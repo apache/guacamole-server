@@ -1141,6 +1141,30 @@ then
     [AC_MSG_RESULT([no])])
 fi
 
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([whether freerdp instance supports LoadChannels])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+        #include <freerdp/freerdp.h>
+
+        /* Mock LoadChannels function with the expected signature */
+        BOOL load_channels(freerdp* instance) {
+            return TRUE;
+        }
+
+        int main() {
+            freerdp* instance = freerdp_new();
+            instance->LoadChannels = load_channels;
+            freerdp_free(instance);
+            return 0;
+        }
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([RDP_INST_HAS_LOAD_CHANNELS],,
+               [Defined if freerdp instance supports LoadChannels])],
+    [AC_MSG_RESULT([no])])
+fi
+
 # Restore CPPFLAGS, removing FreeRDP-specific options needed for testing
 CPPFLAGS="$OLDCPPFLAGS"
 

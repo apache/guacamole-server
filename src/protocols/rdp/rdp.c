@@ -79,20 +79,28 @@
 #include <stdlib.h>
 #include <time.h>
 
-BOOL rdp_freerdp_pre_connect(freerdp* instance) {
-
+/**
+ * Initializes and loads the necessary FreeRDP plugins based on the current
+ * RDP session settings. This function is designed to work in environments
+ * where the FreeRDP instance expects a LoadChannels callback to be set
+ * otherwise it can becalled directly from our pre_connect callback. It
+ * configures various features such as display resizing, multi-touch support,
+ * audio input, clipboard synchronization, device redirection, and graphics
+ * pipeline, by loading their corresponding plugins if they are enabled in the
+ * session settings.
+ *
+ * @param instance
+ *     The FreeRDP instance to be prepared, containing all context and
+ *     settings for the session.
+ *
+ * @return
+ *     Always TRUE.
+ */
+static BOOL rdp_freerdp_load_channels(freerdp* instance) {
     rdpContext* context = GUAC_RDP_CONTEXT(instance);
-    rdpGraphics* graphics = context->graphics;
-
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
-
-    /* Push desired settings to FreeRDP */
-    guac_rdp_push_settings(client, settings, instance);
-
-    /* Init FreeRDP add-in provider */
-    freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
 
     /* Load "disp" plugin for display update */
     if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
@@ -124,6 +132,53 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_rdpdr_load_plugin(context);
         guac_rdpsnd_load_plugin(context);
     }
+
+    /* Load "rdpgfx" plugin for Graphics Pipeline Extension */
+    if (settings->enable_gfx)
+        guac_rdp_rdpgfx_load_plugin(context);
+
+    /* Load plugin providing Dynamic Virtual Channel support, if required */
+    if (freerdp_settings_get_bool(GUAC_RDP_CONTEXT(instance)->settings, FreeRDP_SupportDynamicChannels) &&
+            guac_freerdp_channels_load_plugin(context, "drdynvc",
+                GUAC_RDP_CONTEXT(instance)->settings)) {
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Failed to load drdynvc plugin. Display update and audio "
+                "input support will be disabled.");
+    }
+
+    return TRUE;
+}
+
+/**
+ * Prepares the FreeRDP instance for connection by setting up session-specific
+ * configurations like graphics, plugins, and RDP settings. This involves
+ * integrating Guacamole's custom rendering handlers (for bitmaps, glyphs,
+ * and pointers). If using a freerdp instance that does not expect a
+ * LoadChannels callback then this function manually loads RDP channels.
+ * 
+ * @param instance
+ *     The FreeRDP instance to be prepared, containing all context and
+ *     settings for the session.
+ *
+ * @return
+ *     Returns TRUE if the pre-connection process completes successfully.
+ *     Returns FALSE if an error occurs during the initialization of the
+ *     FreeRDP GDI system.
+ */
+static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
+
+    rdpContext* context = GUAC_RDP_CONTEXT(instance);
+    rdpGraphics* graphics = context->graphics;
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+
+    /* Push desired settings to FreeRDP */
+    guac_rdp_push_settings(client, settings, instance);
+
+    /* Init FreeRDP add-in provider */
+    freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
 
     /* Load RAIL plugin if RemoteApp in use */
     if (settings->remote_app != NULL)
@@ -194,21 +249,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     primary->MemBlt = guac_rdp_gdi_memblt;
     primary->OpaqueRect = guac_rdp_gdi_opaquerect;
 
-    /* Load "rdpgfx" plugin for Graphics Pipeline Extension */
-    if (settings->enable_gfx)
-        guac_rdp_rdpgfx_load_plugin(context);
-
-    /* Load plugin providing Dynamic Virtual Channel support, if required */
-    if (freerdp_settings_get_bool(GUAC_RDP_CONTEXT(instance)->settings, FreeRDP_SupportDynamicChannels) &&
-            guac_freerdp_channels_load_plugin(context, "drdynvc",
-                GUAC_RDP_CONTEXT(instance)->settings)) {
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Failed to load drdynvc plugin. Display update and audio "
-                "input support will be disabled.");
-    }
+    /*
+     * If the freerdp instance does not have a LoadChannels callback for
+     * loading plugins we use the PreConnect callback to load plugins instead.
+     */
+    #ifndef RDP_INST_HAS_LOAD_CHANNELS
+        rdp_freerdp_load_channels(instance);
+    #endif
 
     return TRUE;
-
 }
 
 /**
@@ -489,6 +538,14 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Init client */
     freerdp* rdp_inst = freerdp_new();
+
+    /*
+     * If the freerdp instance has a LoadChannels callback for loading plugins
+     * we use that instead of the PreConnect callback to load plugins.
+     */
+    #ifdef RDP_INST_HAS_LOAD_CHANNELS
+        rdp_inst->LoadChannels = rdp_freerdp_load_channels;
+    #endif
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
 
