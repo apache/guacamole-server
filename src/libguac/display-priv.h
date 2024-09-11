@@ -63,6 +63,18 @@
  *     The function writes (and possibly reads) the state of the last frame.
  *     This prefix and "LFR_" are mutually-exclusive.
  *
+ *   "XFR_"
+ *     The function reads (but does not write) the state of a frame, and
+ *     whether that frame is the pending frame or the last frame depends on
+ *     which frame is provided via function parameters. This prefix and "XFW_"
+ *     are mutually-exclusive.
+ *
+ *   "XFW_"
+ *     The function writes (but does not read) the state of a frame, and
+ *     whether that frame is the pending frame or the last frame depends on
+ *     which frame is provided via function parameters. This prefix and "XFR_"
+ *     are mutually-exclusive.
+ *
  * Any functions lacking these prefixes either do not access last/pending
  * frames in any way or take care of acquiring/releasing locks entirely on
  * their own.
@@ -346,6 +358,13 @@ typedef struct guac_display_layer_state {
      * equivalent to 4 * width.
      */
     size_t buffer_stride;
+
+    /**
+     * Non-zero if the image data referenced by the buffer pointer was
+     * allocated externally and should not be automatically freed or managed by
+     * guac_display, zero otherwise.
+     */
+    int buffer_is_external;
 
     /**
      * The approximate rectangular region containing all pixels within this

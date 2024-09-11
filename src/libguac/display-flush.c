@@ -115,8 +115,39 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
     guac_display_layer* current = display->pending_frame.layers;
     while (current != NULL) {
 
-        /* Copy over pending frame contents if actually changed */
-        if (!guac_rect_is_empty(&current->pending_frame.dirty)) {
+        /* Always resize the last_frame buffer to match the pending_frame prior
+         * to copying over any changes (this is particularly important given
+         * that the pending_frame buffer can be replaced with an external
+         * buffer). Since this involves copying over all data from the
+         * pending frame, we can skip the later pending frame copy based on
+         * whether the pending frame is dirty. */
+        if (current->last_frame.buffer_stride != current->pending_frame.buffer_stride
+                || current->last_frame.buffer_width != current->pending_frame.buffer_width
+                || current->last_frame.buffer_height != current->pending_frame.buffer_height) {
+
+            size_t buffer_size = guac_mem_ckd_mul_or_die(current->pending_frame.buffer_height,
+                    current->pending_frame.buffer_stride);
+
+            guac_mem_free(current->last_frame.buffer);
+            current->last_frame.buffer = guac_mem_zalloc(buffer_size);
+            memcpy(current->last_frame.buffer, current->pending_frame.buffer, buffer_size);
+
+            current->last_frame.buffer_stride = current->pending_frame.buffer_stride;
+            current->last_frame.buffer_width = current->pending_frame.buffer_width;
+            current->last_frame.buffer_height = current->pending_frame.buffer_height;
+
+            current->last_frame.dirty = current->pending_frame.dirty;
+            current->pending_frame.dirty = (guac_rect) { 0 };
+
+            retval = 1;
+
+        }
+
+        /* Copy over pending frame contents if actually changed (this is not
+         * necessary if the last_frame buffer was resized to match
+         * pending_frame, as a copy from pending_frame to last_frame is
+         * inherently part of that) */
+        else if (!guac_rect_is_empty(&current->pending_frame.dirty)) {
 
             unsigned char* pending_frame = current->pending_frame.buffer;
             unsigned char* last_frame = current->last_frame.buffer;

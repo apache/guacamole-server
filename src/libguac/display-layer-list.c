@@ -118,91 +118,50 @@ static void guac_imgcpy(void* dst, size_t dst_stride, int dst_width, int dst_hei
  * @param height
  *     The new height, in pixels.
  */
-static void PFW_LFW_guac_display_layer_buffers_resize(guac_display_layer_state* last_frame,
-        guac_display_layer_state* pending_frame, int width, int height) {
+static void XFW_guac_display_layer_buffer_resize(guac_display_layer_state* frame_state,
+        int width, int height) {
 
-    GUAC_ASSERT(last_frame->buffer_width == pending_frame->buffer_width);
-    GUAC_ASSERT(last_frame->buffer_height == pending_frame->buffer_height);
+    /* We should never be trying to resize an externally-maintained buffer */
+    GUAC_ASSERT(!frame_state->buffer_is_external);
 
     /* Round up to nearest multiple of resize factor */
     width  = ((width  + GUAC_DISPLAY_RESIZE_FACTOR - 1) / GUAC_DISPLAY_RESIZE_FACTOR) * GUAC_DISPLAY_RESIZE_FACTOR;
     height = ((height + GUAC_DISPLAY_RESIZE_FACTOR - 1) / GUAC_DISPLAY_RESIZE_FACTOR) * GUAC_DISPLAY_RESIZE_FACTOR;
 
     /* Do nothing if size isn't actually changing */
-    if (width == last_frame->buffer_width
-            && height == last_frame->buffer_height)
+    if (width == frame_state->buffer_width
+            && height == frame_state->buffer_height)
         return;
 
-    /* The request to resize applies only to the pending frame, but space for
-     * the last frame must be maintained. If either requested dimension is
-     * smaller than the last frame dimensions, the relevant dimension of the
-     * last frame must be used instead. */
-
-    int new_buffer_width = last_frame->buffer_width;
-    if (width > new_buffer_width)
-        new_buffer_width = width;
-
-    int new_buffer_height = last_frame->buffer_height;
-    if (height > new_buffer_height)
-        new_buffer_height = height;
-
-    /* Determine details of shared buffer space sufficient for both the
-     * established last frame and the resized pending frame. Allocate new
-     * shared buffer space for last and pending frames, interleaving their
-     * rows.
-     *
-     * NOTE: We interleave the rows of the last and pending frames to promote
-     * locality of reference. The comparisons performed between last and
-     * pending frames to determine what has changed are faster when the rows
-     * are interleaved, as data relevant to those comparisons will tend to be
-     * present in the CPU cache. */
-
-    int new_last_frame_offset = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, new_buffer_width);
-    int new_common_stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, new_last_frame_offset * 2);
-    unsigned char* new_buffer_base = guac_mem_zalloc(new_buffer_height, new_common_stride);
-    unsigned char* new_pending_frame_buffer = new_buffer_base;
-    unsigned char* new_last_frame_buffer = new_buffer_base + new_last_frame_offset;
+    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
+    unsigned char* buffer = guac_mem_zalloc(height, stride);
 
     /* Copy over data from old shared buffer, if that data exists and is
      * relevant */
 
-    if (last_frame->buffer != NULL && pending_frame->buffer != NULL) {
+    if (frame_state->buffer != NULL) {
 
         guac_imgcpy(
 
-                /* Copy to newly-allocated pending frame buffer ... */
-                new_pending_frame_buffer, new_common_stride,
-                new_buffer_width, new_buffer_height,
+                /* Copy to newly-allocated frame buffer ... */
+                buffer, stride,
+                width, height,
 
-                /* ... from old pending frame buffer. */
-                pending_frame->buffer, pending_frame->buffer_stride,
-                pending_frame->buffer_width, pending_frame->buffer_height,
+                /* ... from old frame buffer. */
+                frame_state->buffer, frame_state->buffer_stride,
+                frame_state->buffer_width, frame_state->buffer_height,
 
                 /* All pixels are 32-bit */
                 GUAC_DISPLAY_LAYER_RAW_BPP);
 
-        guac_imgcpy(
-
-                /* Copy to newly-allocated last frame buffer ... */
-                new_last_frame_buffer, new_common_stride,
-                last_frame->buffer_width, last_frame->buffer_height,
-
-                /* ... from old last frame buffer. */
-                last_frame->buffer, last_frame->buffer_stride,
-                last_frame->buffer_width, last_frame->buffer_height,
-
-                /* All pixels are 32-bit */
-                GUAC_DISPLAY_LAYER_RAW_BPP);
+        guac_mem_free(frame_state->buffer);
 
     }
 
-    guac_mem_free(pending_frame->buffer);
-    last_frame->buffer = new_buffer_base + new_last_frame_offset;
-    pending_frame->buffer = new_buffer_base;
-
-    last_frame->buffer_width = pending_frame->buffer_width = new_buffer_width;
-    last_frame->buffer_height = pending_frame->buffer_height = new_buffer_height;
-    last_frame->buffer_stride = pending_frame->buffer_stride = new_common_stride;
+    frame_state->buffer = buffer;
+    frame_state->buffer_width = width;
+    frame_state->buffer_height = height;
+    frame_state->buffer_stride = stride;
 
 }
 
@@ -227,10 +186,10 @@ static void PFW_LFW_guac_display_layer_state_init(guac_display_layer_state* last
     last_frame->opacity = pending_frame->opacity = 0xFF;
     last_frame->parent = pending_frame->parent = GUAC_DEFAULT_LAYER;
 
-    /* Allocate shared buffer space for last and pending frames, interleaving
-     * their rows */
+    XFW_guac_display_layer_buffer_resize(last_frame,
+            last_frame->width, last_frame->height);
 
-    PFW_LFW_guac_display_layer_buffers_resize(last_frame, pending_frame,
+    XFW_guac_display_layer_buffer_resize(pending_frame,
             pending_frame->width, pending_frame->height);
 
 }
@@ -395,11 +354,14 @@ void guac_display_remove_layer(guac_display_layer* display_layer) {
 
     }
 
-    /* Free memory for underlying image surface and change tracking cells
-     * (NOTE: Freeing pending_frame.buffer inherently also frees
-     * last_frame.buffer because they are actually interleaved views of the
-     * same block) */
-    guac_mem_free(display_layer->pending_frame.buffer);
+    /* Free memory for underlying image surface and change tracking cells. Note
+     * that we do NOT free the associated memory for the pending frame if it
+     * was replaced with an external buffer. */
+
+    if (!display_layer->pending_frame.buffer_is_external)
+        guac_mem_free(display_layer->pending_frame.buffer);
+
+    guac_mem_free(display_layer->last_frame.buffer);
     guac_mem_free(display_layer->pending_frame_cells);
 
     guac_mem_free(display_layer);
@@ -421,7 +383,11 @@ void PFW_LFW_guac_display_layer_resize(guac_display_layer* layer, int width, int
 
     }
 
-    PFW_LFW_guac_display_layer_buffers_resize(&layer->last_frame, &layer->pending_frame, width, height);
+    /* Skip resizing underlying buffer if it's the caller that's responsible
+     * for resizing the buffer */
+    if (!layer->pending_frame.buffer_is_external)
+        XFW_guac_display_layer_buffer_resize(&layer->pending_frame, width, height);
+
     PFW_guac_display_layer_pending_frame_cells_resize(layer, width, height);
 
     layer->pending_frame.width = width;

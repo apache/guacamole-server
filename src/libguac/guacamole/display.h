@@ -124,6 +124,12 @@ struct guac_display_layer_raw_context {
      * this image is 32-bit ARGB with 8 bits per color component, where the
      * lowest-order byte is the blue component and the highest-order byte is
      * alpha.
+     *
+     * This value may be replaced with a manually-allocated buffer if the
+     * associated layer should instead use that manualy-allocated buffer for
+     * future rendering operations. If the buffer is replaced, it must be
+     * maintained manually going forward, including when the buffer needs to be
+     * resized or after the corresponding layer/display have been freed.
      */
     unsigned char* buffer;
 
@@ -132,12 +138,28 @@ struct guac_display_layer_raw_context {
      * necessarily the same as the width of the image multiplied by the size of
      * each pixel. Additional space may be allocated to allow for memory
      * alignment or to make future resize operations more efficient.
+     *
+     * If the buffer for this layer is replaced with an external buffer, or if
+     * the external buffer changes structure, then this value must be manually
+     * kept up-to-date with the stride of the external buffer.
      */
     size_t stride;
 
     /**
      * A rectangle covering the current bounds of the graphical surface. The
      * buffer must not be addressed outside these bounds.
+     *
+     * If the buffer for this layer is replaced with an external buffer, or if
+     * the external buffer changes size, then the dimensions of this bounds
+     * rect must be manually kept up-to-date with the dimensions of the
+     * external buffer. These dimensions will also be passed through to become
+     * the dimensions of the layer, since layers with external buffers cannot
+     * be resized with guac_display_layer_resize().
+     *
+     * NOTE: If an external buffer is used and bounds dimensions are provided
+     * that are greater than GUAC_DISPLAY_MAX_WIDTH and
+     * GUAC_DISPLAY_MAX_HEIGHT, those values will instead be interpreted as
+     * equal to GUAC_DISPLAY_MAX_WIDTH and GUAC_DISPLAY_MAX_HEIGHT.
      */
     guac_rect bounds;
 
@@ -164,9 +186,15 @@ struct guac_display_layer_raw_context {
 /**
  * Allocates a new guac_display representing the remote display shared by all
  * connected users of the given guac_client. The dimensions of the display
- * should be set with guac_display_defaulta_layer() and
+ * should be set with guac_display_default_layer() and
  * guac_display_layer_resize() once the desired display size is known. The
  * guac_display must eventually be freed through a call to guac_display_free().
+ *
+ * NOTE: If the buffer of a layer has been replaced with an externally
+ * maintained buffer, this function CANNOT be used to resize the layer. The
+ * layer must instead be resized through changing the bounds of a
+ * guac_display_layer_raw_context and, if necessary, replacing the underlying
+ * buffer again.
  *
  * @param client
  *     The guac_client whose remote display should be represented by the new
@@ -519,6 +547,12 @@ void guac_display_layer_set_multitouch(guac_display_layer* layer, int touches);
  * Resizes the given layer to the given dimensions. The change in layer size
  * will be made as part of the current pending frame, and will not take effect
  * on remote displays until the pending frame is complete.
+ *
+ * This function will not resize the underlying buffer containing image data if
+ * the layer has been manually reassociated with a different,
+ * externally-maintained buffer using a guac_display_layer_raw_context. If this
+ * is the case, that buffer must instead be manually maintained by the caller,
+ * and resizing will typically involve replacing the buffer again.
  *
  * IMPORTANT: While it is safe to call this function while holding an open
  * context (raw or Cairo), this should only be done if the underlying buffer is

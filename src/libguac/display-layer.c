@@ -218,6 +218,46 @@ void guac_display_layer_close_raw(guac_display_layer* layer, guac_display_layer_
 
     guac_display* display = layer->display;
 
+    /* Replace buffer if requested with an external buffer. This intentionally
+     * falls through to the following buffer_is_external check to update the
+     * buffer details. */
+    if (context->buffer != layer->pending_frame.buffer
+            && !layer->pending_frame.buffer_is_external) {
+        guac_mem_free(layer->pending_frame.buffer);
+        layer->pending_frame.buffer_is_external = 1;
+    }
+
+    /* The details covering the structure of the buffer and the dimensions of
+     * the layer must be copied from the context if the buffer is external
+     * (there is no other way to resize a layer with an external buffer) */
+    if (layer->pending_frame.buffer_is_external) {
+
+        int width = guac_rect_width(&context->bounds);
+        if (width > GUAC_DISPLAY_MAX_WIDTH)
+            width = GUAC_DISPLAY_MAX_WIDTH;
+
+        int height = guac_rect_height(&context->bounds);
+        if (height > GUAC_DISPLAY_MAX_HEIGHT)
+            height = GUAC_DISPLAY_MAX_HEIGHT;
+
+        /* Release any Cairo surface that was created around the external
+         * buffer, in case the details of the buffer have now changed */
+        guac_display_layer_cairo_context* cairo_context = &(layer->pending_frame_cairo_context);
+        if (cairo_context->surface != NULL) {
+            cairo_surface_destroy(cairo_context->surface);
+            cairo_context->surface = NULL;
+        }
+
+        layer->pending_frame.buffer = context->buffer;
+        layer->pending_frame.buffer_width = width;
+        layer->pending_frame.buffer_height = height;
+        layer->pending_frame.buffer_stride = context->stride;
+
+        layer->pending_frame.width = layer->pending_frame.buffer_width;
+        layer->pending_frame.height = layer->pending_frame.buffer_height;
+
+    }
+
     guac_rect_extend(&layer->pending_frame.dirty, &context->dirty);
     PFW_guac_display_layer_touch(layer);
 
