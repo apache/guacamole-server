@@ -139,6 +139,7 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
 
     /* Framebuffer update handler */
     rfb_client->GotFrameBufferUpdate = guac_vnc_update;
+    vnc_client->rfb_GotCopyRect = rfb_client->GotCopyRect;
     rfb_client->GotCopyRect = guac_vnc_copyrect;
 
 #ifdef ENABLE_VNC_TLS_LOCKING

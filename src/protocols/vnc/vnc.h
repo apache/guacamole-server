@@ -86,6 +86,12 @@ typedef struct guac_vnc_client {
     MallocFrameBufferProc rfb_MallocFrameBuffer;
 
     /**
+     * The original CopyRect processing procedure provided by the initialized
+     * rfbClient.
+     */
+    GotCopyRectProc rfb_GotCopyRect;
+
+    /**
      * Whether copyrect  was used to produce the latest update received
      * by the VNC server.
      */
