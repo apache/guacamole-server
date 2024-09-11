@@ -51,16 +51,10 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
-#ifdef LIBVNC_CLIENT_HAS_SCREEN
-    int new_height = rfbClientSwap16IfLE(client->screen.height);
-    int new_width  = rfbClientSwap16IfLE(client->screen.width);
-#else
-    int new_height = rfbClientSwap16IfLE(client->height);
-    int new_width  = rfbClientSwap16IfLE(client->width);
-#endif
-
     /* Resize the surface if VNC screen size has changed */
+    int new_height = client->height;
     int old_height = vnc_client->display->default_surface->height;
+    int new_width  = client->width;
     int old_width  = vnc_client->display->default_surface->width;
     if (
             new_height > 0 && new_width > 0
