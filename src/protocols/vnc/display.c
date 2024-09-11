@@ -201,13 +201,13 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
     /* Get the Guacamole client data */
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
 
+#ifdef LIBVNC_CLIENT_HAS_SCREEN
     guac_client_log(gc, GUAC_LOG_TRACE,
             "Current screen size is %ix%i; setting new size %ix%i\n",
             rfbClientSwap16IfLE(client->screen.width),
             rfbClientSwap16IfLE(client->screen.height),
             width, height);
 
-#ifdef LIBVNC_CLIENT_HAS_SCREEN
     /* Don't send an update if the requested dimensions are identical to current dimensions. */
     if (client->screen.width == rfbClientSwap16IfLE(width) && client->screen.height == rfbClientSwap16IfLE(height)) {
         guac_client_log(gc, GUAC_LOG_WARNING, "Screen size has not changed, not sending update.");
