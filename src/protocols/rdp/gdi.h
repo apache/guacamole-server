@@ -72,6 +72,19 @@ BOOL guac_rdp_gdi_frame_marker(rdpContext* context, const FRAME_MARKER_ORDER* fr
 BOOL guac_rdp_gdi_surface_frame_marker(rdpContext* context, const SURFACE_FRAME_MARKER* surface_frame_marker);
 
 /**
+ * Handler called when a paint operation is beginning. This function is
+ * expected to be called by the FreeRDP GDI implementation of RemoteFX when a
+ * new frame has started.
+ *
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
+ */
+BOOL guac_rdp_gdi_begin_paint(rdpContext* context);
+
+/**
  * Handler called when FreeRDP has finished performing updates to the backing
  * surface of its GDI (graphics) implementation.
  *

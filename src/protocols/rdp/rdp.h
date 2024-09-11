@@ -107,6 +107,14 @@ typedef struct guac_rdp_client {
     guac_display_layer* current_surface;
 
     /**
+     * The current raw context that can be used to draw to Guacamole's default
+     * layer. This context is obtained prior to FreeRDP manipulation of the GDI
+     * buffer and closed when FreeRDP is done with the GDI buffer. If no
+     * drawing to the GDI is currently underway, this will be NULL.
+     */
+    guac_display_layer_raw_context* current_context;
+
+    /**
      * Whether the RDP server has reported that a new frame is in progress, and
      * we are now receiving updates relevant to that frame.
      */
