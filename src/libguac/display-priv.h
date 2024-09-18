@@ -754,7 +754,7 @@ void guac_display_remove_layer(guac_display_layer* display_layer);
  * @param height
  *     The new height, in pixels.
  */
-void PFW_LFW_guac_display_layer_resize(guac_display_layer* layer,
+void PFW_guac_display_layer_resize(guac_display_layer* layer,
         int width, int height);
 
 /**

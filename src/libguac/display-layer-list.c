@@ -368,7 +368,7 @@ void guac_display_remove_layer(guac_display_layer* display_layer) {
 
 }
 
-void PFW_LFW_guac_display_layer_resize(guac_display_layer* layer, int width, int height) {
+void PFW_guac_display_layer_resize(guac_display_layer* layer, int width, int height) {
 
     /* Flush and destroy any cached Cairo context */
     guac_display_layer_cairo_context* cairo_context = &(layer->pending_frame_cairo_context);

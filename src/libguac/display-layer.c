@@ -138,12 +138,10 @@ void guac_display_layer_resize(guac_display_layer* layer, int width, int height)
 
     guac_display* display = layer->display;
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
-    guac_rwlock_acquire_write_lock(&display->last_frame.lock);
 
-    PFW_LFW_guac_display_layer_resize(layer, width, height);
+    PFW_guac_display_layer_resize(layer, width, height);
     PFW_guac_display_layer_touch(layer);
 
-    guac_rwlock_release_lock(&display->last_frame.lock);
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
 }
