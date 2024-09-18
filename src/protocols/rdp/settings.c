@@ -1803,7 +1803,8 @@ void guac_rdp_push_settings(guac_client* client,
 
     /* Client name */
     if (guac_settings->client_name != NULL) {
-        guac_strlcpy(rdp_settings->ClientHostname, guac_settings->client_name,
+        free(rdp_settings->ClientHostname);
+        rdp_settings->ClientHostname = guac_strndup(guac_settings->client_name,
                 RDP_CLIENT_HOSTNAME_SIZE);
     }
 
