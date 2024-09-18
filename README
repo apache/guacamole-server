@@ -32,6 +32,15 @@ proxy which translates between arbitrary protocols and the Guacamole protocol.
 
 
 ------------------------------------------------------------
+ Self-Hosting guacamole-server
+------------------------------------------------------------
+
+Elestio provides an option to deploy fully managed option of software. Elestio 
+manages the migrations, backups, version changes and security of the application.
+Get started here: https://elest.io/open-source/guacamole
+
+
+------------------------------------------------------------
  Required dependencies
 ------------------------------------------------------------
 
