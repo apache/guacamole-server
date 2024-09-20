@@ -23,31 +23,38 @@
 #include "guacamole/rect.h"
 
 /**
- * Returns whether the given operation can be combined with others. Only
- * operations of certain types can be combined, and only up to a certain size
- * (to favor parallelism).
+ * Returns whether the given rectangle crosses the boundaries of any two
+ * adjacent cells in a grid, where each cell in the grid is
+ * 2^GUAC_DISPLAY_MAX_COMBINED_SIZE pixels on each side.
  *
- * @param op
- *     The operation to test.
+ * This function exists because combination of adjacent image updates is
+ * intentionally limited to a certain size in order to favor parallelism.
+ * Greedily combining in the horizontal direction works, but in practice tends
+ * to produce a vertical series of strips that are offset from each other to
+ * the point that they cannot be further combined. Anchoring combined image
+ * updates to a grid helps prevent ths.
+ *
+ * @param rect
+ *     The rectangle to test.
  *
  * @return
- *     Non-zero if the operation can be combined with others, zero otherwise.
+ *     Non-zero if the rectangle crosses the boundary of any adjacent pair of
+ *     cells in a grid, where each cell is 2^GUAC_DISPLAY_MAX_COMBINED_SIZE
+ *     pixels on each side, zero otherwise.
  */
-static int guac_display_plan_is_combinable(const guac_display_plan_operation* op) {
-    switch (op->type) {
+static int guac_display_plan_rect_crosses_boundary(const guac_rect* rect) {
 
-        case GUAC_DISPLAY_PLAN_OPERATION_IMG:
-            return guac_rect_width(&op->dest)  < GUAC_DISPLAY_MAX_COMBINED_WIDTH
-                && guac_rect_height(&op->dest) < GUAC_DISPLAY_MAX_COMBINED_HEIGHT;
+    /* A particular rectangle crosses a grid boundary if and only if expanding
+     * that rectangle to fit the grid would mean increasing the size of that
+     * rectangle beyond a single grid cell */
 
-        case GUAC_DISPLAY_PLAN_OPERATION_RECT:
-        case GUAC_DISPLAY_PLAN_OPERATION_COPY:
-            return 1;
+    guac_rect rect_copy = *rect;
+    guac_rect_align(&rect_copy, GUAC_DISPLAY_MAX_COMBINED_SIZE);
 
-        default:
-            return 0;
+    const int max_size_pixels = 1 << GUAC_DISPLAY_MAX_COMBINED_SIZE;
+    return guac_rect_width(&rect_copy) > max_size_pixels
+        || guac_rect_height(&rect_copy) > max_size_pixels;
 
-    }
 }
 
 /**
@@ -109,15 +116,13 @@ static int guac_display_plan_has_common_edge(const guac_display_plan_operation* 
 static int guac_display_plan_should_combine(const guac_display_plan_operation* op_a,
         const guac_display_plan_operation* op_b) {
 
-    /* Consider only operations that have combinable types (draw to a
-     * particular rectangle in the layer) */
-    if (!guac_display_plan_is_combinable(op_a)
-            || !guac_display_plan_is_combinable(op_b))
-        return 0;
-
     /* Operations can only be combined within the same layer */
     if (op_a->layer != op_b->layer)
         return 0;
+
+    /* Simulate combination */
+    guac_rect combined = op_a->dest;
+    guac_rect_extend(&combined, &op_b->dest);
 
     /* Operations of the same type can be trivially unified under specific
      * circumstances */
@@ -137,7 +142,8 @@ static int guac_display_plan_should_combine(const guac_display_plan_operation* o
                     int delta_yb = op_b->dest.top  - op_b->src.layer_rect.rect.top;
 
                     return delta_xa == delta_xb
-                        && delta_ya == delta_yb;
+                        && delta_ya == delta_yb
+                        && !guac_display_plan_rect_crosses_boundary(&combined);
 
                 }
                 break;
@@ -147,7 +153,14 @@ static int guac_display_plan_should_combine(const guac_display_plan_operation* o
              * color */
             case GUAC_DISPLAY_PLAN_OPERATION_RECT:
                 return op_a->src.color == op_b->src.color
-                    && guac_display_plan_has_common_edge(op_a, op_b);
+                    && guac_display_plan_has_common_edge(op_a, op_b)
+                    && !guac_display_plan_rect_crosses_boundary(&combined);
+
+            /* Image-drawing operations can be combined if doing so wouldn't
+             * exceed the size limits for images (we enforce size limits here
+             * to promote parallelism) */
+            case GUAC_DISPLAY_PLAN_OPERATION_IMG:
+                return !guac_display_plan_rect_crosses_boundary(&combined);
 
             /* Other combinations require more complex logic... (see below) */
             default:
@@ -155,10 +168,6 @@ static int guac_display_plan_should_combine(const guac_display_plan_operation* o
 
         }
     }
-
-    /* Simulate combination */
-    guac_rect combined = op_a->dest;
-    guac_rect_extend(&combined, &op_b->dest);
 
     /* Combine if result is still small */
     int combined_width = guac_rect_width(&combined);

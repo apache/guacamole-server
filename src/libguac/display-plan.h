@@ -47,22 +47,16 @@
 #define GUAC_DISPLAY_DATA_FACTOR 128
 
 /**
- * The maximum width to allow when combining any pair of rendering operations
- * into a single operation, in pixels. This value is intended to be large
- * enough to avoid unnecessarily increasing the number of drawing operations,
- * yet also small enough to allow larger updates to be easily parallelized via
- * the worker threads.
+ * The maximum width or height to allow when combining any pair of rendering
+ * operations into a single operation, in pixels, as the exponent of a power of
+ * two. This value is intended to be large enough to avoid unnecessarily
+ * increasing the number of drawing operations, yet also small enough to allow
+ * larger updates to be easily parallelized via the worker threads.
+ *
+ * The current value of 9 means that each encoded image will be no larger than
+ * 512x512 pixels.
  */
-#define GUAC_DISPLAY_MAX_COMBINED_WIDTH 512
-
-/**
- * The maximum height to allow when combining any pair of rendering operations
- * into a single operation, in pixels. This value is intended to be large
- * enough to avoid unnecessarily increasing the number of drawing operations,
- * yet also small enough to allow larger updates to be easily parallelized via
- * the worker threads.
- */
-#define GUAC_DISPLAY_MAX_COMBINED_HEIGHT 512
+#define GUAC_DISPLAY_MAX_COMBINED_SIZE 9
 
 /**
  * The base cost of every update. Each update should be considered to have
