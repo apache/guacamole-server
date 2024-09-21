@@ -282,7 +282,7 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
 
 void guac_display_end_mouse_frame(guac_display* display) {
 
-    guac_rwlock_acquire_read_lock(&display->pending_frame.lock);
+    guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
 
     if (!display->pending_frame_dirty_excluding_mouse)
         guac_display_end_multiple_frames(display, 0);
