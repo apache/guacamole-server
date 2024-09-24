@@ -311,6 +311,7 @@ void PFW_guac_display_plan_combine_vertically(guac_display_plan* plan) {
 
                     /* Combine adjacent updates if doing so is advantageous */
                     if (previous->related_op != NULL && cell->related_op != NULL
+                            && guac_display_plan_has_common_edge(previous->related_op, cell->related_op)
                             && guac_display_plan_combine_if_improved(previous->related_op, cell->related_op)) {
                         cell->related_op = previous->related_op;
                     }
