@@ -20,9 +20,12 @@
 #include "display-plan.h"
 #include "display-priv.h"
 #include "guacamole/assert.h"
+#include "guacamole/client.h"
 #include "guacamole/display.h"
 #include "guacamole/fifo.h"
 #include "guacamole/mem.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
 #include "guacamole/timestamp.h"
 
 #include <string.h>
@@ -374,10 +377,65 @@ void guac_display_plan_free(guac_display_plan* plan) {
 void guac_display_plan_apply(guac_display_plan* plan) {
 
     guac_display* display = plan->display;
+    guac_client* client = display->client;
     guac_display_plan_operation* op = plan->ops;
 
+    /* Do not allow worker threads to move forward with image encoding until
+     * AFTER the non-image instructions have finished being written */
+    guac_fifo_lock(&display->ops);
+
+    /* Immediately send instructions for all updates that do not involve
+     * significant processing (do not involve encoding anything). This allows
+     * us to use the worker threads solely for encoding, reducing contention
+     * between the threads. */
     for (int i = 0; i < plan->length; i++) {
-        guac_fifo_enqueue(&display->ops, op++);
+
+        guac_display_layer* display_layer = op->layer;
+        switch (op->type) {
+
+            case GUAC_DISPLAY_PLAN_OPERATION_COPY:
+                guac_protocol_send_copy(client->socket, op->src.layer_rect.layer,
+                        op->src.layer_rect.rect.left, op->src.layer_rect.rect.top,
+                        guac_rect_width(&op->src.layer_rect.rect), guac_rect_height(&op->src.layer_rect.rect),
+                        GUAC_COMP_OVER, display_layer->layer, op->dest.left, op->dest.top);
+                break;
+
+            case GUAC_DISPLAY_PLAN_OPERATION_RECT:
+
+                guac_protocol_send_rect(client->socket, display_layer->layer,
+                        op->dest.left, op->dest.top, guac_rect_width(&op->dest), guac_rect_height(&op->dest));
+
+                int alpha = (op->src.color & 0xFF000000) >> 24;
+                int red   = (op->src.color & 0x00FF0000) >> 16;
+                int green = (op->src.color & 0x0000FF00) >> 8;
+                int blue  = (op->src.color & 0x000000FF);
+
+                /* Clear before drawing if layer is not opaque (transparency
+                 * will not be copied correctly otherwise) */
+                if (!display_layer->opaque)
+                    guac_protocol_send_cfill(client->socket, GUAC_COMP_ROUT, display_layer->layer,
+                            0x00, 0x00, 0x00, 0xFF);
+
+                guac_protocol_send_cfill(client->socket, GUAC_COMP_OVER, display_layer->layer,
+                        red, green, blue, alpha);
+
+                break;
+
+            /* Simply ignore and drop NOP */
+            case GUAC_DISPLAY_PLAN_OPERATION_NOP:
+                break;
+
+            /* All other operations should be handled by the workers */
+            default:
+                guac_fifo_enqueue(&display->ops, op);
+                break;
+
+        }
+
+        op++;
+
     }
+
+    guac_fifo_unlock(&display->ops);
 
 }

@@ -92,7 +92,6 @@
  * 2) last_frame.lock
  * 3) ops
  * 4) render_state
- * 5) op_path_lock
  *
  * Acquiring these locks in any other order risks deadlock. Don't do it.
  */
@@ -666,15 +665,6 @@ struct guac_display {
      * worker thread.
      */
     guac_fifo ops;
-
-    /**
-     * Lock which ensures instructions that make use of a layer's current path
-     * (such as "rect" and "cfill") do not get inadvertently interleaved.
-     * Interleaving of path instructions can result in those paths not matching
-     * the expectatiosn of subsequent instructions, causing graphical
-     * artifacts.
-     */
-    pthread_mutex_t op_path_lock;
 
     /**
      * Storage for any items within the ops fifo.

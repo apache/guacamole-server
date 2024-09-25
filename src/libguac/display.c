@@ -137,9 +137,6 @@ guac_display* guac_display_alloc(guac_client* client) {
     guac_flag_init(&display->render_state);
     guac_flag_set(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS);
 
-    /* Init lock specific to the GUAC_DISPLAY_PLAN_OPERATION_RECT operation */
-    pthread_mutex_init(&display->op_path_lock, NULL);
-
     int cpu_count = guac_display_nproc();
     if (cpu_count <= 0) {
         guac_client_log(client, GUAC_LOG_WARNING, "Number of available "
@@ -176,7 +173,6 @@ void guac_display_free(guac_display* display) {
         pthread_join(display->worker_threads[i], NULL);
 
     /* All locks, FIFOs, etc. are now unused and can be safely destroyed */
-    pthread_mutex_destroy(&display->op_path_lock);
     guac_flag_destroy(&display->render_state);
     guac_fifo_destroy(&display->ops);
     guac_rwlock_destroy(&display->last_frame.lock);

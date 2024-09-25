@@ -104,15 +104,11 @@ static void guac_display_layer_clear_non_opaque(guac_display_layer* display_laye
      * being non-opaque */
     if (!display_layer->opaque) {
 
-        pthread_mutex_lock(&display->op_path_lock);
-
         guac_protocol_send_rect(socket, layer, dirty->left, dirty->top,
                 guac_rect_width(dirty), guac_rect_height(dirty));
 
         guac_protocol_send_cfill(socket, GUAC_COMP_ROUT, layer,
                 0x00, 0x00, 0x00, 0xFF);
-
-        pthread_mutex_unlock(&display->op_path_lock);
 
     }
 
@@ -371,36 +367,14 @@ void* guac_display_worker_thread(void* data) {
                 break;
 
             case GUAC_DISPLAY_PLAN_OPERATION_COPY:
-                guac_protocol_send_copy(client->socket, op.src.layer_rect.layer,
-                        op.src.layer_rect.rect.left, op.src.layer_rect.rect.top,
-                        guac_rect_width(&op.src.layer_rect.rect), guac_rect_height(&op.src.layer_rect.rect),
-                        GUAC_COMP_OVER, display_layer->layer, op.dest.left, op.dest.top);
-                break;
-
             case GUAC_DISPLAY_PLAN_OPERATION_RECT:
-
-                pthread_mutex_lock(&display->op_path_lock);
-                guac_protocol_send_rect(client->socket, display_layer->layer,
-                        op.dest.left, op.dest.top, guac_rect_width(&op.dest), guac_rect_height(&op.dest));
-
-                int alpha = (op.src.color & 0xFF000000) >> 24;
-                int red   = (op.src.color & 0x00FF0000) >> 16;
-                int green = (op.src.color & 0x0000FF00) >> 8;
-                int blue  = (op.src.color & 0x000000FF);
-
-                /* Clear before drawing if layer is not opaque (transparency
-                 * will not be copied correctly otherwise) */
-                if (!display_layer->opaque)
-                    guac_protocol_send_cfill(client->socket, GUAC_COMP_ROUT, display_layer->layer,
-                            0x00, 0x00, 0x00, 0xFF);
-
-                guac_protocol_send_cfill(client->socket, GUAC_COMP_OVER, display_layer->layer,
-                        red, green, blue, alpha);
-
-                pthread_mutex_unlock(&display->op_path_lock);
-                break;
-
             case GUAC_DISPLAY_PLAN_OPERATION_NOP:
+                guac_client_log(client, GUAC_LOG_DEBUG, "Operation type %i "
+                        "should NOT be present in the set of operations given "
+                        "to guac_display worker thread. All operations except "
+                        "IMG and END_FRAME are handled during the initial, "
+                        "single-threaded flush step. This is likely a bug.",
+                        op.type);
                 break;
 
             case GUAC_DISPLAY_PLAN_END_FRAME:
