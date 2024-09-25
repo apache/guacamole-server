@@ -44,7 +44,7 @@
 /**
  * The number of worker threads to create per processor.
  */
-#define GUAC_DISPLAY_CPU_THREAD_FACTOR 2
+#define GUAC_DISPLAY_CPU_THREAD_FACTOR 1
 
 /**
  * Returns the number of processors available to this process. If possible,
