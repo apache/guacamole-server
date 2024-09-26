@@ -412,12 +412,12 @@ void guac_display_plan_apply(guac_display_plan* plan) {
 
                 /* Clear before drawing if layer is not opaque (transparency
                  * will not be copied correctly otherwise) */
-                if (!display_layer->opaque)
-                    guac_protocol_send_cfill(client->socket, GUAC_COMP_ROUT, display_layer->layer,
-                            0x00, 0x00, 0x00, 0xFF);
-
-                guac_protocol_send_cfill(client->socket, GUAC_COMP_OVER, display_layer->layer,
-                        red, green, blue, alpha);
+                if (!display_layer->opaque) {
+                    guac_protocol_send_cfill(client->socket, GUAC_COMP_ROUT, display_layer->layer, 0x00, 0x00, 0x00, 0xFF);
+                    guac_protocol_send_cfill(client->socket, GUAC_COMP_OVER, display_layer->layer, red, green, blue, alpha);
+                }
+                else
+                    guac_protocol_send_cfill(client->socket, GUAC_COMP_OVER, display_layer->layer, red, green, blue, 0xFF);
 
                 break;
 
