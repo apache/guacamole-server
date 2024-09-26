@@ -218,21 +218,27 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
 
         int width = guac_rect_width(&layer_bounds);
         int height = guac_rect_height(&layer_bounds);
-
-        /* Get Cairo surface covering layer bounds */
-        unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(current->last_frame, layer_bounds);
-        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
-                    current->opaque ? CAIRO_FORMAT_RGB24 : CAIRO_FORMAT_ARGB32,
-                    width, height, current->last_frame.buffer_stride);
-
-        /* Send PNG for rect */
         guac_protocol_send_size(socket, layer, width, height);
-        guac_client_stream_png(client, socket, GUAC_COMP_OVER, layer, 0, 0, rect);
 
-        /* Resync copy of previous frame */
-        guac_protocol_send_copy(socket,
-                layer, 0, 0, width, height,
-                GUAC_COMP_OVER, current->last_frame_buffer, 0, 0);
+        if (width > 0 && height > 0) {
+
+            /* Get Cairo surface covering layer bounds */
+            unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(current->last_frame, layer_bounds);
+            cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
+                        current->opaque ? CAIRO_FORMAT_RGB24 : CAIRO_FORMAT_ARGB32,
+                        width, height, current->last_frame.buffer_stride);
+
+            /* Send PNG for rect */
+            guac_client_stream_png(client, socket, GUAC_COMP_OVER, layer, 0, 0, rect);
+
+            /* Resync copy of previous frame */
+            guac_protocol_send_copy(socket,
+                    layer, 0, 0, width, height,
+                    GUAC_COMP_OVER, current->last_frame_buffer, 0, 0);
+
+            cairo_surface_destroy(rect);
+
+        }
 
         /* Resync any properties that are specific to non-buffer layers */
         if (current->layer->index > 0) {
