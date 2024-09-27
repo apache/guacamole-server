@@ -126,10 +126,16 @@ struct guac_display_layer_raw_context {
      * alpha.
      *
      * This value may be replaced with a manually-allocated buffer if the
-     * associated layer should instead use that manualy-allocated buffer for
+     * associated layer should instead use that manually-allocated buffer for
      * future rendering operations. If the buffer is replaced, it must be
      * maintained manually going forward, including when the buffer needs to be
      * resized or after the corresponding layer/display have been freed.
+     *
+     * If necessary (such as when a manually-allocated buffer must be freed
+     * before freeing the guac_display), all guac_display references to a
+     * manually-allocated buffer may be removed by setting this value to NULL
+     * and closing the context. Layers with a NULL buffer will not be
+     * considered for graphical changes in subsequent frames.
      */
     unsigned char* buffer;
 

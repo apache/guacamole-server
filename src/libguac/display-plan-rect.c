@@ -215,7 +215,12 @@ void PFR_guac_display_plan_rewrite_as_rects(guac_display_plan* plan) {
             size_t stride = layer->pending_frame.buffer_stride;
             const unsigned char* buffer = layer->pending_frame.buffer;
 
-            if (guac_display_plan_is_rect_single_color(buffer, stride, &op->dest, &color)) {
+            /* NOTE: Processing of operations referring to layers whose buffers
+             * have been replaced with NULL is intentionally allowed to ensure
+             * references to external buffers can be safely removed if
+             * necessary, even before guac_display is freed */
+
+            if (buffer != NULL && guac_display_plan_is_rect_single_color(buffer, stride, &op->dest, &color)) {
 
                 /* Ignore alpha channel for opaque layers */
                 if (layer->opaque)

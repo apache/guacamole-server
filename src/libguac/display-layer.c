@@ -18,6 +18,7 @@
  */
 
 #include "display-priv.h"
+#include "guacamole/assert.h"
 #include "guacamole/display.h"
 #include "guacamole/rect.h"
 #include "guacamole/rwlock.h"
@@ -273,6 +274,13 @@ guac_display_layer_cairo_context* guac_display_layer_open_cairo(guac_display_lay
 
     guac_display* display = layer->display;
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
+
+    /* It is intentionally allowed that the pending frame buffer can be
+     * replaced with NULL to ensure that references to external buffers can be
+     * removed prior to guac_display being freed. If the buffer has been
+     * manually replaced with NULL, further use of that buffer via Cairo
+     * contexts is not safe nor allowed. */
+    GUAC_ASSERT(layer->pending_frame.buffer != NULL);
 
     guac_display_layer_cairo_context* context = &(layer->pending_frame_cairo_context);
 

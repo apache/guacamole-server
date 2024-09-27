@@ -19,6 +19,7 @@
 
 #include "display-plan.h"
 #include "display-priv.h"
+#include "guacamole/assert.h"
 #include "guacamole/client.h"
 #include "guacamole/display.h"
 #include "guacamole/fifo.h"
@@ -114,6 +115,15 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
     display->last_frame.layers = display->pending_frame.layers;
     guac_display_layer* current = display->pending_frame.layers;
     while (current != NULL) {
+
+        /* Skip processing any layers whose buffers have been replaced with
+         * NULL (this is intentionally allowed to ensure references to external
+         * buffers can be safely removed if necessary, even before guac_display
+         * is freed) */
+        if (current->pending_frame.buffer == NULL) {
+            GUAC_ASSERT(current->pending_frame.buffer_is_external);
+            continue;
+        }
 
         /* Always resize the last_frame buffer to match the pending_frame prior
          * to copying over any changes (this is particularly important given

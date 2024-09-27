@@ -147,6 +147,15 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
     current = display->pending_frame.layers;
     while (current != NULL) {
 
+        /* Skip processing any layers whose buffers have been replaced with
+         * NULL (this is intentionally allowed to ensure references to external
+         * buffers can be safely removed if necessary, even before guac_display
+         * is freed) */
+        if (current->pending_frame.buffer == NULL) {
+            GUAC_ASSERT(current->pending_frame.buffer_is_external);
+            continue;
+        }
+
         /* Check only within layer dirty region, skipping the layer if
          * unmodified. This pass should reset and refine that region, but
          * otherwise rely on proper reporting of modified regions by callers of
