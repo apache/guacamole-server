@@ -269,6 +269,57 @@ static int guac_vnc_wait_for_messages(rfbClient* rfb_client, int msec_timeout) {
 
 }
 
+/**
+ * Handles any inbound VNC messages that have been received, updating the
+ * Guacamole display accordingly.
+ *
+ * @param vnc_client
+ *     The guac_vnc_client of the VNC connection whose current messages should
+ *     be handled.
+ *
+ * @return
+ *     True (non-zero) if messages were handled successfully, false (zero)
+ *     otherwise.
+ */
+static rfbBool guac_vnc_handle_messages(guac_vnc_client* vnc_client) {
+
+    rfbClient* rfb_client = vnc_client->rfb_client;
+    guac_display_layer* default_layer = guac_display_default_layer(vnc_client->display);
+
+    /* All potential drawing operations must occur while holding an open context */
+    guac_display_layer_raw_context* context = guac_display_layer_open_raw(default_layer);
+    vnc_client->current_context = context;
+
+    /* Actually handle messages (this may result in drawing to the
+     * guac_display, resizing the display buffer, etc.) */
+    rfbBool retval = HandleRFBServerMessage(rfb_client);
+
+    /* Use the buffer of libvncclient directly if it matches the guac_display
+     * format */
+    unsigned int vnc_bpp = rfb_client->format.bitsPerPixel / 8;
+    if (vnc_bpp == GUAC_DISPLAY_LAYER_RAW_BPP && !vnc_client->settings->swap_red_blue) {
+
+        context->buffer = rfb_client->frameBuffer;
+        context->stride = guac_mem_ckd_mul_or_die(vnc_bpp, rfb_client->width);
+
+        /* Update bounds of pending frame to match those of RFB framebuffer */
+        guac_rect_init(&context->bounds, 0, 0, rfb_client->width, rfb_client->height);
+
+    }
+
+    /* There will be no further drawing operations */
+    guac_display_layer_close_raw(default_layer, context);
+    vnc_client->current_context = NULL;
+
+    /* Resize the surface if VNC screen size has changed (this call
+     * automatically deals with invalid dimensions and is a no-op
+     * if the size has not changed) */
+    guac_display_layer_resize(default_layer, rfb_client->width, rfb_client->height);
+
+    return retval;
+
+}
+
 void* guac_vnc_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -557,7 +608,7 @@ void* guac_vnc_client_thread(void* data) {
             do {
 
                 /* Handle any message received */
-                if (!HandleRFBServerMessage(rfb_client)) {
+                if (!guac_vnc_handle_messages(vnc_client)) {
                     guac_client_abort(client,
                             GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                             "Error handling message from VNC server.");

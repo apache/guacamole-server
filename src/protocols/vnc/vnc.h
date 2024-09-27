@@ -108,6 +108,12 @@ typedef struct guac_vnc_client {
     guac_display* display;
 
     /**
+     * The context of the current drawing (update) operation, if any. If no
+     * operation is in progress, this will be NULL.
+     */
+    guac_display_layer_raw_context* current_context;
+
+    /**
      * Internal clipboard.
      */
     guac_common_clipboard* clipboard;

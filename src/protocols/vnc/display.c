@@ -51,48 +51,25 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
     guac_display_layer* default_layer = guac_display_default_layer(vnc_client->display);
 
-    int rfb_height = client->height;
-    int rfb_width  = client->width;
-
-    guac_display_layer_raw_context* context;
+    guac_display_layer_raw_context* context = vnc_client->current_context;
     unsigned int vnc_bpp = client->format.bitsPerPixel / 8;
-    size_t vnc_stride = guac_mem_ckd_mul_or_die(vnc_bpp, rfb_width);
+    size_t vnc_stride = guac_mem_ckd_mul_or_die(vnc_bpp, client->width);
 
     /* Convert operation coordinates to guac_rect for easier manipulation */
     guac_rect op_bounds;
     guac_rect_init(&op_bounds, x, y, w, h);
 
-    /* Point directly at framebuffer if the pixel format used is identical to
-     * that expected by guac_display. Resize of the layer is implicit in this
-     * case. */
-    if (vnc_bpp == GUAC_DISPLAY_LAYER_RAW_BPP && !vnc_client->settings->swap_red_blue) {
+    /* Ensure operation bounds are within possibly updated bounds of the
+     * pending frame (now the RFB client framebuffer) */
+    guac_rect_constrain(&op_bounds, &context->bounds);
 
-        context = guac_display_layer_open_raw(default_layer);
-        context->buffer = client->frameBuffer;
-        context->stride = vnc_stride;
+    /* NOTE: The guac_display will be pointed directly at the libvncclient
+     * framebuffer if the pixel format used is identical to that expected by
+     * guac_display. No need to manually copy anything around in that case. */
 
-        /* Update bounds of pending frame to match those of RFB framebuffer */
-        guac_rect_init(&context->bounds, 0, 0, rfb_width, rfb_height);
-
-        /* Ensure operation bounds are within possibly updated bounds of the
-         * pending frame (now the RFB client framebuffer) */
-        guac_rect_constrain(&op_bounds, &context->bounds);
-
-    }
-
-    /* All other framebuffer formats must be manually converted */
-    else {
-
-        /* Resize the surface if VNC screen size has changed (this call
-         * automatically deals with invalid dimensions and is a no-op if the size
-         * has not changed) */
-        guac_display_layer_resize(default_layer, rfb_width, rfb_height);
-
-        /* Begin drawing operation directly to default layer. NOTE: This is
-         * intentionally after the call to guac_display_layer_resize() to
-         * ensure the bounds of the resulting context are representative of the
-         * resize operation. */
-        context = guac_display_layer_open_raw(default_layer);
+    /* All framebuffer formats must be manually converted if not identical to
+     * the format used by guac_display */
+    if (vnc_bpp != GUAC_DISPLAY_LAYER_RAW_BPP || vnc_client->settings->swap_red_blue) {
 
         /* Ensure draw is within current bounds of the pending frame */
         guac_rect_constrain(&op_bounds, &context->bounds);
@@ -151,9 +128,6 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
         context->hint_from = default_layer;
         vnc_client->copy_rect_used = 0;
     }
-
-    /* Draw operation is now complete */
-    guac_display_layer_close_raw(default_layer, context);
 
 }
 
@@ -393,26 +367,8 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
     guac_client* gc = rfbClientGetClientData(rfb_client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
-    /* Resize of underlying buffer must be performed while holding an open raw
-     * context if the guac_display is active (replacing the underlying
-     * framebuffer while guac_display may still attempt to flush a pending
-     * frame is bad news, as that flush may still reference the freed buffer) */
-    if (vnc_client->display != NULL) {
-
-        guac_display_layer* default_layer = guac_display_default_layer(vnc_client->display);
-        guac_display_layer_resize(default_layer, rfb_client->width, rfb_client->height);
-
-        /* Use original, wrapped proc to resize the buffer maintained by libvncclient */
-        guac_display_layer_raw_context* context = guac_display_layer_open_raw(default_layer);
-        rfbBool result = vnc_client->rfb_MallocFrameBuffer(rfb_client);
-        guac_display_layer_close_raw(default_layer, context);
-
-        return result;
-
-    }
-
-    /* No need to bracket the buffer allocation in a raw context if there's no
-     * guac_display yet */
+    /* Use original, wrapped proc to resize the buffer maintained by
+     * libvncclient */
     return vnc_client->rfb_MallocFrameBuffer(rfb_client);
 
 }
