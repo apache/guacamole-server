@@ -129,6 +129,8 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
         vnc_client->copy_rect_used = 0;
     }
 
+    guac_display_render_thread_notify_modified(vnc_client->render_thread);
+
 }
 
 void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y) {

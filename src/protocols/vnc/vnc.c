@@ -596,44 +596,22 @@ void* guac_vnc_client_thread(void* data) {
 
     guac_display_end_frame(vnc_client->display);
 
+    vnc_client->render_thread = guac_display_render_thread_create(vnc_client->display);
+
     /* Handle messages from VNC server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
         /* Wait for data and construct a reasonable frame */
-        int wait_result = guac_vnc_wait_for_messages(rfb_client, GUAC_VNC_FRAME_START_TIMEOUT);
+        int wait_result = guac_vnc_wait_for_messages(rfb_client, GUAC_VNC_MESSAGE_CHECK_INTERVAL);
         if (wait_result > 0) {
 
-            /* Read server messages until frame is built */
-            guac_timestamp frame_start = guac_timestamp_current();
-            do {
-
-                /* Handle any message received */
-                if (!guac_vnc_handle_messages(vnc_client)) {
-                    guac_client_abort(client,
-                            GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
-                            "Error handling message from VNC server.");
-                    break;
-                }
-
-                int frame_duration = guac_timestamp_current() - frame_start;
-
-                /* Continue processing messages for up to a reasonable minimum
-                 * framerate without an explicit frame boundary indicating that
-                 * the frame is not yet complete */
-                if (frame_duration > GUAC_VNC_MAX_FRAME_DURATION)
-                    break;
-
-                /* Do not exceed a reasonable maximum framerate without an
-                 * explicit frame boundary terminating the frame early */
-                int allowed_wait = GUAC_VNC_MIN_FRAME_DURATION - frame_duration;
-                if (allowed_wait < 0)
-                    allowed_wait = 0;
-
-                wait_result = guac_vnc_wait_for_messages(rfb_client, allowed_wait);
-
-            } while (wait_result > 0);
-
-            guac_display_end_frame(vnc_client->display);
+            /* Handle any message received */
+            if (!guac_vnc_handle_messages(vnc_client)) {
+                guac_client_abort(client,
+                        GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                        "Error handling message from VNC server.");
+                break;
+            }
 
         }
 
@@ -642,6 +620,10 @@ void* guac_vnc_client_thread(void* data) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed.");
 
     }
+
+    /* Stop render loop */
+    guac_display_render_thread_destroy(vnc_client->render_thread);
+    vnc_client->render_thread = NULL;
 
     /* Kill client and finish connection */
     guac_client_stop(client);

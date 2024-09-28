@@ -114,6 +114,12 @@ typedef struct guac_vnc_client {
     guac_display_layer_raw_context* current_context;
 
     /**
+     * The current instance of the guac_display render thread. If the thread
+     * has not yet been started, this will be NULL.
+     */
+    guac_display_render_thread* render_thread;
+
+    /**
      * Internal clipboard.
      */
     guac_common_clipboard* clipboard;

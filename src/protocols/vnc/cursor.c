@@ -114,6 +114,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int vnc_bpp)
 
     /* Draw operation is now complete */
     guac_display_layer_close_raw(cursor_layer, context);
+    guac_display_render_thread_notify_modified(vnc_client->render_thread);
 
     /* libvncclient does not free rcMask as it does rcSource */
     if (client->rcMask != NULL) {
