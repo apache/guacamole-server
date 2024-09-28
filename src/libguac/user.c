@@ -126,11 +126,12 @@ guac_stream* guac_user_alloc_stream(guac_user* user) {
 
 void guac_user_free_stream(guac_user* user, guac_stream* stream) {
 
-    /* Release index to pool */
-    guac_pool_free_int(user->__stream_pool, stream->index / 2);
-
     /* Mark stream as closed */
+    int freed_index = stream->index;
     stream->index = GUAC_USER_CLOSED_STREAM_INDEX;
+
+    /* Release index to pool */
+    guac_pool_free_int(user->__stream_pool, freed_index / 2);
 
 }
 
@@ -157,11 +158,12 @@ guac_object* guac_user_alloc_object(guac_user* user) {
 
 void guac_user_free_object(guac_user* user, guac_object* object) {
 
-    /* Release index to pool */
-    guac_pool_free_int(user->__object_pool, object->index);
-
     /* Mark object as undefined */
+    int freed_index = object->index;
     object->index = GUAC_USER_UNDEFINED_OBJECT_INDEX;
+
+    /* Release index to pool */
+    guac_pool_free_int(user->__object_pool, freed_index);
 
 }
 

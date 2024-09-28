@@ -146,11 +146,12 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
 
 void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
-    /* Release index to pool */
-    guac_pool_free_int(client->__stream_pool, (stream->index - 1) / 2);
-
     /* Mark stream as closed */
+    int freed_index = stream->index;
     stream->index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
+
+    /* Release index to pool */
+    guac_pool_free_int(client->__stream_pool, (freed_index - 1) / 2);
 
 }
 
