@@ -709,6 +709,71 @@ guac_display_layer_cairo_context* guac_display_layer_open_cairo(guac_display_lay
 void guac_display_layer_close_cairo(guac_display_layer* layer, guac_display_layer_cairo_context* context);
 
 /**
+ * Creates and starts a rendering thread for the given guac_display. The
+ * returned thread must eventually be freed with a call to
+ * guac_display_render_thread_destroy(). The rendering thread simplifies
+ * efficient handling of guac_display, but is not a requirement. If your use
+ * case is not well-served by the provided render thread, you can use your own
+ * render loop, thread, etc.
+ *
+ * The render thread will finalize and send frames after being notified that
+ * graphical changes have occurred, heuristically determining frame boundaries
+ * based on the lull in modifications that occurs between frames. In the event
+ * that modifications are made continuously without pause, the render thread
+ * will finalize and send frames at a reasonable minimum rate.
+ *
+ * If explicit frame boundaries are available, the render thread can be
+ * notified of these boundaries. Explicit boundaries will be preferred by the
+ * render thread over heuristically determined boundaries.
+ *
+ * @see guac_display_render_thread_notify_modified()
+ * @see guac_display_render_thread_notify_frame()
+ *
+ * @param display
+ *     The display to start a rendering thread for.
+ *
+ * @return
+ *     An opaque reference to the created, running rendering thread. This
+ *     thread must be eventually freed through a call to
+ *     guac_display_render_thread_destroy().
+ */
+guac_display_render_thread* guac_display_render_thread_create(guac_display* display);
+
+/**
+ * Notifies the given render thread that the graphical state of the display has
+ * been modified in some visible way. The changes will then be included in a
+ * future frame by the render thread once a frame boundary has been reached.
+ * If frame boundaries are currently being determined heuristically by the
+ * render thread, it is the timing of calls to this function that determine the
+ * boundaries of frames.
+ *
+ * @param render_thread
+ *     The render thread to notify of display modifications.
+ */
+void guac_display_render_thread_notify_modified(guac_display_render_thread* render_thread);
+
+/**
+ * Notifies the given render thread that a frame boundary has been reached.
+ * Further heuristic detection of frame boundaries by the render thread will
+ * stop, and all further frames must be marked through calls to this function.
+ *
+ * @param render_thread
+ *     The render thread to notify of an explicit frame boundary.
+ */
+void guac_display_render_thread_notify_frame(guac_display_render_thread* render_thread);
+
+/**
+ * Safely stops and frees all resources associated with the given render
+ * thread. The provided pointer to the render thread is no longer valid after a
+ * call to this function. The guac_display associated with the render thread is
+ * unaffected.
+ *
+ * @param render_thread
+ *     The render thread to stop and free.
+ */
+void guac_display_render_thread_destroy(guac_display_render_thread* render_thread);
+
+/**
  * @}
  */
 

@@ -39,6 +39,12 @@
 typedef struct guac_display guac_display;
 
 /**
+ * Opaque representation of a thread that continuously renders updated
+ * graphical data to the remote display.
+ */
+typedef struct guac_display_render_thread guac_display_render_thread;
+
+/**
  * Opaque representation of a layer within a guac_display. This may be a
  * visible layer or an off-screen buffer, and is effectively the guac_display
  * equivalent of a guac_layer.

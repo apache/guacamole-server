@@ -220,6 +220,56 @@
 #define GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS 2
 
 /**
+ * Bitwise flag that is set on the state of a guac_display_render_thread when
+ * the thread should be stopped.
+ */
+#define GUAC_DISPLAY_RENDER_THREAD_STATE_STOPPING 1
+
+/**
+ * Bitwise flag that is set on the state of a guac_display_render_thread when
+ * visible, graphical changes have been made.
+ */
+#define GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED 2
+
+/**
+ * Bitwise flag that is set on the state of a guac_display_render_thread when
+ * a frame boundary has been reached.
+ */
+#define GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY 4
+
+struct guac_display_render_thread {
+
+    /**
+     * The display this render thread should render to.
+     */
+    guac_display* display;
+
+    /**
+     * The actual underlying POSIX thread.
+     */
+    pthread_t thread;
+
+    /**
+     * Flag representing render state. This flag is used to store whether the
+     * render thread is stopping and whether the current frame has been
+     * modified or is ready.
+     *
+     * @see GUAC_DISPLAY_RENDER_THREAD_STATE_STOPPING
+     * @see GUAC_DISPLAY_RENDER_THREAD_FRAME_MODIFIED
+     * @see GUAC_DISPLAY_RENDER_THREAD_FRAME_READY
+     */
+    guac_flag state;
+
+    /**
+     * The number of frames that have been explicitly marked as ready since the
+     * last frame sent. This will be zero if explicit frame boundaries are not
+     * currently being used.
+     */
+    unsigned int frames;
+
+};
+
+/**
  * Approximation of how often a region of a layer is modified, as well as what
  * changes have been made to that region since the last frame. This information
  * is used to help advise future optimizations, such as whether lossy

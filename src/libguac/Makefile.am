@@ -135,6 +135,7 @@ libguac_la_SOURCES =          \
     display-plan-combine.c    \
     display-plan-rect.c       \
     display-plan-search.c     \
+    display-render-thread.c   \
     display-worker.c          \
     encode-jpeg.c             \
     encode-png.c              \
