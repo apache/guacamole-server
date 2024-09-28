@@ -108,8 +108,9 @@ guac_stream* guac_user_alloc_stream(guac_user* user) {
     int stream_index;
 
     /* Allocate stream, but refuse to allocate beyond maximum */
-    stream_index = guac_pool_next_int_below_or_die(user->__stream_pool,
-            GUAC_USER_MAX_STREAMS);
+    stream_index = guac_pool_next_int_below(user->__stream_pool, GUAC_USER_MAX_STREAMS);
+    if (stream_index < 0)
+        return NULL;
 
     /* Initialize stream with even index (odd indices are client-level) */
     allocd_stream = &(user->__output_streams[stream_index]);
@@ -139,8 +140,9 @@ guac_object* guac_user_alloc_object(guac_user* user) {
     int object_index;
 
     /* Allocate object, but refuse to allocate beyond maximum */
-    object_index = guac_pool_next_int_below_or_die(user->__object_pool,
-            GUAC_USER_MAX_OBJECTS);
+    object_index = guac_pool_next_int_below(user->__object_pool, GUAC_USER_MAX_OBJECTS);
+    if (object_index < 0)
+        return NULL;
 
     /* Initialize object */
     allocd_object = &(user->__objects[object_index]);
