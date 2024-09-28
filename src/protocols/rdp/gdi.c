@@ -39,15 +39,9 @@ void guac_rdp_gdi_mark_frame(rdpContext* context, int starting) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    /* A new frame is beginning */
-    if (starting) {
-        rdp_client->in_frame = 1;
-        return;
-    }
-
     /* A new frame has been received from the RDP server and processed */
-    rdp_client->in_frame = 0;
-    rdp_client->frames_received++;
+    if (!starting)
+        guac_display_render_thread_notify_frame(rdp_client->render_thread);
 
 }
 
@@ -132,6 +126,8 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
     guac_rect_init(&dst_rect, x, y, w, h);
     guac_rect_constrain(&dst_rect, &current_context->bounds);
     guac_rect_extend(&current_context->dirty, &dst_rect);
+
+    guac_display_render_thread_notify_modified(rdp_client->render_thread);
 
 paint_complete:
 

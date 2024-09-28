@@ -597,6 +597,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     guac_rwlock_release_lock(&(rdp_client->lock));
 
+    rdp_client->render_thread = guac_display_render_thread_create(rdp_client->display);
+
     /* Handle messages from RDP server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING
             && !guac_rdp_disp_reconnect_needed(rdp_client->disp)) {
@@ -605,48 +607,16 @@ static int guac_rdp_handle_connection(guac_client* client) {
         guac_rdp_disp_update_size(rdp_client->disp, settings, rdp_inst);
 
         /* Wait for data and construct a reasonable frame */
-        int wait_result = rdp_guac_client_wait_for_messages(client, GUAC_RDP_FRAME_START_TIMEOUT);
-        if (wait_result > 0) {
 
-            /* Read server messages until frame is built */
-            guac_timestamp frame_start = guac_timestamp_current();
-            int frames_at_start = rdp_client->frames_received;
-            do {
+        int wait_result = rdp_guac_client_wait_for_messages(client, GUAC_RDP_MESSAGE_CHECK_INTERVAL);
+        if (wait_result < 0)
+            break;
 
-                /* Handle any queued FreeRDP events (this may result in RDP
-                 * messages being sent), aborting if FreeRDP event handling
-                 * fails */
-                if (!guac_rdp_handle_events(rdp_client)) {
-                    wait_result = -1;
-                    break;
-                }
-
-                int frame_duration = guac_timestamp_current() - frame_start;
-
-                if (!rdp_client->in_frame) {
-
-                    /* Flush frame if at least one frame has been produced */
-                    if (rdp_client->frames_received > frames_at_start)
-                        break;
-
-                    /* Continue processing messages for up to a reasonable
-                     * minimum framerate without an explicit frame boundary
-                     * indicating that the frame is not yet complete */
-                    if (frame_duration > GUAC_RDP_MAX_FRAME_DURATION)
-                        break;
-
-                }
-
-                /* Do not exceed a reasonable maximum framerate without an
-                 * explicit frame boundary terminating the frame early */
-                int allowed_wait = GUAC_RDP_MIN_FRAME_DURATION - frame_duration;
-                if (allowed_wait < 0)
-                    allowed_wait = 0;
-
-                wait_result = rdp_guac_client_wait_for_messages(client, allowed_wait);
-
-            } while (wait_result > 0);
-
+        /* Handle any queued FreeRDP events (this may result in RDP messages
+         * being sent), aborting if FreeRDP event handling fails */
+        if (!guac_rdp_handle_events(rdp_client)) {
+            wait_result = -1;
+            break;
         }
 
         /* Test whether the RDP server is closing the connection */
@@ -666,13 +636,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                     "Connection closed.");
 
-        /* Flush frame only if successful and an RDP frame is not known to be
-         * in progress */
-        else if (!rdp_client->in_frame) {
-            guac_display_end_multiple_frames(rdp_client->display, rdp_client->frames_received);
-            rdp_client->frames_received = 0;
-        }
-
     }
 
     guac_rwlock_acquire_write_lock(&(rdp_client->lock));
@@ -687,6 +650,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
     pthread_mutex_lock(&(rdp_client->message_lock));
     freerdp_disconnect(rdp_inst);
     pthread_mutex_unlock(&(rdp_client->message_lock));
+
+    /* Stop render loop */
+    guac_display_render_thread_destroy(rdp_client->render_thread);
+    rdp_client->render_thread = NULL;
 
     /* Remove reference to FreeRDP's GDI buffer so that it can be safely freed
      * prior to freeing the guac_display */

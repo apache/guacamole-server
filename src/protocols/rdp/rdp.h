@@ -115,17 +115,10 @@ typedef struct guac_rdp_client {
     guac_display_layer_raw_context* current_context;
 
     /**
-     * Whether the RDP server has reported that a new frame is in progress, and
-     * we are now receiving updates relevant to that frame.
+     * The current instance of the guac_display render thread. If the thread
+     * has not yet been started, this will be NULL.
      */
-    int in_frame;
-
-    /**
-     * The number of distinct frames received from the RDP server since last
-     * flush, if the RDP server supports reporting frame boundaries. If the RDP
-     * server does not support tracking frames, this will be zero.
-     */
-    int frames_received;
+    guac_display_render_thread* render_thread;
 
     /**
      * The current state of the keyboard with respect to the RDP session.

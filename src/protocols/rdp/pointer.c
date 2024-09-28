@@ -103,7 +103,7 @@ BOOL guac_rdp_pointer_set(rdpContext* context, POINTER_SET_CONST rdpPointer* poi
     guac_display_layer_close_raw(cursor_layer, dst_context);
     guac_display_layer_close_raw(src_layer, src_context);
 
-    guac_display_end_mouse_frame(rdp_client->display);
+    guac_display_render_thread_notify_modified(rdp_client->render_thread);
     return TRUE;
 
 }
@@ -128,7 +128,7 @@ BOOL guac_rdp_pointer_set_null(rdpContext* context) {
     /* Set cursor to empty/blank graphic */
     guac_display_set_cursor(rdp_client->display, GUAC_DISPLAY_CURSOR_NONE);
 
-    guac_display_end_mouse_frame(rdp_client->display);
+    guac_display_render_thread_notify_modified(rdp_client->render_thread);
     return TRUE;
 
 }
@@ -141,6 +141,6 @@ BOOL guac_rdp_pointer_set_default(rdpContext* context) {
     /* Set cursor to embedded pointer */
     guac_display_set_cursor(rdp_client->display, GUAC_DISPLAY_CURSOR_POINTER);
 
-    guac_display_end_mouse_frame(rdp_client->display);
+    guac_display_render_thread_notify_modified(rdp_client->render_thread);
     return TRUE;
 }
