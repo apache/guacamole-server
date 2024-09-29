@@ -19,7 +19,6 @@
 
 #include "argv.h"
 #include "clipboard.h"
-#include "common/cursor.h"
 #include "input.h"
 #include "kubernetes.h"
 #include "pipe.h"

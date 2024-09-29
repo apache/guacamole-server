@@ -30,7 +30,7 @@
  * The maximum number of inbound or outbound streams supported by any one
  * guac_client.
  */
-#define GUAC_CLIENT_MAX_STREAMS 64
+#define GUAC_CLIENT_MAX_STREAMS 512
 
 /**
  * The index of a closed stream.

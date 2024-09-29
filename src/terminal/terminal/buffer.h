@@ -17,11 +17,18 @@
  * under the License.
  */
 
-#ifndef _GUAC_TERMINAL_BUFFER_H
-#define _GUAC_TERMINAL_BUFFER_H
+#ifndef GUAC_TERMINAL_BUFFER_H
+#define GUAC_TERMINAL_BUFFER_H
 
 /**
- * Data structures and functions related to the terminal buffer.
+ * Data structures and functions related to the terminal buffer. The terminal
+ * buffer represents both the scrollback region and the current active contents
+ * of the terminal.
+ *
+ * NOTE: By design, all functions defined within this header make no
+ * assumptions about the validity of received coordinates, offsets, and
+ * lengths. Depending on the function, invalid values will be clamped, ignored,
+ * or reported as invalid.
  *
  * @file buffer.h
  */
@@ -29,81 +36,18 @@
 #include "types.h"
 
 /**
- * A single variable-length row of terminal data.
- */
-typedef struct guac_terminal_buffer_row {
-
-    /**
-     * Array of guac_terminal_char representing the contents of the row.
-     */
-    guac_terminal_char* characters;
-
-    /**
-     * The length of this row in characters. This is the number of initialized
-     * characters in the buffer, usually equal to the number of characters
-     * in the screen width at the time this row was created.
-     */
-    int length;
-
-    /**
-     * The number of elements in the characters array. After the length
-     * equals this value, the array must be resized.
-     */
-    int available;
-
-    /**
-     * True if the current row has been wrapped to avoid going off the screen.
-     * False otherwise.
-     */
-    bool wrapped_row;
-
-} guac_terminal_buffer_row;
-
-/**
  * A buffer containing a constant number of arbitrary-length rows.
  * New rows can be appended to the buffer, with the oldest row replaced with
  * the new row.
  */
-typedef struct guac_terminal_buffer {
-
-    /**
-     * The character to assign to newly-allocated cells.
-     */
-    guac_terminal_char default_character;
-
-    /**
-     * Array of buffer rows. This array functions as a ring buffer.
-     * When a new row needs to be appended, the top reference is moved down
-     * and the old top row is replaced.
-     */
-    guac_terminal_buffer_row* rows;
-
-    /**
-     * The index of the first row in the buffer (the row which represents row 0
-     * with respect to the terminal display). This is also the index of the row
-     * to replace when insufficient space remains in the buffer to add a new
-     * row.
-     */
-    int top;
-
-    /**
-     * The number of rows currently stored in the buffer.
-     */
-    int length;
-
-    /**
-     * The number of rows in the buffer. This is the total capacity
-     * of the buffer.
-     */
-    int available;
-
-} guac_terminal_buffer;
+typedef struct guac_terminal_buffer guac_terminal_buffer;
 
 /**
  * Allocates a new buffer having the given maximum number of rows. New character cells will
  * be initialized to the given character.
  */
-guac_terminal_buffer* guac_terminal_buffer_alloc(int rows, guac_terminal_char* default_character);
+guac_terminal_buffer* guac_terminal_buffer_alloc(int rows,
+        const guac_terminal_char* default_character);
 
 /**
  * Frees the given buffer.
@@ -111,10 +55,15 @@ guac_terminal_buffer* guac_terminal_buffer_alloc(int rows, guac_terminal_char* d
 void guac_terminal_buffer_free(guac_terminal_buffer* buffer);
 
 /**
- * Returns the row at the given location. The row returned is guaranteed to be at least the given
- * width.
+ * Resets the state of the given buffer such that it effectively no longer
+ * contains any rows. Space for previous rows, including the data from those
+ * previous rows, may still be maintained internally to avoid needing to
+ * reallocate rows again later.
+ *
+ * @param buffer
+ *     The buffer to reset.
  */
-guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buffer, int row, int width);
+void guac_terminal_buffer_reset(guac_terminal_buffer* buffer);
 
 /**
  * Copies the given range of columns to a new location, offset from
@@ -131,11 +80,111 @@ void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
         int start_row, int end_row, int offset);
 
 /**
+ * Scrolls the contents of the given buffer up by the given number of rows.
+ * Here, "scrolling up" refers to moving the row contents upwards within the
+ * buffer (ie: decreasing the row index of each row), NOT to moving the
+ * viewport up.
+ *
+ * @param buffer
+ *     The buffer to scroll.
+ *
+ * @param amount
+ *     The number of rows to scroll upwards. Zero and negative values have no
+ *     effect.
+ */
+void guac_terminal_buffer_scroll_up(guac_terminal_buffer* buffer, int amount);
+
+/**
+ * Scrolls the contents of the given buffer down by the given number of rows.
+ * Here, "scrolling down" refers to moving the row contents downwards within
+ * the buffer (ie: increasing the row index of each row), NOT to moving the
+ * viewport down.
+ *
+ * @param buffer
+ *     The buffer to scroll.
+ *
+ * @param amount
+ *     The number of rows to scroll downwards. Zero and negative values have no
+ *     effect.
+ */
+void guac_terminal_buffer_scroll_down(guac_terminal_buffer* buffer, int amount);
+
+/**
  * Sets the given range of columns within the given row to the given
  * character.
  */
 void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
         int start_column, int end_column, guac_terminal_char* character);
+
+/**
+ * Get the char (int ASCII code) at a specific row/col of the display.
+ *
+ * @param terminal
+ *     The terminal on which we want to read a character.
+ *
+ * @param row
+ *     The row where to read the character.
+ * 
+ * @param col
+ *     The column where to read the character.
+ * 
+ * @return
+ *     The ASCII code of the character at the given row/col.
+ */
+unsigned int guac_terminal_buffer_get_columns(guac_terminal_buffer* buffer,
+        guac_terminal_char** characters, bool* is_wrapped, int row);
+
+/**
+ * Returns the number of rows actually available for rendering within the given
+ * buffer, taking the scrollback size into account. Regardless of the true
+ * buffer length, only the number of rows that should be made available will be
+ * returned.
+ *
+ * @param buffer
+ *     The buffer whose effective length should be retrieved.
+ *
+ * @param scrollback
+ *     The number of rows currently within the terminal's scrollback buffer.
+ *
+ * @return
+ *     The number of rows effectively available within the buffer.
+ */
+unsigned int guac_terminal_buffer_effective_length(guac_terminal_buffer* buffer, int scrollback);
+
+/**
+ * Sets whether the given buffer row was automatically wrapped by the terminal.
+ * Rows that were not automatically wrapped are lines of text that were printed
+ * and included an explicit newline character.
+ *
+ * @param buffer
+ *     The buffer associated with the row being modified.
+ *
+ * @param row
+ *     The row whose wrapped vs. not-wrapped state is being set.
+ *
+ * @param wrapped
+ *     Whether the row was automatically wrapped (as opposed to simply ending
+ *     with a newline character).
+ */
+void guac_terminal_buffer_set_wrapped(guac_terminal_buffer* buffer, int row, bool wrapped);
+
+/**
+ * Sets whether the character at the given row and column contains the cursor.
+ *
+ * @param buffer
+ *     The buffer associated with character to modify.
+ *
+ * @param row
+ *     The row of the character to modify.
+ *
+ * @param column
+ *     The column of the character to modify.
+ *
+ * @param is_cursor
+ *     Whether the character contains the cursor.
+ */
+void guac_terminal_buffer_set_cursor(guac_terminal_buffer* buffer, int row,
+        int column, bool is_cursor);
 
 #endif
 

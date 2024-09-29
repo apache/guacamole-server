@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include <guacamole/user.h>
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>
 
@@ -109,13 +110,13 @@ void* guac_vnc_display_set_owner_size(guac_user* owner, void* data);
  * @param display
  *     The VNC client to which the display size update should be sent.
  *
- * @param width
+ * @param requested_width
  *     The width that is being requested, in pixels.
  *
- * @param height
+ * @param requested_height
  *     The height that is being requested, in pixels.
  */
-void guac_vnc_display_set_size(rfbClient* client, int width, int height);
+void guac_vnc_display_set_size(rfbClient* client, int requested_width, int requested_height);
 
 /**
  * Sets the pixel format to request of the VNC server. The request will be made
