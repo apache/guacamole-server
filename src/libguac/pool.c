@@ -19,9 +19,11 @@
 
 #include "config.h"
 
+#include "guacamole/assert.h"
 #include "guacamole/mem.h"
 #include "guacamole/pool.h"
 
+#include <limits.h>
 #include <stdlib.h>
 
 guac_pool* guac_pool_alloc(int size) {
@@ -69,42 +71,115 @@ void guac_pool_free(guac_pool* pool) {
 
 }
 
-int guac_pool_next_int(guac_pool* pool) {
+/**
+ * Returns the next available integer from the given guac_pool. All integers
+ * returned are non-negative, and are returned in sequence, starting from 0.
+ *
+ * Unlike the public guac_pool_next_int() function, this function is NOT atomic
+ * and depends on the caller having already acquired the pool's lock.
+ *
+ * @param pool
+ *     The guac_pool to retrieve an integer from.
+ *
+ * @return
+ *     The next available integer, which may be either an integer not yet
+ *     returned by a call to guac_pool_next_int, or an integer which was
+ *     previously returned but has since been freed.
+ */
+static int __guac_pool_next_int(guac_pool* pool) {
 
     int value;
 
-    /* Acquire exclusive access */
-    pthread_mutex_lock(&(pool->__lock));
+    /* It's unlikely that any usage of guac_pool will ever manage to reach
+     * INT_MAX concurrent requests for integers, but we definitely should bail
+     * out if ever this does happen. Tracing this sort of issue down would be
+     * extremely difficult without fail-fast behavior. */
+    GUAC_ASSERT(pool->__next_value < INT_MAX);
+    GUAC_ASSERT(pool->active < INT_MAX);
 
     pool->active++;
 
     /* If more integers are needed, return a new one. */
-    if (pool->__head == NULL || pool->__next_value < pool->min_size) {
+    if (pool->__head == NULL || pool->__next_value < pool->min_size)
         value = pool->__next_value++;
-        pthread_mutex_unlock(&(pool->__lock));
-        return value;
-    }
 
-    /* Otherwise, remove first integer. */
-    value = pool->__head->value;
-
-    /* If only one element exists, reset pool to empty. */
-    if (pool->__tail == pool->__head) {
-        guac_mem_free(pool->__head);
-        pool->__head = NULL;
-        pool->__tail = NULL;
-    }
-
-    /* Otherwise, advance head. */
+    /* Otherwise, reuse a previously freed integer */
     else {
-        guac_pool_int* old_head = pool->__head;
-        pool->__head = old_head->__next;
-        guac_mem_free(old_head);
+
+        value = pool->__head->value;
+
+        /* If only one element exists, reset pool to empty. */
+        if (pool->__tail == pool->__head) {
+            guac_mem_free(pool->__head);
+            pool->__head = NULL;
+            pool->__tail = NULL;
+        }
+
+        /* Otherwise, advance head. */
+        else {
+            guac_pool_int* old_head = pool->__head;
+            pool->__head = old_head->__next;
+            guac_mem_free(old_head);
+        }
+
     }
 
-    /* Return retrieved value. */
-    pthread_mutex_unlock(&(pool->__lock));
+    /* Again, this should never happen and would be a sign of some fairly
+     * fundamental assumption failing. It's important for such things to fail
+     * fast. */
+    GUAC_ASSERT(value >= 0);
+
     return value;
+
+}
+
+int guac_pool_next_int(guac_pool* pool) {
+
+    pthread_mutex_lock(&(pool->__lock));
+    int value = __guac_pool_next_int(pool);
+    pthread_mutex_unlock(&(pool->__lock));
+
+    return value;
+
+}
+
+int guac_pool_next_int_below(guac_pool* pool, int limit) {
+
+    pthread_mutex_lock(&(pool->__lock));
+
+    int value;
+
+    /* Explicitly bail out now if there we would need to return a new integer,
+     * but can't without reaching the given limit */
+    if (pool->active >= limit || (pool->__next_value >= limit && pool->__head == NULL)) {
+        value = -1;
+    }
+
+    /* In all other cases, attempt to obtain the requested integer (either
+     * reusing a freed integer or allocating a new one), but verify that some
+     * fundamental misuse of guac_pool hasn't resulted in values defying
+     * expectations */
+    else {
+        value = __guac_pool_next_int(pool);
+        GUAC_ASSERT(value < limit);
+    }
+
+    pthread_mutex_unlock(&(pool->__lock));
+
+    return value;
+
+}
+
+int guac_pool_next_int_below_or_die(guac_pool* pool, int limit) {
+
+    int value = guac_pool_next_int_below(pool, limit);
+
+    /* Abort current process entirely if no integer can be obtained without
+     * reaching the given limit */
+    GUAC_ASSERT(value >= 0);
+
+    return value;
+
 }
 
 void guac_pool_free_int(guac_pool* pool, int value) {
@@ -117,6 +192,7 @@ void guac_pool_free_int(guac_pool* pool, int value) {
     /* Acquire exclusive access */
     pthread_mutex_lock(&(pool->__lock));
 
+    GUAC_ASSERT(pool->active > 0);
     pool->active--;
 
     /* If pool empty, store as sole entry. */

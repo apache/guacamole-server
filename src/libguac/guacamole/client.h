@@ -182,7 +182,8 @@ struct guac_client {
 
     /**
      * Lock which is acquired when the pending users list is being manipulated,
-     * or when the pending users list is being iterated.
+     * or iterated, or when checking/altering the
+     * __pending_users_thread_started flag.
      */
     guac_rwlock __pending_users_lock;
 
@@ -192,18 +193,14 @@ struct guac_client {
      * use within the client. This will be NULL until the first user joins
      * the connection, as it is lazily instantiated at that time.
      */
-    timer_t __pending_users_timer;
+    pthread_t __pending_users_thread;
 
     /**
-     * A flag storing the current state of the pending users timer.
+     * Whether the pending users thread has started for this guac_client. The
+     * __pending_users_lock must be acquired before checking or altering this
+     * value.
      */
-    int __pending_users_timer_state;
-
-    /**
-     * A mutex that must be acquired before modifying or checking the value of
-     * the timer state.
-     */
-    pthread_mutex_t __pending_users_timer_mutex;
+    int __pending_users_thread_started;
 
     /**
      * The first user within the list of connected users who have not yet had

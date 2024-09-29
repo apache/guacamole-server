@@ -34,6 +34,7 @@
 #endif
 
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/mem.h>
 #include <guacamole/recording.h>
 
@@ -89,7 +90,7 @@ static int guac_vnc_join_pending_handler(guac_client* client) {
 
     /* Synchronize with current display */
     if (vnc_client->display != NULL) {
-        guac_common_display_dup(vnc_client->display, client, broadcast_socket);
+        guac_display_dup(vnc_client->display, broadcast_socket);
         guac_socket_flush(broadcast_socket);
     }
 
@@ -195,7 +196,7 @@ int guac_vnc_client_free_handler(guac_client* client) {
 
     /* Free display */
     if (vnc_client->display != NULL)
-        guac_common_display_free(vnc_client->display);
+        guac_display_free(vnc_client->display);
 
 #ifdef ENABLE_PULSE
     /* If audio enabled, stop streaming */

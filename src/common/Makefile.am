@@ -35,7 +35,6 @@ noinst_HEADERS =            \
     common/clipboard.h      \
     common/cursor.h         \
     common/defaults.h       \
-    common/display.h        \
     common/dot_cursor.h     \
     common/ibar_cursor.h    \
     common/iconv.h          \
@@ -51,7 +50,6 @@ libguac_common_la_SOURCES = \
     blank_cursor.c          \
     clipboard.c             \
     cursor.c                \
-    display.c               \
     dot_cursor.c            \
     ibar_cursor.c           \
     iconv.c                 \

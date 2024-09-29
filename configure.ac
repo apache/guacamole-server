@@ -44,8 +44,13 @@ PKG_PROG_PKG_CONFIG()
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h pngstruct.h])
 
 # Source characteristics
+AC_DEFINE([_GNU_SOURCE],   [1], [Uses GNU-specific APIs (if available)])
 AC_DEFINE([_XOPEN_SOURCE], [700], [Uses X/Open and POSIX APIs])
 AC_DEFINE([__BSD_VISIBLE], [1], [Uses BSD-specific APIs (if available)])
+
+# Check for availability of non-portable sched_getaffinity() function (one of
+# several possible routes for determining the number of available processors)
+AC_CHECK_FUNCS([sched_getaffinity])
 
 # Check for whether math library is required
 AC_CHECK_LIB([m], [cos],
