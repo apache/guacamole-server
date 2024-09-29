@@ -17,12 +17,19 @@
  * under the License.
  */
 
+#include "terminal/common.h"
 #include "terminal/types.h"
+
+#include <guacamole/assert.h>
 
 #include <stdbool.h>
 #include <unistd.h>
 
 int guac_terminal_fit_to_range(int value, int min, int max) {
+
+    /* This should never happen outside a logic error in the caller, but best
+     * to bail out here where debugging will be less onerous  */
+    GUAC_ASSERT(min <= max);
 
     if (value < min) return min;
     if (value > max) return max;

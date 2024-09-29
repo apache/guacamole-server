@@ -23,8 +23,6 @@
 #include "client.h"
 #include "clipboard.h"
 #include "common/clipboard.h"
-#include "common/cursor.h"
-#include "common/display.h"
 #include "cursor.h"
 #include "display.h"
 #include "log.h"
@@ -42,6 +40,7 @@
 #endif
 
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
@@ -140,6 +139,7 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
 
     /* Framebuffer update handler */
     rfb_client->GotFrameBufferUpdate = guac_vnc_update;
+    vnc_client->rfb_GotCopyRect = rfb_client->GotCopyRect;
     rfb_client->GotCopyRect = guac_vnc_copyrect;
 
 #ifdef ENABLE_VNC_TLS_LOCKING
@@ -252,20 +252,71 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
  *     The rfbClient to wait for.
  *
  * @param timeout
- *     The maximum amount of time to wait, in microseconds.
+ *     The maximum amount of time to wait, in milliseconds.
  *
  * @returns
  *     A positive value if data is available, zero if the timeout elapses
  *     before data becomes available, or a negative value on error.
  */
-static int guac_vnc_wait_for_messages(rfbClient* rfb_client, int timeout) {
+static int guac_vnc_wait_for_messages(rfbClient* rfb_client, int msec_timeout) {
 
     /* Do not explicitly wait while data is on the buffer */
     if (rfb_client->buffered)
         return 1;
 
     /* If no data on buffer, wait for data on socket */
-    return WaitForMessage(rfb_client, timeout);
+    return WaitForMessage(rfb_client, msec_timeout * 1000);
+
+}
+
+/**
+ * Handles any inbound VNC messages that have been received, updating the
+ * Guacamole display accordingly.
+ *
+ * @param vnc_client
+ *     The guac_vnc_client of the VNC connection whose current messages should
+ *     be handled.
+ *
+ * @return
+ *     True (non-zero) if messages were handled successfully, false (zero)
+ *     otherwise.
+ */
+static rfbBool guac_vnc_handle_messages(guac_vnc_client* vnc_client) {
+
+    rfbClient* rfb_client = vnc_client->rfb_client;
+    guac_display_layer* default_layer = guac_display_default_layer(vnc_client->display);
+
+    /* All potential drawing operations must occur while holding an open context */
+    guac_display_layer_raw_context* context = guac_display_layer_open_raw(default_layer);
+    vnc_client->current_context = context;
+
+    /* Actually handle messages (this may result in drawing to the
+     * guac_display, resizing the display buffer, etc.) */
+    rfbBool retval = HandleRFBServerMessage(rfb_client);
+
+    /* Use the buffer of libvncclient directly if it matches the guac_display
+     * format */
+    unsigned int vnc_bpp = rfb_client->format.bitsPerPixel / 8;
+    if (vnc_bpp == GUAC_DISPLAY_LAYER_RAW_BPP && !vnc_client->settings->swap_red_blue) {
+
+        context->buffer = rfb_client->frameBuffer;
+        context->stride = guac_mem_ckd_mul_or_die(vnc_bpp, rfb_client->width);
+
+        /* Update bounds of pending frame to match those of RFB framebuffer */
+        guac_rect_init(&context->bounds, 0, 0, rfb_client->width, rfb_client->height);
+
+    }
+
+    /* There will be no further drawing operations */
+    guac_display_layer_close_raw(default_layer, context);
+    vnc_client->current_context = NULL;
+
+    /* Resize the surface if VNC screen size has changed (this call
+     * automatically deals with invalid dimensions and is a no-op
+     * if the size has not changed) */
+    guac_display_layer_resize(default_layer, rfb_client->width, rfb_client->height);
+
+    return retval;
 
 }
 
@@ -514,12 +565,13 @@ void* guac_vnc_client_thread(void* data) {
     }
 
     /* Create display */
-    vnc_client->display = guac_common_display_alloc(client,
-            rfb_client->width, rfb_client->height);
+    vnc_client->display = guac_display_alloc(client);
+    guac_display_layer_resize(guac_display_default_layer(vnc_client->display), rfb_client->width, rfb_client->height);
 
     /* Use lossless compression only if requested (otherwise, use default
      * heuristics) */
-    guac_common_display_set_lossless(vnc_client->display, settings->lossless);
+    guac_display_layer_set_lossless(guac_display_default_layer(vnc_client->display),
+            settings->lossless);
 
     /* If compression and display quality have been configured, set those. */
     if (settings->compress_level >= 0 && settings->compress_level <= 9)
@@ -531,10 +583,9 @@ void* guac_vnc_client_thread(void* data) {
     /* If not read-only, set an appropriate cursor */
     if (settings->read_only == 0) {
         if (settings->remote_cursor)
-            guac_common_cursor_set_dot(vnc_client->display->cursor);
+            guac_display_set_cursor(vnc_client->display, GUAC_DISPLAY_CURSOR_DOT);
         else
-            guac_common_cursor_set_pointer(vnc_client->display->cursor);
-
+            guac_display_set_cursor(vnc_client->display, GUAC_DISPLAY_CURSOR_POINTER);
     }
 
 #ifdef LIBVNC_HAS_SIZE_MSG
@@ -543,76 +594,36 @@ void* guac_vnc_client_thread(void* data) {
         guac_client_for_owner(client, guac_vnc_display_set_owner_size, rfb_client);
 #endif // LIBVNC_HAS_SIZE_MSG
 
-    guac_socket_flush(client->socket);
+    guac_display_end_frame(vnc_client->display);
 
-    guac_timestamp last_frame_end = guac_timestamp_current();
+    vnc_client->render_thread = guac_display_render_thread_create(vnc_client->display);
 
     /* Handle messages from VNC server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
-        /* Wait for start of frame */
-        int wait_result = guac_vnc_wait_for_messages(rfb_client,
-                GUAC_VNC_FRAME_START_TIMEOUT);
+        /* Wait for data and construct a reasonable frame */
+        int wait_result = guac_vnc_wait_for_messages(rfb_client, GUAC_VNC_MESSAGE_CHECK_INTERVAL);
         if (wait_result > 0) {
 
-            int processing_lag = guac_client_get_processing_lag(client);
-            guac_timestamp frame_start = guac_timestamp_current();
-
-            /* Read server messages until frame is built */
-            do {
-
-                guac_timestamp frame_end;
-                int frame_remaining;
-
-                /* Handle any message received */
-                if (!HandleRFBServerMessage(rfb_client)) {
-                    guac_client_abort(client,
-                            GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
-                            "Error handling message from VNC server.");
-                    break;
-                }
-
-                /* Calculate time remaining in frame */
-                frame_end = guac_timestamp_current();
-                frame_remaining = frame_start + GUAC_VNC_FRAME_DURATION
-                                - frame_end;
-
-                /* Calculate time that client needs to catch up */
-                int time_elapsed = frame_end - last_frame_end;
-                int required_wait = processing_lag - time_elapsed;
-
-                /* Increase the duration of this frame if client is lagging */
-                if (required_wait > GUAC_VNC_FRAME_TIMEOUT)
-                    wait_result = guac_vnc_wait_for_messages(rfb_client,
-                            required_wait*1000);
-
-                /* Wait again if frame remaining */
-                else if (frame_remaining > 0)
-                    wait_result = guac_vnc_wait_for_messages(rfb_client,
-                            GUAC_VNC_FRAME_TIMEOUT*1000);
-                else
-                    break;
-
-            } while (wait_result > 0);
-
-            /* Record end of frame, excluding server-side rendering time (we
-             * assume server-side rendering time will be consistent between any
-             * two subsequent frames, and that this time should thus be
-             * excluded from the required wait period of the next frame). */
-            last_frame_end = frame_start;
+            /* Handle any message received */
+            if (!guac_vnc_handle_messages(vnc_client)) {
+                guac_client_abort(client,
+                        GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                        "Error handling message from VNC server.");
+                break;
+            }
 
         }
 
         /* If an error occurs, log it and fail */
-        if (wait_result < 0)
+        else if (wait_result < 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed.");
 
-        /* Flush frame */
-        guac_common_surface_flush(vnc_client->display->default_surface);
-        guac_client_end_frame(client);
-        guac_socket_flush(client->socket);
-
     }
+
+    /* Stop render loop */
+    guac_display_render_thread_destroy(vnc_client->render_thread);
+    vnc_client->render_thread = NULL;
 
     /* Kill client and finish connection */
     guac_client_stop(client);
