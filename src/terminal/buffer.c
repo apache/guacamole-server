@@ -535,7 +535,7 @@ void guac_terminal_buffer_set_cursor(guac_terminal_buffer* buffer, int row,
     column = guac_terminal_fit_to_range(column, 0, GUAC_TERMINAL_MAX_COLUMNS - 1);
 
     guac_terminal_buffer_row_expand(buffer_row, column + 1, &buffer->default_character);
-    GUAC_ASSERT(buffer_row->length > column + 1);
+    GUAC_ASSERT(buffer_row->length >= column + 1);
 
     buffer_row->characters[column].attributes.cursor = is_cursor;
 
