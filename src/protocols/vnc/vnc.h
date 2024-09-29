@@ -23,13 +23,12 @@
 #include "config.h"
 
 #include "common/clipboard.h"
-#include "common/display.h"
 #include "common/iconv.h"
-#include "common/surface.h"
 #include "display.h"
 #include "settings.h"
 
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/layer.h>
 #include <rfb/rfbclient.h>
 
@@ -87,6 +86,12 @@ typedef struct guac_vnc_client {
     MallocFrameBufferProc rfb_MallocFrameBuffer;
 
     /**
+     * The original CopyRect processing procedure provided by the initialized
+     * rfbClient.
+     */
+    GotCopyRectProc rfb_GotCopyRect;
+
+    /**
      * Whether copyrect  was used to produce the latest update received
      * by the VNC server.
      */
@@ -100,7 +105,19 @@ typedef struct guac_vnc_client {
     /**
      * The current display state.
      */
-    guac_common_display* display;
+    guac_display* display;
+
+    /**
+     * The context of the current drawing (update) operation, if any. If no
+     * operation is in progress, this will be NULL.
+     */
+    guac_display_layer_raw_context* current_context;
+
+    /**
+     * The current instance of the guac_display render thread. If the thread
+     * has not yet been started, this will be NULL.
+     */
+    guac_display_render_thread* render_thread;
 
     /**
      * Internal clipboard.

@@ -132,7 +132,7 @@ static int guac_rdp_join_pending_handler(guac_client* client) {
 
     /* Synchronize with current display */
     if (rdp_client->display != NULL) {
-        guac_common_display_dup(rdp_client->display, client, broadcast_socket);
+        guac_display_dup(rdp_client->display, broadcast_socket);
         guac_socket_flush(broadcast_socket);
     }
 

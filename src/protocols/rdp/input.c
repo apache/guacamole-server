@@ -19,9 +19,8 @@
 
 #include "channels/disp.h"
 #include "channels/rdpei.h"
-#include "common/cursor.h"
-#include "common/display.h"
 #include "input.h"
+#include "guacamole/display.h"
 #include "keyboard.h"
 #include "rdp.h"
 #include "settings.h"
@@ -29,6 +28,7 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/input.h>
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/recording.h>
 #include <guacamole/rwlock.h>
 #include <guacamole/user.h>
@@ -48,7 +48,7 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
         goto complete;
 
     /* Store current mouse location/state */
-    guac_common_cursor_update(rdp_client->display->cursor, user, x, y, mask);
+    guac_display_notify_user_moved_mouse(rdp_client->display, user, x, y, mask);
 
     /* Report mouse position within recording */
     if (rdp_client->recording != NULL)

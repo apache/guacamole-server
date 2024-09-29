@@ -132,18 +132,25 @@ guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
      * different key algorithms) we need to perform a heuristic here to check
      * if a passphrase is needed. This could allow junk keys through that
      * would never be able to auth. libssh2 should display errors to help
-     * admins track down malformed keys and delete or replace them.
-     */
+     * admins track down malformed keys and delete or replace them. */
 
     if (is_passphrase_needed(data, length) && (passphrase == NULL || *passphrase == '\0'))
         return NULL;
 
     guac_common_ssh_key* key = guac_mem_alloc(sizeof(guac_common_ssh_key));
 
+    /* NOTE: Older versions of libssh2 will at times ignore the declared key
+     * length and instead recalculate the length using strlen(). This has since
+     * been fixed, but as of this writing the fix has not yet been released.
+     * Below, we add our own null terminator to ensure that such calls to
+     * strlen() will work without issue. We can remove this workaround once
+     * copies of libssh2 that use strlen() on key data are not in common use. */
+
     /* Copy private key to structure */
     key->private_key_length = length;
-    key->private_key = guac_mem_alloc(length);
+    key->private_key = guac_mem_alloc(guac_mem_ckd_add_or_die(length, 1)); /* Extra byte added here for null terminator (see above) */
     memcpy(key->private_key, data, length);
+    key->private_key[length] = '\0'; /* Manually-added null terminator (see above) */
     key->passphrase = guac_strdup(passphrase);
 
     return key;

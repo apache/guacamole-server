@@ -18,7 +18,6 @@
  */
 
 #include "channels/disp.h"
-#include "common/display.h"
 #include "plugins/channels.h"
 #include "fs.h"
 #include "rdp.h"
@@ -29,6 +28,7 @@
 #include <freerdp/event.h>
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
+#include <guacamole/rect.h>
 #include <guacamole/timestamp.h>
 
 #include <stdlib.h>
@@ -153,11 +153,25 @@ void guac_rdp_disp_load_plugin(rdpContext* context) {
 void guac_rdp_disp_set_size(guac_rdp_disp* disp, guac_rdp_settings* settings,
         freerdp* rdp_inst, int width, int height) {
 
-    /* Fit width within bounds, adjusting height to maintain aspect ratio */
-    guac_common_display_fit(&width, &height);
+    guac_rect resize = {
+        .left = 0,
+        .top = 0,
+        .right = width,
+        .bottom = height
+    };
 
-    /* Fit height within bounds, adjusting width to maintain aspect ratio */
-    guac_common_display_fit(&height, &width);
+    /* Fit width and height within bounds, maintaining aspect ratio */
+    guac_rect_shrink(&resize, GUAC_RDP_DISP_MAX_SIZE, GUAC_RDP_DISP_MAX_SIZE);
+
+    width = guac_rect_width(&resize);
+    height = guac_rect_height(&resize);
+
+    /* As it's possible for a rectangle to exceed the maximum allowed
+     * dimensions, yet fall below the minimum allowed dimensions once adjusted,
+     * we don't bother preserving aspect ratio for the unlikely case that a
+     * dimension is below the minimums (consider a rectangle like 16384x256) */
+    if (width  < GUAC_RDP_DISP_MIN_SIZE) width  = GUAC_RDP_DISP_MIN_SIZE;
+    if (height < GUAC_RDP_DISP_MIN_SIZE) height = GUAC_RDP_DISP_MIN_SIZE;
 
     /* Width must be even */
     if (width % 2 == 1)
@@ -185,7 +199,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
     guac_timestamp now = guac_timestamp_current();
 
     /* Limit display update frequency */
-    if (now - disp->last_request <= GUAC_COMMON_DISPLAY_UPDATE_INTERVAL)
+    if (now - disp->last_request <= GUAC_RDP_DISP_UPDATE_INTERVAL)
         return;
 
     /* Do NOT send requests unless the size will change */

@@ -20,10 +20,9 @@
 #ifndef GUAC_RDP_POINTER_H
 #define GUAC_RDP_POINTER_H
 
-#include "common/display.h"
-
 #include <freerdp/freerdp.h>
 #include <freerdp/graphics.h>
+#include <guacamole/display.h>
 #include <winpr/wtypes.h>
 
 #ifdef RDP_POINTER_SET_REQUIRES_CONST
@@ -45,7 +44,7 @@ typedef struct guac_rdp_pointer {
     /**
      * The display layer containing cached image data.
      */
-    guac_common_display_layer* layer;
+    guac_display_layer* layer;
 
 } guac_rdp_pointer;
 

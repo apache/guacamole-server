@@ -49,10 +49,10 @@
  * @param h
  *     The height of the cursor image, in pixels.
  *
- * @param bpp
+ * @param vnc_bpp
  *     The number of bytes in each pixel, which must be either 4, 2, or 1.
  */
-void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp);
+void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int vnc_bpp);
 
 #endif
 

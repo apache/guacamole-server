@@ -20,8 +20,6 @@
 #include "channels/audio-input/audio-input.h"
 #include "channels/cliprdr.h"
 #include "channels/pipe-svc.h"
-#include "common/cursor.h"
-#include "common/display.h"
 #include "config.h"
 #include "input.h"
 #include "rdp.h"
@@ -36,6 +34,7 @@
 #include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
@@ -151,7 +150,7 @@ int guac_rdp_user_leave_handler(guac_user* user) {
 
     /* Update shared cursor state if the display still exists */
     if (rdp_client->display != NULL)
-        guac_common_cursor_remove_user(rdp_client->display->cursor, user);
+        guac_display_notify_user_left(rdp_client->display, user);
 
     /* Free settings if not owner (owner settings will be freed with client) */
     if (!user->owner) {
