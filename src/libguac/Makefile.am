@@ -117,7 +117,6 @@ noinst_HEADERS =              \
     display-priv.h            \
     encode-jpeg.h             \
     encode-png.h              \
-    id.h                      \
     palette.h                 \
     raw_encoder.h             \
     user-handlers.h           \
@@ -160,7 +159,6 @@ libguac_la_SOURCES =          \
     socket-broadcast.c        \
     socket-fd.c               \
     socket-nest.c             \
-    socket-tcp.c              \
     socket-tee.c              \
     string.c                  \
     tcp.c                     \
