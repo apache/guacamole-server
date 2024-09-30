@@ -863,10 +863,6 @@ void guac_terminal_scroll_up(guac_terminal* term,
             end_row - amount + 1, 0,
             end_row, term->term_width - 1);
 
-    /* Flush display copy before the cursor commit override operation
-     * type for visible cursor row and breaks display. */
-    guac_terminal_display_flush(term->display);
-
 }
 
 void guac_terminal_scroll_down(guac_terminal* term,
