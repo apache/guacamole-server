@@ -31,6 +31,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <wchar.h>
