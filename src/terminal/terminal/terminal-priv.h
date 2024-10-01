@@ -366,6 +366,16 @@ struct guac_terminal {
     bool selection_committed;
 
     /**
+     * The row where the first click of selection was made.
+     */
+    int selection_initial_row;
+
+    /**
+     * The column where the first click of selection was made.
+     */
+    int selection_initial_column;
+
+    /**
      * The row that the selection starts at.
      */
     int selection_start_row;
