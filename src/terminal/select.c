@@ -183,7 +183,8 @@ void guac_terminal_select_update(guac_terminal* terminal,
             if (terminal->selection_start_row != start->row ||
                 terminal->selection_start_column != new_start_column ||
                 terminal->selection_end_row != end->row ||
-                terminal->selection_end_column != new_end_column) {
+                terminal->selection_end_column != new_end_column ||
+                !terminal->text_selected) {
 
                 terminal->selection_start_row = start->row;
                 terminal->selection_start_column = new_start_column;
