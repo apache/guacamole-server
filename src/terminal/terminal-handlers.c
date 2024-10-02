@@ -1071,6 +1071,13 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                         guac_terminal_scrollbar_set_bounds(term->scrollbar,
                                 -guac_terminal_get_available_scroll(term), 0);
 
+                        /* Redraw normal buffer content */
+                        guac_terminal_redraw_default_layer(term);
+                        
+                        /* Clear selection */
+                        term->text_selected = false;
+                        term->selection_committed = false;
+
                     }
 
                     /* Clear normal buffer only if we were previously using

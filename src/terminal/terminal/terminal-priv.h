@@ -682,4 +682,12 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
  */
 void guac_terminal_flush(guac_terminal* terminal);
 
+/**
+ * Redraw default layer text and background.
+ *
+ * @param terminal
+ *      The terminal to redraw.
+ */
+void guac_terminal_redraw_default_layer(guac_terminal* terminal);
+
 #endif
