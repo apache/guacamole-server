@@ -23,17 +23,24 @@
 
 #include <errno.h>
 #include <fcntl.h>
+
+#ifdef WINDOWS_BUILD
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#endif
 
 int guac_tcp_connect(const char* hostname, const char* port, const int timeout) {
 
     int retval;
 
-    int fd = EBADFD;
+    int fd = -1;
+
     struct addrinfo* addresses;
     struct addrinfo* current_address;
 

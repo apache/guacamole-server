@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -69,8 +70,9 @@ static int guaclog_read_instructions(guaclog_state* state,
 
     /* Fail on read/parse error */
     if (guac_error != GUAC_STATUS_CLOSED) {
-        guaclog_log(GUAC_LOG_ERROR, "%s: %s",
-                path, guac_status_string(guac_error));
+        char* status_string = guac_status_string(guac_error);
+        guaclog_log(GUAC_LOG_ERROR, "%s: %s", path, status_string);
+        free(status_string);
         guac_parser_free(parser);
         return 1;
     }
@@ -127,8 +129,11 @@ int guaclog_interpret(const char* path, const char* out_path, bool force) {
     /* Obtain guac_socket wrapping file descriptor */
     guac_socket* socket = guac_socket_open(fd);
     if (socket == NULL) {
-        guaclog_log(GUAC_LOG_ERROR, "%s: %s", path,
-                guac_status_string(guac_error));
+        
+        char* status_string = guac_status_string(guac_error);
+        guaclog_log(GUAC_LOG_ERROR, "%s: %s", path, status_string);
+        free(status_string);
+
         close(fd);
         guaclog_state_free(state);
         return 1;

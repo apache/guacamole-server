@@ -36,7 +36,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <syslog.h>
 
 /**
  * Callback invoked by libVNCServer when an informational message needs to be

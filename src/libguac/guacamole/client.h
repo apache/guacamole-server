@@ -26,6 +26,8 @@
  * @file client.h
  */
 
+#include "config.h"
+
 #include "client-fntypes.h"
 #include "client-types.h"
 #include "client-constants.h"
@@ -44,6 +46,15 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <time.h>
+
+#ifdef WINDOWS_BUILD
+#include <windef.h>
+#endif
+
+/**
+ * Internal values for libguac use only.
+ */
+typedef struct guac_client_internal guac_client_internal;
 
 struct guac_client {
 
@@ -310,6 +321,11 @@ struct guac_client {
      * is used.
      */
     void* __plugin_handle;
+
+    /**
+     * Internal-only client data.
+     */
+    guac_client_internal* internal;
 
 };
 

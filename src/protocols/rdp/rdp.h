@@ -213,6 +213,14 @@ typedef struct guac_rdp_client {
      */
     RailClientContext* rail_interface;
 
+    /**
+     * Non-zero if XPS mode is enabled, or zero otherwise.
+     * NOTE: XPS mode is currently only supported on Windows. Attempts to set
+     * XPS mode on linux will be ignored. For more, see:
+     * https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpepc/f97d26e7-d862-4cca-8ec9-98d3c69e2717
+     */
+    int xps_printer_mode_enabled;
+
 } guac_rdp_client;
 
 /**

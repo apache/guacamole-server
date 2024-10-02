@@ -43,15 +43,41 @@ PKG_PROG_PKG_CONFIG()
 # Headers
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h pngstruct.h])
 
+# windows build
+GENERAL_LDFLAGS=
+GENERAL_CFLAGS=-Werror -Wall -pedantic
+AC_ARG_WITH([windows],
+            [AS_HELP_STRING([--with-windows],
+                            [build under/for Windows @<:@default=no@:>@])],
+            [with_windows=yes], [with_windows=no])
+
+AM_CONDITIONAL([WINDOWS_BUILD], [test "x${with_windows}" = "xyes"])
+
+if test "x$with_windows" = "xyes"
+then
+    GENERAL_LDFLAGS=-no-undefined
+    GENERAL_CFLAGS=-Werror -Wall -Wno-error=expansion-to-defined
+    AC_DEFINE([WINDOWS_BUILD],,[Build against windows on Windows])
+
+    AC_CHECK_LIB([systre], [regcomp], [SYSTRE_LIBS=-lsystre],
+                AC_MSG_ERROR("libsystre is required for regex functionality"))
+else
+    SYSTRE_LIBS=
+fi
+
 # Source characteristics
 AC_DEFINE([_GNU_SOURCE],   [1], [Uses GNU-specific APIs (if available)])
 AC_DEFINE([_XOPEN_SOURCE], [700], [Uses X/Open and POSIX APIs])
-AC_DEFINE([__BSD_VISIBLE], [1], [Uses BSD-specific APIs (if available)])
 AC_DEFINE([_GNU_SOURCE], [1], [Use GNU sources (if available)])
 
 # Check for availability of non-portable sched_getaffinity() function (one of
 # several possible routes for determining the number of available processors)
 AC_CHECK_FUNCS([sched_getaffinity])
+
+if test "x$with_windows" = "xno"
+then
+    AC_DEFINE([__BSD_VISIBLE], [1], [Uses BSD-specific APIs (if available)])
+fi
 
 # Check for whether math library is required
 AC_CHECK_LIB([m], [cos],
@@ -79,7 +105,10 @@ AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
 
 # Check for pthread_setattr_default_np
 AC_CHECK_DECLS([pthread_setattr_default_np], , , [[#include <pthread.h>]])
-            
+
+# Windows provides its own timer API, and does not user timer_create
+if test "x$with_windows" = "xno"
+then
 # librt
 AC_CHECK_FUNC([timer_create], [AC_MSG_RESULT([timer_create was found without librt.])],
               [AC_CHECK_LIB([rt], [timer_create],
@@ -87,6 +116,7 @@ AC_CHECK_FUNC([timer_create], [AC_MSG_RESULT([timer_create was found without lib
                                            RT_LIBS=-lrt],
                             [AC_MSG_ERROR([timer_create could not be found.])])
               ])
+fi
 
 # Include libdl for dlopen() if necessary
 AC_CHECK_LIB([dl], [dlopen],
@@ -96,9 +126,28 @@ AC_CHECK_LIB([dl], [dlopen],
                             [#include <dlfcn.h>])])
 
 #
-# libuuid
+# UUID library
+# First, check librpcrt4 (Windows), then libuuid, and finally OSSP UUID
 #
 
+AC_ARG_WITH([librpcrt4],
+            [AS_HELP_STRING([--with-librpcrt4],
+                            [use librpcrt4 to generate unique identifiers @<:@default=check@:>@])],
+            [],
+            [with_librpcrt4=check])
+
+# First, check for librpcrt4 (Windows)
+have_librpcrt4=disabled
+if test "x$with_librpcrt4" != "xno"
+then
+    have_librpcrt4=yes
+    AC_CHECK_LIB([rpcrt4], [UuidCreate],
+                [UUID_LIBS=-lrpcrt4]
+                [AC_DEFINE([HAVE_LIBRPCRT4],, [Whether librpcrt4 is available])],
+                [have_librpcrt4=no])
+fi
+
+# Next, look for libuuid
 have_libuuid=disabled
 AC_ARG_WITH([libuuid],
             [AS_HELP_STRING([--with-libuuid],
@@ -106,38 +155,38 @@ AC_ARG_WITH([libuuid],
             [],
             [with_libuuid=check])
 
-if test "x$with_libuuid" != "xno"
+if test "x$with_libuuid" != "xno" -a "x$have_librpcrt4" != "xyes"
 then
     have_libuuid=yes
     AC_CHECK_LIB([uuid], [uuid_generate],
-                 [UUID_LIBS=-luuid]
-                 [AC_DEFINE([HAVE_LIBUUID],, [Whether libuuid is available])],
-                 [have_libuuid=no])
+                [UUID_LIBS=-luuid]
+                [AC_DEFINE([HAVE_LIBUUID],, [Whether libuuid is available])],
+                [have_libuuid=no])
 fi
 
-# OSSP UUID (if libuuid is unavilable)
-if test "x${have_libuuid}" != "xyes"
+# OSSP UUID (if librpcrt4 and libuuid are unavilable)
+if test "x$have_librpcrt4" != "xyes" -a "x$have_libuuid" != "xyes"
 then
 
     AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
-                 AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
-                              AC_MSG_ERROR([
-  --------------------------------------------
-   Unable to find libuuid or the OSSP UUID library.
-   Either libuuid (from util-linux) or the OSSP UUID library is required for
-   guacamole-server to be built.
-  --------------------------------------------])))
+                AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
+                            AC_MSG_ERROR([
+--------------------------------------------
+Unable to find librpcrt4 or libuuid or the OSSP UUID library.
+Either librpcrt4 (Windows) or libuuid (from util-linux) or the
+OSSP UUID library is required for guacamole-server to be built.
+--------------------------------------------])))
 
     # Check for and validate OSSP uuid.h header
     AC_CHECK_HEADERS([ossp/uuid.h])
     AC_CHECK_DECL([uuid_make],,
-                  AC_MSG_ERROR("No OSSP uuid.h found in include path"),
-                  [#ifdef HAVE_OSSP_UUID_H
-                   #include <ossp/uuid.h>
-                   #else
-                   #include <uuid.h>
-                   #endif
-                   ])
+                AC_MSG_ERROR("No OSSP uuid.h found in include path"),
+                [#ifdef HAVE_OSSP_UUID_H
+                #include <ossp/uuid.h>
+                #else
+                #include <uuid.h>
+                #endif
+                ])
 fi
 
 # cunit
@@ -152,6 +201,9 @@ AC_SUBST(RT_LIBS)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(UUID_LIBS)
 AC_SUBST(CUNIT_LIBS)
+AC_SUBST(GENERAL_LDFLAGS)
+AC_SUBST(GENERAL_CFLAGS)
+AC_SUBST(SYSTRE_LIBS)
 
 # Library functions
 AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
@@ -379,6 +431,7 @@ AC_SUBST(SSL_LIBS)
 
 have_winsock=disabled
 WINSOCK_LIBS=
+
 AC_ARG_WITH([winsock],
             [AS_HELP_STRING([--with-winsock],
                             [support Windows Sockets API @<:@default=check@:>@])],
@@ -389,10 +442,10 @@ if test "x$with_winsock" != "xno"
 then
     have_winsock=yes
     AC_CHECK_LIB([wsock32], [main],
-                 [WINSOCK_LIBS="-lwsock32"]
-                 [AC_DEFINE([ENABLE_WINSOCK],,
+                [WINSOCK_LIBS="-lwsock32"]
+                [AC_DEFINE([ENABLE_WINSOCK],,
                             [Whether Windows Socket API support is enabled])],
-                 [have_winsock=no])
+                [have_winsock=no])
 fi
 
 AM_CONDITIONAL([ENABLE_WINSOCK], [test "x${have_winsock}" = "xyes"])
@@ -535,7 +588,7 @@ then
 
     # Whether libvncserver was built against libgcrypt
     AC_CHECK_DECL([LIBVNCSERVER_WITH_CLIENT_GCRYPT],
-                         [AC_CHECK_HEADER(gcrypt.h,,
+                         [AC_CHECK_HEADER(gcrypt.h, [VNC_LIBS="$VNC_LIBS -lgcrypt"],
                                           [AC_MSG_WARN([
   --------------------------------------------
    libvncserver appears to be built against
@@ -764,7 +817,7 @@ then
     freerdp_version="(3.x)"
     have_freerdp=yes
     PKG_CHECK_MODULES([RDP], [freerdp3 freerdp-client3 winpr3],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror  -Wexpansion-to-defined $CPPFLAGS"]
                       [AS_IF([test "x${FREERDP_PLUGIN_DIR}" = "x"],
                              [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp3`/freerdp3"])],
                       [AC_MSG_WARN([
@@ -780,7 +833,7 @@ then
     freerdp_version="(2.x)"
     have_freerdp=yes
     PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror  -Wexpansion-to-defined $CPPFLAGS"]
                       [AS_IF([test "x${FREERDP_PLUGIN_DIR}" = "x"],
                              [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
                       [AC_MSG_WARN([
@@ -1228,7 +1281,7 @@ then
     # Whether libssh2 was built against libgcrypt
     AC_CHECK_LIB([ssh2], [gcry_control],
                          [AC_CHECK_HEADER(gcrypt.h,
-                                          [AC_DEFINE([LIBSSH2_USES_GCRYPT],,
+                                          [AC_DEFINE([LIBSSH2_USES_GCRYPT],[SSH_LIBS="$SSH_LIBS -lgcrypt"],
                                                      [Whether libssh2 was built against libgcrypt])],
                                           [AC_MSG_WARN([
   --------------------------------------------
@@ -1474,6 +1527,7 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
                  src/protocols/rdp/Makefile
+                 src/protocols/rdp/guacxpstopdf/Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
