@@ -2121,10 +2121,7 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
     display->default_background = default_char->attributes.background;
 
     /* Redraw terminal text and background */
-    guac_terminal_repaint_default_layer(terminal, client->socket);
-    __guac_terminal_redraw_rect(terminal, 0, 0,
-            terminal->term_height - 1,
-            terminal->term_width - 1);
+    guac_terminal_redraw_default_layer(terminal);
 
     /* Acquire exclusive access to terminal */
     guac_terminal_lock(terminal);
@@ -2147,7 +2144,6 @@ const char* guac_terminal_get_color_scheme(guac_terminal* terminal) {
 void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
         int font_size, int dpi) {
 
-    guac_client* client = terminal->client;
     guac_terminal_display* display = terminal->display;
 
     if (guac_terminal_display_set_font(display, font_name, font_size, dpi))
@@ -2159,10 +2155,7 @@ void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
             terminal->outer_height);
 
     /* Redraw terminal text and background */
-    guac_terminal_repaint_default_layer(terminal, client->socket);
-    __guac_terminal_redraw_rect(terminal, 0, 0,
-            terminal->term_height - 1,
-            terminal->term_width - 1);
+    guac_terminal_redraw_default_layer(terminal);
 
     /* Acquire exclusive access to terminal */
     guac_terminal_lock(terminal);
@@ -2227,4 +2220,13 @@ void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
 
     /* Remove the user from the terminal cursor */
     guac_common_cursor_remove_user(terminal->cursor, user);
+}
+
+void guac_terminal_redraw_default_layer(guac_terminal* terminal) {
+
+    /* Redraw terminal text and background */
+    guac_terminal_repaint_default_layer(terminal, terminal->client->socket);
+    __guac_terminal_redraw_rect(terminal, 0, 0,
+            terminal->term_height - 1,
+            terminal->term_width - 1);
 }
