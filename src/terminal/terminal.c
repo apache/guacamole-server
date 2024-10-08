@@ -1606,7 +1606,7 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
 /**
  * Determines if the given character is part of a word.
- * Match these chars :[0-9A-Za-z\$\-\.\/_~]
+ * Match these chars :[0-9A-Za-z\$\-\.\/_~] and accented letters.
  * This allows a path, variable name or IP address to be treated as a word.
  *
  * @param ascii_char
@@ -1620,6 +1620,8 @@ static bool guac_terminal_is_part_of_word(int ascii_char) {
     return ((ascii_char >= '0' && ascii_char <= '9') || 
             (ascii_char >= 'A' && ascii_char <= 'Z') || 
             (ascii_char >= 'a' && ascii_char <= 'z') ||
+            (ascii_char >= GUAC_TERMINAL_LATIN1_CAPITAL_AGRAVE &&
+             ascii_char <= GUAC_TERMINAL_LATIN1_Y_UMLAUT) ||
             (ascii_char == '$') ||
             (ascii_char == '-') ||
             (ascii_char == '.') ||
