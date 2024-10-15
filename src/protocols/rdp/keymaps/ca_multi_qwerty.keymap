@@ -71,11 +71,19 @@ map +ext +ctrl 0x0D    ~ 0xFE5B # Dead cedilla
 # Right Control Combinations
 #
 
-map +ext +ctrl 0x02..0x07 ~ "¹²³¼½¾"
-map +ext +ctrl 0x11..0x19 ~ "łœ¶ŧ←↓→øþ"
-map +ext +ctrl 0x1E..0x20 ~ "æßð"
-map +ext +ctrl 0x22..0x26 ~ "ŋħĳĸŀ"
-map +ext +ctrl 0x2E..0x33 ~ "¢“”ŉµ―"
+map +ext +ctrl -shift 0x02..0x07 ~ "¹²³¼½¾"
+map +ext +ctrl -shift 0x11..0x19 ~ "łœ¶ŧ←↓→øþ"
+map +ext +ctrl -shift 0x1E..0x20 ~ "æßð"
+map +ext +ctrl -shift 0x22..0x26 ~ "ŋħĳĸŀ"
+map +ext +ctrl -shift 0x2E..0x33 ~ "¢“”ŉµ―"
+map +ext +ctrl +shift 0x02 ~ "¡"
+map +ext +ctrl +shift 0x04..0x0A ~ "£€⅜⅝⅞™±"
+map +ext +ctrl +shift 0x0C ~ "¿"
+map +ext +ctrl +shift 0x10..0x19 ~ "ΩŁŒ®Ŧ¥↑ıØÞ"
+map +ext +ctrl +shift 0x1E..0x24 ~ "Æ§ÐªŊĦĲ"
+map +ext +ctrl +shift 0x26 ~ "Ŀ"
+map +ext +ctrl +shift 0x56 ~ ""
+map +ext +ctrl +shift 0x2E..0x34 ~ "©‘’♪º×÷"
 
 
 
