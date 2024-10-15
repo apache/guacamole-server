@@ -65,4 +65,17 @@ map -altgr +shift 0x1A ~ 0xFE57 # Dead umlaut
 map +altgr -shift 0x1A ~ 0xFE50 # Dead grave
 map -altgr -shift 0x1A ~ 0xFE52 # Dead circumflex
 map +altgr -shift 0x1B ~ 0xFE53 # Dead tilde
+map +ext +ctrl 0x0D    ~ 0xFE5B # Dead cedilla
+
+#
+# Right Control Combinations
+#
+
+map +ext +ctrl 0x02..0x07 ~ "¹²³¼½¾"
+map +ext +ctrl 0x11..0x19 ~ "łœ¶ŧ←↓→øþ"
+map +ext +ctrl 0x1E..0x20 ~ "æßð"
+map +ext +ctrl 0x22..0x26 ~ "ŋħĳĸŀ"
+map +ext +ctrl 0x2E..0x33 ~ "¢“”ŉµ―"
+
+
 
