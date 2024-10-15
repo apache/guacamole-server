@@ -105,7 +105,7 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
             int body_size;
 
             /* Remember position in stream */
-            Stream_GetPointer(input_stream, format_start);
+            format_start = Stream_GetPosition(input_stream);
 
             /* Check to make sure Stream has at least 18 bytes. */
             if (Stream_GetRemainingLength(input_stream) < 18) {
@@ -165,12 +165,6 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
                             18 + body_size);
                     Stream_Write(output_stream, format_start, 18 + body_size);
 
-                    /*
-                     * BEWARE that using Stream_EnsureRemainingCapacity means
-                     * that any pointers returned via Stream_GetPointer on
-                     * output_stream are invalid.
-                     */
-
                 }
 
                 /* Otherwise, log that we dropped one */
@@ -193,7 +187,7 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
 
     /* Calculate size of PDU */
     output_body_size = Stream_GetPosition(output_stream) - 4;
-    Stream_GetPointer(output_stream, output_stream_end);
+    output_stream_end = Stream_GetPosition(output_stream);
 
     /* Set body size */
     Stream_SetPosition(output_stream, 0x02);
