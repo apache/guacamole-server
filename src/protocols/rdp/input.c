@@ -191,7 +191,7 @@ complete:
 
 }
 
-int guac_rdp_user_size_handler(guac_user* user, int width, int height) {
+int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monitors) {
 
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -203,7 +203,7 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height) {
     height = height * settings->resolution / user->info.optimal_resolution;
 
     /* Send display update */
-    guac_rdp_disp_set_size(rdp_client->disp, settings, rdp_inst, width, height);
+    guac_rdp_disp_set_size(rdp_client->disp, settings, rdp_inst, width, height, monitors);
 
     return 0;
 
