@@ -120,7 +120,7 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
 
 }
 
-int guac_telnet_user_size_handler(guac_user* user, int width, int height) {
+int guac_telnet_user_size_handler(guac_user* user, int width, int height, int monitors) {
 
     /* Get terminal */
     guac_client* client = user->client;
