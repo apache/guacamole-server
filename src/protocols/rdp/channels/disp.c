@@ -151,7 +151,7 @@ void guac_rdp_disp_load_plugin(rdpContext* context) {
 }
 
 void guac_rdp_disp_set_size(guac_rdp_disp* disp, guac_rdp_settings* settings,
-        freerdp* rdp_inst, int width, int height) {
+        freerdp* rdp_inst, int width, int height, int monitors) {
 
     guac_rect resize = {
         .left = 0,
