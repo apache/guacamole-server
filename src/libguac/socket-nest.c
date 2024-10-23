@@ -315,7 +315,7 @@ guac_socket* guac_socket_nest(guac_socket* parent, int index) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
-    guac_socket_nest_data* data = guac_mem_alloc(sizeof(guac_socket_nest_data));
+    guac_socket_nest_data* data = guac_mem_zalloc(sizeof(guac_socket_nest_data));
 
     /* Store nested socket details as socket data */
     data->parent = parent;
