@@ -19,7 +19,7 @@
 
 parent  "base_altgr"
 name    "es-es-dvorak"
-freerdp "KBD_SPANISH_DVORAK"
+freerdp "KBD_UNITED_STATES_DVORAK"
 
 #
 # Basic keys
