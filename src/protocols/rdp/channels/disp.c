@@ -193,7 +193,18 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
     int width = disp->requested_width;
     int height = disp->requested_height;
-    int monitors_count = disp->requested_monitors;
+    int requested_monitors = disp->requested_monitors;
+
+    /* Add one to account for the primary monitor */
+    int max_monitors = settings->max_secondary_monitors + 1;
+
+    /* Prevent opening too many monitors than allowed */
+    if (requested_monitors > max_monitors)
+        requested_monitors = max_monitors;
+
+    /* At least one monitor is required */
+    if (requested_monitors < 1)
+        requested_monitors = 1;
 
     /* Do not update size if no requests have been received */
     if (width == 0 || height == 0)
@@ -207,7 +218,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
     /* Do NOT send requests unless the size will change */
     if (rdp_inst != NULL
-            && width * monitors_count == guac_rdp_get_width(rdp_inst)
+            && width * requested_monitors == guac_rdp_get_width(rdp_inst)
             && height == guac_rdp_get_height(rdp_inst))
         return;
 
@@ -230,9 +241,9 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
         /* Init monitors layout */
         DISPLAY_CONTROL_MONITOR_LAYOUT* monitors;
-        monitors = guac_mem_alloc(monitors_count * sizeof(DISPLAY_CONTROL_MONITOR_LAYOUT));
+        monitors = guac_mem_alloc(requested_monitors * sizeof(DISPLAY_CONTROL_MONITOR_LAYOUT));
 
-        for (int i = 0; i < monitors_count; i++) {
+        for (int i = 0; i < requested_monitors; i++) {
 
             /* First monitor is the primary */
             int primary_monitor = (i == 0 ? 1 : 0);
@@ -259,7 +270,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
         guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
         pthread_mutex_lock(&(rdp_client->message_lock));
-        disp->disp->SendMonitorLayout(disp->disp, monitors_count, monitors);
+        disp->disp->SendMonitorLayout(disp->disp, requested_monitors, monitors);
         pthread_mutex_unlock(&(rdp_client->message_lock));
 
         guac_mem_free(monitors);
