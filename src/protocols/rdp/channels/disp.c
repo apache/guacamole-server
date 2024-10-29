@@ -195,6 +195,14 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
     int height = disp->requested_height;
     int monitors_count = disp->requested_monitors;
 
+    /* Prevent opening too many monitors than allowed */
+    if (settings->max_secondary_monitors + 1 < monitors_count)
+        monitors_count = settings->max_secondary_monitors + 1;
+
+    /* At least one monitor is required */
+    if (monitors_count < 1)
+        monitors_count = 1;
+
     /* Do not update size if no requests have been received */
     if (width == 0 || height == 0)
         return;
