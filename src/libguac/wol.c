@@ -210,6 +210,21 @@ int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
         const char* hostname, const char* port, const int timeout) {
 
     /* Attempt to connect, first. */
+#ifdef WINDOWS_BUILD
+
+    SOCKET sockfd = guac_tcp_connect(hostname, port, timeout);
+
+    /* If connection succeeds, no need to wake the system. */
+    if (sockfd != INVALID_SOCKET) {
+        closesocket(sockfd);
+        return 0;
+    }
+
+    /* Close the fd to avoid resource leak. */
+    closesocket(sockfd);
+
+#else
+
     int sockfd = guac_tcp_connect(hostname, port, timeout);
 
     /* If connection succeeds, no need to wake the system. */
@@ -220,6 +235,8 @@ int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
 
     /* Close the fd to avoid resource leak. */
     close(sockfd);
+
+#endif
 
     /* Send the magic WOL packet and store return value. */
     int retval = guac_wol_wake(mac_addr, broadcast_addr, udp_port);
@@ -235,7 +252,11 @@ int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
 
         /* Connection succeeded - close socket and exit. */
         if (sockfd > 0) {
-            close(sockfd);
+#ifdef WINDOWS_BUILD
+        closesocket(sockfd);
+#else
+        close(sockfd);
+#endif
             return 0;
         }
 
@@ -243,7 +264,11 @@ int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
          * Connection did not succed - close the socket and sleep for the
          * specified amount of time before retrying.
          */
+#ifdef WINDOWS_BUILD
+        closesocket(sockfd);
+#else
         close(sockfd);
+#endif
         guac_timestamp_msleep(wait_time * 1000);
     }
 

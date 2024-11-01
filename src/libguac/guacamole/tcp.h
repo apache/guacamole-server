@@ -30,12 +30,24 @@
 
 #include <stddef.h>
 
+#ifdef WINDOWS_BUILD
+#include <winsock2.h>
+#endif
+
 /**
+ * Linux:
  * Given a hostname or IP address and port, attempt to connect to that system,
  * returning the file descriptor of an open socket if the connection succeeds,
  * or a negative value if it fails. The returned file descriptor must
  * eventually be freed with a call to close(). If this function fails,
  * guac_error will be set appropriately.
+ *
+ * Windows:
+ * Given a hostname or IP address and port, attempt to connect to that system,
+ * returning A SOCKET representing an open socket if the connection succeeds,
+ * or INVALID_SOCKET if it fails. The returned socket must eventually be freed
+ * with a call to closesocket(). If this function fails, guac_error will be set
+ * appropriately.
  *
  * @param hostname
  *     The hostname or IP address to which to attempt connections.
@@ -50,6 +62,10 @@
  *     A valid socket if the connection succeeds, or a negative integer if it
  *     fails.
  */
+#ifdef WINDOWS_BUILD
+SOCKET guac_tcp_connect(const char* hostname, const char* port, const int timeout);
+#else
 int guac_tcp_connect(const char* hostname, const char* port, const int timeout);
+#endif
 
 #endif // GUAC_TCP_H

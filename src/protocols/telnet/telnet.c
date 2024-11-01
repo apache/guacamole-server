@@ -401,7 +401,11 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
 
+#ifdef WINDOWS_BUILD
+    SOCKET fd = guac_tcp_connect(settings->hostname, settings->port, settings->timeout);
+#else
     int fd = guac_tcp_connect(settings->hostname, settings->port, settings->timeout);
+#endif
 
     /* Open telnet session */
     telnet_t* telnet = telnet_init(__telnet_options, __guac_telnet_event_handler, 0, client);
