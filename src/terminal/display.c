@@ -889,7 +889,7 @@ void guac_terminal_display_dup(
 }
 
 void guac_terminal_display_select(guac_terminal_display* display,
-        int start_row, int start_col, int end_row, int end_col) {
+        int start_row, int start_col, int end_row, int end_col, bool rectangle) {
 
     guac_socket* socket = display->client->socket;
     guac_layer* select_layer = display->select_layer;
@@ -943,38 +943,67 @@ void guac_terminal_display_select(guac_terminal_display* display,
             start_row = end_row;
             end_row = temp;
 
+            /* Don't swap columns if it's a rectangular selection and start_col
+             * is less than end_col */
+            if (!rectangle || start_col > end_col) {
+                temp = start_col;
+                start_col = end_col;
+                end_col = temp;
+            }
+
+        }
+
+        /* Swap columns on rectangular selection to bottom-left direction */
+        else if (rectangle && start_col > end_col) {
+
+            int temp;
+
             temp = start_col;
             start_col = end_col;
             end_col = temp;
 
         }
 
-        /* First row */
-        guac_protocol_send_rect(socket, select_layer,
+        /* Multilines rectangular selection */
+        if (rectangle) {
+            guac_protocol_send_rect(socket, select_layer,
 
-                start_col * display->char_width,
-                start_row * display->char_height,
+                    start_col * display->char_width,
+                    start_row * display->char_height,
 
-                display->width * display->char_width,
-                display->char_height);
+                    (end_col - start_col + 1) * display->char_width,
+                    (end_row - start_row + 1) * display->char_height);
+        }
 
-        /* Middle */
-        guac_protocol_send_rect(socket, select_layer,
+        /* Multilines standard selection */
+        else {
+            /* First row */
+            guac_protocol_send_rect(socket, select_layer,
 
-                0,
-                (start_row + 1) * display->char_height,
+                    start_col * display->char_width,
+                    start_row * display->char_height,
 
-                display->width * display->char_width,
-                (end_row - start_row - 1) * display->char_height);
+                    display->width * display->char_width,
+                    display->char_height);
 
-        /* Last row */
-        guac_protocol_send_rect(socket, select_layer,
+            /* Middle */
+            guac_protocol_send_rect(socket, select_layer,
 
-                0,
-                end_row * display->char_height,
+                    0,
+                    (start_row + 1) * display->char_height,
 
-                (end_col + 1) * display->char_width,
-                display->char_height);
+                    display->width * display->char_width,
+                    (end_row - start_row - 1) * display->char_height);
+
+            /* Last row */
+            guac_protocol_send_rect(socket, select_layer,
+
+                    0,
+                    end_row * display->char_height,
+
+                    (end_col + 1) * display->char_width,
+                    display->char_height);
+        }
 
     }
 
