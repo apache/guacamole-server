@@ -99,7 +99,14 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
 
     guac_display_layer* default_layer = guac_display_default_layer(rdp_client->display);
     guac_display_layer_raw_context* current_context = rdp_client->current_context;
-    GUAC_ASSERT(current_context != NULL);
+
+    /* Handle the case where EndPaint was called without a preceding BeginPaint.
+     * This can occur during screen resize events in "display-update" mode with
+     * FreeRDP version 3.8.0 or later, where EndPaint is called to ensure the
+     * update-lock is released and data is flushed before resizing. See the
+     * associated FreeRDP PR: https://github.com/FreeRDP/FreeRDP/pull/10488 */
+    if (current_context == NULL)
+        return TRUE;
 
     /* Ignore paint if GDI output is suppressed */
     if (gdi->suppressOutput)
