@@ -35,13 +35,21 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/statvfs.h>
 #include <unistd.h>
+
+#ifdef WINDOWS_BUILD
+#include <io.h>
+#include <direct.h>
+#include <fileapi.h>
+#include <winerror.h>
+#include <stringapiset.h>
+#else
+#include <sys/statvfs.h>
+#endif
 
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
         int create_drive_path, int disable_download, int disable_upload) {
@@ -53,7 +61,13 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
                __func__, drive_path);
 
         /* Log error if directory creation fails */
-        if (mkdir(drive_path, S_IRWXU) && errno != EEXIST) {
+        if (
+#ifdef WINDOWS_BUILD
+                _mkdir(drive_path)
+#else
+                mkdir(drive_path, S_IRWXU)
+#endif
+                && errno != EEXIST) {
             guac_client_log(client, GUAC_LOG_ERROR,
                     "Unable to create directory \"%s\": %s",
                     drive_path, strerror(errno));
@@ -326,7 +340,11 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     if ((create_options & FILE_DIRECTORY_FILE) && (flags & O_CREAT)) {
 
         /* Create directory */
+#ifdef WINDOWS_BUILD
+        if (_mkdir(real_path)) {
+#else
         if (mkdir(real_path, S_IRWXU)) {
+#endif
             if (errno != EEXIST || (flags & O_EXCL)) {
                 guac_client_log(fs->client, GUAC_LOG_DEBUG,
                         "%s: mkdir() failed: %s",
@@ -598,7 +616,25 @@ const char* guac_rdp_fs_read_dir(guac_rdp_fs* fs, int file_id) {
 
     /* Open directory if not yet open, stop if error */
     if (file->dir == NULL) {
+#ifdef WINDOWS_BUILD
+
+        wchar_t file_name_buffer[1024];
+
+        DWORD return_value = GetFinalPathNameByHandleW(
+                ((HANDLE) _get_osfhandle(file->fd)),
+                file_name_buffer, sizeof(file_name_buffer),
+                FILE_NAME_NORMALIZED);
+        if (return_value == 0)
+            return NULL;
+
+        char file_name[2048];
+        WideCharToMultiByte(CP_UTF8, 0, file_name_buffer, -1,
+                file_name, sizeof(file_name), NULL, NULL);
+
+        file->dir = opendir(file_name);
+#else
         file->dir = fdopendir(file->fd);
+#endif
         if (file->dir == NULL)
             return NULL;
     }
@@ -731,10 +767,47 @@ guac_rdp_fs_file* guac_rdp_fs_get_file(guac_rdp_fs* fs, int file_id) {
 }
 
 int guac_rdp_fs_matches(const char* filename, const char* pattern) {
-    return fnmatch(pattern, filename, FNM_NOESCAPE) != 0;
+    return FilePatternMatchA(filename, pattern) != 0;
 }
 
 int guac_rdp_fs_get_info(guac_rdp_fs* fs, guac_rdp_fs_info* info) {
+
+#ifdef WINDOWS_BUILD
+
+    /* Variables to store the result of the call */
+    DWORD sectors_per_cluster;
+    DWORD bytes_per_sector;
+    DWORD number_of_free_clusters;
+    DWORD number_of_total_clusters;
+
+    if (!GetDiskFreeSpace(fs->drive_path, &sectors_per_cluster, &bytes_per_sector,
+            &number_of_free_clusters, &number_of_total_clusters)) {
+
+
+        DWORD error_code = GetLastError();
+        switch(error_code) {
+
+            case ERROR_FILE_NOT_FOUND:
+            case ERROR_INVALID_DRIVE:
+            case ERROR_PATH_NOT_FOUND:
+                return GUAC_RDP_FS_ENOENT;
+
+            case ERROR_ACCESS_DENIED:
+                return GUAC_RDP_FS_EACCES;
+
+            /* Default to GUAC_RDP_FS_EINVAL for unknown errors */
+            default:
+                return GUAC_RDP_FS_EINVAL;
+        }
+    }
+
+    /* Treat sectors as equivalent to blocks */
+    info->block_size = bytes_per_sector;
+    info->blocks_available = number_of_free_clusters * sectors_per_cluster;
+    info->blocks_total = number_of_total_clusters * sectors_per_cluster;
+    return 0;
+
+#else
 
     /* Read FS information */
     struct statvfs fs_stat;
@@ -746,6 +819,8 @@ int guac_rdp_fs_get_info(guac_rdp_fs* fs, guac_rdp_fs_info* info) {
     info->blocks_total = fs_stat.f_blocks;
     info->block_size = fs_stat.f_bsize;
     return 0;
+
+#endif
 
 }
 

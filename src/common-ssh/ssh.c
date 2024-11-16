@@ -36,17 +36,23 @@
 #include <openssl/ssl.h>
 
 #include <errno.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <pthread.h>
-#include <pwd.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
-#include <sys/socket.h>
 #include <unistd.h>
+
+#ifdef WINDOWS_BUILD
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pwd.h>
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <fcntl.h>
+#endif
 
 #ifdef LIBSSH2_USES_GCRYPT
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
@@ -417,8 +423,14 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         int timeout, int keepalive, const char* host_key,
         guac_ssh_credential_handler* credential_handler) {
 
+#ifdef WINDOWS_BUILD
+    SOCKET fd = guac_tcp_connect(hostname, port, timeout);
+    if (fd == INVALID_SOCKET) {
+#else
     int fd = guac_tcp_connect(hostname, port, timeout);
     if (fd < 0) {
+#endif
+
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
             "Failed to open TCP connection to %s on %s.", hostname, port);
         return NULL;
@@ -455,7 +467,11 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                 "SSH handshake failed.");
         guac_mem_free(common_session);
+#ifdef WINDOWS_BUILD
+        closesocket(fd);
+#else
         close(fd);
+#endif
         return NULL;
     }
 
@@ -468,7 +484,11 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
             "Failed to get host key for %s", hostname);
         guac_mem_free(common_session);
+#ifdef WINDOWS_BUILD
+        closesocket(fd);
+#else
         close(fd);
+#endif
         return NULL;
     }
 
@@ -491,7 +511,11 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
                 "Host key did not match any provided known host keys. %s", err_msg);
 
         guac_mem_free(common_session);
+#ifdef WINDOWS_BUILD
+        closesocket(fd);
+#else
         close(fd);
+#endif
         return NULL;
     }
 
@@ -505,7 +529,11 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     /* Attempt authentication */
     if (guac_common_ssh_authenticate(common_session)) {
         guac_mem_free(common_session);
+#ifdef WINDOWS_BUILD
+        closesocket(fd);
+#else
         close(fd);
+#endif
         return NULL;
     }
 

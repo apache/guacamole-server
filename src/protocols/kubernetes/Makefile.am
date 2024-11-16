@@ -57,6 +57,7 @@ noinst_HEADERS = \
 
 libguac_client_kubernetes_la_CFLAGS = \
     -Werror -Wall -Iinclude           \
+    @GENERAL_CFLAGS@                   \
     @LIBGUAC_INCLUDE@                 \
     @TERMINAL_INCLUDE@
 
@@ -69,5 +70,6 @@ libguac_client_kubernetes_la_LDFLAGS = \
     -version-info 0:0:0                \
     @PTHREAD_LIBS@                     \
     @SSL_LIBS@                         \
-    @WEBSOCKETS_LIBS@
+    @WEBSOCKETS_LIBS@                  \
+    @GENERAL_LDFLAGS@
 

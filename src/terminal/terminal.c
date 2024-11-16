@@ -53,6 +53,11 @@
 #include <guacamole/timestamp.h>
 #include <guacamole/user.h>
 
+#ifdef WINDOWS_BUILD
+#include "terminal/wcwidth.h"
+#include <guacamole/pipe.h>
+#endif
+
 /**
  * Sets the given range of columns to the given character.
  */

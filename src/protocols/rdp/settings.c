@@ -42,6 +42,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef WINDOWS_BUILD
+#include <fileapi.h>
+#include <winbase.h>
+#endif
+
 /**
  * A warning to log when NLA mode is selected while FIPS mode is active on the
  * guacd server.
@@ -1581,7 +1586,11 @@ void guac_rdp_push_settings(guac_client* client,
 
     /* Timezone redirection */
     if (guac_settings->timezone) {
+#ifdef WINDOWS_BUILD
+        if (!SetEnvironmentVariable("TZ", guac_settings->timezone)) {
+#else
         if (setenv("TZ", guac_settings->timezone, 1)) {
+#endif
             guac_client_log(client, GUAC_LOG_WARNING,
                 "Unable to forward timezone: TZ environment variable "
                 "could not be set: %s", strerror(errno));
@@ -1828,10 +1837,19 @@ void guac_rdp_push_settings(guac_client* client,
 
     /* Timezone redirection */
     if (guac_settings->timezone) {
+#ifdef WINDOWS_BUILD
+        if (!SetEnvironmentVariable("TZ", guac_settings->timezone)) {
+#else
         if (setenv("TZ", guac_settings->timezone, 1)) {
+#endif
+
             guac_client_log(client, GUAC_LOG_WARNING,
                 "Unable to forward timezone: TZ environment variable "
+#ifdef WINDOWS_BUILD
+                "could not be set (windows code): %u", GetLastError());
+#else
                 "could not be set: %s", strerror(errno));
+#endif
         }
     }
 

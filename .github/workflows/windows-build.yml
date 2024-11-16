@@ -1,0 +1,73 @@
+name: Windows Build
+
+# Automatically verify pull requests
+on: [pull_request]
+
+# Limit to only one build for a given PR source branch at a time,
+# cancelling any in-progress builds
+concurrency:
+  group: windows-build-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # This runs on a github-hosted runner, guaranteed fresh for every job run.
+  # Git, msys2, and other tools come preinstalled. For more, see
+  # https://github.com/actions/runner-images/blob/main/images/win/Windows2022-Readme.md
+  windows-build:
+    name: Build guacamole-server on windows server 2022
+    runs-on: windows-2022
+    steps:
+
+      # TODO: Install libtelnet from source - it's not available in msys2
+      - name: Update MSYS2 repos and install dependencies
+        shell: powershell
+        run: |
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S git base-devel mingw-w64-x86_64-gcc mingw-w64-x86_64-autotools mingw-w64-x86_64-libtool libtool
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-cunit mingw-w64-x86_64-make mingw-w64-x86_64-python
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-cairo
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-dlfcn
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-freerdp
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-libssh2
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-libvncserver
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-libwebsockets
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-libjpeg-turbo
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-libpng
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-libgxps
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-libtool
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-libwebp
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-openssl
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-pango
+          C:\\msys64\\usr\\bin\\pacman.exe --noconfirm -S mingw-w64-x86_64-pulseaudio
+
+          C:\\msys64\\usr\\bin\\pacman.exe -Q
+
+      - name: Configure git to not mangle line endings
+        run: git config --global core.autocrlf input
+
+      - name: Checkout guacamole-server source
+        uses: actions/checkout@v4
+
+      - name: Build guacamole-server
+        shell: C:\\msys64\\usr\\bin\\bash.exe --login -eo pipefail -o igncr '{0}'
+        run: |
+
+          SERVER_BASE=`cygpath -u '${{ github.workspace }}'`
+          cd "$SERVER_BASE"
+
+          autoreconf -fi
+
+          export MINGW_ARCH="mingw64"
+          export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig:/usr/lib/pkgconfig"
+          export PATH="$PATH:/mingw64/bin:/usr/bin"
+          export LDFLAGS="-L/mingw64/bin/ -L/usr/bin/ -L/mingw64/lib -lws2_32"
+          export CFLAGS="-isystem/mingw64/include/ \
+                         -I/mingw64/include/pango-1.0 \
+                         -I/mingw64/include/glib-2.0/ \
+                         -I/mingw64/lib/glib-2.0/include/ \
+                         -I/mingw64/include/harfbuzz/ \
+                         -I/mingw64/include/cairo/ \
+                         -I/mingw64/include/winpr2 \
+                         -Wno-error=expansion-to-defined -Wno-error=attributes -Wno-incompatible-pointer-types"
+          ./configure --with-windows --disable-guacenc --disable-guacd --disable-guaclog
+          make

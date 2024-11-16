@@ -23,17 +23,30 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
+
+#ifdef WINDOWS_BUILD
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#endif
 
+#ifdef WINDOWS_BUILD
+SOCKET guac_tcp_connect(const char* hostname, const char* port, const int timeout) {
+    SOCKET sock = INVALID_SOCKET;
+#else
 int guac_tcp_connect(const char* hostname, const char* port, const int timeout) {
+#endif
 
     int retval;
 
-    int fd = EBADFD;
+    int fd = -1;
+
     struct addrinfo* addresses;
     struct addrinfo* current_address;
 
@@ -67,6 +80,47 @@ int guac_tcp_connect(const char* hostname, const char* port, const int timeout) 
             guac_error_message = "Error resolving host.";
             continue;
         }
+
+#ifdef WINDOWS_BUILD
+
+        /* Get socket or return the error. */
+        SOCKET sock = socket(current_address->ai_family, SOCK_STREAM, 0);
+        if (fd < 0) {
+            freeaddrinfo(addresses);
+            return fd;
+        }
+
+        /* Sockets are always created in blocking mode in WinAPI. See
+        https://learn.microsoft.com/en-us/windows/win32/winsock/winsock-ioctls#fionbio
+        */
+        u_long blocking_mode = 0;
+        if(ioctlsocket(sock, FIONBIO, &blocking_mode) != NO_ERROR) {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "Failed to set non-blocking socket.";
+            close(fd);
+            continue;
+        }
+
+        /* Get socket or return the error. WSAGetLastError() is expected
+           to return WSAEWOULDBLOCK for non-blocking sockets. */
+        sock = socket(current_address->ai_family, SOCK_STREAM, 0);
+        if (sock == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) {
+            freeaddrinfo(addresses);
+            return fd;
+        }
+
+        /* Structure that stores our timeout setting. */
+        struct timeval tv;
+        tv.tv_sec = timeout;
+        tv.tv_usec = 0;
+
+        /* Set up timeout. */
+        fd_set fdset;
+        FD_ZERO(&fdset);
+        FD_SET(sock, &fdset);
+
+        int retval = select(sock, NULL, &fdset, NULL, &tv);
+#else
 
         /* Get socket or return the error. */
         fd = socket(current_address->ai_family, SOCK_STREAM, 0);
@@ -117,9 +171,22 @@ int guac_tcp_connect(const char* hostname, const char* port, const int timeout) 
                 continue;
             }
         }
-
+#endif
         /* Successful connection */
         if (retval > 0) {
+
+#ifdef WINDOWS_BUILD
+
+            // Set the socket back to blocking mode
+            blocking_mode = 1;
+            if(ioctlsocket(sock, FIONBIO, &blocking_mode) != NO_ERROR) {
+                guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+                guac_error_message = "Failed to reset socket options.";
+                close(fd);
+                continue;
+            }
+#else
+
             /* Restore previous socket options. */
             if (fcntl(fd, F_SETFL, opt) < 0) {
                 guac_error = GUAC_STATUS_INVALID_ARGUMENT;
@@ -127,6 +194,7 @@ int guac_tcp_connect(const char* hostname, const char* port, const int timeout) 
                 close(fd);
                 continue;
             }
+#endif
 
             break;
         }
@@ -154,7 +222,11 @@ int guac_tcp_connect(const char* hostname, const char* port, const int timeout) 
         guac_error_message = "Unable to connect to remote host.";
     }
 
-    /* Return the fd, or the error message if the socket connection failed. */
+    /* Return the socket, or the error message if the socket connection failed. */
+#ifdef WINDOWS_BUILD
+    return sock;
+#else
     return fd;
+#endif
 
 }

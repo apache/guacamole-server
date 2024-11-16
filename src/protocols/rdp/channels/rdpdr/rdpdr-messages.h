@@ -125,8 +125,7 @@ guac_rdpdr_message_handler guac_rdpdr_process_prn_cache_data;
 /**
  * Handler which processes a received Server Printer Set XPS Mode message. The
  * Server Printer Set XPS Mode message is specific to printers and requests
- * that the client printer be set to XPS mode. The Guacamole RDPDR
- * implementation ignores any request to set the printer to XPS mode. See:
+ * that the client printer be set to XPS mode. See:
  *
  * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpepc/f1789a66-bcd0-4df3-bfc2-6e7330d63145
  */

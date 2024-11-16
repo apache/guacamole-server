@@ -25,6 +25,10 @@
 #include "terminal/terminal-priv.h"
 #include "terminal/types.h"
 
+#ifdef WINDOWS_BUILD
+#include <terminal/wcwidth.h>
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

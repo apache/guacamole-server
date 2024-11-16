@@ -34,16 +34,27 @@
 #include <libtelnet.h>
 
 #include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <poll.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#ifdef WINDOWS_BUILD
+#include <winsock2.h>
+#include <ws2def.h>
+#include <ws2tcpip.h>
+#else
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#    ifdef HAVE_POLL
+#        include <poll.h>
+#    else
+#        include <sys/select.h>
+#    endif
+#endif
 
 /**
  * Support levels for various telnet options, required for connection
@@ -75,7 +86,11 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
     while (remaining > 0) {
 
         /* Attempt to write data */
+#ifdef WINDOWS_BUILD
+        int ret_val = send(fd, buffer, remaining, 0);
+#else
         int ret_val = write(fd, buffer, remaining);
+#endif
         if (ret_val <= 0)
             return -1;
 
@@ -386,7 +401,11 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
 
+#ifdef WINDOWS_BUILD
+    SOCKET fd = guac_tcp_connect(settings->hostname, settings->port, settings->timeout);
+#else
     int fd = guac_tcp_connect(settings->hostname, settings->port, settings->timeout);
+#endif
 
     /* Open telnet session */
     telnet_t* telnet = telnet_init(__telnet_options, __guac_telnet_event_handler, 0, client);
@@ -471,6 +490,8 @@ void guac_telnet_send_user(telnet_t* telnet, const char* username) {
  */
 static int __guac_telnet_wait(int socket_fd) {
 
+#ifdef HAVE_POLL
+
     /* Build array of file descriptors */
     struct pollfd fds[] = {{
         .fd      = socket_fd,
@@ -480,6 +501,25 @@ static int __guac_telnet_wait(int socket_fd) {
 
     /* Wait for one second */
     return poll(fds, 1, 1000);
+
+#else
+
+    /* Initialize fd_set with single underlying file descriptor */
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(socket_fd, &fds);
+
+    /* Handle timeout if specified */
+    struct timeval timeout = {
+        .tv_sec  = 1,
+        .tv_usec = 0
+    };
+
+    /* Wait up to computed timeout */
+    return select(socket_fd, &fds, NULL, NULL, &timeout);
+
+
+#endif
 
 }
 
@@ -606,8 +646,11 @@ void* guac_telnet_client_thread(void* data) {
         /* Resume waiting of no data available */
         if (wait_result == 0)
             continue;
-
+#ifdef WINDOWS_BUILD
+        int bytes_read = recv(telnet_client->socket_fd, buffer, sizeof(buffer), 0);
+#else
         int bytes_read = read(telnet_client->socket_fd, buffer, sizeof(buffer));
+#endif
         if (bytes_read <= 0)
             break;
 

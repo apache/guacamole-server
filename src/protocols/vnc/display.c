@@ -43,7 +43,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <syslog.h>
 
 void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 

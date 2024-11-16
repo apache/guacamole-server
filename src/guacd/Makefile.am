@@ -38,7 +38,6 @@ noinst_HEADERS =  \
     conf-parse.h  \
     connection.h  \
     log.h         \
-    move-fd.h     \
     proc.h        \
     proc-map.h
 
@@ -49,12 +48,20 @@ guacd_SOURCES =  \
     connection.c \
     daemon.c     \
     log.c        \
-    move-fd.c    \
     proc.c       \
     proc-map.c
 
+# Windows Build
+if WINDOWS_BUILD
+noinst_HEADERS += move-pipe.h
+guacd_SOURCES += move-pipe.c
+else
+noinst_HEADERS += move-fd.h
+guacd_SOURCES += move-fd.c
+endif
+
 guacd_CFLAGS =              \
-    -Werror -Wall -pedantic \
+    @GENERAL_CFLAGS@         \
     @COMMON_INCLUDE@        \
     @LIBGUAC_INCLUDE@
 
