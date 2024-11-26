@@ -242,6 +242,7 @@ guac_terminal_options* guac_terminal_options_create(
     options->dpi = dpi;
 
     /* Set default values for all other parameters */
+    options->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MAX_LENGTH;
     options->disable_copy = GUAC_TERMINAL_DEFAULT_DISABLE_COPY;
     options->max_scrollback = GUAC_TERMINAL_DEFAULT_MAX_SCROLLBACK;
     options->font_name = GUAC_TERMINAL_DEFAULT_FONT_NAME;
@@ -419,7 +420,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init terminal state */
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
-    term->clipboard = guac_common_clipboard_alloc();
+    term->clipboard = guac_common_clipboard_alloc(options->clipboard_buffer_size);
     term->disable_copy = options->disable_copy;
 
     /* Calculate available text display area by character size */

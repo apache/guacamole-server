@@ -618,12 +618,12 @@ static void guac_rdp_cliprdr_channel_disconnected(rdpContext* context,
 
 }
 
-guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client) {
+guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client, int buffer_size) {
 
     /* Allocate clipboard and underlying storage */
     guac_rdp_clipboard* clipboard = guac_mem_zalloc(sizeof(guac_rdp_clipboard));
     clipboard->client = client;
-    clipboard->clipboard = guac_common_clipboard_alloc();
+    clipboard->clipboard = guac_common_clipboard_alloc(buffer_size);
     clipboard->requested_format = CF_TEXT;
 
     return clipboard;

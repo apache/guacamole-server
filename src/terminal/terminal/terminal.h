@@ -180,6 +180,8 @@ typedef guac_stream* guac_terminal_file_download_handler(guac_client* client, ch
  */
 typedef struct guac_terminal_options {
 
+    int clipboard_buffer_size;
+
     /**
      * Whether copying from the terminal clipboard should be blocked. If set,
      * the contents of the terminal can still be copied, but will be usable

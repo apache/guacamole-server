@@ -75,7 +75,7 @@ typedef struct guac_rdp_clipboard {
  *     A newly-allocated instance of guac_rdp_clipboard which has been
  *     initialized for processing Guacamole clipboard data.
  */
-guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client);
+guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client, int buffer_size);
 
 /**
  * Initializes clipboard support for RDP and handling of the CLIPRDR channel.
