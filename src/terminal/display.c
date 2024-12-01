@@ -480,6 +480,11 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
     /* For each column in range */
     for (int col = start_column; col <= end_column; col += character->width) {
 
+        /* Flush pending copy operation before adding new SET operation. This
+         * avoid operation conflicts that cause inconsistent display. */
+        if (current->type == GUAC_CHAR_COPY)
+            guac_terminal_display_flush(display);
+
         /* Set operation */
         current->type      = GUAC_CHAR_SET;
         current->character = *character;
