@@ -662,7 +662,6 @@ enum RDP_ARGS_IDX {
     
     /**
      * The maximum number of bytes to allow within the clipboard.
-     * The default value will be used if not set or less than 1.
      */
     IDX_CLIPBOARD_BUFFER_SIZE,
 
@@ -1296,12 +1295,20 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_CLIPBOARD_BUFFER_SIZE, 0);
 
-    /* Use default clipboard buffer size if given one is invalid. */            
-    if (settings->clipboard_buffer_size <= 0) {
+    /* Use default clipboard buffer size if given one is invalid. */
+    if (settings->clipboard_buffer_size < GUAC_COMMON_CLIPBOARD_MIN_LENGTH) {
+        settings->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MIN_LENGTH;
+        guac_user_log(user, GUAC_LOG_ERROR, "Invalid clipboard buffer "
+                "size: \"%s\". Using the default minimum size: %i.",
+                argv[IDX_CLIPBOARD_BUFFER_SIZE],
+                settings->clipboard_buffer_size);
+    }
+    else if (settings->clipboard_buffer_size > GUAC_COMMON_CLIPBOARD_MAX_LENGTH) {
         settings->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MAX_LENGTH;
-        guac_user_log(user, GUAC_LOG_ERROR,
-                "Invalid clipboard buffer size: \"%s\". Using default of %i.",
-                argv[IDX_CLIPBOARD_BUFFER_SIZE], settings->clipboard_buffer_size);
+        guac_user_log(user, GUAC_LOG_ERROR, "Invalid clipboard buffer "
+                "size: \"%s\". Using the default maximum size: %i.",
+                argv[IDX_CLIPBOARD_BUFFER_SIZE],
+                settings->clipboard_buffer_size);
     }
 
     /* Parse clipboard copy disable flag */

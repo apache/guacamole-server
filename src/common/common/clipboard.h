@@ -32,9 +32,16 @@
 #define GUAC_COMMON_CLIPBOARD_BLOCK_SIZE 4096
 
 /**
- * The default maximum number of bytes to allow within the clipboard.
+ * The minimum clipboard buffer size in bytes.
+ * This is the original hardcoded clipboard buffer size.
  */
-#define GUAC_COMMON_CLIPBOARD_MAX_LENGTH 262144
+#define GUAC_COMMON_CLIPBOARD_MIN_LENGTH 262144
+
+/**
+ * The maximum clipboard buffer size in bytes.
+ * This should be enough for a raw 4K picture and even more.
+ */
+#define GUAC_COMMON_CLIPBOARD_MAX_LENGTH 52428800
 
 /**
  * Generic clipboard structure.

@@ -159,7 +159,6 @@ typedef struct guac_ssh_settings {
 
     /**
      * The maximum number of bytes to allow within the clipboard.
-     * The default value will be used if not set or less than 1.
      */
     int clipboard_buffer_size;
 
