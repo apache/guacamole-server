@@ -703,6 +703,10 @@ void* guac_rdp_client_thread(void* data) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
+    /* Init clipboard */
+    rdp_client->clipboard =
+        guac_rdp_clipboard_alloc(client, settings->clipboard_buffer_size);
+
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
 

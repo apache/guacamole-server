@@ -157,6 +157,11 @@ typedef struct guac_vnc_settings {
      * to use the encoding required by the VNC standard.
      */
     char* clipboard_encoding;
+    
+    /**
+     * The maximum number of bytes to allow within the clipboard.
+     */
+    int clipboard_buffer_size;
 
     /**
      * Whether outbound clipboard access should be blocked. If set, it will not

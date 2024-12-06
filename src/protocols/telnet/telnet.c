@@ -545,6 +545,7 @@ void* guac_telnet_client_thread(void* data) {
             settings->width, settings->height, settings->resolution);
 
     /* Set optional parameters */
+    options->clipboard_buffer_size = settings->clipboard_buffer_size;
     options->disable_copy = settings->disable_copy;
     options->max_scrollback = settings->max_scrollback;
     options->font_name = settings->font_name;

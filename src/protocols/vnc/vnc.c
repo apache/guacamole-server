@@ -326,6 +326,10 @@ void* guac_vnc_client_thread(void* data) {
     guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
     guac_vnc_settings* settings = vnc_client->settings;
 
+    /* Init clipboard. */
+    vnc_client->clipboard =
+        guac_common_clipboard_alloc(settings->clipboard_buffer_size);
+
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
 

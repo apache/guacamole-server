@@ -32,9 +32,16 @@
 #define GUAC_COMMON_CLIPBOARD_BLOCK_SIZE 4096
 
 /**
- * The maximum number of bytes to allow within the clipboard.
+ * The minimum clipboard buffer size in bytes.
+ * This is the original hardcoded clipboard buffer size.
  */
-#define GUAC_COMMON_CLIPBOARD_MAX_LENGTH 262144
+#define GUAC_COMMON_CLIPBOARD_MIN_LENGTH 262144
+
+/**
+ * The maximum clipboard buffer size in bytes.
+ * This should be enough for a raw 4K picture and even more.
+ */
+#define GUAC_COMMON_CLIPBOARD_MAX_LENGTH 52428800
 
 /**
  * Generic clipboard structure.
@@ -72,13 +79,17 @@ typedef struct guac_common_clipboard {
 
 /**
  * Creates a new clipboard.
+ * 
+ * @param buffer_size
+ *     The buffer size in bytes.
  */
-guac_common_clipboard* guac_common_clipboard_alloc();
+guac_common_clipboard* guac_common_clipboard_alloc(int buffer_size);
 
 /**
  * Frees the given clipboard.
  *
- * @param clipboard The clipboard to free.
+ * @param clipboard
+ *     The clipboard to free.
  */
 void guac_common_clipboard_free(guac_common_clipboard* clipboard);
 
@@ -86,16 +97,22 @@ void guac_common_clipboard_free(guac_common_clipboard* clipboard);
  * Sends the contents of the clipboard along the given client, splitting
  * the contents as necessary.
  *
- * @param clipboard The clipboard whose contents should be sent.
- * @param client The client to send the clipboard contents on.
+ * @param clipboard
+ *     The clipboard whose contents should be sent.
+ *
+ * @param client
+ *     The client to send the clipboard contents on.
  */
 void guac_common_clipboard_send(guac_common_clipboard* clipboard, guac_client* client);
 
 /**
  * Clears the clipboard contents and assigns a new mimetype for future data.
  *
- * @param clipboard The clipboard to reset.
- * @param mimetype The mimetype of future data.
+ * @param clipboard
+ *     The clipboard to reset.
+ *
+ * @param mimetype
+ *     The mimetype of future data.
  */
 void guac_common_clipboard_reset(guac_common_clipboard* clipboard, const char* mimetype);
 
@@ -104,9 +121,14 @@ void guac_common_clipboard_reset(guac_common_clipboard* clipboard, const char* m
  * match the mimetype chosen for the clipboard data by
  * guac_common_clipboard_reset().
  *
- * @param clipboard The clipboard to append data to.
- * @param data The data to append.
- * @param length The number of bytes to append from the data given.
+ * @param clipboard
+ *     The clipboard to append data to.
+ *
+ * @param data
+ *     The data to append.
+ *
+ * @param length
+ *     The number of bytes to append from the data given.
  */
 void guac_common_clipboard_append(guac_common_clipboard* clipboard, const char* data, int length);
 
