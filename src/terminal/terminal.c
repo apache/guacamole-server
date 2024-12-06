@@ -242,7 +242,7 @@ guac_terminal_options* guac_terminal_options_create(
     options->dpi = dpi;
 
     /* Set default values for all other parameters */
-    options->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MAX_LENGTH;
+    options->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MIN_LENGTH;
     options->disable_copy = GUAC_TERMINAL_DEFAULT_DISABLE_COPY;
     options->max_scrollback = GUAC_TERMINAL_DEFAULT_MAX_SCROLLBACK;
     options->font_name = GUAC_TERMINAL_DEFAULT_FONT_NAME;
@@ -2207,14 +2207,17 @@ void guac_terminal_clipboard_append(guac_terminal* terminal,
         const char* data, int length) {
 
     /* Allocate and clear space for the converted data */
-    char output_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
+    int output_buf_size = terminal->clipboard->available;
+    char* output_data = guac_mem_alloc(output_buf_size);
     char* output = output_data;
 
     /* Convert clipboard contents */
     guac_iconv(GUAC_READ_UTF8_NORMALIZED, &data, length,
-            GUAC_WRITE_UTF8, &output, GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+            GUAC_WRITE_UTF8, &output, output_buf_size);
 
     guac_common_clipboard_append(terminal->clipboard, output_data, output - output_data);
+    
+    guac_mem_free(output_data);
 }
 
 void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
