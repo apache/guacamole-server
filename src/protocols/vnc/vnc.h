@@ -164,6 +164,19 @@ typedef struct guac_vnc_client {
      */
     guac_iconv_write* clipboard_writer;
 
+#ifdef LIBVNC_HAS_RESIZE_SUPPORT
+    /**
+     * Whether or not the server has sent the required message to initialize
+     * the screen data in the client.
+     */
+    bool rfb_screen_initialized;
+
+    /**
+     * Whether or not the client has sent it's starting size to the server.
+     */
+    bool rfb_initial_resize;
+#endif
+
 } guac_vnc_client;
 
 /**
