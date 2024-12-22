@@ -657,55 +657,36 @@ then
 fi
 
 #
-# libVNCserver support for the rfbSetDesktopSizeMsg message, which allows the
-# VNC client to send its dimensions to the server, requesting that the server
-# resize itself to match. If libvnc lacks this message, remote resize will
-# be completely disabled.
+# libVNCserver support for the rfbSetDesktopSizeMsg message and the screen
+# data structure, both of which are required in order to properly request that
+# a remote server resize its screen to match the dimensions that the client
+# sends. If libvnc lacks either this message or the screen data structure
+# remote resize will be completely disabled.
 #
 
 if test "x${have_libvncserver}" = "xyes"
 then
 
-    have_vnc_size_msg=yes
+    have_vnc_resize_support=yes
     AC_CHECK_TYPE([rfbSetDesktopSizeMsg],
-                     [], [have_vnc_size_msg=no],
+                     [], [have_vnc_resize_support=no],
                      [[#include <rfb/rfbproto.h>]])
 
-    if test "x${have_vnc_size_msg}" = "xno"
+    AC_CHECK_MEMBERS([rfbClient.screen],
+                     [], [have_vnc_resize_support=no],
+                     [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_resize_support}" = "xno"
     then
         AC_MSG_WARN([
       --------------------------------------------------------
-       No support for rfbSetDesktopSizeMsg in libvncclient.
-       VNC support for remote display resize will be disabled.
+       The libvncclient library lacks support for either the
+       rfbSetDesktopSizeMsg message or for extended screen
+       support. Resizing of remote displays will be disabled.
       --------------------------------------------------------])
     else
-        AC_DEFINE([LIBVNC_HAS_SIZE_MSG],,
+        AC_DEFINE([LIBVNC_HAS_RESIZE_SUPPORT],,
                   [Whether VNC client will support sending desktop size messages.])
-    fi
-
-fi
-
-#
-# libVNCserver support for the screen structure, which allows for tracking
-# multiple screens that are part of a larger frame buffer display. If this
-# feature is missing, the VNC client may still attempt to send the display
-# resize messages, but will assume that there is a one-to-one relationship
-# between the screen size and the frame buffer size (which is currently safe
-# for Guacamole, as it lacks multi-monitor/screen support).
-#
-
-if test "x${have_libvncserver}" = "xyes"
-then
-
-    have_vnc_screen=yes
-    AC_CHECK_MEMBERS([rfbClient.screen],
-                     [], [have_vnc_screen=no],
-                     [[#include <rfb/rfbclient.h>]])
-
-    if test "x${have_vnc_screen}" = "xyes"
-    then
-        AC_DEFINE([LIBVNC_CLIENT_HAS_SCREEN],,
-                  [Whether rfbClient contains the screen data structure.])
     fi
 
 fi

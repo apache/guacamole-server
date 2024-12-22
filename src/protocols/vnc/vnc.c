@@ -281,8 +281,9 @@ static int guac_vnc_wait_for_messages(rfbClient* rfb_client, int msec_timeout) {
  *     True (non-zero) if messages were handled successfully, false (zero)
  *     otherwise.
  */
-static rfbBool guac_vnc_handle_messages(guac_vnc_client* vnc_client) {
+static rfbBool guac_vnc_handle_messages(guac_client* client) {
 
+    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
     rfbClient* rfb_client = vnc_client->rfb_client;
     guac_display_layer* default_layer = guac_display_default_layer(vnc_client->display);
 
@@ -310,6 +311,31 @@ static rfbBool guac_vnc_handle_messages(guac_vnc_client* vnc_client) {
     /* There will be no further drawing operations */
     guac_display_layer_close_raw(default_layer, context);
     vnc_client->current_context = NULL;
+
+#ifdef LIBVNC_HAS_RESIZE_SUPPORT
+    // If screen was not previously initialized, check for it and set it.
+    if (!vnc_client->rfb_screen_initialized 
+            && rfb_client->screen.width > 0
+            && rfb_client->screen.height > 0) {
+        vnc_client->rfb_screen_initialized = true;
+        guac_client_log(client, GUAC_LOG_DEBUG, "Screen is now initialized.");
+    }
+
+    /*
+     * If the screen is now or has been initialized, check to see if the initial
+     * dimensions have already been sent. If not, and resize is not disabled,
+     * send the initial size.
+     */
+    if (vnc_client->rfb_screen_initialized) {
+        guac_vnc_settings* settings = vnc_client->settings;
+        if (!vnc_client->rfb_initial_resize && !settings->disable_display_resize) {
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Sending initial screen size to VNC server.");
+            guac_client_for_owner(client, guac_vnc_display_set_owner_size, rfb_client);
+            vnc_client->rfb_initial_resize = true;
+        }
+    }
+#endif // LIBVNC_HAS_RESIZE_SUPPORT
 
     /* Resize the surface if VNC screen size has changed (this call
      * automatically deals with invalid dimensions and is a no-op
@@ -588,11 +614,11 @@ void* guac_vnc_client_thread(void* data) {
             guac_display_set_cursor(vnc_client->display, GUAC_DISPLAY_CURSOR_POINTER);
     }
 
-#ifdef LIBVNC_HAS_SIZE_MSG
-    /* Update the display with the owner's screen size. */
-    if (!settings->disable_display_resize)
-        guac_client_for_owner(client, guac_vnc_display_set_owner_size, rfb_client);
-#endif // LIBVNC_HAS_SIZE_MSG
+#ifdef LIBVNC_HAS_RESIZE_SUPPORT
+    /* Set initial state of the screen and resize flags. */
+    vnc_client->rfb_screen_initialized = false;
+    vnc_client->rfb_initial_resize = false;
+#endif // LIBVNC_HAS_RESIZE_SUPPORT
 
     guac_display_end_frame(vnc_client->display);
 
@@ -606,7 +632,7 @@ void* guac_vnc_client_thread(void* data) {
         if (wait_result > 0) {
 
             /* Handle any message received */
-            if (!guac_vnc_handle_messages(vnc_client)) {
+            if (!guac_vnc_handle_messages(client)) {
                 guac_client_abort(client,
                         GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                         "Error handling message from VNC server.");
