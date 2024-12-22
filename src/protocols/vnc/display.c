@@ -146,7 +146,7 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
 
 }
 
-#ifdef LIBVNC_HAS_SIZE_MSG
+#ifdef LIBVNC_HAS_RESIZE_SUPPORT
 /**
  * This function does the actual work of sending the message to the RFB/VNC
  * server to request the resize, and then makes sure that the client frame
@@ -173,7 +173,11 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
     /* Get the Guacamole client data */
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
 
-#ifdef LIBVNC_CLIENT_HAS_SCREEN
+    if (client->screen.width == 0 || client->screen.height == 0) {
+        guac_client_log(gc, GUAC_LOG_WARNING, "Screen data has not been initialized, yet.");
+        return FALSE;
+    }
+
     guac_client_log(gc, GUAC_LOG_TRACE,
             "Current screen size is %ix%i; setting new size %ix%i\n",
             rfbClientSwap16IfLE(client->screen.width),
@@ -185,19 +189,6 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
         guac_client_log(gc, GUAC_LOG_WARNING, "Screen size has not changed, not sending update.");
         return FALSE;
     }
-#else
-    /* Don't send an update if the screen appears to be uninitialized. */
-    if (client->width == 0 || client->height == 0) {
-        guac_client_log(gc, GUAC_LOG_WARNING, "Framebuffer has not been initialized, cannot send resize.");
-        return FALSE;
-    }
-    
-    /* Don't send an update if the requested dimensions are identical to current dimensions. */
-    if (client->width == rfbClientSwap16IfLE(width) && client->height == rfbClientSwap16IfLE(height)) {
-        guac_client_log(gc, GUAC_LOG_WARNING, "Screen size has not changed, not sending update.");
-        return FALSE;
-    }
-#endif
 
     /**
      * Note: The RFB protocol requires two message types to be sent during a
@@ -219,19 +210,11 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
     size_msg.height = rfbClientSwap16IfLE(height);
     size_msg.numberOfScreens = 1;
 
-#ifdef LIBVNC_CLIENT_HAS_SCREEN
     /* Configure the screen update message. */
     new_screen.id = GUAC_VNC_SCREEN_ID;
     new_screen.x = client->screen.x;
     new_screen.y = client->screen.y;
     new_screen.flags = client->screen.flags;
-#else
-    /* Assume screen starts at the origin. */
-    new_screen.id = GUAC_VNC_SCREEN_ID;
-    new_screen.x = 0;
-    new_screen.y = 0;
-    new_screen.flags = 0;
-#endif // LIBVNC_CLIENT_HAS_SCREEN
 
     new_screen.width = rfbClientSwap16IfLE(width);
     new_screen.height = rfbClientSwap16IfLE(height);
@@ -246,11 +229,9 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
 
     }
 
-#ifdef LIBVNC_CLIENT_HAS_SCREEN
     /* Update the client frame buffer with the requested size. */
     client->screen.width = rfbClientSwap16IfLE(width);
     client->screen.height = rfbClientSwap16IfLE(height);
-#endif // LIBVNC_CLIENT_HAS_SCREEN
 
 #ifdef LIBVNC_CLIENT_HAS_REQUESTED_RESIZE
     client->requestedResize = FALSE;
@@ -266,6 +247,7 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
 
     /* Update should be successful. */
     return TRUE;
+
 }
 
 void* guac_vnc_display_set_owner_size(guac_user* owner, void* data) {
@@ -323,7 +305,7 @@ void guac_vnc_display_set_size(rfbClient* client, int requested_width, int reque
     pthread_mutex_unlock(&(vnc_client->message_lock));
 
 }
-#endif // LIBVNC_HAS_SIZE_MSG
+#endif // LIBVNC_HAS_RESIZE_SUPPORT
 
 void guac_vnc_set_pixel_format(rfbClient* client, int color_depth) {
     client->format.trueColour = 1;
