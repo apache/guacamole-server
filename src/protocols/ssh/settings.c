@@ -47,6 +47,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "sftp-root-directory",
     "sftp-disable-download",
     "sftp-disable-upload",
+    "sftp-attr-permissions",
     "private-key",
     "passphrase",
     "public-key",
@@ -147,6 +148,8 @@ enum SSH_ARGS_IDX {
      * file uploads should be allowed.
      */
     IDX_SFTP_DISABLE_UPLOAD,
+
+    IDX_SFTP_ATTR_PERMISSIONS,
 
     /**
      * The private key to use for authentication, if any.
@@ -448,6 +451,10 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->sftp_disable_upload =
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_SFTP_DISABLE_UPLOAD, false);
+
+    settings->sftp_attr_permissions =
+        guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_SFTP_ATTR_PERMISSIONS, false);
 
 #ifdef ENABLE_SSH_AGENT
     settings->enable_agent =
