@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "common/string.h"
+
 #include "common-ssh/key.h"
 #include "common-ssh/ssh.h"
 #include "common-ssh/user.h"
@@ -39,6 +41,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <pwd.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,7 +64,7 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 /**
  * A list of ciphers that are both FIPS-compliant, and OpenSSL-supported.
  */
-#define FIPS_COMPLIANT_CIPHERS "aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,aes192-cbc,aes256-cbc"
+#define FIPS_COMPLIANT_CIPHERS "aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,aes192-cbc,aes256-cbc"
 
 #ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
 /**
@@ -403,6 +406,59 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 
 }
 
+/**
+ * Verifies if given algorithms are supported by libssh2.
+ * Writes log messages if an algorithm is not supported or
+ * could not get the list of supported algorithms from libssh2.
+ *
+ * @param client
+ *     The Guacamole client that is using SSH.
+ * 
+ * @param session
+ *     The session associated with the user to be authenticated.
+ *
+ * @param method_type
+ *      One of the libssh2 Method Type constants for libssh2_session_method_pref().
+ * 
+ * @param algs
+ *      A string with preferred list of algorithms, for example FIPS_COMPLIANT_CIPHERS.
+ *
+ */
+static void check_if_algs_are_supported(guac_client* client, LIBSSH2_SESSION* session,
+        int method_type, const char* algs) {
+
+    /* Request the list of supported algorithms/cyphers from libssh2. */
+    const char** supported_algs;
+    int supported_algs_count =
+        libssh2_session_supported_algs(session, method_type, &supported_algs);
+
+    if (supported_algs_count > 0) {
+        char** preferred_algs = guac_split(algs, ',');
+        for (int i = 0; preferred_algs[i]; i++) {
+            bool found = false;
+            /* Check if the algorithm is found in the libssh2 supported list. */
+            for (int j = 0; j < supported_algs_count; j++) {
+                if (strcmp(preferred_algs[i], supported_algs[j]) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                guac_client_log(client, GUAC_LOG_WARNING,
+                    "Preferred algorithm/cipher '%s' is not supported by libssh2", preferred_algs[i]);
+            }
+        }
+        guac_mem_free(preferred_algs);
+        /* should free if supported_algs_count is a positive number. */
+        libssh2_free(session, supported_algs);
+    }
+    else {
+        guac_client_log(client, GUAC_LOG_WARNING,
+            "libssh2 reports that no ciphers/algorithms are supported. This may be a bug in libssh2. "
+            "If the SSH connection fails, it may not be possible to log the cause here.");
+    }
+}
+
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         const char* hostname, const char* port, guac_common_ssh_user* user,
         int keepalive, const char* host_key,
@@ -507,8 +563,16 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
      * https://csrc.nist.gov/CSRC/media/projects/cryptographic-module-validation-program/documents/security-policies/140sp2906.pdf
      */
     if (guac_fips_enabled()) {
+        /*
+         * The following algorithm check is only to simplify debugging.
+         * libssh2_session_method_pref() ignores unsupported methods.
+         * So they are not sent to the remote host during protocol negotiation anyways.
+         */
+        check_if_algs_are_supported(client, session, LIBSSH2_METHOD_KEX, FIPS_COMPLIANT_KEX_ALGORITHMS);
         libssh2_session_method_pref(session, LIBSSH2_METHOD_KEX, FIPS_COMPLIANT_KEX_ALGORITHMS);
+        check_if_algs_are_supported(client, session, LIBSSH2_METHOD_CRYPT_CS, FIPS_COMPLIANT_CIPHERS);
         libssh2_session_method_pref(session, LIBSSH2_METHOD_CRYPT_CS, FIPS_COMPLIANT_CIPHERS);
+        check_if_algs_are_supported(client, session, LIBSSH2_METHOD_CRYPT_SC, FIPS_COMPLIANT_CIPHERS);
         libssh2_session_method_pref(session, LIBSSH2_METHOD_CRYPT_SC, FIPS_COMPLIANT_CIPHERS);
     }
 
