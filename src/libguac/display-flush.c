@@ -278,7 +278,9 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
         display->last_frame.cursor_mask = display->pending_frame.cursor_mask;
         guac_client_foreach_user(client, LFR_guac_display_broadcast_cursor_state, display);
 
-        retval = 1;
+        /* NOTE: We DO NOT set retval here, as flushing a frame due purely to
+         * mouse position changes can cause slowdowns apparently from the sheer
+         * quantity of frames */
 
     }
 
