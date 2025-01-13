@@ -176,6 +176,12 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
 
         }
 
+        /* Even if nothing has changed in the pending frame, we have to at
+         * least flush that fact to the last frame (otherwise, the last frame
+         * may contain stale dirty rects) */
+        else
+            current->last_frame.dirty = (guac_rect) { 0 };
+
         /* Commit any change in layer size */
         if (current->pending_frame.width != current->last_frame.width
                 || current->pending_frame.height != current->last_frame.height) {
