@@ -81,6 +81,8 @@ typedef struct guac_ssh_settings {
      */
     int timeout;
 
+    int sftp_attr_permissions;
+
     /**
      * The name of the user to login as, if any. If no username is specified,
      * this will be NULL.
