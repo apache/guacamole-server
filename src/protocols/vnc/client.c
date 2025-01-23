@@ -115,9 +115,6 @@ int guac_client_init(guac_client* client) {
     /* Initialize the message lock. */
     pthread_mutex_init(&(vnc_client->message_lock), NULL);
 
-    /* Init clipboard */
-    vnc_client->clipboard = guac_common_clipboard_alloc();
-
     /* Set handlers */
     client->join_handler = guac_vnc_user_join_handler;
     client->join_pending_handler = guac_vnc_join_pending_handler;

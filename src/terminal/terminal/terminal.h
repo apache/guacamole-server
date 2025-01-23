@@ -181,6 +181,11 @@ typedef guac_stream* guac_terminal_file_download_handler(guac_client* client, ch
 typedef struct guac_terminal_options {
 
     /**
+     * The maximum number of bytes to allow within the clipboard.
+     */
+    int clipboard_buffer_size;
+
+    /**
      * Whether copying from the terminal clipboard should be blocked. If set,
      * the contents of the terminal can still be copied, but will be usable
      * only within the terminal itself. The clipboard contents will not be

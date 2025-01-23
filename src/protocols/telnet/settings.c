@@ -21,6 +21,7 @@
 
 #include "argv.h"
 #include "common/defaults.h"
+#include "common/clipboard.h"
 #include "settings.h"
 #include "terminal/terminal.h"
 
@@ -63,6 +64,7 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "scrollback",
     "login-success-regex",
     "login-failure-regex",
+    "clipboard-buffer-size",
     "disable-copy",
     "disable-paste",
     "wol-send-packet",
@@ -247,6 +249,11 @@ enum TELNET_ARGS_IDX {
      * success/failure has been determined.
      */
     IDX_LOGIN_FAILURE_REGEX,
+
+    /**
+     * The maximum number of bytes to allow within the clipboard.
+     */
+    IDX_CLIPBOARD_BUFFER_SIZE,
 
     /**
      * Whether outbound clipboard access should be blocked. If set to "true",
@@ -519,6 +526,27 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
     settings->terminal_type =
         guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_TERMINAL_TYPE, "linux");
+
+    /* Set the maximum number of bytes to allow within the clipboard. */
+    settings->clipboard_buffer_size =
+        guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_CLIPBOARD_BUFFER_SIZE, 0);
+
+    /* Use default clipboard buffer size if given one is invalid. */
+    if (settings->clipboard_buffer_size < GUAC_COMMON_CLIPBOARD_MIN_LENGTH) {
+        settings->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MIN_LENGTH;
+        guac_user_log(user, GUAC_LOG_ERROR, "Invalid clipboard buffer "
+                "size: \"%s\". Using the default minimum size: %i.",
+                argv[IDX_CLIPBOARD_BUFFER_SIZE],
+                settings->clipboard_buffer_size);
+    }
+    else if (settings->clipboard_buffer_size > GUAC_COMMON_CLIPBOARD_MAX_LENGTH) {
+        settings->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MAX_LENGTH;
+        guac_user_log(user, GUAC_LOG_ERROR, "Invalid clipboard buffer "
+                "size: \"%s\". Using the default maximum size: %i.",
+                argv[IDX_CLIPBOARD_BUFFER_SIZE],
+                settings->clipboard_buffer_size);
+    }
 
     /* Parse clipboard copy disable flag */
     settings->disable_copy =
