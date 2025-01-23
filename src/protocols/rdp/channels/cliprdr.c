@@ -371,7 +371,9 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 
     guac_iconv_write* remote_writer;
     const char* input = clipboard->clipboard->buffer;
-    char* output = guac_mem_alloc(GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+
+    int output_buf_size = clipboard->clipboard->available;
+    char* output = guac_mem_alloc(output_buf_size);
 
     /* Map requested clipboard format to a guac_iconv writer */
     switch (format_data_request->requestedFormatId) {
@@ -402,7 +404,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     BYTE* start = (BYTE*) output;
     guac_iconv_read* local_reader = settings->normalize_clipboard ? GUAC_READ_UTF8_NORMALIZED : GUAC_READ_UTF8;
     guac_iconv(local_reader, &input, clipboard->clipboard->length,
-            remote_writer, &output, GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+            remote_writer, &output, output_buf_size);
 
     CLIPRDR_FORMAT_DATA_RESPONSE data_response = {
         .requestedFormatData = (BYTE*) start,
@@ -470,7 +472,8 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
         return CHANNEL_RC_OK;
     }
 
-    char received_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
+    int output_buf_size = clipboard->clipboard->available;
+    char* received_data = guac_mem_alloc(output_buf_size);
 
     guac_iconv_read* remote_reader;
     const char* input = (char*) format_data_response->requestedFormatData;
@@ -498,6 +501,7 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
         default:
             guac_client_log(client, GUAC_LOG_DEBUG, "Requested clipboard data "
                     "in unsupported format (0x%X).", clipboard->requested_format);
+            guac_mem_free(received_data);
             return CHANNEL_RC_OK;
 
     }
@@ -512,12 +516,14 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
     /* Convert, store, and forward the clipboard data received from RDP
      * server */
     if (guac_iconv(remote_reader, &input, data_len,
-            GUAC_WRITE_UTF8, &output, sizeof(received_data))) {
-        int length = strnlen(received_data, sizeof(received_data));
+            GUAC_WRITE_UTF8, &output, output_buf_size)) {
+        int length = strnlen(received_data, output_buf_size);
         guac_common_clipboard_reset(clipboard->clipboard, "text/plain");
         guac_common_clipboard_append(clipboard->clipboard, received_data, length);
         guac_common_clipboard_send(clipboard->clipboard, client);
     }
+
+    guac_mem_free(received_data);
 
     return CHANNEL_RC_OK;
 
@@ -618,12 +624,12 @@ static void guac_rdp_cliprdr_channel_disconnected(rdpContext* context,
 
 }
 
-guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client) {
+guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client, int buffer_size) {
 
     /* Allocate clipboard and underlying storage */
     guac_rdp_clipboard* clipboard = guac_mem_zalloc(sizeof(guac_rdp_clipboard));
     clipboard->client = client;
-    clipboard->clipboard = guac_common_clipboard_alloc();
+    clipboard->clipboard = guac_common_clipboard_alloc(buffer_size);
     clipboard->requested_format = CF_TEXT;
 
     return clipboard;

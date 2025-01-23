@@ -64,6 +64,10 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
         /* Store owner's settings at client level */
         vnc_client->settings = settings;
 
+        /* Init clipboard. */
+        vnc_client->clipboard =
+            guac_common_clipboard_alloc(settings->clipboard_buffer_size);
+
         /* Start client thread */
         if (pthread_create(&vnc_client->client_thread, NULL, guac_vnc_client_thread, user->client)) {
             guac_user_log(user, GUAC_LOG_ERROR, "Unable to start VNC client thread.");

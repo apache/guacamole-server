@@ -30,14 +30,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-guac_common_clipboard* guac_common_clipboard_alloc() {
+guac_common_clipboard* guac_common_clipboard_alloc(int buffer_size) {
 
     guac_common_clipboard* clipboard = guac_mem_alloc(sizeof(guac_common_clipboard));
 
     /* Init clipboard */
     clipboard->mimetype[0] = '\0';
-    clipboard->buffer = guac_mem_alloc(GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
-    clipboard->available = GUAC_COMMON_CLIPBOARD_MAX_LENGTH;
+    clipboard->buffer = guac_mem_alloc(buffer_size);
+    clipboard->available = buffer_size;
     clipboard->length = 0;
 
     pthread_mutex_init(&(clipboard->lock), NULL);
