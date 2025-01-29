@@ -454,10 +454,6 @@ void* guac_display_worker_thread(void* data) {
 
                     }
 
-                    /* Include an additional frame boundary to allow the client to also move forward with committing
-                     * changes to the backing buffer while the server is receiving and preparing the next frame */
-                    guac_client_end_multiple_frames(client, 0);
-
                     /* This is now absolutely everything for the current frame,
                      * and it's safe to flush any outstanding data */
                     guac_socket_flush(client->socket);
