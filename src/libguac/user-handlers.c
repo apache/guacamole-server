@@ -372,7 +372,8 @@ int __guac_handle_size(guac_user* user, int argc, char** argv) {
         return user->size_handler(
             user,
             atoi(argv[0]), /* width */
-            atoi(argv[1])  /* height */
+            atoi(argv[1]), /* height */
+            (argc == 3 ? atoi(argv[2]) : 1) /* Monitors count */
         );
     return 0;
 }
