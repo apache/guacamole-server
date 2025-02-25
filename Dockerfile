@@ -179,6 +179,7 @@ ARG PREFIX_DIR=/opt/guacamole
 ENV LC_ALL=C.UTF-8
 ENV LD_LIBRARY_PATH=${PREFIX_DIR}/lib
 ENV GUACD_LOG_LEVEL=info
+ENV LISTEN_ADDRESS=0.0.0.0
 
 # Copy build artifacts into this stage
 COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
@@ -211,9 +212,9 @@ USER guacd
 # Expose the default listener port
 EXPOSE 4822
 
-# Start guacd, listening on port 0.0.0.0:4822
+# Start guacd, listening on port 4822
 #
 # Note the path here MUST correspond to the value specified in the 
 # PREFIX_DIR build argument.
 #
-CMD /opt/guacamole/sbin/guacd -b 0.0.0.0 -L $GUACD_LOG_LEVEL -f
+CMD /opt/guacamole/sbin/guacd -b $LISTEN_ADDRESS -L $GUACD_LOG_LEVEL -f
