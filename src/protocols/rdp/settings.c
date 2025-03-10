@@ -128,6 +128,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "create-recording-path",
     "recording-write-existing",
     "resize-method",
+    "secondary-monitors",
     "enable-audio-input",
     "enable-touch",
     "read-only",
@@ -598,6 +599,12 @@ enum RDP_ARGS_IDX {
      * Valid values are blank, "display-update", and "reconnect".
      */
     IDX_RESIZE_METHOD,
+
+    /**
+     * The maximum allowed count of secondary monitors.
+     * 0 to disable.
+     */
+    IDX_SECONDARY_MONITORS,
 
     /**
      * "true" if audio input (microphone) should be enabled for the RDP
@@ -1240,6 +1247,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->resize_method = GUAC_RESIZE_NONE;
     }
 
+    /* Maximum secondary monitors (default 0 = disabled) */
+    settings->max_secondary_monitors =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SECONDARY_MONITORS, 0);
+
     /* RDP Graphics Pipeline enable/disable */
     settings->enable_gfx =
         !guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -1756,6 +1768,7 @@ void guac_rdp_push_settings(guac_client* client,
     freerdp_settings_set_uint32(rdp_settings, FreeRDP_OsMajorType, OSMAJORTYPE_UNSPECIFIED);
     freerdp_settings_set_uint32(rdp_settings, FreeRDP_OsMinorType, OSMINORTYPE_UNSPECIFIED);
     freerdp_settings_set_bool(rdp_settings, FreeRDP_DesktopResize, TRUE);
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_UseMultimon, TRUE);
 
     /* Claim support only for specific updates, independent of FreeRDP defaults */
 	BYTE* order_support = freerdp_settings_get_pointer_writable(rdp_settings, FreeRDP_OrderSupport);
@@ -2002,6 +2015,7 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->OsMajorType = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
     rdp_settings->DesktopResize = TRUE;
+    rdp_settings->UseMultimon = TRUE;
 
     /* Claim support only for specific updates, independent of FreeRDP defaults */
     ZeroMemory(rdp_settings->OrderSupport, GUAC_RDP_ORDER_SUPPORT_LENGTH);
