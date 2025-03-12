@@ -43,6 +43,12 @@
  */
 #define GUAC_RDP_DISP_UPDATE_INTERVAL 500
 
+// Define a structure for monitor properties
+typedef struct {
+        int width;   // Width of the monitor in pixels
+        int height;  // Height of the monitor in pixels
+} DISPLAY_MONITOR;
+
 /**
  * Display size update module.
  */
@@ -82,10 +88,7 @@ typedef struct guac_rdp_disp {
     /**
      * The dimensions of the last monitors in pixels for up to 12 monitors.
      */
-    struct {
-        int width[12];  /**< Last monitor screen widths. */
-        int height[12]; /**< Last monitor screen heights. */
-    } monitors;
+    DISPLAY_MONITOR monitors[12];
 
     /**
      * Whether the size has changed and the RDP connection must be closed and

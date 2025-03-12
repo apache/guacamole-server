@@ -204,8 +204,9 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monit
 
     // Update monitor dimensions based on the number of monitors
     for (int i = 0; i < settings->max_secondary_monitors; i++) {
-        if (monitors == 1) break;
+        
         if (i < monitors) {
+            if (monitors == 1) break;
             int i_monitor_width = atoi(argv[3 + i * 2]);
             int i_monitor_height = atoi(argv[3 + i * 2 + 1]);
 

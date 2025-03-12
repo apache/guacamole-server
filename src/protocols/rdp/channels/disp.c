@@ -51,8 +51,8 @@ guac_rdp_disp* guac_rdp_disp_alloc(guac_client* client) {
 
     // Initialize monitor dimensions
     for (int i = 0; i < 12; i++) {
-        disp->monitors.width[i] = 0;  // Initialize widths
-        disp->monitors.height[i] = 0; // Initialize heights
+        disp->monitors[i].width = 0;  // Initialize widths
+        disp->monitors[i].height = 0; // Initialize heights
     }
 
     return disp;
