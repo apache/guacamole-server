@@ -80,6 +80,14 @@ typedef struct guac_rdp_disp {
     int requested_monitors;
 
     /**
+     * The dimensions of the last monitors in pixels for up to 12 monitors.
+     */
+    struct {
+        int width[12];  /**< Last monitor screen widths. */
+        int height[12]; /**< Last monitor screen heights. */
+    } monitors;
+
+    /**
      * Whether the size has changed and the RDP connection must be closed and
      * reestablished.
      */

@@ -49,6 +49,12 @@ guac_rdp_disp* guac_rdp_disp_alloc(guac_client* client) {
     disp->reconnect_needed   = 0;
     disp->requested_monitors = 1;
 
+    // Initialize monitor dimensions
+    for (int i = 0; i < 12; i++) {
+        disp->monitors.width[i] = 0;  // Initialize widths
+        disp->monitors.height[i] = 0; // Initialize heights
+    }
+
     return disp;
 
 }
@@ -242,6 +248,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
         /* Init monitors layout */
         DISPLAY_CONTROL_MONITOR_LAYOUT* monitors;
         monitors = guac_mem_alloc(requested_monitors * sizeof(DISPLAY_CONTROL_MONITOR_LAYOUT));
+        int monitor_left = 0;
 
         for (int i = 0; i < requested_monitors; i++) {
 
@@ -249,8 +256,10 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
             int primary_monitor = (i == 0 ? 1 : 0);
 
             /* Shift each monitor to the right */
-            int monitor_left = i * width;
-
+            if (i >= 1)
+                monitor_left += disp->monitors[i].width;
+            else monitor_left = 0;
+            
             /* Get current monitor */
             DISPLAY_CONTROL_MONITOR_LAYOUT* monitor = &monitors[i];
 
@@ -258,8 +267,8 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
             monitor->Flags = primary_monitor;
             monitor->Left = monitor_left;
             monitor->Top = 0;
-            monitor->Width = width;
-            monitor->Height = height;
+            monitor->Width = disp->monitors[i].width;
+            monitor->Height = disp->monitors[i].height;
             monitor->Orientation = 0;
             monitor->PhysicalWidth = 0;
             monitor->PhysicalHeight = 0;
