@@ -75,6 +75,11 @@ typedef struct guac_rdp_disp {
     int requested_height;
 
     /**
+     * The number of monitors requested.
+     */
+    int requested_monitors;
+
+    /**
      * Whether the size has changed and the RDP connection must be closed and
      * reestablished.
      */
@@ -154,9 +159,12 @@ void guac_rdp_disp_load_plugin(rdpContext* context);
  *     The desired display height, in pixels. Due to the restrictions of the
  *     RDP display update channel, this will be constrained to the range of 200
  *     through 8192 inclusive.
+ * 
+ * @param monitors
+ *     The count of monitors.
  */
 void guac_rdp_disp_set_size(guac_rdp_disp* disp, guac_rdp_settings* settings,
-        freerdp* rdp_inst, int width, int height);
+        freerdp* rdp_inst, int width, int height, int monitors);
 
 /**
  * Sends an actual display update request to the RDP server based on previous

@@ -607,7 +607,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
         guac_rdp_disp_update_size(rdp_client->disp, settings, rdp_inst);
 
         /* Wait for data and construct a reasonable frame */
-
         int wait_result = rdp_guac_client_wait_for_messages(client, GUAC_RDP_MESSAGE_CHECK_INTERVAL);
         if (wait_result < 0)
             break;
