@@ -191,7 +191,7 @@ complete:
 
 }
 
-int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monitors) {
+int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monitors, char** argv) {
 
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;

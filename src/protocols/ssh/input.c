@@ -68,7 +68,7 @@ int guac_ssh_user_key_handler(guac_user* user, int keysym, int pressed) {
     return 0;
 }
 
-int guac_ssh_user_size_handler(guac_user* user, int width, int height, int monitors) {
+int guac_ssh_user_size_handler(guac_user* user, int width, int height, int monitors, char** argv) {
 
     /* Get terminal */
     guac_client* client = user->client;

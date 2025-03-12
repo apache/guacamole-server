@@ -215,20 +215,23 @@ typedef int guac_user_clipboard_handler(guac_user* user, guac_stream* stream,
  *     The user whose desired display size has changed.
  *
  * @param width
- *     The desired width of the display, in pixels.
+ *     The desired width of the display, in pixels. in the case multimonitor, total width
  *
  * @param height
- *     The desired height of the display, in pixels.
+ *     The desired height of the display, in pixels. in the case multimonitor, max height
  *
  * @param monitors
  *     The count of monitors.
+ * 
+ * @param argv
+ *      The sizes of monitors. after 3 position
  * 
  * @return
  *     Zero if the size event has been successfully handled, non-zero
  *     otherwise.
  */
 typedef int guac_user_size_handler(guac_user* user,
-        int width, int height, int monitors);
+    int width, int height, int monitors, char** argv);
 
 /**
  * Handler for Guacamole file streams received from a user. Each such file
