@@ -1248,9 +1248,9 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     }
 
     /* Maximum secondary monitors (default 0 = disabled) */
-    settings->max_secondary_monitors =
-        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SECONDARY_MONITORS, 0);
+    settings->max_secondary_monitors = 11;
+        // guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+        //         IDX_SECONDARY_MONITORS, 0);
 
     /* RDP Graphics Pipeline enable/disable */
     settings->enable_gfx =
