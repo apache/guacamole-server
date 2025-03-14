@@ -258,6 +258,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
             
             /* Get current monitor */
             DISPLAY_CONTROL_MONITOR_LAYOUT* monitor = &monitors[i];
+            // guacd_log(GUAC_LOG_ERROR, "Could not fork() parent: %s", strerror(errno));
 
             syslog(6, "II guac_rdp_disp_update_size monitor_index = %d size(%d, %d)", i, disp->monitors[i].width, disp->monitors[i].height);
 

@@ -31,6 +31,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 
 /**
  * Parameters required by the user input thread.
@@ -99,6 +100,9 @@ static void guac_user_log_guac_error(guac_user* user,
  *     The guac_user associated with the failed Guacamole protocol handshake.
  */
 static void guac_user_log_handshake_failure(guac_user* user) {
+
+    syslog(GUAC_LOG_DEBUG,
+        "***III log_handshake error");
 
     if (guac_error == GUAC_STATUS_CLOSED)
         guac_user_log(user, GUAC_LOG_DEBUG,
@@ -265,6 +269,10 @@ static int __guac_user_handshake(guac_user* user, guac_parser* parser,
         
         guac_user_log(user, GUAC_LOG_DEBUG, "Processing instruction: %s",
                 parser->opcode);
+
+        syslog(GUAC_LOG_DEBUG, "***III Processing instruction: %s",
+            parser->opcode);
+            
         
         /* Run instruction handler for opcode with arguments. */
         if (__guac_user_call_opcode_handler(__guac_handshake_handler_map, user,
