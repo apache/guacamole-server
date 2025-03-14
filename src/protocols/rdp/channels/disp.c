@@ -257,7 +257,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
             /* Shift each monitor to the right */
             if (i >= 1)
-                monitor_left += disp->monitors[i].width;
+                monitor_left += disp->monitors[i-1].width;
             else monitor_left = 0;
             
             /* Get current monitor */
