@@ -270,7 +270,7 @@ static int __guac_user_handshake(guac_user* user, guac_parser* parser,
         guac_user_log(user, GUAC_LOG_DEBUG, "Processing instruction: %s",
                 parser->opcode);
 
-        syslog(GUAC_LOG_DEBUG, "***III Processing instruction: %s",
+        guac_user_log(user, GUAC_LOG_DEBUG, "***III Processing instruction: %s",
             parser->opcode);
             
         
