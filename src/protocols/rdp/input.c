@@ -34,6 +34,8 @@
 #include <guacamole/user.h>
 
 #include <stdlib.h>
+#include <syslog.h>
+
 
 int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
@@ -202,27 +204,8 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monit
     width  = width  * settings->resolution / user->info.optimal_resolution;
     height = height * settings->resolution / user->info.optimal_resolution;
 
-    // Update monitor dimensions based on the number of monitors
-    for (int i = 0; i < settings->max_secondary_monitors; i++) {
-        
-        if (i < monitors) {
-            if (monitors == 1) break;
-            int i_monitor_width = atoi(argv[3 + i * 2]);
-            int i_monitor_height = atoi(argv[3 + i * 2 + 1]);
+    syslog(6, "SfT - guac_rdp_user_size_handler monitors = %d", monitors);
 
-            // Adjust dimensions based on resolution settings
-            i_monitor_width  = i_monitor_width  * settings->resolution / user->info.optimal_resolution;
-            i_monitor_height = i_monitor_height * settings->resolution / user->info.optimal_resolution;
-
-            // Set monitor dimensions
-            rdp_client->disp->monitors[i].width = i_monitor_width;
-            rdp_client->disp->monitors[i].height = i_monitor_height;
-        } else {
-            // Default to zero if no monitor is configured
-            rdp_client->disp->monitors[i].width = 0;
-            rdp_client->disp->monitors[i].height = 0;
-        }
-    }
 
     if (monitors == 1) {
         for (int i = 1; i < settings->max_secondary_monitors; i++) {
@@ -234,6 +217,37 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monit
 
         rdp_client->disp->monitors[0].width = width;
         rdp_client->disp->monitors[0].height = height;
+
+    } else {
+        syslog(6, "SfT - guac_rdp_user_size_handler max_monitors = %d", settings->max_secondary_monitors);
+        // Update monitor dimensions based on the number of monitors
+        for (int i = 0; i < settings->max_secondary_monitors; i++) {
+                
+            if (i < monitors) {
+                if (monitors == 1) break;
+                int i_monitor_width = atoi(argv[3 + i * 2]);
+                int i_monitor_height = atoi(argv[3 + i * 2 + 1]);
+
+                // Adjust dimensions based on resolution settings
+                i_monitor_width  = i_monitor_width  * settings->resolution / user->info.optimal_resolution;
+                i_monitor_height = i_monitor_height * settings->resolution / user->info.optimal_resolution;
+
+                syslog(6, "SfT - guac_rdp_user_size_handler monitor_index = %d size(%d, %d)", i, i_monitor_width, i_monitor_height);
+
+                if (i == 0) {
+                    width = i_monitor_width;
+                    height = i_monitor_height;
+                }
+
+                // Set monitor dimensions
+                rdp_client->disp->monitors[i].width = i_monitor_width;
+                rdp_client->disp->monitors[i].height = i_monitor_height;
+            } else {
+                // Default to zero if no monitor is configured
+                rdp_client->disp->monitors[i].width = 0;
+                rdp_client->disp->monitors[i].height = 0;
+            }
+        }
     }
 
     /* Send display update */

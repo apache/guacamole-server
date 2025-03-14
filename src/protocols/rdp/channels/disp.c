@@ -33,6 +33,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 
 guac_rdp_disp* guac_rdp_disp_alloc(guac_client* client) {
 
@@ -224,7 +225,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
     /* Do NOT send requests unless the size will change */
     if (rdp_inst != NULL
-            && width * requested_monitors == guac_rdp_get_width(rdp_inst)
+            && width == guac_rdp_get_width(rdp_inst)
             && height == guac_rdp_get_height(rdp_inst))
         return;
 
@@ -254,14 +255,11 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
             /* First monitor is the primary */
             int primary_monitor = (i == 0 ? 1 : 0);
-
-            /* Shift each monitor to the right */
-            if (i >= 1)
-                monitor_left += disp->monitors[i-1].width;
-            else monitor_left = 0;
             
             /* Get current monitor */
             DISPLAY_CONTROL_MONITOR_LAYOUT* monitor = &monitors[i];
+
+            syslog(6, "II guac_rdp_disp_update_size monitor_index = %d size(%d, %d)", i, disp->monitors[i].width, disp->monitors[i].height);
 
             /* Set current monitor properties */
             monitor->Flags = primary_monitor;
@@ -272,6 +270,8 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
             monitor->Orientation = 0;
             monitor->PhysicalWidth = 0;
             monitor->PhysicalHeight = 0;
+
+            monitor_left += disp->monitors[i].width;
         }
 
         /* Send display update notification */

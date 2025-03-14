@@ -139,6 +139,7 @@ static int guac_rdp_join_pending_handler(guac_client* client) {
     /* Send current max allowed secondary monitors */
     guac_client_stream_argv(client, broadcast_socket, "text/plain",
             "secondary-monitors", max_monitors);
+            
     guac_mem_free(max_monitors);
 
     /* Synchronize with current display */
