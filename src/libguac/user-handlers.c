@@ -34,6 +34,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 
 /* Guacamole instruction handler map */
 
@@ -368,12 +369,17 @@ int __guac_handle_clipboard(guac_user* user, int argc, char** argv) {
 }
 
 int __guac_handle_size(guac_user* user, int argc, char** argv) {
+    
+    syslog(6, "SfT - __guac_handle_size argc = %d", argc);
+    syslog(6, "SfT - __guac_handle_size argc = %d", argc);
+    syslog(6, "SfT - __guac_handle_size argc = %d", argc);
+
     if (user->size_handler)
         return user->size_handler(
             user,
             atoi(argv[0]), /* width */
             atoi(argv[1]), /* height */
-            (argc == 3 ? atoi(argv[2]) : 1), /* Monitors count */
+            (argc >= 3 ? atoi(argv[2]) : 1), /* Monitors count */
             argv
         );
     return 0;

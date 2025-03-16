@@ -223,11 +223,31 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
     if (now - disp->last_request <= GUAC_RDP_DISP_UPDATE_INTERVAL)
         return;
 
+
+
     /* Do NOT send requests unless the size will change */
     if (rdp_inst != NULL
             && width == guac_rdp_get_width(rdp_inst)
             && height == guac_rdp_get_height(rdp_inst))
         return;
+
+    if (requested_monitors != 1) {
+        
+        int c_width = 0;
+        int c_height = 0;
+        for (int i = 0; i < requested_monitors; i++) { 
+            c_width += disp->monitors[i].width;
+            if (c_height < disp->monitors[i].height) {
+                c_height = disp->monitors[i].height;
+            }
+        }
+        syslog(6, "***III *** cc monitors %d, %d == ", c_width, c_height);
+        if (c_width == guac_rdp_get_width(rdp_inst) && c_height == guac_rdp_get_height(rdp_inst)) return;
+    }
+
+    syslog(6, "III *** %d, %d == ", width, height);
+
+    syslog(6, "***III *** %d, %d == ", guac_rdp_get_width(rdp_inst), guac_rdp_get_height(rdp_inst));
 
     disp->last_request = now;
 

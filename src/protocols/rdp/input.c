@@ -205,8 +205,10 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monit
     width  = width  * settings->resolution / user->info.optimal_resolution;
     height = height * settings->resolution / user->info.optimal_resolution;
 
-    guaclog_log(6, "SfT - guac_rdp_user_size_handler monitors = %d", monitors);
-    guaclog_log(6, "SfT - guac_rdp_user_size_handler max_monitors = %d", settings->max_secondary_monitors);
+    syslog(6, "SfT - guac_rdp_user_size_handler monitors = %d", monitors);
+
+    syslog(6, "SfT - guac_rdp_user_size_handler monitors = %d", monitors);
+    syslog(6, "SfT - guac_rdp_user_size_handler max_monitors = %d", settings->max_secondary_monitors);
 
     if (monitors == 1) {
         for (int i = 1; i < settings->max_secondary_monitors; i++) {
@@ -220,7 +222,7 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monit
         rdp_client->disp->monitors[0].height = height;
 
     } else {
-        guaclog_log(6, "SfT - guac_rdp_user_size_handler max_monitors = %d", settings->max_secondary_monitors);
+        syslog(6, "SfT - guac_rdp_user_size_handler max_monitors = %d", settings->max_secondary_monitors);
         // Update monitor dimensions based on the number of monitors
         for (int i = 0; i < settings->max_secondary_monitors; i++) {
                 
@@ -233,7 +235,7 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monit
                 i_monitor_width  = i_monitor_width  * settings->resolution / user->info.optimal_resolution;
                 i_monitor_height = i_monitor_height * settings->resolution / user->info.optimal_resolution;
 
-                guaclog_log(6, "SfT - guac_rdp_user_size_handler monitor_index = %d size(%d, %d)", i, i_monitor_width, i_monitor_height);
+                syslog(6, "SfT - guac_rdp_user_size_handler monitor_index = %d size(%d, %d)", i, i_monitor_width, i_monitor_height);
 
                 if (i == 0) {
                     width = i_monitor_width;
