@@ -370,10 +370,6 @@ int __guac_handle_clipboard(guac_user* user, int argc, char** argv) {
 
 int __guac_handle_size(guac_user* user, int argc, char** argv) {
     
-    syslog(6, "SfT - __guac_handle_size argc = %d", argc);
-    syslog(6, "SfT - __guac_handle_size argc = %d", argc);
-    syslog(6, "SfT - __guac_handle_size argc = %d", argc);
-
     if (user->size_handler)
         return user->size_handler(
             user,

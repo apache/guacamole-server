@@ -101,9 +101,6 @@ static void guac_user_log_guac_error(guac_user* user,
  */
 static void guac_user_log_handshake_failure(guac_user* user) {
 
-    syslog(GUAC_LOG_DEBUG,
-        "***III log_handshake error");
-
     if (guac_error == GUAC_STATUS_CLOSED)
         guac_user_log(user, GUAC_LOG_DEBUG,
                 "Guacamole connection closed during handshake");

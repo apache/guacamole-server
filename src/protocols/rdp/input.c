@@ -205,11 +205,6 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height, int monit
     width  = width  * settings->resolution / user->info.optimal_resolution;
     height = height * settings->resolution / user->info.optimal_resolution;
 
-    syslog(6, "SfT - guac_rdp_user_size_handler monitors = %d", monitors);
-
-    syslog(6, "SfT - guac_rdp_user_size_handler monitors = %d", monitors);
-    syslog(6, "SfT - guac_rdp_user_size_handler max_monitors = %d", settings->max_secondary_monitors);
-
     if (monitors == 1) {
         for (int i = 1; i < settings->max_secondary_monitors; i++) {
 
