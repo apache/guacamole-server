@@ -1553,10 +1553,10 @@ void guac_rdp_push_settings(guac_client* client,
 
     /* Set individual flags - some FreeRDP versions overwrite flags set by guac_rdp_get_performance_flags() above */
     freerdp_settings_set_bool(rdp_settings, FreeRDP_AllowFontSmoothing, guac_settings->font_smoothing_enabled);
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_DisableWallpaper, guac_settings->wallpaper_enabled);
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_DisableFullWindowDrag, guac_settings->full_window_drag_enabled);
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_DisableMenuAnims, guac_settings->menu_animations_enabled);
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_DisableThemes, guac_settings->theming_enabled);
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_DisableWallpaper, !guac_settings->wallpaper_enabled);
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_DisableFullWindowDrag, !guac_settings->full_window_drag_enabled);
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_DisableMenuAnims, !guac_settings->menu_animations_enabled);
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_DisableThemes, !guac_settings->theming_enabled);
     freerdp_settings_set_bool(rdp_settings, FreeRDP_AllowDesktopComposition, guac_settings->desktop_composition_enabled);
 
     /* Client name */
