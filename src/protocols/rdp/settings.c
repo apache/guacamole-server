@@ -151,6 +151,8 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
     "force-lossless",
     "normalize-clipboard",
+
+    "always-prompt-for-credentials",
     NULL
 };
 
@@ -722,6 +724,12 @@ enum RDP_ARGS_IDX {
      * default, line endings within the clipboard are preserved.
      */
     IDX_NORMALIZE_CLIPBOARD,
+
+    /*
+     * Whether guacd should always request that guacamole-client provides
+     * the username and password if missing. (GUACAMOLE-2045)
+     */
+    IDX_ALWAYS_PROMPT_FOR_CREDENTIALS,
 
     RDP_ARGS_COUNT
 };
@@ -1357,6 +1365,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 IDX_WOL_WAIT_TIME, GUAC_WOL_DEFAULT_BOOT_WAIT_TIME);
         
     }
+
+    /* Always prompt for credentials (GUACAMOLE-2045) */
+    settings->always_prompt_for_credentials =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ALWAYS_PROMPT_FOR_CREDENTIALS, 0);
 
     /* Success */
     return settings;

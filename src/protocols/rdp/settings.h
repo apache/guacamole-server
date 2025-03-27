@@ -680,6 +680,12 @@ typedef struct guac_rdp_settings {
      */
     int wol_wait_time;
 
+    /*
+     * Whether guacd should always request that guacamole-client provides
+     * the username and password if missing. (GUACAMOLE-2045)
+     */
+    int always_prompt_for_credentials;
+
 } guac_rdp_settings;
 
 /**
