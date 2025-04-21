@@ -38,6 +38,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -545,6 +546,12 @@ int main(int argc, char* argv[]) {
                 guacd_log(GUAC_LOG_ERROR, "Could not accept client connection: %s", strerror(errno));
             continue;
         }
+
+        /* Set TCP_NODELAY to avoid any latency that would otherwise be added by the OS'
+         * networking stack and Nagle's algorithm */
+        const int SO_TRUE = 1;
+        setsockopt(connected_socket_fd, IPPROTO_TCP, TCP_NODELAY,
+                (const void*) &SO_TRUE, sizeof(SO_TRUE));
 
         /* Create parameters for connection thread */
         guacd_connection_thread_params* params = guac_mem_alloc(sizeof(guacd_connection_thread_params));
