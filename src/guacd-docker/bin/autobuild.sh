@@ -84,10 +84,10 @@ fi
 # Determine architecture that we're building on
 if [ -z "$BUILD_ARCHITECTURE" ]; then
     case "$(uname -m)" in
-        armv6l|armv7l|aarch64)
+        arm|armv6l|armv7l|armv8l|aarch64)
             BUILD_ARCHITECTURE="ARM"
             ;;
-        x86_64)
+        i386|i686|x86_64)
             BUILD_ARCHITECTURE="X86"
             ;;
         *)
