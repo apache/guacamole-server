@@ -111,7 +111,8 @@ ARG FREERDP_X86_OPTS=""
 ARG GUACAMOLE_SERVER_ARM_OPTS=""
 
 ARG GUACAMOLE_SERVER_OPTS="\
-    --disable-guaclog"
+    --disable-guaclog \
+    CPPFLAGS=-Wno-error=deprecated-declarations"
 
 ARG GUACAMOLE_SERVER_X86_OPTS=""
 
