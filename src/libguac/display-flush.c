@@ -376,6 +376,8 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
     frame_nonempty = PFW_LFW_guac_display_frame_complete(display);
     GUAC_DISPLAY_PLAN_END_PHASE(display, "commit", 5, 5);
 
+    guac_rwlock_release_lock(&display->last_frame.lock);
+
     /* Not all frames are graphical. If we end up with a frame containing
      * nothing but layer property changes, then we must still send a frame
      * boundary even though there is no display plan to optimize. */
@@ -385,15 +387,12 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
         };
         guac_fifo_enqueue(&display->ops, &end_frame_op);
     }
-
-    guac_rwlock_release_lock(&display->last_frame.lock);
-
-finished_with_pending_frame_lock:
-    guac_rwlock_release_lock(&display->pending_frame.lock);
-
-    if (plan != NULL) {
+    else if (plan != NULL) {
         guac_display_plan_apply(plan);
         guac_display_plan_free(plan);
     }
+
+finished_with_pending_frame_lock:
+    guac_rwlock_release_lock(&display->pending_frame.lock);
 
 }
