@@ -379,11 +379,12 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
     guac_rwlock_release_lock(&display->last_frame.lock);
 
     /* Not all frames are graphical. If we end up with a frame containing
-     * nothing but layer property changes, then we must still send a frame
-     * boundary even though there is no display plan to optimize. */
+     * nothing but layer property changes, then we must still send at least one
+     * operation to awaken the workers and flush layer changes, even though
+     * there is no display plan to optimize. */
     if (plan == NULL && frame_nonempty) {
         guac_display_plan_operation end_frame_op = {
-            .type = GUAC_DISPLAY_PLAN_END_FRAME
+            .type = GUAC_DISPLAY_PLAN_OPERATION_NOP
         };
         guac_fifo_enqueue(&display->ops, &end_frame_op);
     }
