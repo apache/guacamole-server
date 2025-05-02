@@ -1528,6 +1528,9 @@ void guac_rdp_push_settings(guac_client* client,
     /* Explicitly set flag value */
     freerdp_settings_set_uint32(rdp_settings, FreeRDP_PerformanceFlags, guac_rdp_get_performance_flags(guac_settings));
 
+    /* Set explicit connection type to LAN to prevent auto-detection */
+    freerdp_settings_set_uint32(rdp_settings, FreeRDP_ConnectionType, CONNECTION_TYPE_LAN);
+
     /* Always request frame markers */
     freerdp_settings_set_bool(rdp_settings, FreeRDP_FrameMarkerCommandEnabled, TRUE);
     freerdp_settings_set_bool(rdp_settings, FreeRDP_SurfaceFrameMarkerEnabled, TRUE);
@@ -1769,6 +1772,9 @@ void guac_rdp_push_settings(guac_client* client,
     /* Performance flags */
     /* Explicitly set flag value */
     rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
+
+    /* Set explicit connection type to LAN to prevent auto-detection */
+    freerdp_settings_set_uint32(rdp_settings, FreeRDP_ConnectionType, CONNECTION_TYPE_LAN);
 
     /* Always request frame markers */
     rdp_settings->FrameMarkerCommandEnabled = TRUE;
