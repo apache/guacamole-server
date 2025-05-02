@@ -141,12 +141,7 @@ typedef enum guac_display_plan_operation_type {
     /**
      * Draw arbitrary image data to the destination rect.
      */
-    GUAC_DISPLAY_PLAN_OPERATION_IMG,
-
-    /**
-     * Finish the frame, sending the frame boundary to all connected users.
-     */
-    GUAC_DISPLAY_PLAN_END_FRAME
+    GUAC_DISPLAY_PLAN_OPERATION_IMG
 
 } guac_display_plan_operation_type;
 
