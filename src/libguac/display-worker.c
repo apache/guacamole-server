@@ -368,141 +368,128 @@ void* guac_display_worker_thread(void* data) {
 
             case GUAC_DISPLAY_PLAN_OPERATION_COPY:
             case GUAC_DISPLAY_PLAN_OPERATION_RECT:
-            case GUAC_DISPLAY_PLAN_OPERATION_NOP:
                 guac_client_log(client, GUAC_LOG_DEBUG, "Operation type %i "
                         "should NOT be present in the set of operations given "
                         "to guac_display worker thread. All operations except "
-                        "IMG and END_FRAME are handled during the initial, "
+                        "IMG and NOP are handled during the initial, "
                         "single-threaded flush step. This is likely a bug.",
                         op.type);
                 break;
 
-            case GUAC_DISPLAY_PLAN_END_FRAME:
-
-                guac_fifo_lock(&display->ops);
-                int other_workers_busy = (display->active_workers > 1);
-                guac_fifo_unlock(&display->ops);
-
-                /* If other workers are still busy, push the frame boundary
-                 * back on the queue so that it's picked up by one of those
-                 * workers */
-                if (other_workers_busy) {
-                    guac_fifo_enqueue(&display->ops, &op);
-                }
-
-                /* Otherwise, we've reached the end of the frame, and this is
-                 * the worker that will be sending that boundary to connected
-                 * users */
-                else {
-
-                    /* Update the mouse cursor if it's been changed since the
-                     * last frame */
-                    guac_display_layer* cursor = display->cursor_buffer;
-                    if (!guac_rect_is_empty(&cursor->last_frame.dirty)) {
-                        guac_protocol_send_cursor(client->socket,
-                                display->last_frame.cursor_hotspot_x,
-                                display->last_frame.cursor_hotspot_y,
-                                cursor->layer, 0, 0,
-                                cursor->last_frame.width,
-                                cursor->last_frame.height);
-                    }
-
-                    /* Use the amount of time that the client has been waiting
-                     * for a frame vs. the amount of time that it took the
-                     * client to process the most recently acknowledged frame
-                     * to calculate the amount of additional delay required to
-                     * allow the client to catch up. This value is used later,
-                     * after everything else related to the frame has been
-                     * finalized. */
-                    int time_since_last_frame = guac_timestamp_current() - client->last_sent_timestamp;
-                    int processing_lag = guac_client_get_processing_lag(client);
-                    int required_wait = processing_lag - time_since_last_frame;
-
-                    /* Allow connected clients to move forward with rendering */
-                    guac_client_end_multiple_frames(client, display->last_frame.frames);
-
-                    /* While connected clients moves forward with rendering,
-                     * commit any changed contents to client-side backing buffer */
-                    guac_display_layer* current = display->last_frame.layers;
-                    while (current != NULL) {
-
-                        /* Save a copy of the changed region if the layer has
-                         * been modified since the last frame */
-                        guac_rect* dirty = &current->last_frame.dirty;
-                        if (!guac_rect_is_empty(dirty)) {
-
-                            int x = dirty->left;
-                            int y = dirty->top;
-                            int width = guac_rect_width(dirty);
-                            int height = guac_rect_height(dirty);
-
-                            /* Ensure destination region is cleared out first if the alpha channel need be considered,
-                             * as GUAC_COMP_OVER is significantly faster than GUAC_COMP_SRC on the browser side */
-                            if (!current->opaque) {
-                                guac_protocol_send_rect(client->socket, current->last_frame_buffer, x, y, width, height);
-                                guac_protocol_send_cfill(client->socket, GUAC_COMP_RATOP, current->last_frame_buffer,
-                                        0x00, 0x00, 0x00, 0x00);
-                            }
-
-                            guac_protocol_send_copy(client->socket,
-                                    current->layer, x, y, width, height,
-                                    GUAC_COMP_OVER, current->last_frame_buffer, x, y);
-
-                        }
-
-                        current = current->last_frame.next;
-
-                    }
-
-                    /* This is now absolutely everything for the current frame,
-                     * and it's safe to flush any outstanding data */
-                    guac_socket_flush(client->socket);
-
-                    /* Notify any watchers of render_state that a frame is no longer in progress */
-                    guac_flag_set_and_lock(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS);
-                    guac_flag_clear(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_IN_PROGRESS);
-                    guac_flag_unlock(&display->render_state);
-
-                    /* Exclude local, server-side frame processing latency from
-                     * waiting period */
-                    int latency = (int) (guac_timestamp_current() - display->last_frame.timestamp);
-                    if (latency >= 0) {
-                        guac_client_log(display->client, GUAC_LOG_TRACE,
-                                "Rendering latency: %ims (%i:1 frame)\n",
-                                latency, display->last_frame.frames);
-                        required_wait -= latency;
-                    }
-
-                    /* Ensure we don't wait without bound when compensating for
-                     * client-side processing delays */
-                    if (required_wait > GUAC_DISPLAY_MAX_LAG_COMPENSATION)
-                        required_wait = GUAC_DISPLAY_MAX_LAG_COMPENSATION;
-
-                    /* Allow connected clients to catch up if they're taking
-                     * longer to process frames than the server is taking to
-                     * generate them */
-                    if (required_wait > 0) {
-                        guac_client_log(display->client, GUAC_LOG_TRACE,
-                                "Waiting %ims to compensate for client-side "
-                                "processing delays.\n", required_wait);
-                        guac_timestamp_msleep(required_wait);
-                    }
-
-                    guac_fifo_lock(&display->ops);
-                    has_outstanding_frames = display->frame_deferred;
-                    guac_fifo_unlock(&display->ops);
-
-                }
-
+            case GUAC_DISPLAY_PLAN_OPERATION_NOP:
+                /* Do nothing */
                 break;
 
         }
 
-        guac_rwlock_release_lock(&display->last_frame.lock);
-
         guac_fifo_lock(&display->ops);
+
+        /* If we're the only active worker and there are no further operations
+         * pending, we've reached the end of the frame, and this is the worker
+         * that will be sending that boundary to connected users */
+        if (!(display->ops.state.value & GUAC_FIFO_STATE_NONEMPTY) && display->active_workers == 1) {
+
+            /* Update the mouse cursor if it's been changed since the
+             * last frame */
+            guac_display_layer* cursor = display->cursor_buffer;
+            if (!guac_rect_is_empty(&cursor->last_frame.dirty)) {
+                guac_protocol_send_cursor(client->socket,
+                        display->last_frame.cursor_hotspot_x,
+                        display->last_frame.cursor_hotspot_y,
+                        cursor->layer, 0, 0,
+                        cursor->last_frame.width,
+                        cursor->last_frame.height);
+            }
+
+            /* Use the amount of time that the client has been waiting
+             * for a frame vs. the amount of time that it took the
+             * client to process the most recently acknowledged frame
+             * to calculate the amount of additional delay required to
+             * allow the client to catch up. This value is used later,
+             * after everything else related to the frame has been
+             * finalized. */
+            int time_since_last_frame = guac_timestamp_current() - client->last_sent_timestamp;
+            int processing_lag = guac_client_get_processing_lag(client);
+            int required_wait = processing_lag - time_since_last_frame;
+
+            /* Allow connected clients to move forward with rendering */
+            guac_client_end_multiple_frames(client, display->last_frame.frames);
+
+            /* While connected clients moves forward with rendering,
+             * commit any changed contents to client-side backing buffer */
+            guac_display_layer* current = display->last_frame.layers;
+            while (current != NULL) {
+
+                /* Save a copy of the changed region if the layer has
+                 * been modified since the last frame */
+                guac_rect* dirty = &current->last_frame.dirty;
+                if (!guac_rect_is_empty(dirty)) {
+
+                    int x = dirty->left;
+                    int y = dirty->top;
+                    int width = guac_rect_width(dirty);
+                    int height = guac_rect_height(dirty);
+
+                    /* Ensure destination region is cleared out first if the alpha channel need be considered,
+                     * as GUAC_COMP_OVER is significantly faster than GUAC_COMP_SRC on the browser side */
+                    if (!current->opaque) {
+                        guac_protocol_send_rect(client->socket, current->last_frame_buffer, x, y, width, height);
+                        guac_protocol_send_cfill(client->socket, GUAC_COMP_RATOP, current->last_frame_buffer,
+                                0x00, 0x00, 0x00, 0x00);
+                    }
+
+                    guac_protocol_send_copy(client->socket,
+                            current->layer, x, y, width, height,
+                            GUAC_COMP_OVER, current->last_frame_buffer, x, y);
+
+                }
+
+                current = current->last_frame.next;
+
+            }
+
+            /* This is now absolutely everything for the current frame,
+             * and it's safe to flush any outstanding data */
+            guac_socket_flush(client->socket);
+
+            /* Notify any watchers of render_state that a frame is no longer in progress */
+            guac_flag_set_and_lock(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS);
+            guac_flag_clear(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_IN_PROGRESS);
+            guac_flag_unlock(&display->render_state);
+
+            /* Exclude local, server-side frame processing latency from
+             * waiting period */
+            int latency = (int) (guac_timestamp_current() - display->last_frame.timestamp);
+            if (latency >= 0) {
+                guac_client_log(display->client, GUAC_LOG_TRACE,
+                        "Rendering latency: %ims (%i:1 frame)\n",
+                        latency, display->last_frame.frames);
+                required_wait -= latency;
+            }
+
+            /* Ensure we don't wait without bound when compensating for
+             * client-side processing delays */
+            if (required_wait > GUAC_DISPLAY_MAX_LAG_COMPENSATION)
+                required_wait = GUAC_DISPLAY_MAX_LAG_COMPENSATION;
+
+            /* Allow connected clients to catch up if they're taking
+             * longer to process frames than the server is taking to
+             * generate them */
+            if (required_wait > 0) {
+                guac_client_log(display->client, GUAC_LOG_TRACE,
+                        "Waiting %ims to compensate for client-side "
+                        "processing delays.\n", required_wait);
+                guac_timestamp_msleep(required_wait);
+            }
+
+            has_outstanding_frames = display->frame_deferred;
+
+        }
+
         display->active_workers--;
         guac_fifo_unlock(&display->ops);
+
+        guac_rwlock_release_lock(&display->last_frame.lock);
 
         /* Trigger additional flush if frames were completed while we were
          * still processing the previous frame */
