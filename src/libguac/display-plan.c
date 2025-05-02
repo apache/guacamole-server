@@ -305,7 +305,7 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
     guac_display_plan* plan = guac_mem_alloc(sizeof(guac_display_plan));
     plan->display = display;
     plan->frame_end = frame_end;
-    plan->length = guac_mem_ckd_add_or_die(op_count, 1);
+    plan->length = op_count;
     plan->ops = guac_mem_alloc(plan->length, sizeof(guac_display_plan_operation));
 
     /* Convert the dirty rectangles stored in each layer's cells to individual
@@ -358,12 +358,6 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
     /* At this point, the number of operations added should exactly match the
      * predicted quantity */
     GUAC_ASSERT(added_ops == op_count);
-
-    /* Worker threads must be aware of end-of-frame to know when to send sync,
-     * etc. Noticing that the operation queue is empty is insufficient, as the
-     * queue may become empty while a frame is in progress if the worker
-     * threads happen to be processing things quickly. */
-    current_op->type = GUAC_DISPLAY_PLAN_END_FRAME;
 
     return plan;
 
