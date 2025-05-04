@@ -87,9 +87,12 @@ endif
 # Systemd service
 if ENABLE_SYSTEMD
 systemddir = @systemd_dir@
+systemduser = @systemd_user@
 systemd_DATA = systemd/guacd.service
 
 systemd/guacd.service: systemd/guacd.service.in
-	sed -e 's,[@]sbindir[@],$(sbindir),g' < systemd/guacd.service.in > systemd/guacd.service
+	sed -e 's,[@]sbindir[@],$(sbindir),g' \
+	 -e 's,[@]systemduser[@],$(systemduser),g' \
+	 < systemd/guacd.service.in > systemd/guacd.service
 endif
 
