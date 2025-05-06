@@ -48,7 +48,7 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
         goto complete;
 
     /* Store current mouse location/state */
-    guac_display_notify_user_moved_mouse(rdp_client->display, user, x, y, mask);
+    guac_display_render_thread_notify_user_moved_mouse(rdp_client->render_thread, user, x, y, mask);
 
     /* Report mouse position within recording */
     if (rdp_client->recording != NULL)

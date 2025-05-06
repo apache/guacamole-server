@@ -174,7 +174,7 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
 
     if (client->screen.width == 0 || client->screen.height == 0) {
-        guac_client_log(gc, GUAC_LOG_WARNING, "Screen data has not been initialized, yet.");
+        guac_client_log(gc, GUAC_LOG_DEBUG, "Screen data has not been initialized, yet.");
         return FALSE;
     }
 
@@ -186,7 +186,7 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
 
     /* Don't send an update if the requested dimensions are identical to current dimensions. */
     if (client->screen.width == rfbClientSwap16IfLE(width) && client->screen.height == rfbClientSwap16IfLE(height)) {
-        guac_client_log(gc, GUAC_LOG_WARNING, "Screen size has not changed, not sending update.");
+        guac_client_log(gc, GUAC_LOG_DEBUG, "Screen size has not changed, not sending update.");
         return FALSE;
     }
 
