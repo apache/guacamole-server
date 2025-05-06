@@ -237,6 +237,40 @@
  */
 #define GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY 4
 
+/**
+ * The state of the mouse cursor, as independently tracked by the render
+ * thread. The mouse cursor state may be reported by
+ * guac_display_render_thread_notify_user_moved_mouse() to avoid unnecessarily
+ * locking the display within instruction handlers (which can otherwise result
+ * in delays in handling critical instructions like "sync").
+ */
+typedef struct guac_display_render_thread_cursor_state {
+
+    /**
+     * The user that moved or clicked the mouse.
+     *
+     * NOTE: This user is NOT guaranteed to still exist in memory. This may be
+     * a dangling pointer and must be validated before deferencing.
+     */
+    guac_user* user;
+
+    /**
+     * The X coordinate of the mouse cursor.
+     */
+    int x;
+
+    /**
+     * The Y coordinate of the mouse cursor.
+     */
+    int y;
+
+    /**
+     * The mask representing the states of all mouse buttons.
+     */
+    int mask;
+
+} guac_display_render_thread_cursor_state;
+
 struct guac_display_render_thread {
 
     /**
@@ -259,6 +293,12 @@ struct guac_display_render_thread {
      * @see GUAC_DISPLAY_RENDER_THREAD_FRAME_READY
      */
     guac_flag state;
+
+    /**
+     * The current mouse cursor state, as reported by
+     * guac_display_render_thread_notify_user_moved_mouse().
+     */
+    guac_display_render_thread_cursor_state cursor_state;
 
     /**
      * The number of frames that have been explicitly marked as ready since the
@@ -617,6 +657,9 @@ typedef struct guac_display_state {
      * The user that moved or clicked the mouse. This is used to ensure we
      * don't attempt to synchronize an out-of-date mouse position to the user
      * that is actively moving the mouse.
+     *
+     * NOTE: This user is NOT guaranteed to still exist in memory. This may be
+     * a dangling pointer and must be validated before deferencing.
      */
     guac_user* cursor_user;
 

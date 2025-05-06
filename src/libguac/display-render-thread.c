@@ -65,6 +65,8 @@ static void* guac_display_render_loop(void* data) {
 
     for (;;) {
 
+        guac_display_render_thread_cursor_state cursor_state = render_thread->cursor_state;
+
         /* Wait indefinitely for any change to the frame state */
         guac_flag_wait_and_lock(&render_thread->state,
                   GUAC_DISPLAY_RENDER_THREAD_STATE_STOPPING
@@ -109,6 +111,12 @@ static void* guac_display_render_loop(void* data) {
 
             }
 
+            /* Copy cursor state for later flushing with final frame,
+             * regardless of whether it's changed (there's really no need to
+             * compare here - that will be done by the actual guac_display
+             * frame flush) */
+            cursor_state = render_thread->cursor_state;
+
             /* Do not exceed a reasonable maximum framerate without an
              * explicit frame boundary terminating the frame early */
             allowed_wait = GUAC_DISPLAY_RENDER_THREAD_MIN_FRAME_DURATION - frame_duration;
@@ -125,6 +133,14 @@ static void* guac_display_render_loop(void* data) {
                     | GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY
                     | GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED, allowed_wait));
 
+        /* Pass on cursor state for consumption by guac_display frame flush */
+        guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
+        display->pending_frame.cursor_user = cursor_state.user;
+        display->pending_frame.cursor_x = cursor_state.x;
+        display->pending_frame.cursor_y = cursor_state.y;
+        display->pending_frame.cursor_mask = cursor_state.mask;
+        guac_rwlock_release_lock(&display->pending_frame.lock);
+
         guac_display_end_multiple_frames(display, rendered_frames);
 
     }
@@ -140,6 +156,7 @@ guac_display_render_thread* guac_display_render_thread_create(guac_display* disp
     guac_flag_init(&render_thread->state);
     render_thread->display = display;
     render_thread->frames = 0;
+    render_thread->cursor_state = (guac_display_render_thread_cursor_state) { 0 };
 
     /* Start render thread (this will immediately begin blocking until frame
      * modification or readiness is signalled) */
@@ -157,6 +174,18 @@ void guac_display_render_thread_notify_frame(guac_display_render_thread* render_
     guac_flag_set_and_lock(&render_thread->state, GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY);
     render_thread->frames++;
     guac_flag_unlock(&render_thread->state);
+}
+
+void guac_display_render_thread_notify_user_moved_mouse(guac_display_render_thread* render_thread,
+        guac_user* user, int x, int y, int mask) {
+
+    guac_flag_set_and_lock(&render_thread->state, GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED);
+    render_thread->cursor_state.user = user;
+    render_thread->cursor_state.x = x;
+    render_thread->cursor_state.y = y;
+    render_thread->cursor_state.mask = mask;
+    guac_flag_unlock(&render_thread->state);
+
 }
 
 void guac_display_render_thread_destroy(guac_display_render_thread* render_thread) {

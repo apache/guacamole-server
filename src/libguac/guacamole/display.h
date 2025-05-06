@@ -254,6 +254,13 @@ void guac_display_notify_user_left(guac_display* display, guac_user* user);
  * mouse button. This function automatically invokes
  * guac_display_end_mouse_frame().
  *
+ * NOTE: If using guac_display_render_thread, the
+ * guac_display_render_thread_notify_user_moved_mouse() function should be used
+ * instead. If NOT using guac_display_render_thread, care should be taken in
+ * calling this function directly within a mouse_handler, as doing so
+ * inherently must lock the guac_display, which can cause delays in handling
+ * other received instructions like "sync".
+ *
  * @param display
  *     The guac_display to notify.
  *
@@ -761,6 +768,42 @@ void guac_display_render_thread_notify_modified(guac_display_render_thread* rend
  *     The render thread to notify of an explicit frame boundary.
  */
 void guac_display_render_thread_notify_frame(guac_display_render_thread* render_thread);
+
+/**
+ * Notifies the given render thread that a specific user has changed the state
+ * of the mouse, such as through moving the pointer or pressing/releasing a
+ * mouse button.
+ *
+ * When using guac_display_render_thread, this function should be preferred to
+ * manually invoking guac_display_notify_user_moved_mouse().
+ *
+ * @param render_thread
+ *     The guac_display_render_thread to notify.
+ *
+ * @param user
+ *     The user that moved the mouse or pressed/released a mouse button.
+ *
+ * @param x
+ *     The X position of the mouse, in pixels.
+ *
+ * @param y
+ *     The Y position of the mouse, in pixels.
+ *
+ * @param mask
+ *     An integer value representing the current state of each button, where
+ *     the Nth bit within the integer is set to 1 if and only if the Nth mouse
+ *     button is currently pressed. The lowest-order bit is the left mouse
+ *     button, followed by the middle button, right button, and finally the up
+ *     and down buttons of the scroll wheel.
+ *
+ *     @see GUAC_CLIENT_MOUSE_LEFT
+ *     @see GUAC_CLIENT_MOUSE_MIDDLE
+ *     @see GUAC_CLIENT_MOUSE_RIGHT
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_UP
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
+ */
+void guac_display_render_thread_notify_user_moved_mouse(guac_display_render_thread* render_thread,
+        guac_user* user, int x, int y, int mask);
 
 /**
  * Safely stops and frees all resources associated with the given render
