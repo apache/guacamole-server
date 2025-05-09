@@ -84,7 +84,6 @@ static void* guac_display_render_loop(void* data) {
         /* Lacking explicit frame boundaries, handle the change in frame state,
          * continuing to accumulate frame modifications while still within
          * heuristically determined frame boundaries */
-        int allowed_wait = 0;
         guac_timestamp frame_start = guac_timestamp_current();
         do {
 
@@ -117,21 +116,23 @@ static void* guac_display_render_loop(void* data) {
              * frame flush) */
             cursor_state = render_thread->cursor_state;
 
-            /* Do not exceed a reasonable maximum framerate without an
-             * explicit frame boundary terminating the frame early */
-            allowed_wait = GUAC_DISPLAY_RENDER_THREAD_MIN_FRAME_DURATION - frame_duration;
-            if (allowed_wait < 0)
-                allowed_wait = 0;
-
-            /* Wait for further modifications or other changes to frame state */
-
+            /* Frame is no longer modified - prepare for possible future wait
+             * for further changes */
             guac_flag_clear(&render_thread->state, GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED);
             guac_flag_unlock(&render_thread->state);
+
+            /* Do not exceed a reasonable maximum framerate without an
+             * explicit frame boundary terminating the frame early */
+            int allowed_wait = GUAC_DISPLAY_RENDER_THREAD_MIN_FRAME_DURATION - frame_duration;
+            if (allowed_wait > 0)
+                guac_timestamp_msleep(allowed_wait);
+
+            /* Wait for further modifications or other changes to frame state */
 
         } while (guac_flag_timedwait_and_lock(&render_thread->state,
                       GUAC_DISPLAY_RENDER_THREAD_STATE_STOPPING
                     | GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY
-                    | GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED, allowed_wait));
+                    | GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED, 0));
 
         /* Pass on cursor state for consumption by guac_display frame flush */
         guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
