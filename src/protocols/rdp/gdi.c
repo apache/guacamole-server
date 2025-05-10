@@ -138,6 +138,10 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
 
 paint_complete:
 
+    /* Clear GDI state for future draws */
+    gdi->primary->hdc->hwnd->invalid->null = TRUE;
+    gdi->primary->hdc->hwnd->ninvalid = 0;
+
     /* There will be no further drawing operations */
     rdp_client->current_context = NULL;
     guac_display_layer_close_raw(default_layer, current_context);
