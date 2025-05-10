@@ -56,10 +56,8 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     /* If button mask unchanged, just send move event */
     if (mask == rdp_client->mouse_button_mask) {
-        pthread_mutex_lock(&(rdp_client->message_lock));
         GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
                 GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_MOVE, x, y);
-        pthread_mutex_unlock(&(rdp_client->message_lock));
     }
 
     /* Otherwise, send events describing button change */
@@ -80,10 +78,8 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
             if (released_mask & 0x02) flags |= PTR_FLAGS_BUTTON3;
             if (released_mask & 0x04) flags |= PTR_FLAGS_BUTTON2;
 
-            pthread_mutex_lock(&(rdp_client->message_lock));
             GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
                     GUAC_RDP_CONTEXT(rdp_inst)->input, flags, x, y);
-            pthread_mutex_unlock(&(rdp_client->message_lock));
 
         }
 
@@ -99,10 +95,8 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
             if (pressed_mask & 0x10) flags |= PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88;
 
             /* Send event */
-            pthread_mutex_lock(&(rdp_client->message_lock));
             GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
                     GUAC_RDP_CONTEXT(rdp_inst)->input, flags, x, y);
-            pthread_mutex_unlock(&(rdp_client->message_lock));
 
         }
 
@@ -111,18 +105,14 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
             /* Down */
             if (pressed_mask & 0x08) {
-                pthread_mutex_lock(&(rdp_client->message_lock));
                 GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
                         GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_WHEEL | 0x78, x, y);
-                pthread_mutex_unlock(&(rdp_client->message_lock));
             }
 
             /* Up */
             if (pressed_mask & 0x10) {
-                pthread_mutex_lock(&(rdp_client->message_lock));
                 GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
                         GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88, x, y);
-                pthread_mutex_unlock(&(rdp_client->message_lock));
             }
 
         }

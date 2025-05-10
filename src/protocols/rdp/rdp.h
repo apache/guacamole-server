@@ -189,23 +189,12 @@ typedef struct guac_rdp_client {
     guac_common_list* available_svc;
 
     /**
-     * Common attributes for locks.
-     */
-    pthread_mutexattr_t attributes;
-
-    /**
      * Lock which is used to synchronizes access to RDP data structures
      * between user input and client threads. It prevents input handlers
      * from running when RDP data structures are allocated or freed
      * by the client thread.
      */
     guac_rwlock lock;
-
-    /**
-     * Lock which synchronizes the sending of each RDP message, ensuring
-     * attempts to send RDP messages never overlap.
-     */
-    pthread_mutex_t message_lock;
 
     /**
      * A pointer to the RAIL interface provided by the RDP client when rail is

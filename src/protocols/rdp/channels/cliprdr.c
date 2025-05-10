@@ -78,7 +78,6 @@ static UINT guac_rdp_cliprdr_send_format_list(CliprdrClientContext* cliprdr) {
     assert(clipboard != NULL);
 
     guac_client* client = clipboard->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* We support CP-1252 and UTF-16 text */
     CLIPRDR_FORMAT_LIST format_list = {
@@ -98,10 +97,7 @@ static UINT guac_rdp_cliprdr_send_format_list(CliprdrClientContext* cliprdr) {
 
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format list");
 
-    pthread_mutex_lock(&(rdp_client->message_lock));
-    int retval = cliprdr->ClientFormatList(cliprdr, &format_list);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
-    return retval;
+    return cliprdr->ClientFormatList(cliprdr, &format_list);
 
 }
 
@@ -126,9 +122,6 @@ static UINT guac_rdp_cliprdr_send_capabilities(CliprdrClientContext* cliprdr) {
     guac_rdp_clipboard* clipboard = (guac_rdp_clipboard*) cliprdr->custom;
     assert(clipboard != NULL);
 
-    guac_client* client = clipboard->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
     /* We support CP-1252 and UTF-16 text */
     CLIPRDR_GENERAL_CAPABILITY_SET cap_set = {
         .capabilitySetType = CB_CAPSTYPE_GENERAL, /* CLIPRDR specification requires that this is CB_CAPSTYPE_GENERAL, the only defined set type */
@@ -142,11 +135,7 @@ static UINT guac_rdp_cliprdr_send_capabilities(CliprdrClientContext* cliprdr) {
         .capabilitySets = (CLIPRDR_CAPABILITY_SET*) &cap_set
     };
 
-    pthread_mutex_lock(&(rdp_client->message_lock));
-    int retval = cliprdr->ClientCapabilities(cliprdr, &caps);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
-
-    return retval;
+    return cliprdr->ClientCapabilities(cliprdr, &caps);
 
 }
 
@@ -218,7 +207,6 @@ static UINT guac_rdp_cliprdr_send_format_data_request(
     assert(clipboard != NULL);
 
     guac_client* client = clipboard->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Create new data request */
     CLIPRDR_FORMAT_DATA_REQUEST data_request = {
@@ -232,11 +220,7 @@ static UINT guac_rdp_cliprdr_send_format_data_request(
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format data request.");
 
     /* Send request */
-    pthread_mutex_lock(&(rdp_client->message_lock));
-    int retval = cliprdr->ClientFormatDataRequest(cliprdr, &data_request);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
-
-    return retval;
+    return cliprdr->ClientFormatDataRequest(cliprdr, &data_request);
 
 }
 
@@ -299,8 +283,6 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
     assert(clipboard != NULL);
 
     guac_client* client = clipboard->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format list.");
 
     CLIPRDR_FORMAT_LIST_RESPONSE format_list_response = {
@@ -314,9 +296,7 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
 #endif
     };
     /* Report successful processing of format list */
-    pthread_mutex_lock(&(rdp_client->message_lock));
     cliprdr->ClientFormatListResponse(cliprdr, &format_list_response);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
 
     /* Prefer Unicode (in this case, UTF-16) */
     if (guac_rdp_cliprdr_format_supported(format_list, CF_UNICODETEXT))
@@ -420,9 +400,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format data response.");
 
-    pthread_mutex_lock(&(rdp_client->message_lock));
     UINT result = cliprdr->ClientFormatDataResponse(cliprdr, &data_response);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
 
     guac_mem_free(start);
     return result;
