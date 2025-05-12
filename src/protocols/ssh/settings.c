@@ -570,14 +570,14 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     /* Use default clipboard buffer size if given one is invalid. */
     if (settings->clipboard_buffer_size < GUAC_COMMON_CLIPBOARD_MIN_LENGTH) {
         settings->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MIN_LENGTH;
-        guac_user_log(user, GUAC_LOG_ERROR, "Invalid clipboard buffer "
+        guac_user_log(user, GUAC_LOG_INFO, "Unspecified or invalid clipboard buffer "
                 "size: \"%s\". Using the default minimum size: %i.",
                 argv[IDX_CLIPBOARD_BUFFER_SIZE],
                 settings->clipboard_buffer_size);
     }
     else if (settings->clipboard_buffer_size > GUAC_COMMON_CLIPBOARD_MAX_LENGTH) {
         settings->clipboard_buffer_size = GUAC_COMMON_CLIPBOARD_MAX_LENGTH;
-        guac_user_log(user, GUAC_LOG_ERROR, "Invalid clipboard buffer "
+        guac_user_log(user, GUAC_LOG_WARNING, "Invalid clipboard buffer "
                 "size: \"%s\". Using the default maximum size: %i.",
                 argv[IDX_CLIPBOARD_BUFFER_SIZE],
                 settings->clipboard_buffer_size);
