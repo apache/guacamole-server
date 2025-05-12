@@ -44,9 +44,10 @@ guac_rdp_disp* guac_rdp_disp_alloc(guac_client* client) {
 
     /* No requests have been made */
     disp->last_request = guac_timestamp_current();
-    disp->requested_width  = 0;
-    disp->requested_height = 0;
-    disp->reconnect_needed = 0;
+    disp->requested_width    = 0;
+    disp->requested_height   = 0;
+    disp->reconnect_needed   = 0;
+    disp->requested_monitors = 1;
 
     return disp;
 
@@ -88,7 +89,7 @@ static void guac_rdp_disp_channel_connected(rdpContext* context,
     /* Init module with current display size */
     guac_rdp_disp_set_size(guac_disp, rdp_client->settings,
             context->instance, guac_rdp_get_width(context->instance),
-            guac_rdp_get_height(context->instance));
+            guac_rdp_get_height(context->instance), 1);
 
     /* Store reference to the display update plugin once it's connected */
     DispClientContext* disp = (DispClientContext*) args->pInterface;
@@ -151,7 +152,7 @@ void guac_rdp_disp_load_plugin(rdpContext* context) {
 }
 
 void guac_rdp_disp_set_size(guac_rdp_disp* disp, guac_rdp_settings* settings,
-        freerdp* rdp_inst, int width, int height) {
+        freerdp* rdp_inst, int width, int height, int monitors) {
 
     guac_rect resize = {
         .left = 0,
@@ -180,6 +181,7 @@ void guac_rdp_disp_set_size(guac_rdp_disp* disp, guac_rdp_settings* settings,
     /* Store deferred size */
     disp->requested_width = width;
     disp->requested_height = height;
+    disp->requested_monitors = monitors;
 
     /* Send display update notification if possible */
     guac_rdp_disp_update_size(disp, settings, rdp_inst);
@@ -191,6 +193,18 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
     int width = disp->requested_width;
     int height = disp->requested_height;
+    int requested_monitors = disp->requested_monitors;
+
+    /* Add one to account for the primary monitor */
+    int max_monitors = settings->max_secondary_monitors + 1;
+
+    /* Prevent opening too many monitors than allowed */
+    if (requested_monitors > max_monitors)
+        requested_monitors = max_monitors;
+
+    /* At least one monitor is required */
+    if (requested_monitors < 1)
+        requested_monitors = 1;
 
     /* Do not update size if no requests have been received */
     if (width == 0 || height == 0)
@@ -204,7 +218,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
     /* Do NOT send requests unless the size will change */
     if (rdp_inst != NULL
-            && width == guac_rdp_get_width(rdp_inst)
+            && width * requested_monitors == guac_rdp_get_width(rdp_inst)
             && height == guac_rdp_get_height(rdp_inst))
         return;
 
@@ -221,31 +235,45 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
     }
 
-    else if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
-        DISPLAY_CONTROL_MONITOR_LAYOUT monitors[1] = {{
-            .Flags  = 0x1, /* DISPLAYCONTROL_MONITOR_PRIMARY */
-            .Left = 0,
-            .Top = 0,
-            .Width  = width,
-            .Height = height,
-            .PhysicalWidth = 0,
-            .PhysicalHeight = 0,
-            .Orientation = 0,
-            .DesktopScaleFactor = 0,
-            .DeviceScaleFactor = 0
-        }};
+    /* Send display update notification if display channel is connected */
+    else if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE
+                && disp->disp != NULL) {
 
-        /* Send display update notification if display channel is connected */
-        if (disp->disp != NULL) {
+        /* Init monitors layout */
+        DISPLAY_CONTROL_MONITOR_LAYOUT* monitors;
+        monitors = guac_mem_alloc(requested_monitors * sizeof(DISPLAY_CONTROL_MONITOR_LAYOUT));
 
-            guac_client* client = disp->client;
-            guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+        for (int i = 0; i < requested_monitors; i++) {
 
-            pthread_mutex_lock(&(rdp_client->message_lock));
-            disp->disp->SendMonitorLayout(disp->disp, 1, monitors);
-            pthread_mutex_unlock(&(rdp_client->message_lock));
+            /* First monitor is the primary */
+            int primary_monitor = (i == 0 ? 1 : 0);
 
+            /* Shift each monitor to the right */
+            int monitor_left = i * width;
+
+            /* Get current monitor */
+            DISPLAY_CONTROL_MONITOR_LAYOUT* monitor = &monitors[i];
+
+            /* Set current monitor properties */
+            monitor->Flags = primary_monitor;
+            monitor->Left = monitor_left;
+            monitor->Top = 0;
+            monitor->Width = width;
+            monitor->Height = height;
+            monitor->Orientation = 0;
+            monitor->PhysicalWidth = 0;
+            monitor->PhysicalHeight = 0;
         }
+
+        /* Send display update notification */
+        guac_client* client = disp->client;
+        guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+        pthread_mutex_lock(&(rdp_client->message_lock));
+        disp->disp->SendMonitorLayout(disp->disp, requested_monitors, monitors);
+        pthread_mutex_unlock(&(rdp_client->message_lock));
+
+        guac_mem_free(monitors);
 
     }
 
