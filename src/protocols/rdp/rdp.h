@@ -115,6 +115,12 @@ typedef struct guac_rdp_client {
     guac_display_layer_raw_context* current_context;
 
     /**
+     * Whether the graphical state of FreeRDP's GDI has changed since the last
+     * time a frame was sent to the client.
+     */
+    int gdi_modified;
+
+    /**
      * The current instance of the guac_display render thread. If the thread
      * has not yet been started, this will be NULL.
      */
