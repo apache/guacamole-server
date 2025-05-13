@@ -617,6 +617,13 @@ static int guac_rdp_handle_connection(guac_client* client) {
         if (!guac_rdp_handle_events(rdp_client))
             wait_result = -1;
 
+        /* Notify display of any changes to the GDI that may have occurred
+         * while handling events/messages */
+        if (rdp_client->gdi_modified) {
+            guac_display_render_thread_notify_modified(rdp_client->render_thread);
+            rdp_client->gdi_modified = 0;
+        }
+
         /* Test whether the RDP server is closing the connection */
         int connection_closing;
 #ifdef HAVE_DISCONNECT_CONTEXT
