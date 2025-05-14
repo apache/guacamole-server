@@ -62,6 +62,7 @@ static void* guac_display_render_loop(void* data) {
 
     guac_display_render_thread* render_thread = (guac_display_render_thread*) data;
     guac_display* display = render_thread->display;
+    guac_client* client = display->client;
 
     for (;;) {
 
@@ -121,11 +122,37 @@ static void* guac_display_render_loop(void* data) {
             guac_flag_clear(&render_thread->state, GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED);
             guac_flag_unlock(&render_thread->state);
 
+            /* Use the amount of time that the client has been waiting
+             * for a frame vs. the amount of time that it took the
+             * client to process the most recently acknowledged frame
+             * to calculate the amount of additional delay required to
+             * allow the client to catch up. This value is used later,
+             * after everything else related to the frame has been
+             * finalized. */
+            int time_since_last_frame = guac_timestamp_current() - client->last_sent_timestamp;
+            int processing_lag = guac_client_get_processing_lag(client);
+            int required_wait = processing_lag - time_since_last_frame;
+
             /* Do not exceed a reasonable maximum framerate without an
              * explicit frame boundary terminating the frame early */
-            int allowed_wait = GUAC_DISPLAY_RENDER_THREAD_MIN_FRAME_DURATION - frame_duration;
-            if (allowed_wait > 0)
-                guac_timestamp_msleep(allowed_wait);
+            int minimum_wait = GUAC_DISPLAY_RENDER_THREAD_MIN_FRAME_DURATION - frame_duration;
+            if (minimum_wait > required_wait)
+                required_wait = minimum_wait;
+
+            /* Ensure we don't wait without bound when compensating for
+             * client-side processing delays */
+            else if (required_wait > GUAC_DISPLAY_MAX_LAG_COMPENSATION)
+                required_wait = GUAC_DISPLAY_MAX_LAG_COMPENSATION;
+
+            /* Wait for client to catch up, if necessary. Note that we don't do
+             * this via guac_flag_timedwait_and_lock() to avoid causing
+             * contention around the render_thread state lock. */
+            if (required_wait > 0) {
+                guac_client_log(client, GUAC_LOG_TRACE,
+                        "Waiting %ims to compensate for client-side "
+                        "processing delays.\n", required_wait);
+                guac_timestamp_msleep(required_wait);
+            }
 
             /* Wait for further modifications or other changes to frame state */
 
