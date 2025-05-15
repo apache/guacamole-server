@@ -97,20 +97,6 @@ static void* guac_display_render_loop(void* data) {
                 break;
             }
 
-            /* Use explicit frame boundaries whenever available */
-            if (render_thread->state.value & GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY) {
-
-                rendered_frames = render_thread->frames;
-                render_thread->frames = 0;
-
-                guac_flag_clear(&render_thread->state,
-                          GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY
-                        | GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED);
-                guac_flag_unlock(&render_thread->state);
-                break;
-
-            }
-
             /* Copy cursor state for later flushing with final frame,
              * regardless of whether it's changed (there's really no need to
              * compare here - that will be done by the actual guac_display
@@ -152,6 +138,20 @@ static void* guac_display_render_loop(void* data) {
                         "Waiting %ims to compensate for client-side "
                         "processing delays.\n", required_wait);
                 guac_timestamp_msleep(required_wait);
+            }
+
+            /* Use explicit frame boundaries whenever available */
+            if (render_thread->state.value & GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY) {
+
+                rendered_frames = render_thread->frames;
+                render_thread->frames = 0;
+
+                guac_flag_clear(&render_thread->state,
+                          GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY
+                        | GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_MODIFIED);
+                guac_flag_unlock(&render_thread->state);
+                break;
+
             }
 
             /* Wait for further modifications or other changes to frame state */
