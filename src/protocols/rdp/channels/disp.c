@@ -237,14 +237,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
         /* Send display update notification if display channel is connected */
         if (disp->disp != NULL) {
-
-            guac_client* client = disp->client;
-            guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
-            pthread_mutex_lock(&(rdp_client->message_lock));
             disp->disp->SendMonitorLayout(disp->disp, 1, monitors);
-            pthread_mutex_unlock(&(rdp_client->message_lock));
-
         }
 
     }

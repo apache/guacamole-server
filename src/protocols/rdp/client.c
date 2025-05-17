@@ -205,6 +205,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_rdp_client* rdp_client = guac_mem_zalloc(sizeof(guac_rdp_client));
     client->data = rdp_client;
 
+    guac_fifo_init(&rdp_client->input_events, &rdp_client->input_events_items,
+            GUAC_RDP_INPUT_EVENT_QUEUE_SIZE, sizeof(guac_rdp_input_event));
+
     /* Init clipboard */
     rdp_client->clipboard = guac_rdp_clipboard_alloc(client);
 
@@ -217,14 +220,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Redirect FreeRDP log messages to guac_client_log() */
     guac_rdp_redirect_wlog(client);
 
-    /* Recursive attribute for locks */
-    pthread_mutexattr_init(&(rdp_client->attributes));
-    pthread_mutexattr_settype(&(rdp_client->attributes),
-            PTHREAD_MUTEX_RECURSIVE);
-
     /* Init required locks */
     guac_rwlock_init(&(rdp_client->lock));
-    pthread_mutex_init(&(rdp_client->message_lock), &(rdp_client->attributes));
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
@@ -309,7 +306,6 @@ int guac_rdp_client_free_handler(guac_client* client) {
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
 
     guac_rwlock_destroy(&(rdp_client->lock));
-    pthread_mutex_destroy(&(rdp_client->message_lock));
 
     /* Free client data */
     guac_mem_free(rdp_client);

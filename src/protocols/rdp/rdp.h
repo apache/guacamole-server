@@ -44,6 +44,7 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/display.h>
+#include <guacamole/fifo.h>
 #include <guacamole/rwlock.h>
 #include <guacamole/recording.h>
 #include <winpr/wtypes.h>
@@ -64,6 +65,41 @@
 #else
 #define GUAC_RDP_CONTEXT(rdp_instance) ((rdp_instance))
 #endif
+
+/**
+ * The maximum number of input events to allow in the event queue.
+ */
+#define GUAC_RDP_INPUT_EVENT_QUEUE_SIZE 4096
+
+typedef enum guac_rdp_input_event_type {
+
+    GUAC_RDP_INPUT_EVENT_MOUSE
+
+} guac_rdp_input_event_type;
+
+typedef struct guac_rdp_input_event_mouse_details {
+
+    int x;
+
+    int y;
+
+    int mask;
+
+} guac_rdp_input_event_mouse_details;
+
+typedef struct guac_rdp_input_event {
+
+    guac_rdp_input_event_type type;
+
+    guac_user* user;
+
+    union {
+
+        guac_rdp_input_event_mouse_details mouse;
+
+    } details;
+
+} guac_rdp_input_event;
 
 /**
  * RDP-specific client data.
@@ -115,10 +151,28 @@ typedef struct guac_rdp_client {
     guac_display_layer_raw_context* current_context;
 
     /**
+     * Whether the graphical state of FreeRDP's GDI has changed since the last
+     * time a frame was sent to the client.
+     */
+    int gdi_modified;
+
+    /**
      * The current instance of the guac_display render thread. If the thread
      * has not yet been started, this will be NULL.
      */
     guac_display_render_thread* render_thread;
+
+    /**
+     * Queue of mouse, keyboard, and touch events. These events are accumulated
+     * and flushed within the RDP client thread to avoid spending excessive
+     * time within Guacamole's event handlers. If an attempt to send an RDP
+     * event to the RDP server takes a noticable amount of time, that time will
+     * otherwise block handling of Guacamole events, including critical events
+     * like "sync" (resulting in miscalculation of processing lag).
+     */
+    guac_fifo input_events;
+
+    guac_rdp_input_event input_events_items[GUAC_RDP_INPUT_EVENT_QUEUE_SIZE];
 
     /**
      * The current state of the keyboard with respect to the RDP session.
@@ -189,23 +243,12 @@ typedef struct guac_rdp_client {
     guac_common_list* available_svc;
 
     /**
-     * Common attributes for locks.
-     */
-    pthread_mutexattr_t attributes;
-
-    /**
      * Lock which is used to synchronizes access to RDP data structures
      * between user input and client threads. It prevents input handlers
      * from running when RDP data structures are allocated or freed
      * by the client thread.
      */
     guac_rwlock lock;
-
-    /**
-     * Lock which synchronizes the sending of each RDP message, ensuring
-     * attempts to send RDP messages never overlap.
-     */
-    pthread_mutex_t message_lock;
 
     /**
      * A pointer to the RAIL interface provided by the RDP client when rail is

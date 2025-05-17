@@ -106,10 +106,8 @@ static void guac_rdp_send_key_event(guac_rdp_client* rdp_client,
         return;
 
     /* Send actual key */
-    pthread_mutex_lock(&(rdp_client->message_lock));
     GUAC_RDP_CONTEXT(rdp_inst)->input->KeyboardEvent(
             GUAC_RDP_CONTEXT(rdp_inst)->input, flags | pressed_flags, scancode);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }
 
@@ -136,10 +134,8 @@ static void guac_rdp_send_unicode_event(guac_rdp_client* rdp_client,
         return;
 
     /* Send Unicode event */
-    pthread_mutex_lock(&(rdp_client->message_lock));
     GUAC_RDP_CONTEXT(rdp_inst)->input->UnicodeKeyboardEvent(
             GUAC_RDP_CONTEXT(rdp_inst)->input, 0, codepoint);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }
 
@@ -166,10 +162,8 @@ static void guac_rdp_send_synchronize_event(guac_rdp_client* rdp_client,
         return;
 
     /* Synchronize lock key states */
-    pthread_mutex_lock(&(rdp_client->message_lock));
     GUAC_RDP_CONTEXT(rdp_inst)->input->SynchronizeEvent(
             GUAC_RDP_CONTEXT(rdp_inst)->input, flags);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }
 

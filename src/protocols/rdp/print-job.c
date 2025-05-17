@@ -604,9 +604,6 @@ static void guac_rdp_print_job_read_filename(guac_rdp_print_job* job,
 int guac_rdp_print_job_write(guac_rdp_print_job* job,
         void* buffer, int length) {
 
-    guac_client* client = job->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
     /* Create print job, if not yet created */
     if (job->bytes_received == 0) {
 
@@ -626,21 +623,11 @@ int guac_rdp_print_job_write(guac_rdp_print_job* job,
      * generic RDP message lock as this may be a lengthy operation that depends
      * on other threads sending outstanding messages (resulting in deadlock if
      * those messages are blocked) */
-    int unlock_status = pthread_mutex_unlock(&(rdp_client->message_lock));
-    int write_status = write(job->input_fd, buffer, length);
-
-    /* Restore RDP message lock state */
-    if (!unlock_status)
-        pthread_mutex_lock(&(rdp_client->message_lock));
-
-    return write_status;
+    return write(job->input_fd, buffer, length);
 
 }
 
 void guac_rdp_print_job_free(guac_rdp_print_job* job) {
-
-    guac_client* client = job->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* No more input will be provided */
     close(job->input_fd);
@@ -649,12 +636,7 @@ void guac_rdp_print_job_free(guac_rdp_print_job* job) {
      * RDP message lock as this may be a lengthy operation that depends on
      * other threads sending outstanding messages (resulting in deadlock if
      * those messages are blocked) */
-    int unlock_status = pthread_mutex_unlock(&(rdp_client->message_lock));
     pthread_join(job->output_thread, NULL);
-
-    /* Restore RDP message lock state */
-    if (!unlock_status)
-        pthread_mutex_lock(&(rdp_client->message_lock));
 
     /* Destroy lock */
     pthread_mutex_destroy(&(job->state_lock));
