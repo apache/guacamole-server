@@ -612,10 +612,23 @@ static int guac_rdp_handle_connection(guac_client* client) {
         if (wait_result < 0)
             break;
 
-        /* Handle any queued FreeRDP events (this may result in RDP messages
-         * being sent), aborting later if FreeRDP event handling fails */
-        if (!guac_rdp_handle_events(rdp_client))
-            wait_result = -1;
+        int connection_closing;
+        do {
+
+            /* Handle any queued FreeRDP events (this may result in RDP messages
+             * being sent), aborting later if FreeRDP event handling fails */
+            if (!guac_rdp_handle_events(rdp_client))
+                wait_result = -1;
+
+            /* Test whether the RDP server is closing the connection */
+#ifdef HAVE_DISCONNECT_CONTEXT
+            connection_closing = freerdp_shall_disconnect_context(rdp_inst->context);
+#else
+            connection_closing = freerdp_shall_disconnect(rdp_inst);
+#endif
+
+        } while (!connection_closing &&
+                (wait_result = rdp_guac_client_wait_for_events(client, 0)) > 0);
 
         /* Notify display of any changes to the GDI that may have occurred
          * while handling events/messages */
@@ -623,14 +636,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
             guac_display_render_thread_notify_modified(rdp_client->render_thread);
             rdp_client->gdi_modified = 0;
         }
-
-        /* Test whether the RDP server is closing the connection */
-        int connection_closing;
-#ifdef HAVE_DISCONNECT_CONTEXT
-        connection_closing = freerdp_shall_disconnect_context(rdp_inst->context);
-#else
-        connection_closing = freerdp_shall_disconnect(rdp_inst);
-#endif
 
         /* Close connection cleanly if server is disconnecting */
         if (connection_closing)
