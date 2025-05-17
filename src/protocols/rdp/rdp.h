@@ -28,6 +28,7 @@
 #include "common/list.h"
 #include "config.h"
 #include "fs.h"
+#include "input.h"
 #include "keyboard.h"
 #include "print-job.h"
 #include "settings.h"
@@ -44,6 +45,7 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/display.h>
+#include <guacamole/fifo.h>
 #include <guacamole/rwlock.h>
 #include <guacamole/recording.h>
 #include <winpr/wtypes.h>
@@ -64,6 +66,11 @@
 #else
 #define GUAC_RDP_CONTEXT(rdp_instance) ((rdp_instance))
 #endif
+
+/**
+ * The maximum number of input events to allow in the event queue.
+ */
+#define GUAC_RDP_INPUT_EVENT_QUEUE_SIZE 4096
 
 /**
  * RDP-specific client data.
@@ -125,6 +132,28 @@ typedef struct guac_rdp_client {
      * has not yet been started, this will be NULL.
      */
     guac_display_render_thread* render_thread;
+
+    /**
+     * Queue of mouse, keyboard, and touch events. These events are accumulated
+     * and flushed within the RDP client thread to avoid spending excessive
+     * time within Guacamole's event handlers. If an attempt to send an RDP
+     * event to the RDP server takes a noticable amount of time, that time will
+     * otherwise block handling of Guacamole events, including critical events
+     * like "sync" (resulting in miscalculation of processing lag).
+     */
+    guac_fifo input_events;
+
+    /**
+     * Storage for the input_events queue (see above).
+     */
+    guac_rdp_input_event input_events_items[GUAC_RDP_INPUT_EVENT_QUEUE_SIZE];
+
+    /**
+     * FreeRDP event handle that is set with SetEvent() when at least one input
+     * event has been added to the input_events queue. When all input events
+     * have been processed, this event handle is cleared with ResetEvent().
+     */
+    HANDLE input_event_queued;
 
     /**
      * The current state of the keyboard with respect to the RDP session.
@@ -258,5 +287,33 @@ typedef struct rdp_freerdp_context {
  *     ignored.
  */
 void* guac_rdp_client_thread(void* data);
+
+/**
+ * Enqueues the given input event for future processing by a call to
+ * guac_rdp_handle_input_events(). The values from the input event will be
+ * copied and stored independently of the provided pointer. Calling this
+ * function will automatically notify any threads waiting on the
+ * input_event_queued handle.
+ *
+ * @param rdp_client
+ *     The RDP client instance associated with the RDP session receiving the
+ *     event.
+ *
+ * @param input_event
+ *     The input event to add to the queue.
+ */
+void guac_rdp_input_event_enqueue(guac_rdp_client* rdp_client,
+        const guac_rdp_input_event* input_event);
+
+/**
+ * Processes all events that have been enqueued with
+ * guac_rdp_input_event_enqueue(), clearing the event queue and the state of
+ * the input_event_queued handle. Events are processed in the order they are
+ * received.
+ *
+ * @param rdp_client
+ *     The RDP client instance whose queued input events should be processed.
+ */
+void guac_rdp_handle_input_events(guac_rdp_client* rdp_client);
 
 #endif

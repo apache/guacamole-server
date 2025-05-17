@@ -1780,9 +1780,6 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->FrameMarkerCommandEnabled = TRUE;
     rdp_settings->SurfaceFrameMarkerEnabled = TRUE;
 
-    /* Always handle input events asynchronously (rather than synchronously
-     * with the rest of FreeRDP's event loop, including graphics) */
-    rdp_settings->AsyncInput = TRUE;
 
     /* Enable RemoteFX / Graphics Pipeline */
     if (guac_settings->enable_gfx) {
