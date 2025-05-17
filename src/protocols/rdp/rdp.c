@@ -668,14 +668,18 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
         /* Wait for data and construct a reasonable frame */
 
-        int wait_result = rdp_guac_client_wait_for_messages(client, GUAC_RDP_MESSAGE_CHECK_INTERVAL);
+        int wait_result = rdp_guac_client_wait_for_messages(client, 10);
         if (wait_result < 0)
             break;
 
-        /* Handle any queued FreeRDP events (this may result in RDP messages
-         * being sent), aborting later if FreeRDP event handling fails */
-        if (!freerdp_check_event_handles(GUAC_RDP_CONTEXT(rdp_client->rdp_inst)))
-            wait_result = -1;
+        do {
+
+            /* Handle any queued FreeRDP events (this may result in RDP messages
+             * being sent), aborting later if FreeRDP event handling fails */
+            if (!freerdp_check_event_handles(GUAC_RDP_CONTEXT(rdp_client->rdp_inst)))
+                wait_result = -1;
+
+        } while ((wait_result = rdp_guac_client_wait_for_messages(client, 0)) > 0);
 
         /* Notify display of any changes to the GDI that may have occurred
          * while handling events/messages */
