@@ -465,6 +465,90 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
 
 }
 
+static void guac_rdp_handle_mouse_event(guac_rdp_client* rdp_client, guac_rdp_input_event* event) {
+
+    freerdp* rdp_inst = rdp_client->rdp_inst;
+
+    int x = event->details.mouse.x;
+    int y = event->details.mouse.y;
+    int mask = event->details.mouse.mask;
+    guac_user* user = event->user;
+
+    /* Store current mouse location/state */
+    guac_display_render_thread_notify_user_moved_mouse(rdp_client->render_thread, user, x, y, mask);
+
+    /* Report mouse position within recording */
+    if (rdp_client->recording != NULL)
+        guac_recording_report_mouse(rdp_client->recording, x, y, mask);
+
+    /* If button mask unchanged, just send move event */
+    if (mask == rdp_client->mouse_button_mask) {
+        GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
+                GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_MOVE, x, y);
+    }
+
+    /* Otherwise, send events describing button change */
+    else {
+
+        /* Mouse buttons which have JUST become released */
+        int released_mask =  rdp_client->mouse_button_mask & ~mask;
+
+        /* Mouse buttons which have JUST become pressed */
+        int pressed_mask  = ~rdp_client->mouse_button_mask &  mask;
+
+        /* Release event */
+        if (released_mask & 0x07) {
+
+            /* Calculate flags */
+            int flags = 0;
+            if (released_mask & 0x01) flags |= PTR_FLAGS_BUTTON1;
+            if (released_mask & 0x02) flags |= PTR_FLAGS_BUTTON3;
+            if (released_mask & 0x04) flags |= PTR_FLAGS_BUTTON2;
+
+            GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
+                    GUAC_RDP_CONTEXT(rdp_inst)->input, flags, x, y);
+
+        }
+
+        /* Press event */
+        if (pressed_mask & 0x07) {
+
+            /* Calculate flags */
+            int flags = PTR_FLAGS_DOWN;
+            if (pressed_mask & 0x01) flags |= PTR_FLAGS_BUTTON1;
+            if (pressed_mask & 0x02) flags |= PTR_FLAGS_BUTTON3;
+            if (pressed_mask & 0x04) flags |= PTR_FLAGS_BUTTON2;
+            if (pressed_mask & 0x08) flags |= PTR_FLAGS_WHEEL | 0x78;
+            if (pressed_mask & 0x10) flags |= PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88;
+
+            /* Send event */
+            GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
+                    GUAC_RDP_CONTEXT(rdp_inst)->input, flags, x, y);
+
+        }
+
+        /* Scroll event */
+        if (pressed_mask & 0x18) {
+
+            /* Down */
+            if (pressed_mask & 0x08) {
+                GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
+                        GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_WHEEL | 0x78, x, y);
+            }
+
+            /* Up */
+            if (pressed_mask & 0x10) {
+                GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
+                        GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88, x, y);
+            }
+
+        }
+
+        rdp_client->mouse_button_mask = mask;
+    }
+
+}
+
 /**
  * Connects to an RDP server as described by the guac_rdp_settings structure
  * associated with the given client, allocating and freeing all objects
@@ -599,6 +683,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
             guac_display_render_thread_notify_modified(rdp_client->render_thread);
             rdp_client->gdi_modified = 0;
         }
+
+        guac_rdp_input_event input_event;
+        while (guac_fifo_timed_dequeue(&rdp_client->input_events, &input_event, 0))
+            guac_rdp_handle_mouse_event(rdp_client, &input_event);
 
         /* Test whether the RDP server is closing the connection */
         int connection_closing;

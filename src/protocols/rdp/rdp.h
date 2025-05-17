@@ -44,6 +44,7 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/display.h>
+#include <guacamole/fifo.h>
 #include <guacamole/rwlock.h>
 #include <guacamole/recording.h>
 #include <winpr/wtypes.h>
@@ -64,6 +65,41 @@
 #else
 #define GUAC_RDP_CONTEXT(rdp_instance) ((rdp_instance))
 #endif
+
+/**
+ * The maximum number of input events to allow in the event queue.
+ */
+#define GUAC_RDP_INPUT_EVENT_QUEUE_SIZE 4096
+
+typedef enum guac_rdp_input_event_type {
+
+    GUAC_RDP_INPUT_EVENT_MOUSE
+
+} guac_rdp_input_event_type;
+
+typedef struct guac_rdp_input_event_mouse_details {
+
+    int x;
+
+    int y;
+
+    int mask;
+
+} guac_rdp_input_event_mouse_details;
+
+typedef struct guac_rdp_input_event {
+
+    guac_rdp_input_event_type type;
+
+    guac_user* user;
+
+    union {
+
+        guac_rdp_input_event_mouse_details mouse;
+
+    } details;
+
+} guac_rdp_input_event;
 
 /**
  * RDP-specific client data.
@@ -125,6 +161,18 @@ typedef struct guac_rdp_client {
      * has not yet been started, this will be NULL.
      */
     guac_display_render_thread* render_thread;
+
+    /**
+     * Queue of mouse, keyboard, and touch events. These events are accumulated
+     * and flushed within the RDP client thread to avoid spending excessive
+     * time within Guacamole's event handlers. If an attempt to send an RDP
+     * event to the RDP server takes a noticable amount of time, that time will
+     * otherwise block handling of Guacamole events, including critical events
+     * like "sync" (resulting in miscalculation of processing lag).
+     */
+    guac_fifo input_events;
+
+    guac_rdp_input_event input_events_items[GUAC_RDP_INPUT_EVENT_QUEUE_SIZE];
 
     /**
      * The current state of the keyboard with respect to the RDP session.

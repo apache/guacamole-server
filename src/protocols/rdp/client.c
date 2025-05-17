@@ -205,6 +205,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_rdp_client* rdp_client = guac_mem_zalloc(sizeof(guac_rdp_client));
     client->data = rdp_client;
 
+    guac_fifo_init(&rdp_client->input_events, &rdp_client->input_events_items,
+            GUAC_RDP_INPUT_EVENT_QUEUE_SIZE, sizeof(guac_rdp_input_event));
+
     /* Init clipboard */
     rdp_client->clipboard = guac_rdp_clipboard_alloc(client);
 
