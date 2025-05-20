@@ -40,100 +40,19 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
-
-    /* Skip if not yet connected */
-    freerdp* rdp_inst = rdp_client->rdp_inst;
-    if (rdp_inst == NULL)
-        goto complete;
-
-    /* Store current mouse location/state */
-    guac_display_render_thread_notify_user_moved_mouse(rdp_client->render_thread, user, x, y, mask);
-
-    /* Report mouse position within recording */
-    if (rdp_client->recording != NULL)
-        guac_recording_report_mouse(rdp_client->recording, x, y, mask);
-
-    /* If button mask unchanged, just send move event */
-    if (mask == rdp_client->mouse_button_mask) {
-        pthread_mutex_lock(&(rdp_client->message_lock));
-        GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
-                GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_MOVE, x, y);
-        pthread_mutex_unlock(&(rdp_client->message_lock));
-    }
-
-    /* Otherwise, send events describing button change */
-    else {
-
-        /* Mouse buttons which have JUST become released */
-        int released_mask =  rdp_client->mouse_button_mask & ~mask;
-
-        /* Mouse buttons which have JUST become pressed */
-        int pressed_mask  = ~rdp_client->mouse_button_mask &  mask;
-
-        /* Release event */
-        if (released_mask & 0x07) {
-
-            /* Calculate flags */
-            int flags = 0;
-            if (released_mask & 0x01) flags |= PTR_FLAGS_BUTTON1;
-            if (released_mask & 0x02) flags |= PTR_FLAGS_BUTTON3;
-            if (released_mask & 0x04) flags |= PTR_FLAGS_BUTTON2;
-
-            pthread_mutex_lock(&(rdp_client->message_lock));
-            GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
-                    GUAC_RDP_CONTEXT(rdp_inst)->input, flags, x, y);
-            pthread_mutex_unlock(&(rdp_client->message_lock));
-
+    guac_rdp_input_event mouse_event = {
+        .type = GUAC_RDP_INPUT_EVENT_MOUSE,
+        .user = user,
+        .details.mouse = {
+            .x = x,
+            .y = y,
+            .mask = mask
         }
+    };
 
-        /* Press event */
-        if (pressed_mask & 0x07) {
-
-            /* Calculate flags */
-            int flags = PTR_FLAGS_DOWN;
-            if (pressed_mask & 0x01) flags |= PTR_FLAGS_BUTTON1;
-            if (pressed_mask & 0x02) flags |= PTR_FLAGS_BUTTON3;
-            if (pressed_mask & 0x04) flags |= PTR_FLAGS_BUTTON2;
-            if (pressed_mask & 0x08) flags |= PTR_FLAGS_WHEEL | 0x78;
-            if (pressed_mask & 0x10) flags |= PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88;
-
-            /* Send event */
-            pthread_mutex_lock(&(rdp_client->message_lock));
-            GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
-                    GUAC_RDP_CONTEXT(rdp_inst)->input, flags, x, y);
-            pthread_mutex_unlock(&(rdp_client->message_lock));
-
-        }
-
-        /* Scroll event */
-        if (pressed_mask & 0x18) {
-
-            /* Down */
-            if (pressed_mask & 0x08) {
-                pthread_mutex_lock(&(rdp_client->message_lock));
-                GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
-                        GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_WHEEL | 0x78, x, y);
-                pthread_mutex_unlock(&(rdp_client->message_lock));
-            }
-
-            /* Up */
-            if (pressed_mask & 0x10) {
-                pthread_mutex_lock(&(rdp_client->message_lock));
-                GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
-                        GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88, x, y);
-                pthread_mutex_unlock(&(rdp_client->message_lock));
-            }
-
-        }
-
-        rdp_client->mouse_button_mask = mask;
-    }
-
-complete:
-    guac_rwlock_release_lock(&(rdp_client->lock));
-
+    guac_rdp_input_event_enqueue(rdp_client, &mouse_event);
     return 0;
+
 }
 
 int guac_rdp_user_touch_handler(guac_user* user, int id, int x, int y,
@@ -142,52 +61,41 @@ int guac_rdp_user_touch_handler(guac_user* user, int id, int x, int y,
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+    guac_rdp_input_event touch_event = {
+        .type = GUAC_RDP_INPUT_EVENT_TOUCH,
+        .user = user,
+        .details.touch = {
+            .id = id,
+            .x = x,
+            .y = y,
+            .x_radius = x_radius,
+            .y_radius = y_radius,
+            .angle = angle,
+            .force = force
+        }
+    };
 
-    /* Skip if not yet connected */
-    freerdp* rdp_inst = rdp_client->rdp_inst;
-    if (rdp_inst == NULL)
-        goto complete;
-
-    /* Report touch event within recording */
-    if (rdp_client->recording != NULL)
-        guac_recording_report_touch(rdp_client->recording, id, x, y,
-                x_radius, y_radius, angle, force);
-
-    /* Forward touch event along RDPEI channel */
-    guac_rdp_rdpei_touch_update(rdp_client->rdpei, id, x, y, force);
-
-complete:
-    guac_rwlock_release_lock(&(rdp_client->lock));
-
+    guac_rdp_input_event_enqueue(rdp_client, &touch_event);
     return 0;
+
 }
 
 int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    int retval = 0;
 
-    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+    guac_rdp_input_event key_event = {
+        .type = GUAC_RDP_INPUT_EVENT_KEY,
+        .user = user,
+        .details.key = {
+            .keysym = keysym,
+            .pressed = pressed
+        }
+    };
 
-    /* Report key state within recording */
-    if (rdp_client->recording != NULL)
-        guac_recording_report_key(rdp_client->recording,
-                keysym, pressed);
-
-    /* Skip if keyboard not yet ready */
-    if (rdp_client->keyboard == NULL)
-        goto complete;
-
-    /* Update keysym state */
-    retval = guac_rdp_keyboard_update_keysym(rdp_client->keyboard,
-                keysym, pressed, GUAC_RDP_KEY_SOURCE_CLIENT);
-
-complete:
-    guac_rwlock_release_lock(&(rdp_client->lock));
-
-    return retval;
+    guac_rdp_input_event_enqueue(rdp_client, &key_event);
+    return 0;
 
 }
 
