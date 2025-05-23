@@ -373,7 +373,8 @@ int __guac_handle_size(guac_user* user, int argc, char** argv) {
             user,
             atoi(argv[0]), /* width */
             atoi(argv[1]), /* height */
-            (argc == 3 ? atoi(argv[2]) : 1) /* Monitors count */
+            (argc >= 3 ? atoi(argv[2]) : 0), /* Monitor x-position */
+            (argc >= 4 ? atoi(argv[3]) : 0)  /* Top offset */
         );
     return 0;
 }
