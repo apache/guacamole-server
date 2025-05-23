@@ -64,6 +64,173 @@ static void __guac_wol_create_magic_packet(unsigned char packet[],
 }
 
 /**
+ * Converts the given IPv4 address and UDP port number into its binary
+ * representation (struct sockaddr_in). The size of the structure used will be
+ * stored in wol_dest_size.
+ *
+ * @param addr
+ *     The IPv4 address to convert.
+ *
+ * @param udp_port
+ *     The UDP port number to convert and include in the resulting sockaddr_in
+ *     structure.
+ *
+ * @param wol_dest
+ *     Storage that is sufficiently large and correctly aligned such that it
+ *     may be typecast as a sockaddr_in without issue (this is guaranteed by
+ *     the definition of the sockaddr_storage structure).
+ *
+ * @param wol_dest_size
+ *     Pointer to a socklen_t that should receive the size of the sockaddr_in
+ *     structure. This value is assigned only if this call succeeds.
+ *
+ * @return
+ *     A positive value if conversion succeeded, zero if conversion failed, and
+ *     a negative value if IPv4 is unsupported by this system.
+ */
+static int __guac_wol_convert_addr_ipv4(const char* addr, const unsigned short udp_port,
+        struct sockaddr_storage* wol_dest, socklen_t* wol_dest_size) {
+
+    struct sockaddr_in* wol_dest_ipv4 = (struct sockaddr_in*) wol_dest;
+    *wol_dest_size = sizeof(struct sockaddr_in);
+
+    /* Init address structure for IPv4 details */
+    memset(wol_dest, 0, *wol_dest_size);
+    wol_dest_ipv4->sin_port = htons(udp_port);
+    wol_dest_ipv4->sin_family = AF_INET;
+
+    return inet_pton(wol_dest_ipv4->sin_family, addr, &(wol_dest_ipv4->sin_addr));
+
+}
+
+/**
+ * Converts the given IPv6 address and UDP port number into its binary
+ * representation (struct sockaddr_in6). The size of the structure used will be
+ * stored in wol_dest_size.
+ *
+ * @param addr
+ *     The IPv6 address to convert.
+ *
+ * @param udp_port
+ *     The UDP port number to convert and include in the resulting sockaddr_in6
+ *     structure.
+ *
+ * @param wol_dest
+ *     Storage that is sufficiently large and correctly aligned such that it
+ *     may be typecast as a sockaddr_in6 without issue (this is guaranteed by
+ *     the definition of the sockaddr_storage structure).
+ *
+ * @param wol_dest_size
+ *     Pointer to a socklen_t that should receive the size of the sockaddr_in6
+ *     structure. This value is assigned only if this call succeeds.
+ *
+ * @return
+ *     A positive value if conversion succeeded, zero if conversion failed, and
+ *     a negative value if IPv6 is unsupported by this system.
+ */
+static int __guac_wol_convert_addr_ipv6(const char* addr, const unsigned short udp_port,
+         struct sockaddr_storage* wol_dest, socklen_t* wol_dest_size) {
+
+    struct sockaddr_in6* wol_dest_ipv6 = (struct sockaddr_in6*) wol_dest;
+    *wol_dest_size = sizeof(struct sockaddr_in6);
+
+    /* Init address structure for IPv6 details */
+    memset(wol_dest, 0, *wol_dest_size);
+    wol_dest_ipv6->sin6_family = AF_INET6;
+    wol_dest_ipv6->sin6_port = htons(udp_port);
+
+    return inet_pton(wol_dest_ipv6->sin6_family, addr, &(wol_dest_ipv6->sin6_addr));
+
+}
+
+/**
+ * Converts the given IPv4 or IPv6 address and UDP port number into its binary
+ * representation (either a struct sockaddr_in or struct sockaddr_in6). The
+ * size of the structure used will be stored in wol_dest_size. If conversion
+ * fails, guac_error and guac_error_message are set appropriately.
+ *
+ * @param addr
+ *     The address to convert.
+ *
+ * @param udp_port
+ *     The UDP port number to convert and include in the resulting structure.
+ *
+ * @param wol_dest
+ *     Storage that is sufficiently large and correctly aligned such that it
+ *     may be typecast as a sockaddr_in OR sockaddr_in6 without issue (this is
+ *     guaranteed by the definition of the sockaddr_storage structure).
+ *
+ * @param wol_dest_size
+ *     Pointer to a socklen_t that should receive the size of the structure
+ *     ultimately used. This value is assigned only if this call succeeds.
+ *
+ * @return
+ *     Non-zero if conversion succeeded, zero otherwise.
+ */
+static int __guac_wol_convert_addr(const char* addr, const unsigned short udp_port,
+          struct sockaddr_storage* wol_dest, socklen_t* wol_dest_size) {
+
+    /* Attempt to resolve as an IPv4 address first */
+    int ipv4_retval = __guac_wol_convert_addr_ipv4(addr, udp_port, wol_dest, wol_dest_size);
+    if (ipv4_retval > 0)
+        return 1;
+
+    /* Failing that, reattempt as IPv6 */
+    int ipv6_retval = __guac_wol_convert_addr_ipv6(addr, udp_port, wol_dest, wol_dest_size);
+    if (ipv6_retval > 0)
+        return 1;
+
+    /*
+     * Translate all possible IPv4 / IPv6 failure combinations into a single,
+     * human-readable message.
+     */
+
+    /* The provided address is not valid IPv4 ... */
+    if (ipv4_retval == 0) {
+
+        /* ... and also not valid IPv6. */
+        if (ipv6_retval == 0) {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "The broadcast or multicast address "
+                "specified for Wake-on-LAN is not a valid IPv4 or IPv6 "
+                "address";
+        }
+
+        /* ... but we can't try IPv6 because this system doesn't support it. */
+        else {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "IPv6 is not supported by this system and "
+                "the broadcast/multicast address specified for Wake-on-LAN is "
+                "not a valid IPv4 address";
+        }
+
+    }
+
+    /* This system bizarrely doesn't support IPv4 ... */
+    else {
+
+        /* ... and the provided address is not valid IPv6. */
+        if (ipv6_retval == 0) {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "IPv4 is not supported by this system and "
+                "the broadcast/multicast address specified for Wake-on-LAN is "
+                "not a valid IPv6 address";
+        }
+
+        /* ... nor IPv6 (should be impossible). */
+        else {
+            guac_error = GUAC_STATUS_NOT_SUPPORTED;
+            guac_error_message = "Neither IPv4 nor IPv6 is supported by this "
+                "system (this should not be possible)";
+        }
+
+    }
+
+    return 0;
+
+}
+
+/**
  * Send the magic Wake-on-LAN (WoL) packet to the specified broadcast address,
  * returning the number of bytes sent, or zero if any error occurred and nothing
  * was sent.
@@ -82,46 +249,16 @@ static void __guac_wol_create_magic_packet(unsigned char packet[],
  */
 static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
         const unsigned short udp_port, unsigned char packet[]) {
-    
-    struct sockaddr_in wol_dest;
-    int wol_socket;
-    
-    /* Determine the IP version, starting with IPv4. */
-    wol_dest.sin_port = htons(udp_port);
-    wol_dest.sin_family = AF_INET;
-    int retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
-    
-    /* If return value is less than zero, this system doesn't know about IPv4. */
-    if (retval < 0) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "IPv4 address family is not supported";
+
+    struct sockaddr_storage wol_dest;
+    socklen_t wol_dest_size;
+
+    /* Resolve broadcast address */
+    if (!__guac_wol_convert_addr(broadcast_addr, udp_port, &wol_dest, &wol_dest_size))
         return 0;
-    }
-    
-    /* If return value is zero, address doesn't match the IPv4, so try IPv6. */
-    else if (retval == 0) {
-        wol_dest.sin_family = AF_INET6;
-        retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
-        
-        /* System does not support IPv6. */
-        if (retval < 0) {
-            guac_error = GUAC_STATUS_SEE_ERRNO;
-            guac_error_message = "IPv6 address family is not supported";
-            return 0;
-        }
-        
-        /* Address didn't match IPv6. */
-        else if (retval == 0) {
-            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
-            guac_error_message = "Invalid broadcast or multicast address specified for Wake-on-LAN";
-            return 0;
-        }
-    }
-    
-    
-    
+
     /* Set up the socket */
-    wol_socket = socket(wol_dest.sin_family, SOCK_DGRAM, 0);
+    int wol_socket = socket(wol_dest.ss_family, SOCK_DGRAM, 0);
     
     /* If socket open fails, bail out. */
     if (wol_socket < 0) {
@@ -129,10 +266,10 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
         guac_error_message = "Failed to open socket to send Wake-on-LAN packet";
         return 0;
     }
-    
+
     /* Set up socket for IPv4 broadcast. */
-    if (wol_dest.sin_family == AF_INET) {
-        
+    if (wol_dest.ss_family == AF_INET) {
+
         /* For configuring socket broadcast */
         int wol_bcast = 1;
 
@@ -161,10 +298,10 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
             return 0;
         }
     }
-    
+
     /* Send the packet and return number of bytes sent. */
     int bytes = sendto(wol_socket, packet, GUAC_WOL_PACKET_SIZE, 0,
-            (struct sockaddr*) &wol_dest, sizeof(wol_dest));
+            (struct sockaddr*) &wol_dest, wol_dest_size);
     close(wol_socket);
     return bytes;
  
