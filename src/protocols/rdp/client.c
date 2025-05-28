@@ -205,6 +205,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_rdp_client* rdp_client = guac_mem_zalloc(sizeof(guac_rdp_client));
     client->data = rdp_client;
 
+    /* Create queue for input events (to avoid RDP I/O blocking processing of
+     * further Guacamole instructions) and associated signalling handle */
+    guac_fifo_init(&rdp_client->input_events, &rdp_client->input_events_items,
+            GUAC_RDP_INPUT_EVENT_QUEUE_SIZE, sizeof(guac_rdp_input_event));
+
+    rdp_client->input_event_queued = CreateEvent(NULL, TRUE, FALSE, NULL);
+
     /* Init clipboard */
     rdp_client->clipboard = guac_rdp_clipboard_alloc(client);
 
@@ -254,6 +261,10 @@ int guac_rdp_client_free_handler(guac_client* client) {
 
     /* Wait for client thread */
     pthread_join(rdp_client->client_thread, NULL);
+
+    /* Clean up event queue and associated signalling handle */
+    guac_fifo_destroy(&rdp_client->input_events);
+    CloseHandle(rdp_client->input_event_queued);
 
     /* Free parsed settings */
     if (rdp_client->settings != NULL)
