@@ -401,17 +401,6 @@ void* guac_display_worker_thread(void* data) {
                         cursor->last_frame.height);
             }
 
-            /* Use the amount of time that the client has been waiting
-             * for a frame vs. the amount of time that it took the
-             * client to process the most recently acknowledged frame
-             * to calculate the amount of additional delay required to
-             * allow the client to catch up. This value is used later,
-             * after everything else related to the frame has been
-             * finalized. */
-            int time_since_last_frame = guac_timestamp_current() - client->last_sent_timestamp;
-            int processing_lag = guac_client_get_processing_lag(client);
-            int required_wait = processing_lag - time_since_last_frame;
-
             /* Allow connected clients to move forward with rendering */
             guac_client_end_multiple_frames(client, display->last_frame.frames);
 
@@ -456,31 +445,6 @@ void* guac_display_worker_thread(void* data) {
             guac_flag_set_and_lock(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS);
             guac_flag_clear(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_IN_PROGRESS);
             guac_flag_unlock(&display->render_state);
-
-            /* Exclude local, server-side frame processing latency from
-             * waiting period */
-            int latency = (int) (guac_timestamp_current() - display->last_frame.timestamp);
-            if (latency >= 0) {
-                guac_client_log(display->client, GUAC_LOG_TRACE,
-                        "Rendering latency: %ims (%i:1 frame)\n",
-                        latency, display->last_frame.frames);
-                required_wait -= latency;
-            }
-
-            /* Ensure we don't wait without bound when compensating for
-             * client-side processing delays */
-            if (required_wait > GUAC_DISPLAY_MAX_LAG_COMPENSATION)
-                required_wait = GUAC_DISPLAY_MAX_LAG_COMPENSATION;
-
-            /* Allow connected clients to catch up if they're taking
-             * longer to process frames than the server is taking to
-             * generate them */
-            if (required_wait > 0) {
-                guac_client_log(display->client, GUAC_LOG_TRACE,
-                        "Waiting %ims to compensate for client-side "
-                        "processing delays.\n", required_wait);
-                guac_timestamp_msleep(required_wait);
-            }
 
             has_outstanding_frames = display->frame_deferred;
 
