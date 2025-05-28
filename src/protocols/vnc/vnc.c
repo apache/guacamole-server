@@ -629,7 +629,7 @@ void* guac_vnc_client_thread(void* data) {
 
         /* Wait for data and construct a reasonable frame */
         int wait_result = guac_vnc_wait_for_messages(rfb_client, GUAC_VNC_MESSAGE_CHECK_INTERVAL);
-        if (wait_result > 0) {
+        while (wait_result > 0) {
 
             /* Handle any message received */
             if (!guac_vnc_handle_messages(client)) {
@@ -639,10 +639,12 @@ void* guac_vnc_client_thread(void* data) {
                 break;
             }
 
+            wait_result = guac_vnc_wait_for_messages(rfb_client, 0);
+
         }
 
         /* If an error occurs, log it and fail */
-        else if (wait_result < 0)
+        if (wait_result < 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed.");
 
     }
