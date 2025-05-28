@@ -139,6 +139,17 @@ int guac_flag_timedwait_and_lock(guac_flag* event_flag,
 
     guac_flag_lock(event_flag);
 
+    /* Short path: skip wait completely when possible */
+    if (!msec_timeout) {
+
+        int retval = event_flag->value & flags;
+        if (!retval)
+            guac_flag_unlock(event_flag);
+
+        return retval;
+
+    }
+
     struct timespec ts_timeout;
     clock_gettime(CLOCK_MONOTONIC, &ts_timeout);
 
