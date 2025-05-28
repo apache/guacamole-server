@@ -141,9 +141,10 @@ static void* guac_display_render_loop(void* data) {
             }
 
             /* Use explicit frame boundaries whenever available */
-            if (render_thread->state.value & GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY) {
+            if (guac_flag_timedwait_and_lock(&render_thread->state,
+                        GUAC_DISPLAY_RENDER_THREAD_STATE_FRAME_READY, 0)) {
 
-                rendered_frames = render_thread->frames;
+                rendered_frames += render_thread->frames;
                 render_thread->frames = 0;
 
                 guac_flag_clear(&render_thread->state,
