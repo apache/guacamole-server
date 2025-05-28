@@ -67,6 +67,7 @@ libguac_client_rdp_la_SOURCES =                  \
     fs.c                                         \
     gdi.c                                        \
     input.c                                      \
+    input-queue.c                                \
     keyboard.c                                   \
     keymap.c                                     \
     log.c                                        \
