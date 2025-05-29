@@ -85,10 +85,12 @@ static void* LFR_guac_display_broadcast_cursor_state(guac_user* user, void* data
     guac_display* display = (guac_display*) data;
 
     /* Send cursor state only if the user is not moving the cursor */
-    if (user != display->last_frame.cursor_user)
+    if (user != display->last_frame.cursor_user) {
         guac_protocol_send_mouse(user->socket,
                 display->last_frame.cursor_x, display->last_frame.cursor_y,
                 display->last_frame.cursor_mask, display->last_frame.timestamp);
+        guac_socket_flush(user->socket);
+    }
 
     return NULL;
 
