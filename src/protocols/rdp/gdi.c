@@ -26,6 +26,7 @@
 #include <freerdp/gdi/gdi.h>
 #include <freerdp/graphics.h>
 #include <freerdp/primary.h>
+#include <freerdp/version.h>
 #include <guacamole/assert.h>
 #include <guacamole/client.h>
 #include <guacamole/display.h>
@@ -159,7 +160,14 @@ BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
     int width = guac_rdp_get_width(context->instance);
     int height = guac_rdp_get_height(context->instance);
 
+#if (FREERDP_VERSION_MAJOR < 3) || \
+    (FREERDP_VERSION_MAJOR == 3 && FREERDP_VERSION_MINOR < 8)
+    /* For FreeRDP versions prior to 3.8.0, EndPaint will not be called in
+     * `gdi_resize()`, so the current context should be NULL. If it is not
+     * NULL, it means that the current context is still open, and therefore the
+     * GDI buffer has not been flushed yet. */
     GUAC_ASSERT(rdp_client->current_context == NULL);
+#endif
 
     /* All potential drawing operations must occur while holding an open context */
     guac_display_layer* default_layer = guac_display_default_layer(rdp_client->display);
