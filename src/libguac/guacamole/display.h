@@ -213,6 +213,32 @@ struct guac_display_layer_raw_context {
 guac_display* guac_display_alloc(guac_client* client);
 
 /**
+ * Stops all background processes that may be running beneath the given
+ * guac_display, ensuring nothing within guac_display will continue to access
+ * any memory unless explicitly and externally requested. After this function
+ * returns, all background threads used by guac_display have stopped. This
+ * function is threadsafe and may be safely invoked by multiple threads. All
+ * concurrent calls to this function will block until all background threads
+ * used by the guac_display have terminated.
+ *
+ * This function DOES NOT affect the state of a guac_display_render_thread,
+ * which must be similarly stopped and destroyed with a call to
+ * guac_display_render_thread_destroy() before underlying external buffers can
+ * be safely freed.
+ *
+ * NOTE: Invoking this function may be necessary to allow external objects to
+ * be safely cleaned up, particularly if external buffers have been provided to
+ * replace the buffers allocated by guac_display. Doing otherwise would mean
+ * that background worker threads used for encoding by guac_display may
+ * continue to check the contents of external buffers while those buffers are
+ * being freed.
+ *
+ * @param display
+ *     The display to stop.
+ */
+void guac_display_stop(guac_display* display);
+
+/**
  * Frees all resources associated with the given guac_display.
  *
  * @param display
