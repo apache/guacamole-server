@@ -132,6 +132,11 @@ int guac_vnc_client_free_handler(guac_client* client) {
     guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
     guac_vnc_settings* settings = vnc_client->settings;
 
+    /* Ensure all background rendering processes are stopped before freeing
+     * underlying memory */
+    if (vnc_client->display != NULL)
+        guac_display_stop(vnc_client->display);
+
     /* Clean up VNC client*/
     rfbClient* rfb_client = vnc_client->rfb_client;
     if (rfb_client != NULL) {
