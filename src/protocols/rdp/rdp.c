@@ -680,6 +680,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
     context->buffer = NULL;
     guac_display_layer_close_raw(default_layer, context);
 
+    /* Ensure all background rendering processes are stopped before freeing
+     * underlying memory */
+    guac_display_stop(rdp_client->display);
+
     /* Clean up FreeRDP internal GDI implementation (this must be done BEFORE
      * freeing the guac_display, as freeing the GDI will free objects like
      * rdpPointer that will attempt to free associated guac_display_layer

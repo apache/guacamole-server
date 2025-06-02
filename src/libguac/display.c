@@ -162,15 +162,58 @@ guac_display* guac_display_alloc(guac_client* client) {
 
 }
 
+void guac_display_stop(guac_display* display) {
+
+    /* Ensure only one of any number of concurrent calls to guac_display_stop()
+     * will actually start terminating the worker threads */
+    guac_fifo_lock(&display->ops);
+
+    /* Stop and clean up worker threads if the display is not already being
+     * stopped (we don't use the GUAC_DISPLAY_RENDER_STATE_STOPPED flag here,
+     * as we must consider the case that guac_display_stop() has already been
+     * called in a different thread but has not yet finished) */
+    if (guac_fifo_is_valid(&display->ops)) {
+
+        /* Stop further use of the operation FIFO */
+        guac_fifo_invalidate(&display->ops);
+        guac_fifo_unlock(&display->ops);
+
+        /* Wait for all worker threads to terminate (they should nearly immediately
+         * terminate following invalidation of the FIFO) */
+        for (int i = 0; i < display->worker_thread_count; i++)
+            pthread_join(display->worker_threads[i], NULL);
+
+        /* All worker threads are now terminated and may be safely cleaned up */
+        guac_mem_free(display->worker_threads);
+        display->worker_thread_count = 0;
+
+        /* NOTE: The only other reference to the worker_threads AT ALL is in
+         * guac_display_create(). Nothing outside of guac_display_create() and
+         * guac_display_stop() references worker_threads or worker_thread_count. */
+
+        /* Notify other calls to guac_display_stop() that the display is now
+         * officially stopped */
+        guac_flag_set(&display->render_state, GUAC_DISPLAY_RENDER_STATE_STOPPED);
+
+    }
+
+    /* Even if it isn't this particular call to guac_display_stop() that
+     * terminates and waits on all the worker threads, ensure that we only
+     * return after all threads are known to have been stopped */
+    else {
+
+        guac_fifo_unlock(&display->ops);
+
+        guac_flag_wait_and_lock(&display->render_state, GUAC_DISPLAY_RENDER_STATE_STOPPED);
+        guac_flag_unlock(&display->render_state);
+
+    }
+
+}
+
 void guac_display_free(guac_display* display) {
 
-    /* Stop further use of the operation FIFO */
-    guac_fifo_invalidate(&display->ops);
-
-    /* Wait for all worker threads to terminate (they should nearly immediately
-     * terminate following invalidation of the FIFO) */
-    for (int i = 0; i < display->worker_thread_count; i++)
-        pthread_join(display->worker_threads[i], NULL);
+    guac_display_stop(display);
 
     /* All locks, FIFOs, etc. are now unused and can be safely destroyed */
     guac_flag_destroy(&display->render_state);
@@ -188,7 +231,6 @@ void guac_display_free(guac_display* display) {
     while (display->last_frame.layers != NULL)
         guac_display_free_layer(display->last_frame.layers);
 
-    guac_mem_free(display->worker_threads);
     guac_mem_free(display);
 
 }

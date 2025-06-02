@@ -220,6 +220,14 @@
 #define GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS 2
 
 /**
+ * Bitwise flag set on the render_state flag in guac_display when the
+ * guac_display has been stopped and all worker threads have terminated (no
+ * further frames will render). This flag is set when guac_display_stop() has
+ * been invoked, including as part of guac_display_free().
+ */
+#define GUAC_DISPLAY_RENDER_STATE_STOPPED 4
+
+/**
  * Bitwise flag that is set on the state of a guac_display_render_thread when
  * the thread should be stopped.
  */
