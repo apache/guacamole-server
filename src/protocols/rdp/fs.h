@@ -366,7 +366,7 @@ int guac_rdp_fs_get_errorcode(int err);
  *     A status code corresponding to the given error code that an
  *     implementation of the RDPDR channel can understand.
  */
-int guac_rdp_fs_get_status(int err);
+unsigned int guac_rdp_fs_get_status(int err);
 
 /**
  * Opens the given file, returning the a new file ID, or an error code less
