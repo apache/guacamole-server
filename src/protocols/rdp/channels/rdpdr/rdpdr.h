@@ -212,7 +212,7 @@ typedef struct guac_rdpdr {
  *     requested additional free space.
  */
 wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
-        int completion_id, int status, int size);
+        unsigned int completion_id, unsigned int status, int size);
 
 /**
  * Initializes device redirection support (file transfer, printing, etc.) for

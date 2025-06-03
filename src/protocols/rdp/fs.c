@@ -191,7 +191,7 @@ int guac_rdp_fs_get_errorcode(int err) {
 
 }
 
-int guac_rdp_fs_get_status(int err) {
+unsigned int guac_rdp_fs_get_status(int err) {
 
     /* Translate GUAC_RDP_FS error code to RDPDR status code */
     if (err == GUAC_RDP_FS_ENFILE)  return STATUS_NO_MORE_FILES;

@@ -123,7 +123,7 @@ void guac_rdpdr_process_receive(guac_rdp_common_svc* svc,
 }
 
 wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
-        int completion_id, int status, int size) {
+        unsigned int completion_id, unsigned int status, int size) {
 
     wStream* output_stream = Stream_New(NULL, 16+size);
 
