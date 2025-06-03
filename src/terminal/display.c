@@ -859,13 +859,19 @@ void __guac_terminal_display_flush_set(guac_terminal_display* display) {
     }
 
 }
-
-void guac_terminal_display_flush(guac_terminal_display* display) {
+void guac_terminal_display_flush_operations(guac_terminal_display* display) {
 
     /* Flush operations, copies first, then clears, then sets. */
     __guac_terminal_display_flush_copy(display);
     __guac_terminal_display_flush_clear(display);
     __guac_terminal_display_flush_set(display);
+
+}
+
+void guac_terminal_display_flush(guac_terminal_display* display) {
+
+    /* Flush operations */
+    guac_terminal_display_flush_operations(display);
 
     /* Flush surface */
     guac_common_surface_flush(display->display_surface);

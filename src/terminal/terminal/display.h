@@ -318,6 +318,18 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
 
 /**
  * Flushes all pending operations within the given guac_terminal_display.
+ *
+ * @param display
+ *     The terminal display whose pending operations are being flushed.
+ */
+void guac_terminal_display_flush_operations(guac_terminal_display* display);
+
+/**
+ * Flushes all pending operations within the given guac_terminal_display,
+ * then flushes the display surface.
+ *
+ * @param display
+ *     The terminal display to flush.
  */
 void guac_terminal_display_flush(guac_terminal_display* display);
 
