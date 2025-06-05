@@ -225,6 +225,12 @@ typedef struct guac_terminal_display {
      */
     int selection_end_column;
 
+    /**
+     * Whether there are GUAC_CHAR_SET operations that need to be flushed
+     * to the display.
+     */
+    bool unflushed_set;
+
 } guac_terminal_display;
 
 /**

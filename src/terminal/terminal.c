@@ -868,15 +868,6 @@ void guac_terminal_scroll_up(guac_terminal* term,
 void guac_terminal_scroll_down(guac_terminal* term,
         int start_row, int end_row, int amount) {
 
-    /*
-     * We must flush all pending operations here because 
-     * guac_terminal_copy_rows will set new GUAC_CHAR_COPY for
-     * cells of shifted rows meanwhile preceding GUAC_CHAR_SET for these cells
-     * are not actually done yet. The GUAC_CHAR_COPY operation has the highest
-     * priority, so if we do not 'flush' here, wrong content will be copied.
-     */
-    guac_terminal_display_flush_operations(term->display);
-
     guac_terminal_copy_rows(term, start_row, end_row - amount, amount);
 
     /* Clear new area */
