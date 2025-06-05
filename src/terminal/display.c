@@ -258,6 +258,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     display->width = 0;
     display->height = 0;
     display->operations = NULL;
+    display->unflushed_set = false;
 
     /* Initially nothing selected */
     display->text_selected = false;
@@ -430,6 +431,12 @@ void guac_terminal_display_copy_rows(guac_terminal_display* display,
     guac_terminal_operation* src = &(display->operations[src_offset]);
     guac_terminal_operation* dst = &(display->operations[dst_offset]);
 
+    /* Flush operations if there are any unflushed SET operations. This is
+     * necessary to ensure that the copy operation does not conflict with any
+     * SET operations that may have been performed since the last flush. */
+    if (display->unflushed_set)
+        guac_terminal_display_flush_operations(display);
+
     /* Copy data */
     memmove(dst, src, guac_mem_ckd_mul_or_die(sizeof(guac_terminal_operation),
                 display->width, (end_row - start_row + 1)));
@@ -483,7 +490,7 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         /* Flush pending copy operation before adding new SET operation. This
          * avoid operation conflicts that cause inconsistent display. */
         if (current->type == GUAC_CHAR_COPY)
-            guac_terminal_display_flush(display);
+            guac_terminal_display_flush_operations(display);
 
         /* Set operation */
         current->type      = GUAC_CHAR_SET;
@@ -493,6 +500,13 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         current += character->width;
 
     }
+
+    /* Marks whether there are unflushed GUAC_CHAR_SET operations when the
+     * operation is not on the first or last row because flushing new lines
+     * added has a high performance cost. This flag is used to determine
+     * whether a flush is necessary before performing copy operations. */
+    if (row > 0 && row < display->height - 1)
+        display->unflushed_set = true;
 
 }
 
@@ -858,14 +872,23 @@ void __guac_terminal_display_flush_set(guac_terminal_display* display) {
         }
     }
 
-}
+    /* Mark that all SET operations have been flushed */
+    display->unflushed_set = 0;
 
-void guac_terminal_display_flush(guac_terminal_display* display) {
+}
+void guac_terminal_display_flush_operations(guac_terminal_display* display) {
 
     /* Flush operations, copies first, then clears, then sets. */
     __guac_terminal_display_flush_copy(display);
     __guac_terminal_display_flush_clear(display);
     __guac_terminal_display_flush_set(display);
+
+}
+
+void guac_terminal_display_flush(guac_terminal_display* display) {
+
+    /* Flush operations */
+    guac_terminal_display_flush_operations(display);
 
     /* Flush surface */
     guac_common_surface_flush(display->display_surface);
