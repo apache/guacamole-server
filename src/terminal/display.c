@@ -433,8 +433,13 @@ void guac_terminal_display_copy_rows(guac_terminal_display* display,
 
     /* Flush operations if there are any unflushed SET operations. This is
      * necessary to ensure that the copy operation does not conflict with any
-     * SET operations that may have been performed since the last flush. */
-    if (display->unflushed_set)
+     * SET operations that may have been performed since the last flush.
+     * It is a workaround for the terminal artifacts during scrolling to
+     * the beginning of texts (i.e. with guac_terminal_scroll_down) so we
+     * apply it when the offset is positive only. Otherwise it will affect
+     * guac_terminal_scroll_up which will lead to significant performance
+     * degradation when dumping big text files. */
+    if (display->unflushed_set && offset > 0)
         guac_terminal_display_flush_operations(display);
 
     /* Copy data */
