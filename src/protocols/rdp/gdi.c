@@ -228,6 +228,10 @@ BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
     guac_protocol_send_set(client->socket, (const guac_layer*) default_layer,
             GUAC_PROTOCOL_LAYER_PARAMETER_MULTIMON_LAYOUT, json);
 
+    /* Set default pointer after resizing to ensure it is visible when adding
+     * a new monitor */
+    guac_display_set_cursor(rdp_client->display, GUAC_DISPLAY_CURSOR_POINTER);
+
     return retval;
 
 }
