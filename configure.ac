@@ -742,6 +742,18 @@ OLDCPPFLAGS="$CPPFLAGS"
 
 if test "x$with_rdp" != "xno"
 then
+    freerdp_version="(2.x)"
+    have_freerdp=yes
+    PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+                      [AS_IF([test "x${FREERDP_PLUGIN_DIR}" = "x"],
+                             [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
+                      [freerdp_version=
+                       have_freerdp=no])
+fi
+
+if test "x$with_rdp" != "xno" -a "x${have_freerdp}" = "xno"
+then
     freerdp_version="(3.x)"
     have_freerdp=yes
     PKG_CHECK_MODULES([RDP], [freerdp3 freerdp-client3 winpr3],
@@ -750,25 +762,10 @@ then
                              [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp3`/freerdp3"])],
                       [AC_MSG_WARN([
   --------------------------------------------
-   Unable to find FreeRDP3 (libfreerdp3 / libfreerdp-client3 / libwinpr3).
-   Checking for FreeRDP2.
-  --------------------------------------------])
-                       have_freerdp=no])
-fi
-
-if test "x$with_rdp" != "xno" -a "x${have_freerdp}" = "xno"
-then
-    freerdp_version="(2.x)"
-    have_freerdp=yes
-    PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
-                      [AS_IF([test "x${FREERDP_PLUGIN_DIR}" = "x"],
-                             [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
-                      [AC_MSG_WARN([
-  --------------------------------------------
-   Unable to find FreeRDP2 (libfreerdp2 / libfreerdp-client2 / libwinpr2)
+   Unable to find FreeRDP.
    RDP will be disabled.
   --------------------------------------------])
+                       freerdp_version=
                        have_freerdp=no])
 fi
 
@@ -1544,3 +1541,12 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
+
+if test "x$freerdp_version" = "x(3.x)"
+then
+    AC_MSG_WARN([
+  --------------------------------------------
+    Support for FreeRDP 3.x is currently experimental. Some features, like
+    RemoteApp, have known issues. If not testing, consider using FreeRDP 2.x.
+  --------------------------------------------])
+fi
