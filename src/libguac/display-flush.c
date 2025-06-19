@@ -380,19 +380,24 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
 
     guac_rwlock_release_lock(&display->last_frame.lock);
 
-    /* Not all frames are graphical. If we end up with a frame containing
-     * nothing but layer property changes, then we must still send at least one
-     * operation to awaken the workers and flush layer changes, even though
-     * there is no display plan to optimize. */
-    if (plan == NULL && frame_nonempty) {
+    /* Awaken worker threads to perform the rest of the tasks required for the
+     * frame (if any such tasks remain) */
+    if (plan != NULL) {
+        guac_display_plan_apply(plan);
+        guac_display_plan_free(plan);
+    }
+
+    /* Not all frames are graphical, and not all frames result in operations
+     * reaching the worker threads. If we end up with a frame containing
+     * nothing but layer property changes or nothing but non-image updates,
+     * then we must still send at least one operation to awaken the workers,
+     * flush any layer changes, and mark the end of the frame with a "sync",
+     * even though there is no display plan to optimize.  */
+    if (frame_nonempty) {
         guac_display_plan_operation end_frame_op = {
             .type = GUAC_DISPLAY_PLAN_OPERATION_NOP
         };
         guac_fifo_enqueue(&display->ops, &end_frame_op);
-    }
-    else if (plan != NULL) {
-        guac_display_plan_apply(plan);
-        guac_display_plan_free(plan);
     }
 
 finished_with_pending_frame_lock:
