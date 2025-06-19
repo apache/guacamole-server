@@ -415,10 +415,6 @@ void guac_display_plan_apply(guac_display_plan* plan) {
 
                 break;
 
-            /* Simply ignore and drop NOP */
-            case GUAC_DISPLAY_PLAN_OPERATION_NOP:
-                break;
-
             /* All other operations should be handled by the workers */
             default:
                 guac_fifo_enqueue(&display->ops, op);
