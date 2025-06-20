@@ -67,11 +67,38 @@
 static void guac_terminal_select_normalized_range(guac_terminal* terminal,
         int* start_row, int* start_col, int* end_row, int* end_col) {
 
+
+    /* Columns coordinates must be swapped when selecting to bottom-left direction
+     * on rectangular selection mode. */
+    if (terminal->rectangle_selection
+        && terminal->selection_start_row < terminal->selection_end_row
+        && terminal->selection_start_column > terminal->selection_end_column) {
+
+        *start_row = terminal->selection_start_row;
+        *end_col   = terminal->selection_start_column + terminal->selection_start_width - 1;
+        *end_row   = terminal->selection_end_row;
+        *start_col = terminal->selection_end_column;
+
+    }
+
+    /* Rows coordinates must be swapped when selecting to top-right direction
+     * on rectangular selection mode. */
+    else if (terminal->rectangle_selection
+             && terminal->selection_start_row > terminal->selection_end_row
+             && terminal->selection_start_column < terminal->selection_end_column) {
+
+        *end_row   = terminal->selection_start_row;
+        *start_col = terminal->selection_start_column;
+        *start_row = terminal->selection_end_row;
+        *end_col   = terminal->selection_end_column + terminal->selection_end_width - 1;
+
+    }
+
     /* Pass through start/end coordinates if they are already in the expected
      * order, adjusting only for final character width */
-    if (terminal->selection_start_row < terminal->selection_end_row
-        || (terminal->selection_start_row == terminal->selection_end_row
-            && terminal->selection_start_column < terminal->selection_end_column)) {
+    else if (terminal->selection_start_row < terminal->selection_end_row
+            || (terminal->selection_start_row == terminal->selection_end_row
+                && terminal->selection_start_column < terminal->selection_end_column)) {
 
         *start_row = terminal->selection_start_row;
         *start_col = terminal->selection_start_column;
@@ -109,7 +136,8 @@ void guac_terminal_select_redraw(guac_terminal* terminal) {
         else
             end_column += terminal->selection_end_width - 1;
 
-        guac_terminal_display_select(terminal->display, start_row, start_column, end_row, end_column);
+        guac_terminal_display_select(terminal->display, start_row,
+                start_column, end_row, end_column, terminal->rectangle_selection);
 
     }
 
@@ -364,7 +392,7 @@ void guac_terminal_select_end(guac_terminal* terminal) {
     for (int row = start_row; row <= end_row; row++) {
 
         /* Add a newline only if the previous line was not wrapped */
-        if (!last_row_was_wrapped)
+        if (!last_row_was_wrapped || (terminal->rectangle_selection && row != start_row))
             guac_common_clipboard_append(terminal->clipboard, "\n", 1);
 
         /* Append next row from desired region, adjusting the start/end column
@@ -373,8 +401,8 @@ void guac_terminal_select_end(guac_terminal* terminal) {
          * copied in their entirety. */
         int length = guac_terminal_buffer_get_columns(terminal->current_buffer, &characters, &last_row_was_wrapped, row);
         guac_terminal_clipboard_append_characters(terminal, characters, length,
-            (row == start_row) ? start_col : 0,
-            (row == end_row)   ? end_col   : length - 1);
+            (row == start_row || terminal->rectangle_selection) ? start_col : 0,
+            (row == end_row   || terminal->rectangle_selection) ? end_col   : length - 1);
 
     }
 
