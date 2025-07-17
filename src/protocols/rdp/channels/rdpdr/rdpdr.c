@@ -160,6 +160,7 @@ void guac_rdpdr_process_connect(guac_rdp_common_svc* svc) {
 
     /* Register smartcard if enabled */
     guac_rdpdr_register_smartcard(svc, "Test Smartcard");
+
 }
 
 void guac_rdpdr_process_terminate(guac_rdp_common_svc* svc) {

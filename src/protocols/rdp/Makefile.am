@@ -55,7 +55,8 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/rdpdr/rdpdr-messages.c              \
     channels/rdpdr/rdpdr-printer.c               \
     channels/rdpdr/rdpdr-smartcard.c             \
-    channels/rdpdr/smartcard-pcsc.c              \
+    channels/rdpdr/rdpdr-utils.c                 \
+    channels/rdpdr/smartcard.c                   \
     channels/rdpdr/rdpdr.c                       \
     channels/rdpei.c                             \
     channels/rdpgfx.c                            \
@@ -103,7 +104,8 @@ noinst_HEADERS =                                 \
     channels/rdpdr/rdpdr-messages.h              \
     channels/rdpdr/rdpdr-printer.h               \
     channels/rdpdr/rdpdr-smartcard.h             \
-    channels/rdpdr/smartcard-pcsc.h              \
+    channels/rdpdr/rdpdr-utils.h                 \
+    channels/rdpdr/smartcard.h                   \
     channels/rdpdr/rdpdr.h                       \
     channels/rdpei.h                             \
     channels/rdpgfx.h                            \
