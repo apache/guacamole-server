@@ -21,6 +21,7 @@
 #include "channels/rdpdr/rdpdr-fs.h"
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr-printer.h"
+#include "channels/rdpdr/rdpdr-smartcard.h"
 #include "rdp.h"
 #include "settings.h"
 
@@ -39,7 +40,7 @@ void guac_rdpdr_process_receive(guac_rdp_common_svc* svc,
     int component;
     int packet_id;
 
-    /* 
+    /*
      * Check that device redirection stream contains at least 4 bytes
      * (UINT16 + UINT16).
      */
@@ -49,7 +50,7 @@ void guac_rdpdr_process_receive(guac_rdp_common_svc* svc,
                 "bytes. Device redirection may not function as expected.");
         return;
     }
-    
+
     /* Read header */
     Stream_Read_UINT16(input_stream, component);
     Stream_Read_UINT16(input_stream, packet_id);
@@ -157,6 +158,8 @@ void guac_rdpdr_process_connect(guac_rdp_common_svc* svc) {
     if (rdp_client->settings->drive_enabled)
         guac_rdpdr_register_fs(svc, rdp_client->settings->drive_name);
 
+    /* Register smartcard if enabled */
+    guac_rdpdr_register_smartcard(svc, "Test Smartcard");
 }
 
 void guac_rdpdr_process_terminate(guac_rdp_common_svc* svc) {
@@ -189,6 +192,9 @@ void guac_rdpdr_load_plugin(rdpContext* context) {
         guac_client_log(client, GUAC_LOG_WARNING, "Support for the RDPDR "
                 "channel (device redirection) could not be loaded. Drive "
                 "redirection and printing will not work. Sound MAY not work.");
+    } else {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Support for the RDPDR "
+                "channel (device redirection) loaded succesfully .");
     }
 
 }

@@ -54,6 +54,8 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/rdpdr/rdpdr-fs.c                    \
     channels/rdpdr/rdpdr-messages.c              \
     channels/rdpdr/rdpdr-printer.c               \
+    channels/rdpdr/rdpdr-smartcard.c             \
+    channels/rdpdr/smartcard-pcsc.c              \
     channels/rdpdr/rdpdr.c                       \
     channels/rdpei.c                             \
     channels/rdpgfx.c                            \
@@ -100,6 +102,8 @@ noinst_HEADERS =                                 \
     channels/rdpdr/rdpdr-fs.h                    \
     channels/rdpdr/rdpdr-messages.h              \
     channels/rdpdr/rdpdr-printer.h               \
+    channels/rdpdr/rdpdr-smartcard.h             \
+    channels/rdpdr/smartcard-pcsc.h              \
     channels/rdpdr/rdpdr.h                       \
     channels/rdpei.h                             \
     channels/rdpgfx.h                            \
@@ -135,7 +139,8 @@ libguac_client_rdp_la_CFLAGS = \
     @COMMON_INCLUDE@           \
     @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@          \
-    @RDP_CFLAGS@
+    @RDP_CFLAGS@               \
+    @PCSC_CFLAGS@
 
 libguac_client_rdp_la_LDFLAGS = \
     -version-info 0:0:0         \
@@ -145,7 +150,8 @@ libguac_client_rdp_la_LDFLAGS = \
 
 libguac_client_rdp_la_LIBADD = \
     @COMMON_LTLIB@             \
-    @LIBGUAC_LTLIB@
+    @LIBGUAC_LTLIB@            \
+    @PCSC_LIBS@
 
 #
 # Plugins for FreeRDP
