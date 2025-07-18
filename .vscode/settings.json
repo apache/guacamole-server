@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+        "client.h": "c",
+        "rdpdr.h": "c",
+        "rdpdr-smartcard.h": "c",
+        "__locale": "c",
+        "locale": "c",
+        "__config": "c",
+        "__hash_table": "c",
+        "__split_buffer": "c",
+        "array": "c",
+        "functional": "c",
+        "ios": "c",
+        "iterator": "c",
+        "ostream": "c",
+        "sstream": "c",
+        "string": "c",
+        "string_view": "c",
+        "vector": "c"
+    }
+}

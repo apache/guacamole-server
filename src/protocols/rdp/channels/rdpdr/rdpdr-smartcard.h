@@ -65,6 +65,23 @@
 #define SCARD_IOCTL_GETDEVICETYPEID RDP_SCARD_CTL_CODE(66)    /* SCardGetDeviceTypeIdA */
 #define SCARD_IOCTL_ISVALID                 0x313624
 
+typedef struct guac_rdp_scard_operation {
+    guac_client* client;
+    UINT32 ioControlCode;
+    UINT32 outputBufferLength;
+	wStream* out;
+
+    // Add more fields as needed for decoding
+} guac_rdp_scard_operation;
+
+struct guac_rdpdr_thread_arg {
+    guac_rdp_common_svc* svc;
+	guac_rdpdr_device* device;
+    guac_rdpdr_iorequest* iorequest;
+    guac_rdp_scard_operation op;
+	wStream* input_stream;
+};
+
 /**
  * Name of the printer driver that should be used on the server.
  */
@@ -99,6 +116,34 @@ guac_rdpdr_device_iorequest_handler guac_rdpdr_device_smartcard_iorequest_handle
  * Free handler which frees all data specific to the simulated printer device.
  */
 guac_rdpdr_device_free_handler guac_rdpdr_device_smartcard_free_handler;
+
+LONG guac_rdpdr_smartcard_irp_device_control_decode(wStream* input_stream,
+                                                    UINT32 CompletionId,
+                                                    UINT32 FileId,
+                                                    guac_rdp_scard_operation* operation);
+
+LONG smartcard_EstablishContext_Decode(wStream* stream, guac_rdp_scard_operation* op);
+LONG smartcard_ReleaseContext_Decode(wStream* stream, guac_rdp_scard_operation* op);
+LONG smartcard_AccessStartedEvent_Decode(wStream* stream, guac_rdp_scard_operation* op);
+
+#define SMARTCARD_COMMON_TYPE_HEADER_LENGTH 8
+#define SMARTCARD_PRIVATE_TYPE_HEADER_LENGTH 8
+LONG guac_rdpdr_scard_unpack_common_type_header(wStream* s, guac_client* client);
+LONG guac_rdpdr_scard_unpack_private_type_header(wStream* s, guac_client* client);
+LONG smartcard_pack_write_size_align(guac_rdp_common_svc* svc, wStream* s, size_t size, UINT32 alignment);
+void smartcard_pack_common_type_header(wStream* s);
+void smartcard_pack_private_type_header(wStream* s, UINT32 objectBufferLength);
+
+LONG guac_rdpdr_smartcard_irp_device_control_call(guac_rdp_common_svc* svc,
+                                                  guac_rdpdr_iorequest* request,
+                                                  guac_rdp_scard_operation* op,
+                                                  NTSTATUS* io_status, wStream* input_stream);
+
+bool guac_rdpdr_start_irp_thread(guac_rdp_common_svc* svc, guac_rdpdr_device* device, const guac_rdpdr_iorequest* request, wStream* input_stream);
+
+void smartcard_operation_free(guac_rdp_scard_operation* op, BOOL allocated);
+
+BOOL rdpdr_write_iocompletion_header(wStream* out, UINT32 DeviceId, UINT32 CompletionId, NTSTATUS ioStatus);
 
 #endif
 

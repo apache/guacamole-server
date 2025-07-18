@@ -128,6 +128,14 @@ wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
 
     wStream* output_stream = Stream_New(NULL, 16+size);
 
+    guac_rdpdr_write_io_completion(output_stream, device, completion_id, status, size);
+
+    return output_stream;
+}
+
+void guac_rdpdr_write_io_completion(wStream* output_stream, guac_rdpdr_device* device,
+        unsigned int completion_id, unsigned int status, int size) {
+
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
     Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
@@ -136,9 +144,6 @@ wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
     Stream_Write_UINT32(output_stream, status);
-
-    return output_stream;
-
 }
 
 void guac_rdpdr_process_connect(guac_rdp_common_svc* svc) {
@@ -200,3 +205,186 @@ void guac_rdpdr_load_plugin(rdpContext* context) {
 
 }
 
+const char* rdpdr_irp_string(uint32_t major)
+{
+	switch (major)
+	{
+		case IRP_MJ_CREATE:
+			return "IRP_MJ_CREATE";
+		case IRP_MJ_CLOSE:
+			return "IRP_MJ_CLOSE";
+		case IRP_MJ_READ:
+			return "IRP_MJ_READ";
+		case IRP_MJ_WRITE:
+			return "IRP_MJ_WRITE";
+		case IRP_MJ_DEVICE_CONTROL:
+			return "IRP_MJ_DEVICE_CONTROL";
+		case IRP_MJ_QUERY_VOLUME_INFORMATION:
+			return "IRP_MJ_QUERY_VOLUME_INFORMATION";
+		case IRP_MJ_SET_VOLUME_INFORMATION:
+			return "IRP_MJ_SET_VOLUME_INFORMATION";
+		case IRP_MJ_QUERY_INFORMATION:
+			return "IRP_MJ_QUERY_INFORMATION";
+		case IRP_MJ_SET_INFORMATION:
+			return "IRP_MJ_SET_INFORMATION";
+		case IRP_MJ_DIRECTORY_CONTROL:
+			return "IRP_MJ_DIRECTORY_CONTROL";
+		case IRP_MJ_LOCK_CONTROL:
+			return "IRP_MJ_LOCK_CONTROL";
+		default:
+			return "IRP_UNKNOWN";
+	}
+}
+
+const char* scard_get_ioctl_string(UINT32 ioControlCode, BOOL funcName)
+{
+	switch (ioControlCode)
+	{
+		case SCARD_IOCTL_ESTABLISHCONTEXT:
+			return funcName ? "SCardEstablishContext" : "SCARD_IOCTL_ESTABLISHCONTEXT";
+
+		case SCARD_IOCTL_RELEASECONTEXT:
+			return funcName ? "SCardReleaseContext" : "SCARD_IOCTL_RELEASECONTEXT";
+
+		case SCARD_IOCTL_ISVALIDCONTEXT:
+			return funcName ? "SCardIsValidContext" : "SCARD_IOCTL_ISVALIDCONTEXT";
+
+		case SCARD_IOCTL_LISTREADERGROUPSA:
+			return funcName ? "SCardListReaderGroupsA" : "SCARD_IOCTL_LISTREADERGROUPSA";
+
+		case SCARD_IOCTL_LISTREADERGROUPSW:
+			return funcName ? "SCardListReaderGroupsW" : "SCARD_IOCTL_LISTREADERGROUPSW";
+
+		case SCARD_IOCTL_LISTREADERSA:
+			return funcName ? "SCardListReadersA" : "SCARD_IOCTL_LISTREADERSA";
+
+		case SCARD_IOCTL_LISTREADERSW:
+			return funcName ? "SCardListReadersW" : "SCARD_IOCTL_LISTREADERSW";
+
+		case SCARD_IOCTL_INTRODUCEREADERGROUPA:
+			return funcName ? "SCardIntroduceReaderGroupA" : "SCARD_IOCTL_INTRODUCEREADERGROUPA";
+
+		case SCARD_IOCTL_INTRODUCEREADERGROUPW:
+			return funcName ? "SCardIntroduceReaderGroupW" : "SCARD_IOCTL_INTRODUCEREADERGROUPW";
+
+		case SCARD_IOCTL_FORGETREADERGROUPA:
+			return funcName ? "SCardForgetReaderGroupA" : "SCARD_IOCTL_FORGETREADERGROUPA";
+
+		case SCARD_IOCTL_FORGETREADERGROUPW:
+			return funcName ? "SCardForgetReaderGroupW" : "SCARD_IOCTL_FORGETREADERGROUPW";
+
+		case SCARD_IOCTL_INTRODUCEREADERA:
+			return funcName ? "SCardIntroduceReaderA" : "SCARD_IOCTL_INTRODUCEREADERA";
+
+		case SCARD_IOCTL_INTRODUCEREADERW:
+			return funcName ? "SCardIntroduceReaderW" : "SCARD_IOCTL_INTRODUCEREADERW";
+
+		case SCARD_IOCTL_FORGETREADERA:
+			return funcName ? "SCardForgetReaderA" : "SCARD_IOCTL_FORGETREADERA";
+
+		case SCARD_IOCTL_FORGETREADERW:
+			return funcName ? "SCardForgetReaderW" : "SCARD_IOCTL_FORGETREADERW";
+
+		case SCARD_IOCTL_ADDREADERTOGROUPA:
+			return funcName ? "SCardAddReaderToGroupA" : "SCARD_IOCTL_ADDREADERTOGROUPA";
+
+		case SCARD_IOCTL_ADDREADERTOGROUPW:
+			return funcName ? "SCardAddReaderToGroupW" : "SCARD_IOCTL_ADDREADERTOGROUPW";
+
+		case SCARD_IOCTL_REMOVEREADERFROMGROUPA:
+			return funcName ? "SCardRemoveReaderFromGroupA" : "SCARD_IOCTL_REMOVEREADERFROMGROUPA";
+
+		case SCARD_IOCTL_REMOVEREADERFROMGROUPW:
+			return funcName ? "SCardRemoveReaderFromGroupW" : "SCARD_IOCTL_REMOVEREADERFROMGROUPW";
+
+		case SCARD_IOCTL_LOCATECARDSA:
+			return funcName ? "SCardLocateCardsA" : "SCARD_IOCTL_LOCATECARDSA";
+
+		case SCARD_IOCTL_LOCATECARDSW:
+			return funcName ? "SCardLocateCardsW" : "SCARD_IOCTL_LOCATECARDSW";
+
+		case SCARD_IOCTL_GETSTATUSCHANGEA:
+			return funcName ? "SCardGetStatusChangeA" : "SCARD_IOCTL_GETSTATUSCHANGEA";
+
+		case SCARD_IOCTL_GETSTATUSCHANGEW:
+			return funcName ? "SCardGetStatusChangeW" : "SCARD_IOCTL_GETSTATUSCHANGEW";
+
+		case SCARD_IOCTL_CANCEL:
+			return funcName ? "SCardCancel" : "SCARD_IOCTL_CANCEL";
+
+		case SCARD_IOCTL_CONNECTA:
+			return funcName ? "SCardConnectA" : "SCARD_IOCTL_CONNECTA";
+
+		case SCARD_IOCTL_CONNECTW:
+			return funcName ? "SCardConnectW" : "SCARD_IOCTL_CONNECTW";
+
+		case SCARD_IOCTL_RECONNECT:
+			return funcName ? "SCardReconnect" : "SCARD_IOCTL_RECONNECT";
+
+		case SCARD_IOCTL_DISCONNECT:
+			return funcName ? "SCardDisconnect" : "SCARD_IOCTL_DISCONNECT";
+
+		case SCARD_IOCTL_BEGINTRANSACTION:
+			return funcName ? "SCardBeginTransaction" : "SCARD_IOCTL_BEGINTRANSACTION";
+
+		case SCARD_IOCTL_ENDTRANSACTION:
+			return funcName ? "SCardEndTransaction" : "SCARD_IOCTL_ENDTRANSACTION";
+
+		case SCARD_IOCTL_STATE:
+			return funcName ? "SCardState" : "SCARD_IOCTL_STATE";
+
+		case SCARD_IOCTL_STATUSA:
+			return funcName ? "SCardStatusA" : "SCARD_IOCTL_STATUSA";
+
+		case SCARD_IOCTL_STATUSW:
+			return funcName ? "SCardStatusW" : "SCARD_IOCTL_STATUSW";
+
+		case SCARD_IOCTL_TRANSMIT:
+			return funcName ? "SCardTransmit" : "SCARD_IOCTL_TRANSMIT";
+
+		case SCARD_IOCTL_CONTROL:
+			return funcName ? "SCardControl" : "SCARD_IOCTL_CONTROL";
+
+		case SCARD_IOCTL_GETATTRIB:
+			return funcName ? "SCardGetAttrib" : "SCARD_IOCTL_GETATTRIB";
+
+		case SCARD_IOCTL_SETATTRIB:
+			return funcName ? "SCardSetAttrib" : "SCARD_IOCTL_SETATTRIB";
+
+		case SCARD_IOCTL_ACCESSSTARTEDEVENT:
+			return funcName ? "SCardAccessStartedEvent" : "SCARD_IOCTL_ACCESSSTARTEDEVENT";
+
+		case SCARD_IOCTL_LOCATECARDSBYATRA:
+			return funcName ? "SCardLocateCardsByATRA" : "SCARD_IOCTL_LOCATECARDSBYATRA";
+
+		case SCARD_IOCTL_LOCATECARDSBYATRW:
+			return funcName ? "SCardLocateCardsByATRB" : "SCARD_IOCTL_LOCATECARDSBYATRW";
+
+		case SCARD_IOCTL_READCACHEA:
+			return funcName ? "SCardReadCacheA" : "SCARD_IOCTL_READCACHEA";
+
+		case SCARD_IOCTL_READCACHEW:
+			return funcName ? "SCardReadCacheW" : "SCARD_IOCTL_READCACHEW";
+
+		case SCARD_IOCTL_WRITECACHEA:
+			return funcName ? "SCardWriteCacheA" : "SCARD_IOCTL_WRITECACHEA";
+
+		case SCARD_IOCTL_WRITECACHEW:
+			return funcName ? "SCardWriteCacheW" : "SCARD_IOCTL_WRITECACHEW";
+
+		case SCARD_IOCTL_GETTRANSMITCOUNT:
+			return funcName ? "SCardGetTransmitCount" : "SCARD_IOCTL_GETTRANSMITCOUNT";
+
+		case SCARD_IOCTL_RELEASETARTEDEVENT:
+			return funcName ? "SCardReleaseStartedEvent" : "SCARD_IOCTL_RELEASETARTEDEVENT";
+
+		case SCARD_IOCTL_GETREADERICON:
+			return funcName ? "SCardGetReaderIcon" : "SCARD_IOCTL_GETREADERICON";
+
+		case SCARD_IOCTL_GETDEVICETYPEID:
+			return funcName ? "SCardGetDeviceTypeId" : "SCARD_IOCTL_GETDEVICETYPEID";
+
+		default:
+			return funcName ? "SCardUnknown" : "SCARD_IOCTL_UNKNOWN";
+	}
+}
