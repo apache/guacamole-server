@@ -79,7 +79,7 @@ AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
 
 # Check for pthread_setattr_default_np
 AC_CHECK_DECLS([pthread_setattr_default_np], , , [[#include <pthread.h>]])
-            
+
 # librt
 AC_CHECK_FUNC([timer_create], [AC_MSG_RESULT([timer_create was found without librt.])],
               [AC_CHECK_LIB([rt], [timer_create],
@@ -692,7 +692,7 @@ then
 fi
 
 #
-# libVNCserver support for the requestedResize member, which enables the 
+# libVNCserver support for the requestedResize member, which enables the
 # client to pause frame buffer updates during a resize operation. If support
 # for this is missing, Guacamole may still attempt to send the resize requests
 # to the remote display, but there may be odd display behavior just before,
@@ -750,6 +750,10 @@ then
                              [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
                       [freerdp_version=
                        have_freerdp=no])
+
+    PKG_CHECK_MODULES([PCSC], [libpcsclite],
+                      [CPPFLAGS="${PCSC_CFLAGS} -Werror $CPPFLAGS"],
+                      [AC_MSG_ERROR([libpcsclite is required for smartcard support])])
 fi
 
 if test "x$with_rdp" != "xno" -a "x${have_freerdp}" = "xno"
