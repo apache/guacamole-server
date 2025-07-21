@@ -251,7 +251,6 @@ void guac_rdpdr_process_clientid_confirm(guac_rdp_common_svc* svc,
 void guac_rdpdr_process_device_reply(guac_rdp_common_svc* svc,
         wStream* input_stream) {
 
-    guac_client_log(svc->client, GUAC_LOG_DEBUG, "guac_rdpdr_process_device_reply");
     guac_rdpdr* rdpdr = (guac_rdpdr*) svc->data;
 
     unsigned int device_id, ntstatus;
@@ -296,8 +295,6 @@ void guac_rdpdr_process_device_reply(guac_rdp_common_svc* svc,
 
 void guac_rdpdr_process_device_iorequest(guac_rdp_common_svc* svc,
         wStream* input_stream) {
-
-    guac_client_log(svc->client, GUAC_LOG_DEBUG, "guac_rdpdr_process_device_iorequest");
 
     guac_rdpdr* rdpdr = (guac_rdpdr*) svc->data;
     guac_rdpdr_iorequest iorequest;

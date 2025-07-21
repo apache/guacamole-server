@@ -55,8 +55,12 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/rdpdr/rdpdr-messages.c              \
     channels/rdpdr/rdpdr-printer.c               \
     channels/rdpdr/rdpdr-smartcard.c             \
-    channels/rdpdr/smartcard.c                   \
+    channels/rdpdr/smartcard-call.c              \
+    channels/rdpdr/smartcard-pack.c              \
+    channels/rdpdr/smartcard-operations.c        \
+    channels/rdpdr/remote-smartcard.c            \
     channels/rdpdr/rdpdr.c                       \
+    channels/rdpdr/msz-unicode.c                 \
     channels/rdpei.c                             \
     channels/rdpgfx.c                            \
     channels/rdpsnd/rdpsnd-messages.c            \
@@ -103,8 +107,13 @@ noinst_HEADERS =                                 \
     channels/rdpdr/rdpdr-messages.h              \
     channels/rdpdr/rdpdr-printer.h               \
     channels/rdpdr/rdpdr-smartcard.h             \
-    channels/rdpdr/smartcard.h                   \
+    channels/rdpdr/scard.h                       \
+    channels/rdpdr/remote-smartcard.h            \
+    channels/rdpdr/smartcard-call.h              \
+    channels/rdpdr/smartcard-pack.h              \
+    channels/rdpdr/smartcard-operations.h        \
     channels/rdpdr/rdpdr.h                       \
+    channels/rdpdr/msz-unicode.h                 \
     channels/rdpei.h                             \
     channels/rdpgfx.h                            \
     channels/rdpsnd/rdpsnd-messages.h            \

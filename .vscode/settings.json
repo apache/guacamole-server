@@ -16,6 +16,13 @@
         "sstream": "c",
         "string": "c",
         "string_view": "c",
-        "vector": "c"
+        "vector": "c",
+        "unicode.h": "c",
+        "complex": "c",
+        "smartcard-pack.h": "c",
+        "scard.h": "c",
+        "smartcard-call.h": "c",
+        "unordered_map": "c",
+        "remote-smartcard.h": "c"
     }
 }

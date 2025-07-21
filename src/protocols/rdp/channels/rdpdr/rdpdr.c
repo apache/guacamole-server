@@ -22,6 +22,7 @@
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr-printer.h"
 #include "channels/rdpdr/rdpdr-smartcard.h"
+#include "channels/rdpdr/scard.h"
 #include "rdp.h"
 #include "settings.h"
 
