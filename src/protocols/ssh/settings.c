@@ -573,7 +573,7 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     if (settings->wol_send_packet) {
         
         if (strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
-            guac_user_log(user, GUAC_LOG_WARNING, "WoL was enabled, but no ",
+            guac_user_log(user, GUAC_LOG_WARNING, "WoL was enabled, but no "
                     "MAC address was provide.  WoL will not be sent.");
             settings->wol_send_packet = false;
         }

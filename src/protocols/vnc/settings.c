@@ -698,7 +698,7 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         
         /* If WoL has been enabled but no MAC provided, log warning and disable. */
         if(strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
-            guac_user_log(user, GUAC_LOG_WARNING, "Wake on LAN was requested, ",
+            guac_user_log(user, GUAC_LOG_WARNING, "Wake on LAN was requested, "
                     "but no MAC address was specified.  WoL will not be sent.");
             settings->wol_send_packet = false;
         }
