@@ -477,6 +477,19 @@ int guac_terminal_scrollbar_handle_mouse(guac_terminal_scrollbar* scrollbar,
         return 1;
 
     }
+    /* Handle left click within scrollbar but outside handle */
+    else if (mask == GUAC_CLIENT_MOUSE_LEFT
+            && x >= parent_left && x < parent_right
+            && y >= parent_top  && y < parent_bottom) {
+
+        /* Snap the handle to the middle of the click location */
+        scrollbar->dragging_handle = 1;
+        scrollbar->drag_offset_y = scrollbar->render_state.handle_height / 2;
+        scrollbar->drag_current_y = y;
+
+        /* Mouse event was handled by scrollbar */
+        return 1;
+    }
 
     /* Eat any events that occur within the scrollbar */
     return x >= parent_left && x < parent_right
