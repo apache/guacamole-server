@@ -1358,8 +1358,8 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         
         /* If WoL has been requested but no MAC address given, log a warning. */
         if(strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
-            guac_user_log(user, GUAC_LOG_WARNING, "WoL requested but no MAC ",
-                    "address specified.  WoL will not be sent.");
+            guac_user_log(user, GUAC_LOG_WARNING, "WoL was enabled, but no "
+                    "MAC address was provided. WoL will not be sent.");
             settings->wol_send_packet = 0;
         }
         
