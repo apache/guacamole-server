@@ -33,6 +33,7 @@
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
+#include "common-ssh/tunnel.h"
 #include "common-ssh/user.h"
 #endif
 
@@ -300,6 +301,9 @@ int guac_rdp_client_free_handler(guac_client* client) {
     /* Free SFTP user */
     if (rdp_client->sftp_user)
         guac_common_ssh_destroy_user(rdp_client->sftp_user);
+
+    if (rdp_client->ssh_tunnel)
+        guac_common_ssh_tunnel_cleanup(rdp_client->ssh_tunnel);
 
     guac_common_ssh_uninit();
 #endif
