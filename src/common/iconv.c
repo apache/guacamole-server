@@ -93,7 +93,7 @@ int guac_iconv(guac_iconv_read* reader, const char** input, int in_remaining,
 
 int GUAC_READ_UTF8(const char** input, int remaining) {
 
-    int value;
+    int value = 0;
 
     *input += guac_utf8_read(*input, remaining, &value);
     return value;
