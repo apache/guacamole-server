@@ -1714,8 +1714,8 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
     }
 
     /* Select and add to clipboard the "word" */
-    guac_terminal_select_start(terminal, row, word_head);
-    guac_terminal_select_update(terminal, row, word_tail);
+    guac_terminal_select_start(terminal, row, word_head, GUAC_TERMINAL_COLUMN_SIDE_LEFT);
+    guac_terminal_select_update(terminal, row, word_tail, GUAC_TERMINAL_COLUMN_SIDE_RIGHT);
 
 }
 
@@ -1779,11 +1779,16 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         int row = y / term->display->char_height - term->scroll_offset;
         int col = x / term->display->char_width;
 
+        /* Determine if x is on the left or right half of the column */
+        int char_x_offset = x % term->display->char_width;
+        guac_terminal_column_side side = char_x_offset < (term->display->char_width / 2) ?
+            GUAC_TERMINAL_COLUMN_SIDE_LEFT : GUAC_TERMINAL_COLUMN_SIDE_RIGHT;
+
         /* If mouse button was already just pressed, start a new selection or
          * resume the existing selection depending on whether shift is held */
         if (pressed_mask & GUAC_CLIENT_MOUSE_LEFT) {
             if (term->mod_shift)
-                guac_terminal_select_resume(term, row, col);
+                guac_terminal_select_resume(term, row, col, side);
             else {
 
                 /* Reset click counter if last click was 300ms before */
@@ -1797,7 +1802,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
 
                     /* First click = start selection */
                     case 0:
-                        guac_terminal_select_start(term, row, col);
+                        guac_terminal_select_start(term, row, col, side);
                         break;
                     
                     /* Second click = word selection */
@@ -1807,8 +1812,8 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
 
                     /* third click or more = line selection */
                     default:
-                        guac_terminal_select_start(term, row, 0);
-                        guac_terminal_select_update(term, row, term->display->width);
+                        guac_terminal_select_start(term, row, 0, GUAC_TERMINAL_COLUMN_SIDE_LEFT);
+                        guac_terminal_select_update(term, row, term->display->width, GUAC_TERMINAL_COLUMN_SIDE_RIGHT);
                         break;
                 }
             }
@@ -1817,7 +1822,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         /* In all other cases, simply update the existing selection as long as
          * the mouse button is pressed */
         else
-            guac_terminal_select_update(term, row, col);
+            guac_terminal_select_update(term, row, col, side);
 
     }
 

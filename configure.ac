@@ -1439,6 +1439,7 @@ AC_CONFIG_FILES([Makefile
                  src/common-ssh/Makefile
                  src/common-ssh/tests/Makefile
                  src/terminal/Makefile
+                 src/terminal/tests/Makefile
                  src/libguac/Makefile
                  src/libguac/tests/Makefile
                  src/guacd/Makefile
