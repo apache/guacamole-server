@@ -27,6 +27,7 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac-terminal.la
+SUBDIRS = . tests
 
 libguac_terminalincdir = $(includedir)/guacamole/terminal
 
@@ -40,6 +41,7 @@ noinst_HEADERS =                 \
     terminal/palette.h           \
     terminal/scrollbar.h         \
     terminal/select.h            \
+    terminal/selection-point.h   \
     terminal/terminal-priv.h     \
     terminal/terminal-handlers.h \
     terminal/types.h             \
@@ -59,6 +61,7 @@ libguac_terminal_la_SOURCES =   \
     palette.c                   \
     scrollbar.c                 \
     select.c                    \
+    selection-point.c           \
     terminal.c                  \
     terminal-handlers.c         \
     terminal-stdin-stream.c     \
