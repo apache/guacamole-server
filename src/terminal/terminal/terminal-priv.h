@@ -27,6 +27,7 @@
 #include "scrollbar.h"
 #include "terminal.h"
 #include "typescript.h"
+#include "selection-point.h"
 
 #include <guacamole/flag.h>
 
@@ -366,34 +367,34 @@ struct guac_terminal {
     bool selection_committed;
 
     /**
-     * The row that the selection starts at.
+     * The starting point of a selection
+     */
+    guac_terminal_selection_point selection_start;
+
+    /**
+     * The normalized row that the selection starts at.
      */
     int selection_start_row;
 
     /**
-     * The column that the selection starts at.
+     * The normalized column that the selection starts at.
      */
     int selection_start_column;
 
     /**
-     * The width of the character at selection start.
+     * The ending point of a selection
      */
-    int selection_start_width;
+    guac_terminal_selection_point selection_end;
 
     /**
-     * The row that the selection ends at.
+     * The normalized row that the selection ends at.
      */
     int selection_end_row;
 
     /**
-     * The column that the selection ends at.
+     * The normalized column that the selection ends at.
      */
     int selection_end_column;
-
-    /**
-     * The width of the character at selection end.
-     */
-    int selection_end_width;
 
     /**
      * Whether the cursor (arrow) keys should send cursor sequences

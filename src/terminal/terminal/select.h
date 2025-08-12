@@ -27,6 +27,7 @@
  */
 
 #include "terminal.h"
+#include "selection-point.h"
 
 #include <stdbool.h>
 
@@ -59,8 +60,12 @@ void guac_terminal_select_redraw(guac_terminal* terminal);
  * @param column
  *     The column number of the character at the start of the text selection,
  *     where the first (left-most) column in the terminal is column 0.
+ * 
+ * @param side
+ *      Which specific side of the column are we starting on.
  */
-void guac_terminal_select_start(guac_terminal* terminal, int row, int column);
+void guac_terminal_select_start(guac_terminal* terminal, int row, int column,
+        guac_terminal_column_side side);
 
 /**
  * Updates the end of text selection at the given row and column. This function
@@ -80,8 +85,12 @@ void guac_terminal_select_start(guac_terminal* terminal, int row, int column);
  *     The column number of the character at the current end of the text
  *     selection, where the first (left-most) column in the terminal is
  *     column 0.
+ * 
+ * @param side
+ *      Which specific side of the column are we selecting to.
  */
-void guac_terminal_select_update(guac_terminal* terminal, int row, int column);
+void guac_terminal_select_update(guac_terminal* terminal, int row, int column,
+        guac_terminal_column_side side);
 
 /**
  * Resumes selecting text, expanding the existing selected region from the
@@ -101,9 +110,12 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column);
  * @param column
  *     The column number of the character to include within the text selection,
  *     where the first (left-most) column in the terminal is column 0.
+ * 
+ * @param side
+ *      Which specific side of the column to resume selecting from.
  */
-void guac_terminal_select_resume(guac_terminal* terminal, int row, int column);
-
+void guac_terminal_select_resume(guac_terminal* terminal, int row, int column,
+        guac_terminal_column_side side);
 /**
  * Ends text selection, removing any highlight and storing the selected
  * character data within the clipboard associated with the given terminal. If
