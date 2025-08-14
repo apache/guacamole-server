@@ -70,6 +70,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "read-only",
     "server-alive-interval",
     "backspace",
+    "function-keys",
     "terminal-type",
     "scrollback",
     "locale",
@@ -282,6 +283,12 @@ enum SSH_ARGS_IDX {
      * GUAC_TERMINAL_DEFAULT_BACKSPACE.
      */
     IDX_BACKSPACE,
+
+    /**
+     * The family of codes (e.g. vt100) which will be used when you push
+     * the function and keypad keys.
+     */
+    IDX_FUNCTION_KEYS,
 
     /**
      * The terminal emulator type that is passed to the remote system (e.g.
@@ -546,6 +553,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->backspace =
         guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_BACKSPACE, GUAC_TERMINAL_DEFAULT_BACKSPACE);
+
+    /* Copy the family of codes for function keys and keypad */
+    settings->function_keys =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_FUNCTION_KEYS, "");
 
     /* Read terminal emulator type. */
     settings->terminal_type =

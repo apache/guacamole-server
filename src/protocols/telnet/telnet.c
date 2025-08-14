@@ -552,6 +552,7 @@ void* guac_telnet_client_thread(void* data) {
     options->font_size = settings->font_size;
     options->color_scheme = settings->color_scheme;
     options->backspace = settings->backspace;
+    options->function_keys = settings->function_keys;
 
     /* Create terminal */
     telnet_client->term = guac_terminal_create(client, options);

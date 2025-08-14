@@ -253,6 +253,7 @@ void* guac_kubernetes_client_thread(void* data) {
     options->font_size = settings->font_size;
     options->color_scheme = settings->color_scheme;
     options->backspace = settings->backspace;
+    options->function_keys = settings->function_keys;
 
     /* Create terminal */
     kubernetes_client->term = guac_terminal_create(client, options);

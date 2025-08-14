@@ -504,6 +504,13 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Configure backspace */
     term->backspace = options->backspace;
 
+    /* Configure the family of codes for function keys and the keypad */
+    if (options->function_keys == NULL || options->function_keys[0] == 0) {
+        term->function_keys = GUAC_TERMINAL_FUNCTION_KEYS_DEFAULT;
+    } else if (strcmp(options->function_keys, "vt100plus") == 0) {
+        term->function_keys = GUAC_TERMINAL_FUNCTION_KEYS_VT100PLUS;
+    }
+
     /* Initialize mouse latest click time and counter */
     term->click_timer = 0;
     term->click_counter = 0;
@@ -1546,7 +1553,10 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
             if (keysym == 0xFF50 || keysym == 0xFF95) return guac_terminal_send_string(term, "\x1B[1~"); /* Home */
 
-            /* Arrow keys w/ application cursor */
+            /*
+             * Arrow keys w/ application cursor.
+             * VT100 uses the same sequences: http://www.braun-home.net/michael/info/misc/VT100_commands.htm
+             */
             if (term->application_cursor_keys) {
                 if (keysym == 0xFF51 || keysym == 0xFF96) return guac_terminal_send_string(term, "\x1BOD"); /* Left */
                 if (keysym == 0xFF52 || keysym == 0xFF97) return guac_terminal_send_string(term, "\x1BOA"); /* Up */
@@ -1566,11 +1576,25 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
             if (keysym == 0xFF63 || keysym == 0xFF9E) return guac_terminal_send_string(term, "\x1B[2~"); /* Insert */
 
-            if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_send_string(term, "\x1B[[A"); /* F1  */
-            if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_send_string(term, "\x1B[[B"); /* F2  */
-            if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1B[[C"); /* F3  */
-            if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_send_string(term, "\x1B[[D"); /* F4  */
-            if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[[E"); /* F5  */
+            if (term->function_keys == GUAC_TERMINAL_FUNCTION_KEYS_VT100PLUS) {
+                if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_send_string(term, "\x1BOP"); /* F1  */
+                if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_send_string(term, "\x1BOQ"); /* F2  */
+                if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1BOR"); /* F3  */
+                if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_send_string(term, "\x1BOS"); /* F4  */
+                /*
+                 * VT100 only has 4 functon keys. Although, some sources suggest to
+                 * send default function key sequences like below for F5, etc.
+                 * It is very likely that modern VT100 terminals will understand the sequences.
+                 */
+                if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[15~"); /* F5  */
+            }
+            else {
+                if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_send_string(term, "\x1B[[A"); /* F1  */
+                if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_send_string(term, "\x1B[[B"); /* F2  */
+                if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1B[[C"); /* F3  */
+                if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_send_string(term, "\x1B[[D"); /* F4  */
+                if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[[E"); /* F5  */
+            }
 
             if (keysym == 0xFFC3) return guac_terminal_send_string(term, "\x1B[17~"); /* F6  */
             if (keysym == 0xFFC4) return guac_terminal_send_string(term, "\x1B[18~"); /* F7  */
