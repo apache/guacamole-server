@@ -234,6 +234,14 @@ AC_ARG_WITH(systemd_dir,
 AM_CONDITIONAL([ENABLE_SYSTEMD], [test "x${systemd_dir}" != "x"])
 AC_SUBST(systemd_dir)
 
+# Systemd user
+AC_ARG_WITH(systemd_user,
+            [AS_HELP_STRING([--with-systemd-user=<username>],
+                            [the user configured in the systemd unit to run guacd @<:@default=daemon@:>@])],
+            [systemd_user=$withval],
+            [systemd_user=daemon])
+AC_SUBST(systemd_user)
+
 # guacd config file
 AC_ARG_WITH(guacd_conf,
             [AS_HELP_STRING([--with-guacd-conf=<path>],
@@ -1488,6 +1496,7 @@ AM_COND_IF([ENABLE_INIT], [build_init="${init_dir}"], [build_init=no])
 #
 
 AM_COND_IF([ENABLE_SYSTEMD], [build_systemd="${systemd_dir}"], [build_systemd=no])
+AM_COND_IF([ENABLE_SYSTEMD], [build_systemd_user="${systemd_user}"], [build_systemd_user=no])
 
 #
 # FreeRDP plugins
@@ -1539,6 +1548,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
    FreeRDP plugins: ${build_rdp_plugins}
    Init scripts: ${build_init}
    Systemd units: ${build_systemd}
+   Systemd user: ${build_systemd_user}
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
