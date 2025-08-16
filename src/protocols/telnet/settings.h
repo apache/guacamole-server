@@ -264,6 +264,12 @@ typedef struct guac_telnet_settings {
     int backspace;
 
     /**
+     * The family of codes (e.g. vt100) which will be used when you push
+     * the function and keypad keys.
+     */
+    char* function_keys;
+
+    /**
      * The terminal emulator type that is passed to the remote system.
      */
     char* terminal_type;

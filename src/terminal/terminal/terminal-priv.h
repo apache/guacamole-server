@@ -475,6 +475,12 @@ struct guac_terminal {
     char backspace;
 
     /**
+     * The family of codes (e.g. vt100) which will be used when you push
+     * the function and keypad keys.
+     */
+    guac_terminal_function_keys function_keys;
+
+    /**
      * Whether copying from the terminal clipboard should be blocked. If set,
      * the contents of the terminal can still be copied, but will be usable
      * only within the terminal itself. The clipboard contents will not be
