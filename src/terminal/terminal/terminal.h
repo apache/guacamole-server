@@ -112,6 +112,416 @@
 #define GUAC_TERMINAL_PIPE_AUTOFLUSH 2
 
 /**
+ * Keysym for up arrow.
+ */
+#define GUAC_TERMINAL_KEY_UP          0xFF52
+
+/**
+ * Keysym for down arrow.
+ */
+#define GUAC_TERMINAL_KEY_DOWN        0xFF54
+
+/**
+ * Keysym for left arrow.
+ */
+#define GUAC_TERMINAL_KEY_LEFT        0xFF51
+
+/**
+ * Keysym for right arrow.
+ */
+#define GUAC_TERMINAL_KEY_RIGHT       0xFF53
+
+/**
+ * Keysym for home key.
+ */
+#define GUAC_TERMINAL_KEY_HOME        0xFF50
+
+/**
+ * Keysym for end key.
+ */
+#define GUAC_TERMINAL_KEY_END         0xFF57
+
+/**
+ * Keysym for page up.
+ */
+#define GUAC_TERMINAL_KEY_PAGEUP      0xFF55
+
+/**
+ * Keysym for page down.
+ */
+#define GUAC_TERMINAL_KEY_PAGEDOWN    0xFF56
+
+/**
+ * Keysym for keypad up arrow.
+ */
+#define GUAC_TERMINAL_KEY_KP_UP       0xFF97
+
+/**
+ * Keysym for keypad down arrow.
+ */
+#define GUAC_TERMINAL_KEY_KP_DOWN     0xFF99
+
+/**
+ * Keysym for keypad left arrow.
+ */
+#define GUAC_TERMINAL_KEY_KP_LEFT     0xFF96
+
+/**
+ * Keysym for keypad right arrow.
+ */
+#define GUAC_TERMINAL_KEY_KP_RIGHT    0xFF98
+
+/**
+ * Keysym for keypad home key.
+ */
+#define GUAC_TERMINAL_KEY_KP_HOME     0xFF95
+
+/**
+ * Keysym for keypad end key.
+ */
+#define GUAC_TERMINAL_KEY_KP_END      0xFF9C
+
+/**
+ * Keysym for keypad page up.
+ */
+#define GUAC_TERMINAL_KEY_KP_PAGEUP   0xFF9A
+
+/**
+ * Keysym for keypad page down.
+ */
+#define GUAC_TERMINAL_KEY_KP_PAGEDOWN 0xFF9B
+
+/**
+ * Keysym for left Control.
+ */
+#define GUAC_TERMINAL_KEY_CTRL_L      0xFFE3
+
+/**
+ * Keysym for right Control.
+ */
+#define GUAC_TERMINAL_KEY_CTRL_R      0xFFE4
+
+/**
+ * Keysym for left Meta.
+ */
+#define GUAC_TERMINAL_KEY_META_L      0xFFE7
+
+/**
+ * Keysym for right Meta.
+ */
+#define GUAC_TERMINAL_KEY_META_R      0xFFE8
+
+/**
+ * Keysym for left ALT.
+ */
+#define GUAC_TERMINAL_KEY_ALT_L       0xFFE9
+
+/**
+ * Keysym for right ALT.
+ */
+#define GUAC_TERMINAL_KEY_ALT_R       0xFFEA
+
+/**
+ * Keysym for left Shift.
+ */
+#define GUAC_TERMINAL_KEY_SHIFT_L     0xFFE1
+
+/**
+ * Keysym for right Shift.
+ */
+#define GUAC_TERMINAL_KEY_SHIFT_R     0xFFE2
+
+/**
+ * Keysym for escape.
+ */
+#define GUAC_TERMINAL_KEY_ESCAPE      0xFF1B
+
+/**
+ * Keysym for insert.
+ */
+#define GUAC_TERMINAL_KEY_INSERT      0xFF63
+
+/**
+ * Keysym for enter.
+ */
+#define GUAC_TERMINAL_KEY_ENTER       0xFF0D
+
+/**
+ * Keysym for tab.
+ */
+#define GUAC_TERMINAL_KEY_TAB         0xFF09
+
+/**
+ * Keysym for backspace.
+ */
+#define GUAC_TERMINAL_KEY_BACKSPACE   0xFF08
+
+/**
+ * Keysym for delete.
+ */
+#define GUAC_TERMINAL_KEY_DELETE      0xFFFF
+
+/**
+ * Keysym for keypad insert.
+ */
+#define GUAC_TERMINAL_KEY_KP_INSERT   0xFF9E
+
+/**
+ * Keysym for keypad enter.
+ */
+#define GUAC_TERMINAL_KEY_KP_ENTER    0xFF8D
+
+/**
+ * Keysym for keypad tab.
+ */
+#define GUAC_TERMINAL_KEY_KP_TAB      0xFF89
+
+/**
+ * Keysym for keypad delete.
+ */
+#define GUAC_TERMINAL_KEY_KP_DELETE   0xFF9F
+
+/**
+ * Keysym for Function key F1.
+ */
+#define GUAC_TERMINAL_KEY_F1          0xFFBE
+
+/**
+ * Keysym for Function key F2.
+ */
+#define GUAC_TERMINAL_KEY_F2          0xFFBF
+
+/**
+ * Keysym for Function key F3.
+ */
+#define GUAC_TERMINAL_KEY_F3          0xFFC0
+
+/**
+ * Keysym for Function key F4.
+ */
+#define GUAC_TERMINAL_KEY_F4          0xFFC1
+
+/**
+ * Keysym for Function key F5.
+ */
+#define GUAC_TERMINAL_KEY_F5          0xFFC2
+
+/**
+ * Keysym for Function key F6.
+ */
+#define GUAC_TERMINAL_KEY_F6          0xFFC3
+
+/**
+ * Keysym for Function key F7.
+ */
+#define GUAC_TERMINAL_KEY_F7          0xFFC4
+
+/**
+ * Keysym for Function key F8.
+ */
+#define GUAC_TERMINAL_KEY_F8          0xFFC5
+
+/**
+ * Keysym for Function key F9.
+ */
+#define GUAC_TERMINAL_KEY_F9          0xFFC6
+
+/**
+ * Keysym for Function key F10.
+ */
+#define GUAC_TERMINAL_KEY_F10         0xFFC7
+
+/**
+ * Keysym for Function key F11.
+ */
+#define GUAC_TERMINAL_KEY_F11         0xFFC8
+
+/**
+ * Keysym for Function key F12.
+ */
+#define GUAC_TERMINAL_KEY_F12         0xFFC9
+
+/**
+ * Keysym for keypad Function key F1.
+ */
+#define GUAC_TERMINAL_KEY_KP_F1       0xFF91
+
+/**
+ * Keysym for keypad Function key F2.
+ */
+#define GUAC_TERMINAL_KEY_KP_F2       0xFF92
+
+/**
+ * Keysym for keypad Function key F3.
+ */
+#define GUAC_TERMINAL_KEY_KP_F3       0xFF93
+
+/**
+ * Keysym for keypad Function key F4.
+ */
+#define GUAC_TERMINAL_KEY_KP_F4       0xFF94
+
+/**
+ * Hex ASCII code for Tab.
+ */
+#define GUAC_TERMINAL_ASCII_TAB                "\x09"
+
+/**
+ * Hex ASCII code for Carriage Return.
+ */
+#define GUAC_TERMINAL_ASCII_CR                 "\x0D"
+
+/**
+ * Hex ASCII code for Escape.
+ */
+#define GUAC_TERMINAL_ASCII_ESCAPE             "\x1B"
+
+/**
+ * Escape sequence: page up.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_PAGEUP           "\x1B[5~"
+
+/**
+ * Escape sequence: page down.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_PAGEDOWN         "\x1B[6~"
+
+/**
+ * Escape sequence: end.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_END              "\x1B[4~"
+
+/**
+ * Escape sequence: insert.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_INSERT           "\x1B[2~"
+
+/**
+ * Escape sequence: home.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_HOME             "\x1B[1~"
+
+/**
+ * Escape sequence: move cursor left.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_CURSOR_LEFT      "\x1B[D"
+
+/**
+ * Escape sequence: move cursor right.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_CURSOR_RIGHT     "\x1B[C"
+
+/**
+ * Escape sequence: move cursor up.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_CURSOR_UP        "\x1B[A"
+
+/**
+ * Escape sequence: move cursor down.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_CURSOR_DOWN      "\x1B[B"
+
+/**
+ * Escape sequence: delete.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_DELETE           "\x1B[3~"
+
+/**
+ * Escape sequence: application cursor move left.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_APP_CURSOR_LEFT  "\x1BOD"
+
+/**
+ * Escape sequence: application cursor move right.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_APP_CURSOR_RIGHT "\x1BOC"
+
+/**
+ * Escape sequence: application cursor move up.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_APP_CURSOR_UP    "\x1BOA"
+
+/**
+ * Escape sequence: application cursor move down.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_APP_CURSOR_DOWN  "\x1BOB"
+
+/**
+ * Escape sequence: function key F1.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F1               "\x1B[[A"
+
+/**
+ * Escape sequence: function key F2.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F2               "\x1B[[B"
+
+/**
+ * Escape sequence: function key F3.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F3               "\x1B[[C"
+
+/**
+ * Escape sequence: function key F4.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F4               "\x1B[[D"
+
+/**
+ * Escape sequence: function key F5.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F5               "\x1B[[E"
+
+/**
+ * Escape sequence: function key F6.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F6               "\x1B[17~"
+
+/**
+ * Escape sequence: function key F7.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F7               "\x1B[18~"
+
+/**
+ * Escape sequence: function key F8.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F8               "\x1B[19~"
+
+/**
+ * Escape sequence: function key F9.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F9               "\x1B[20~"
+
+/**
+ * Escape sequence: function key F10.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F10              "\x1B[21~"
+
+/**
+ * Escape sequence: function key F11.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F11              "\x1B[22~"
+
+/**
+ * Escape sequence: function key F12.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_F12              "\x1B[23~"
+
+/**
+ * Escape sequence: go to previous word.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_PREV_WORD        "\033[1;5D"
+
+/**
+ * Escape sequence: go to next word.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_NEXT_WORD        "\033[1;5C"
+
+/**
+ * Escape sequence: delete word.
+ */
+#define GUAC_TERMINAL_ESC_SEQ_DELETE_WORD      "\033D"
+
+/**
  * Represents a terminal emulator which uses a given Guacamole client to
  * render itself.
  */
