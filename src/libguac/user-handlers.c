@@ -55,6 +55,9 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"audio",      __guac_handle_audio},
    {"argv",       __guac_handle_argv},
    {"nop",        __guac_handle_nop},
+   {"usbconnect",    __guac_handle_usbconnect},
+   {"usbdata",       __guac_handle_usbdata},
+   {"usbdisconnect", __guac_handle_usbdisconnect},
    {NULL,         NULL}
 };
 
@@ -627,6 +630,83 @@ int __guac_handle_disconnect(guac_user* user, int argc, char** argv) {
     return 0;
 }
 
+int __guac_handle_usbconnect(guac_user* user, int argc, char** argv) {
+
+    if (argc != 9) {
+        guac_user_log(user, GUAC_LOG_WARNING, "Received \"usbconnect\" "
+                "instruction with wrong number of arguments (expected 9, got %d).", 
+                argc);
+        return 0;
+    }
+
+    if (user->usbconnect_handler)
+        return user->usbconnect_handler(
+            user,
+            argv[0], /* device_id */
+            atoi(argv[1]), /* vendor_id */
+            atoi(argv[2]), /* product_id */
+            argv[3], /* device_name */
+            argv[4], /* serial_number */
+            atoi(argv[5]), /* device_class */
+            atoi(argv[6]), /* device_subclass */
+            atoi(argv[7]), /* device_protocol */
+            argv[8]  /* interface_data */
+        );
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "USB redirection not supported, "
+            "ignoring usbconnect instruction.");
+    return 0;
+
+}
+
+int __guac_handle_usbdata(guac_user* user, int argc, char** argv) {
+
+    if (argc != 4) {
+        guac_user_log(user, GUAC_LOG_WARNING, "Received \"usbdata\" "
+                "instruction with wrong number of arguments (expected 4, got %d).", 
+                argc);
+        return 0;
+    }
+
+    if (user->usbdata_handler) {
+        /* Decode base64 data */
+        guac_protocol_decode_base64(argv[2]);
+        return user->usbdata_handler(
+            user,
+            argv[0], /* device_id */
+            atoi(argv[1]), /* endpoint_number */
+            argv[2], /* data (now decoded) */
+            argv[3]  /* transfer_type */
+        );
+    }
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "USB redirection not supported, "
+            "ignoring usbdata instruction.");
+    return 0;
+
+}
+
+int __guac_handle_usbdisconnect(guac_user* user, int argc, char** argv) {
+
+    if (argc != 1) {
+        guac_user_log(user, GUAC_LOG_WARNING, "Received \"usbdisconnect\" "
+                "instruction with wrong number of arguments (expected 1, got %d).", 
+                argc);
+        return 0;
+    }
+
+    if (user->usbdisconnect_handler)
+        return user->usbdisconnect_handler(
+            user,
+            argv[0] /* device_id */
+        );
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "USB redirection not supported, "
+            "ignoring usbdisconnect instruction.");
+    return 0;
+
+}
+
 /* Guacamole handshake handler functions. */
 
 int __guac_handshake_size_handler(guac_user* user, int argc, char** argv) {
@@ -777,4 +857,3 @@ int __guac_user_call_opcode_handler(__guac_instruction_handler_mapping* map,
     return 0;
 
 }
-

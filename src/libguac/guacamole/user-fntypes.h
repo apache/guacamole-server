@@ -499,5 +499,93 @@ typedef int guac_user_get_handler(guac_user* user, guac_object* object,
 typedef int guac_user_put_handler(guac_user* user, guac_object* object,
         guac_stream* stream, char* mimetype, char* name);
 
-#endif
+/**
+ * Handler for Guacamole USB connect events, invoked when a "usbconnect" 
+ * instruction has been received from a user. This indicates that the user
+ * has connected a USB device via WebUSB and it is available for redirection.
+ *
+ * @param user
+ *     The user that connected the USB device.
+ *
+ * @param device_id
+ *     The unique identifier for the USB device.
+ *
+ * @param vendor_id
+ *     The vendor ID of the USB device.
+ *
+ * @param product_id
+ *     The product ID of the USB device.
+ *
+ * @param device_name
+ *     The human-readable name of the device.
+ *
+ * @param serial_number
+ *     The serial number of the device, if available.
+ *
+ * @param device_class
+ *     The USB device class.
+ *
+ * @param device_subclass
+ *     The USB device subclass.
+ *
+ * @param device_protocol
+ *     The USB device protocol.
+ *
+ * @param interface_data
+ *     Encoded string containing interface and endpoint information in the
+ *     format: "iface_num:class:subclass:protocol:ep_num:dir:type:size,..."
+ *
+ * @return
+ *     Zero if the USB connect event was handled successfully, or non-zero if 
+ *     an error occurred.
+ */
+typedef int guac_user_usbconnect_handler(guac_user* user, const char* device_id,
+    int vendor_id, int product_id, const char* device_name, 
+    const char* serial_number, int device_class, int device_subclass,
+    int device_protocol, const char* interface_data);
 
+/**
+* Handler for Guacamole USB data events, invoked when a "usbdata" instruction
+* has been received from a user. This carries data from a client-side USB 
+* device to be processed on the server side.
+*
+* @param user
+*     The user that sent the USB data.
+*
+* @param device_id
+*     The unique identifier for the USB device.
+*
+* @param endpoint_number
+*     The endpoint number the data originated from.
+*
+* @param data
+*     The base64-encoded USB data.
+*
+* @param transfer_type
+*     The type of USB transfer (bulk, interrupt, isochronous, control).
+*
+* @return
+*     Zero if the USB data was handled successfully, or non-zero if an error
+*     occurred.
+*/
+typedef int guac_user_usbdata_handler(guac_user* user, const char* device_id,
+    int endpoint_number, const char* data, const char* transfer_type);
+
+/**
+* Handler for Guacamole USB disconnect events, invoked when a "usbdisconnect"
+* instruction has been received from a user. This indicates that the user
+* has disconnected a USB device that was previously available for redirection.
+*
+* @param user
+*     The user that disconnected the USB device.
+*
+* @param device_id
+*     The unique identifier for the USB device that was disconnected.
+*
+* @return
+*     Zero if the USB disconnect event was handled successfully, or non-zero 
+*     if an error occurred.
+*/
+typedef int guac_user_usbdisconnect_handler(guac_user* user, const char* device_id);
+
+#endif
