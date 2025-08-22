@@ -280,8 +280,7 @@ static BOOL guac_rdp_rail_window_update(rdpContext* context,
         guac_client_log(client, GUAC_LOG_TRACE, "RAIL window visibility change: %d", windowState->showState);
 
         /* State is either hidden or minimized - send restore command. */
-        if (windowState->showState == GUAC_RDP_RAIL_WINDOW_STATE_HIDDEN
-            || windowState->showState == GUAC_RDP_RAIL_WINDOW_STATE_MINIMIZED) {
+        if (windowState->showState == GUAC_RDP_RAIL_WINDOW_STATE_MINIMIZED) {
 
             guac_client_log(client, GUAC_LOG_DEBUG, "RAIL window minimized, sending restore command.");
 
