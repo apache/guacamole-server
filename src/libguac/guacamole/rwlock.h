@@ -21,6 +21,7 @@
 #define __GUAC_RWLOCK_H
 
 #include <pthread.h>
+#include "thread-local.h"
 
 /**
  * This file implements reentrant read-write locks using thread-local storage
@@ -57,7 +58,7 @@ typedef struct guac_rwlock {
      * A key to access a thread-local property tracking any ownership of the
      * lock by the current thread.
      */
-    pthread_key_t key;
+    guac_thread_local_key_t key;
 
 } guac_rwlock;
 
