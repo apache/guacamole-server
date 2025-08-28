@@ -169,78 +169,21 @@ const char* guac_status_string(guac_status status) {
 
 #ifdef HAVE_LIBPTHREAD
 
-/* PThread implementation of __guac_error */
+/* Thread-local implementation using __thread for optimal performance */
 
-static pthread_key_t  __guac_error_key;
-static pthread_once_t __guac_error_key_init = PTHREAD_ONCE_INIT;
-
-static pthread_key_t  __guac_error_message_key;
-static pthread_once_t __guac_error_message_key_init = PTHREAD_ONCE_INIT;
-
-static void __guac_mem_free_pointer(void* pointer) {
-
-    /* Free memory allocated to status variable */
-    guac_mem_free(pointer);
-
-}
-
-static void __guac_alloc_error_key() {
-
-    /* Create key, destroy any allocated variable on thread exit */
-    pthread_key_create(&__guac_error_key, __guac_mem_free_pointer);
-
-}
-
-static void __guac_alloc_error_message_key() {
-
-    /* Create key, destroy any allocated variable on thread exit */
-    pthread_key_create(&__guac_error_message_key, __guac_mem_free_pointer);
-
-}
+/* 
+ * Simple __thread implementation for error handling.
+ * Uses static allocation to avoid memory management complexity.
+ */
+static __thread guac_status __guac_error_storage;
+static __thread const char* __guac_error_message_storage = NULL;
 
 guac_status* __guac_error() {
-
-    /* Pointer for thread-local data */
-    guac_status* status;
-
-    /* Init error key, if not already initialized */
-    pthread_once(&__guac_error_key_init, __guac_alloc_error_key);
-
-    /* Retrieve thread-local status variable */
-    status = (guac_status*) pthread_getspecific(__guac_error_key);
-
-    /* Allocate thread-local status variable if not already allocated */
-    if (status == NULL) {
-        status = guac_mem_alloc(sizeof(guac_status));
-        pthread_setspecific(__guac_error_key, status);
-    }
-
-    return status;
-
+    return &__guac_error_storage;
 }
 
 const char** __guac_error_message() {
-
-    /* Pointer for thread-local data */
-    const char** message;
-
-    /* Init error message key, if not already initialized */
-    pthread_once(
-        &__guac_error_message_key_init,
-        __guac_alloc_error_message_key
-    );
-
-    /* Retrieve thread-local message variable */
-    message = (const char**) pthread_getspecific(__guac_error_message_key);
-
-    /* Allocate thread-local message variable if not already allocated */
-    if (message == NULL) {
-        message = guac_mem_alloc(sizeof(const char*));
-        pthread_setspecific(__guac_error_message_key, message);
-    }
-
-    return message;
-
+    return &__guac_error_message_storage;
 }
 
 #else

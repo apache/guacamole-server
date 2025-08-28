@@ -86,6 +86,7 @@ libguacinc_HEADERS =                  \
     guacamole/stream-types.h          \
     guacamole/string.h                \
     guacamole/tcp.h                   \
+    guacamole/thread-local.h          \
     guacamole/timestamp.h             \
     guacamole/timestamp-types.h       \
     guacamole/unicode.h               \
@@ -147,6 +148,7 @@ libguac_la_SOURCES =          \
     id.c                      \
     mem.c                     \
     rwlock.c                  \
+    thread-local.c            \
     palette.c                 \
     parser.c                  \
     pool.c                    \

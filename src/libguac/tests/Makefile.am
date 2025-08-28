@@ -70,6 +70,10 @@ test_libguac_SOURCES =               \
     string/strlcpy.c                 \
     string/strljoin.c                \
     string/strnstr.c                 \
+    thread-local/thread_local_storage_basic.c \
+    thread-local/thread_local_storage_multithreaded.c \
+    thread-local/thread_local_storage_error_compat.c \
+    thread-local/thread_local_storage_stress.c \
     unicode/charsize.c               \
     unicode/read.c                   \
     unicode/strlen.c                 \
