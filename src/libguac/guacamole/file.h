@@ -73,12 +73,16 @@ struct guac_open_how {
  * The guac_open_how structure contains multiple types of flags that dictate
  * how the file should be opened, whether a lock should be acquired, etc.
  *
- * If the GUAC_O_UNIQUE_SUFFIX flag is given in the guac_open_how structure, a
- * buffer for storage of the filename MUST be provided within that same
- * structure. That filename buffer will contain the filename ultimately used to
- * open the file (excluding the path), even if the filename is unchanged. This
+ * If a filename buffer is provided within the guac_open_how structure, and the
+ * call to guac_openat() succeeds, that filename buffer will contain the
+ * filename ultimately used to open the file (excluding the path), regardless
+ * of whether the filename was modified from the value provided. NOTE: This
  * buffer may be touched even if the operation fails, and is not guaranteed to
  * be null terminated if the operation fails.
+ *
+ * If the GUAC_O_UNIQUE_SUFFIX flag is given in the guac_open_how structure, a
+ * buffer for storage of the filename MUST be provided within that same
+ * structure.
  *
  * If the operation succeeds, the resulting file descriptor is returned. If the
  * operation fails, -1 is returned and guac_error and guac_error_message are

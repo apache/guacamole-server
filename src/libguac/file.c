@@ -142,6 +142,21 @@ int guac_openat(const char* path, const char* filename,
     if (how->flags & GUAC_O_UNIQUE_SUFFIX)
         oflags |= O_CREAT | O_EXCL;
 
+    /* Always return a filename for the opened file if a filename buffer is
+     * provided */
+    size_t filename_length = 0;
+    if (how->filename != NULL) {
+
+        /* We at least need enough storage for the unaltered filename */
+        filename_length = guac_strlcpy(how->filename, filename, how->filename_size);
+        if (filename_length >= how->filename_size) {
+            guac_error = GUAC_STATUS_RESULT_TOO_LARGE;
+            guac_error_message = "Insufficient space in provided buffer for filename (even without suffix)";
+            goto failed;
+        }
+
+    }
+
     /* Attempt to open requested file beneath specified path */
     fd = openat(dir_fd, filename, oflags, how->mode);
     if (fd == -1) {
@@ -162,14 +177,6 @@ int guac_openat(const char* path, const char* filename,
         if (how->filename == NULL) {
             guac_error = GUAC_STATUS_INVALID_ARGUMENT;
             guac_error_message = "No filename buffer provided for adding unique suffix";
-            goto failed;
-        }
-
-        /* We at least need enough storage for the unaltered filename */
-        size_t filename_length = guac_strlcpy(how->filename, filename, how->filename_size);
-        if (filename_length >= how->filename_size) {
-            guac_error = GUAC_STATUS_RESULT_TOO_LARGE;
-            guac_error_message = "Insufficient space in provided buffer for filename (even without suffix)";
             goto failed;
         }
 
