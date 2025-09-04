@@ -2042,16 +2042,16 @@ int guac_terminal_create_typescript(guac_terminal* term, const char* path,
 
     /* Log failure */
     if (term->typescript == NULL) {
-        guac_client_log(term->client, GUAC_LOG_ERROR,
-                "Creation of typescript failed: %s", strerror(errno));
+        guac_client_log(term->client, GUAC_LOG_ERROR, "Creation of typescript "
+                "failed: %s: %s", guac_error_message,
+                guac_status_string(guac_error));
         return 1;
     }
 
     /* If typescript was successfully created, log filenames */
-    guac_client_log(term->client, GUAC_LOG_INFO,
-            "Typescript of terminal session will be saved to \"%s\". "
-            "Timing file is \"%s\".",
-            term->typescript->data_filename,
+    guac_client_log(term->client, GUAC_LOG_INFO, "Typescript of terminal "
+            "session will be saved within \"%s\" to \"%s\". Corresponding "
+            "timing file is \"%s\".", path, term->typescript->data_filename,
             term->typescript->timing_filename);
 
     /* Typescript creation succeeded */

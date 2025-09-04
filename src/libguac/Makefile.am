@@ -55,6 +55,9 @@ libguacinc_HEADERS =                  \
     guacamole/fifo.h                  \
     guacamole/fifo-constants.h        \
     guacamole/fifo-types.h            \
+    guacamole/file.h                  \
+    guacamole/file-constants.h        \
+    guacamole/file-types.h            \
     guacamole/fips.h                  \
     guacamole/flag.h                  \
     guacamole/flag-types.h            \
@@ -116,6 +119,7 @@ noinst_HEADERS =              \
     encode-jpeg.h             \
     encode-png.h              \
     id.h                      \
+    file-private.h            \
     palette.h                 \
     raw_encoder.h             \
     user-handlers.h           \
@@ -141,6 +145,7 @@ libguac_la_SOURCES =          \
     encode-png.c              \
     error.c                   \
     fifo.c                    \
+    file.c                    \
     fips.c                    \
     flag.c                    \
     hash.c                    \
