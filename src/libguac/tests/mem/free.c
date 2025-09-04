@@ -50,6 +50,7 @@ void test_mem__free_const() {
 void test_mem__free_null() {
     void* ptr = NULL;
     guac_mem_free(ptr);
+    CU_PASS("Nothing freed (segfault did not occur)");
 }
 
 /**
@@ -59,5 +60,6 @@ void test_mem__free_null() {
 void test_mem__free_null_const() {
     const void* ptr = NULL;
     guac_mem_free_const(ptr);
+    CU_PASS("Nothing freed (segfault did not occur)");
 }
 
