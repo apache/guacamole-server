@@ -91,6 +91,11 @@ print <<'END';
 int tap_test_number = 1;
 
 /**
+ * The total number of assertions made prior to the current test.
+ */
+int last_asserts = 0;
+
+/**
  * Logs the status of a CUnit test which just completed. This implementation
  * logs test completion in TAP format.
  *
@@ -106,10 +111,19 @@ int tap_test_number = 1;
 static void tap_log_test_completed(const CU_pTest test,
         const CU_pSuite suite, const CU_pFailureRecord failure) {
 
+    const char* directive = "";
+
+    /* Determine whether the test was skipped (no assertions made at all) */
+    int current_asserts = CU_get_number_of_asserts();
+    if (current_asserts == last_asserts)
+        directive = " # SKIP";
+    else
+        last_asserts = current_asserts;
+
     /* Log success/failure in TAP format */
     if (failure == NULL)
-        printf("ok %i - [%s] %s: OK\n",
-            tap_test_number, suite->pName, test->pName);
+        printf("ok %i - [%s] %s: OK%s\n",
+            tap_test_number, suite->pName, test->pName, directive);
     else
         printf("not ok %i - [%s] %s: Assertion failed on %s:%i: %s\n",
             tap_test_number, suite->pName, test->pName,
