@@ -25,6 +25,7 @@
 
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
+AM_CPPFLAGS = -DGUACD_STATE_DIR='"$(localstatedir)/run/guacd"'
 
 noinst_LTLIBRARIES = libguac_common_ssh.la
 SUBDIRS = . tests
@@ -34,6 +35,7 @@ libguac_common_ssh_la_SOURCES = \
     sftp.c                      \
     ssh.c                       \
     key.c                       \
+    tunnel.c                    \
     user.c
 
 noinst_HEADERS =            \
@@ -41,6 +43,7 @@ noinst_HEADERS =            \
     common-ssh/key.h        \
     common-ssh/sftp.h       \
     common-ssh/ssh.h        \
+    common-ssh/tunnel.h     \
     common-ssh/user.h
 
 libguac_common_ssh_la_CFLAGS = \

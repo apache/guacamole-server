@@ -24,6 +24,13 @@
 #include "settings.h"
 #include "terminal/terminal.h"
 
+#ifdef ENABLE_COMMON_SSH
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/tunnel.h"
+#include "common-ssh/user.h"
+#endif
+
 #include <guacamole/recording.h>
 #include <libtelnet.h>
 
@@ -76,6 +83,29 @@ typedef struct guac_telnet_client {
      * progress.
      */
     guac_recording* recording;
+
+#ifdef ENABLE_COMMON_SSH
+    /**
+     * The user and credentials used to authenticate for SFTP.
+     */
+    guac_common_ssh_user* sftp_user;
+
+    /**
+     * The SSH session used for SFTP.
+     */
+    guac_common_ssh_session* sftp_session;
+
+    /**
+     * An SFTP-based filesystem.
+     */
+    guac_common_ssh_sftp_filesystem* sftp_filesystem;
+
+    /**
+     * The SSH tunnel data.
+     */
+    guac_ssh_tunnel* ssh_tunnel;
+#endif
+
 
 } guac_telnet_client;
 

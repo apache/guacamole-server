@@ -20,6 +20,7 @@
 #include "argv.h"
 #include "common/defaults.h"
 #include "common/string.h"
+#include "common-ssh/ssh-constants.h"
 #include "config.h"
 #include "rdp.h"
 #include "resolution.h"
@@ -117,6 +118,16 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "sftp-server-alive-interval",
     "sftp-disable-download",
     "sftp-disable-upload",
+    "ssh-tunnel",
+    "ssh-tunnel-host",
+    "ssh-tunnel-port",
+    "ssh-tunnel-host-key",
+    "ssh-tunnel-username",
+    "ssh-tunnel-password",
+    "ssh-tunnel-private-key",
+    "ssh-tunnel-passphrase",
+    "ssh-tunnel-alive-interval",
+    "ssh-tunnel-timeout",
 #endif
 
     "recording-path",
@@ -534,6 +545,61 @@ enum RDP_ARGS_IDX {
      * blank otherwise.
      */
     IDX_SFTP_DISABLE_UPLOAD,
+
+    /**
+     * True if SSH tunneling should be enabled. If false or not set, SSH
+     * tunneling will not be used.
+     */
+    IDX_SSH_TUNNEL,
+
+    /**
+     * The hostname or IP address of the SSH server to use for tunneling.
+     */
+    IDX_SSH_TUNNEL_HOST,
+
+    /**
+     * The TCP port of the SSH server to use for tunneling.
+     */
+    IDX_SSH_TUNNEL_PORT,
+
+    /**
+     * If host key checking should be done, the public key of the SSH host
+     * to be used for tunneling.
+     */
+    IDX_SSH_TUNNEL_HOST_KEY,
+
+    /**
+     * The username for authenticating to the SSH hsot for tunneling.
+     */
+    IDX_SSH_TUNNEL_USERNAME,
+
+    /**
+     * The password to use to authenticate to the SSH host for tunneling.
+     */
+    IDX_SSH_TUNNEL_PASSWORD,
+
+    /**
+     * The private key to use to authenticate to the SSH host for tunneling,
+     * as an alternative to password-based authentication.
+     */
+    IDX_SSH_TUNNEL_PRIVATE_KEY,
+
+    /**
+     * The passphrase to use to decrypt the private key.
+     */
+    IDX_SSH_TUNNEL_PASSPHRASE,
+
+    /**
+     * The interval at which keepalive packets should be sent to the SSH
+     * tunneling server, or zero if keepalive should be disabled.
+     */
+    IDX_SSH_TUNNEL_ALIVE_INTERVAL,
+
+    /**
+     * The amount of time, in seconds, after which the attempt to establish
+     * a SSH tunnel connection will fail.
+     */
+    IDX_SSH_TUNNEL_TIMEOUT,
 #endif
 
     /**
@@ -1103,76 +1169,127 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_ENABLE_SFTP, 0);
 
-    /* Hostname for SFTP connection */
-    settings->sftp_hostname =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_HOSTNAME, settings->hostname);
+    /* Only parse remaining SFTP settings if it's enabled. */
+    if (settings->enable_sftp) {
+        /* Hostname for SFTP connection */
+        settings->sftp_hostname =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_HOSTNAME, settings->hostname);
 
-    /* The public SSH host key. */
-    settings->sftp_host_key =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_HOST_KEY, NULL);
+        /* The public SSH host key. */
+        settings->sftp_host_key =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_HOST_KEY, NULL);
 
-    /* Port for SFTP connection */
-    settings->sftp_port =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_PORT, "22");
+        /* Port for SFTP connection */
+        settings->sftp_port =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_PORT, GUAC_COMMON_SSH_DEFAULT_PORT);
 
-    /* SFTP timeout */
-    settings->sftp_timeout =
-        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_TIMEOUT, RDP_DEFAULT_SFTP_TIMEOUT);
+        /* SFTP timeout */
+        settings->sftp_timeout =
+            guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_TIMEOUT, RDP_DEFAULT_SFTP_TIMEOUT);
 
-    /* Username for SSH/SFTP authentication */
-    settings->sftp_username =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_USERNAME,
-                settings->username != NULL ? settings->username : "");
+        /* Username for SSH/SFTP authentication */
+        settings->sftp_username =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_USERNAME,
+                    settings->username != NULL ? settings->username : "");
 
-    /* Password for SFTP (if not using private key) */
-    settings->sftp_password =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_PASSWORD, "");
+        /* Password for SFTP (if not using private key) */
+        settings->sftp_password =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_PASSWORD, "");
 
-    /* Private key for SFTP (if not using password) */
-    settings->sftp_private_key =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_PRIVATE_KEY, NULL);
+        /* Private key for SFTP (if not using password) */
+        settings->sftp_private_key =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_PRIVATE_KEY, NULL);
 
-    /* Passphrase for decrypting the SFTP private key (if applicable) */
-    settings->sftp_passphrase =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_PASSPHRASE, "");
+        /* Public key for authenticating to SFTP server, if applicable. */
+        settings->sftp_public_key =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_PUBLIC_KEY, NULL);
 
-    /* Public key for authenticating to SFTP server, if applicable. */
-    settings->sftp_public_key =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_PUBLIC_KEY, NULL);
+        /* Passphrase for decrypting the SFTP private key (if applicable) */
+        settings->sftp_passphrase =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_PASSPHRASE, "");
 
-    /* Default upload directory */
-    settings->sftp_directory =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_DIRECTORY, NULL);
+        /* Default upload directory */
+        settings->sftp_directory =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_DIRECTORY, NULL);
 
-    /* SFTP root directory */
-    settings->sftp_root_directory =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_ROOT_DIRECTORY, "/");
+        /* SFTP root directory */
+        settings->sftp_root_directory =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_ROOT_DIRECTORY, GUAC_COMMON_SSH_SFTP_DEFAULT_ROOT);
 
-    /* Default keepalive value */
-    settings->sftp_server_alive_interval =
-        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_SERVER_ALIVE_INTERVAL, 0);
-    
-    /* Whether or not to disable file download over SFTP. */
-    settings->sftp_disable_download =
+        /* Default keepalive value */
+        settings->sftp_server_alive_interval =
+            guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_SERVER_ALIVE_INTERVAL, 0);
+
+        /* Whether or not to disable file download over SFTP. */
+        settings->sftp_disable_download =
+            guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_DISABLE_DOWNLOAD, 0);
+
+        /* Whether or not to disable file upload over SFTP. */
+        settings->sftp_disable_upload =
+            guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_DISABLE_UPLOAD, 0);
+    }
+
+    /* Parse SSH tunneling. */
+    settings->ssh_tunnel =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_DISABLE_DOWNLOAD, 0);
+                IDX_SSH_TUNNEL, false);
     
-    /* Whether or not to disable file upload over SFTP. */
-    settings->sftp_disable_upload =
-        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_DISABLE_UPLOAD, 0);
+    /* Only parse remaining tunneling settings if it has been enabled. */
+    if (settings->ssh_tunnel) {
+
+        settings->ssh_tunnel_host =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_HOST, NULL);
+
+        settings->ssh_tunnel_port =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PORT, GUAC_COMMON_SSH_DEFAULT_PORT);
+
+        settings->ssh_tunnel_host_key =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_HOST_KEY, NULL);
+
+        settings->ssh_tunnel_username =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_USERNAME, NULL);
+
+        settings->ssh_tunnel_password =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PASSWORD, NULL);
+
+        settings->ssh_tunnel_private_key =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PRIVATE_KEY, NULL);
+
+        settings->ssh_tunnel_passphrase =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PASSPHRASE, NULL);
+
+        settings->ssh_tunnel_alive_interval =
+            guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_ALIVE_INTERVAL,
+                    GUAC_COMMON_SSH_DEFAULT_ALIVE_INTERVAL);
+
+        settings->ssh_tunnel_timeout =
+            guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_TIMEOUT,
+                    GUAC_COMMON_SSH_DEFAULT_TIMEOUT);
+
+    }
 #endif
 
     /* Read recording path */
@@ -1427,7 +1544,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     }
 
 #ifdef ENABLE_COMMON_SSH
-    /* Free SFTP settings */
+    /* Free SFTP and SSH tunnel settings */
     guac_mem_free(settings->sftp_directory);
     guac_mem_free(settings->sftp_root_directory);
     guac_mem_free(settings->sftp_host_key);
@@ -1438,6 +1555,12 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     guac_mem_free(settings->sftp_private_key);
     guac_mem_free(settings->sftp_public_key);
     guac_mem_free(settings->sftp_username);
+    guac_mem_free(settings->ssh_tunnel_host);
+    guac_mem_free(settings->ssh_tunnel_host_key);
+    guac_mem_free(settings->ssh_tunnel_port);
+    guac_mem_free(settings->ssh_tunnel_username);
+    guac_mem_free(settings->ssh_tunnel_password);
+    guac_mem_free(settings->ssh_tunnel_private_key);
 #endif
 
     /* Free RD gateway information */
