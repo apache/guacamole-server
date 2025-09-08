@@ -22,6 +22,7 @@
 #include <guacamole/socket.h>
 
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 /**
@@ -123,6 +124,7 @@ static void read_expected_instructions(int fd) {
 void test_socket__nested_send_instruction() {
 
     int fd[2];
+    int return_status;
 
     /* Create pipe */
     CU_ASSERT_EQUAL_FATAL(pipe(fd), 0);
@@ -140,6 +142,9 @@ void test_socket__nested_send_instruction() {
         write_instructions(write_fd);
         exit(0);
     }
+
+    /* Wait for child to finish */
+    waitpid(childpid, &return_status, 0);
 
     /* Read and verify the expected instructions within the parent process */
     close(write_fd);
