@@ -152,6 +152,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
     "force-lossless",
     "normalize-clipboard",
+    "enable-usb",
     NULL
 };
 
@@ -728,6 +729,11 @@ enum RDP_ARGS_IDX {
      * default, line endings within the clipboard are preserved.
      */
     IDX_NORMALIZE_CLIPBOARD,
+
+    /**
+     * ...
+     */
+    IDX_ENABLE_USB,
 
     RDP_ARGS_COUNT
 };
@@ -1382,8 +1388,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_WOL_WAIT_TIME, GUAC_WOL_DEFAULT_BOOT_WAIT_TIME);
-        
     }
+
+    settings->usb_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+            IDX_ENABLE_USB, 0);
 
     /* Success */
     return settings;
@@ -1617,7 +1626,10 @@ void guac_rdp_push_settings(guac_client* client,
 
     /* Device redirection */
     freerdp_settings_set_bool(rdp_settings, FreeRDP_DeviceRedirection, 
-            (guac_settings->audio_enabled || guac_settings->drive_enabled || guac_settings->printing_enabled));
+            (guac_settings->audio_enabled
+                || guac_settings->drive_enabled
+                || guac_settings->printing_enabled
+                || guac_settings->usb_enabled));
 
     /* Security */
     switch (guac_settings->security_mode) {
@@ -1865,7 +1877,8 @@ void guac_rdp_push_settings(guac_client* client,
     /* Device redirection */
     rdp_settings->DeviceRedirection =  guac_settings->audio_enabled
                                     || guac_settings->drive_enabled
-                                    || guac_settings->printing_enabled;
+                                    || guac_settings->printing_enabled
+                                    || guac_settings->usb_enabled;
 
     /* Security */
     switch (guac_settings->security_mode) {

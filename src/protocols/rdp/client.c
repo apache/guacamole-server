@@ -23,6 +23,7 @@
 #include "channels/disp.h"
 #include "channels/pipe-svc.h"
 #include "channels/rail.h"
+#include "channels/usb-redirection/usb-manager.h"
 #include "config.h"
 #include "fs.h"
 #include "log.h"
@@ -304,6 +305,9 @@ int guac_rdp_client_free_handler(guac_client* client) {
     /* Clean up audio input buffer, if allocated */
     if (rdp_client->audio_input != NULL)
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
+
+    if (rdp_client->usb_manager)
+        guac_rdp_usb_manager_free(rdp_client->usb_manager);
 
     guac_rwlock_destroy(&(rdp_client->lock));
     pthread_mutex_destroy(&(rdp_client->message_lock));

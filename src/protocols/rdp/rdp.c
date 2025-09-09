@@ -29,6 +29,8 @@
 #include "channels/rdpei.h"
 #include "channels/rdpgfx.h"
 #include "channels/rdpsnd/rdpsnd.h"
+#include "channels/usb-redirection/usb-manager.h"
+#include "channels/usb-redirection/usb-redirection.h"
 #include "client.h"
 #include "color.h"
 #include "config.h"
@@ -118,6 +120,10 @@ static BOOL rdp_freerdp_load_channels(freerdp* instance) {
         /* Downgrade the lock to allow for concurrent read access */
         guac_rwlock_release_lock(&(rdp_client->lock));
     }
+
+    /* Load USB redirection plugin if enabled */\
+    if (settings->usb_enabled)
+        guac_rdp_usb_load_plugin(GUAC_RDP_CONTEXT(instance));
 
     /* Load "cliprdr" service if not disabled */
     if (!(settings->disable_copy && settings->disable_paste))
@@ -776,6 +782,17 @@ void* guac_rdp_client_thread(void* data) {
         /* Expose filesystem to owner */
         guac_client_for_owner(client, guac_rdp_fs_expose,
                 rdp_client->filesystem);
+
+    }
+
+    /* Initialize USB device manager if USB redirection is enabled */
+    if (settings->usb_enabled) {
+
+        rdp_client->usb_manager = guac_rdp_usb_manager_alloc(client);
+
+        if (!rdp_client->usb_manager)
+            guac_client_log(client, GUAC_LOG_ERROR,
+                    "Failed to create USB device manager");
 
     }
 

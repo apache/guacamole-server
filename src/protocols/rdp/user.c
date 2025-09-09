@@ -20,6 +20,7 @@
 #include "channels/audio-input/audio-input.h"
 #include "channels/cliprdr.h"
 #include "channels/pipe-svc.h"
+#include "channels/usb-redirection/usb-redirection.h"
 #include "config.h"
 #include "input.h"
 #include "rdp.h"
@@ -108,6 +109,12 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
         /* Inbound arbitrary named pipes */
         user->pipe_handler = guac_rdp_pipe_svc_pipe_handler;
+
+        if (settings->usb_enabled) {
+            user->usbconnect_handler = guac_rdp_user_usbconnect_handler;
+            user->usbdata_handler = guac_rdp_user_usbdata_handler;
+            user->usbdisconnect_handler = guac_rdp_user_usbdisconnect_handler;
+        }
         
         /* If we own it, register handler for updating parameters during connection. */
         if (user->owner)
@@ -164,4 +171,3 @@ int guac_rdp_user_leave_handler(guac_user* user) {
 
     return 0;
 }
-

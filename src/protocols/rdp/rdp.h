@@ -32,6 +32,8 @@
 #include "print-job.h"
 #include "settings.h"
 
+#include "plugins/guacusb/guacusb.h"
+
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
@@ -212,6 +214,19 @@ typedef struct guac_rdp_client {
      * in use.
      */
     RailClientContext* rail_interface;
+
+    /**
+     * USB redirection plugin instance, or NULL if USB redirection
+     * is not enabled.
+     */
+    guac_rdp_usb_plugin* usb_plugin;
+
+    /**
+     * USB device manager for tracking redirected USB devices.
+     * This is shared between the user handlers and the USB plugin.
+     * Created when the first USB device connects or when the plugin loads.
+     */
+    guac_rdp_usb_manager* usb_manager;
 
 } guac_rdp_client;
 

@@ -40,4 +40,3 @@ guac_user_leave_handler guac_rdp_user_leave_handler;
 guac_user_file_handler guac_rdp_user_file_handler;
 
 #endif
-

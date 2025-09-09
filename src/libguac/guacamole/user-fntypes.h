@@ -504,36 +504,36 @@ typedef int guac_user_put_handler(guac_user* user, guac_object* object,
  * instruction has been received from a user. This indicates that the user
  * has connected a USB device via WebUSB and it is available for redirection.
  *
- * @param user
- *     The user that connected the USB device.
- *
  * @param device_id
- *     The unique identifier for the USB device.
+ *     The unique identifier for the USB device. Required.
  *
  * @param vendor_id
- *     The vendor ID of the USB device.
+ *     The vendor ID of the USB device. Required.
  *
  * @param product_id
- *     The product ID of the USB device.
+ *     The product ID of the USB device. Required.
  *
  * @param device_name
- *     The human-readable name of the device.
+ *     The human-readable name of the device. Required (may be empty string).
  *
  * @param serial_number
- *     The serial number of the device, if available.
+ *     The serial number of the device. Optional (may be NULL or empty string
+ *     if not available).
  *
  * @param device_class
- *     The USB device class.
+ *     The USB device class. Required.
  *
  * @param device_subclass
- *     The USB device subclass.
+ *     The USB device subclass. Required.
  *
  * @param device_protocol
- *     The USB device protocol.
+ *     The USB device protocol. Required.
  *
  * @param interface_data
- *     Encoded string containing interface and endpoint information in the
- *     format: "iface_num:class:subclass:protocol:ep_num:dir:type:size,..."
+ *     Encoded string containing interface and endpoint information. Required.
+ *     Format: "ifaceNum:class:subclass:protocol:ep1Num:ep1Dir:ep1Type:ep1Size;ep2...,iface2..."
+ *     where multiple endpoints within an interface are separated by semicolons
+ *     and multiple interfaces are separated by commas.
  *
  * @return
  *     Zero if the USB connect event was handled successfully, or non-zero if 
@@ -556,7 +556,9 @@ typedef int guac_user_usbconnect_handler(guac_user* user, const char* device_id,
 *     The unique identifier for the USB device.
 *
 * @param endpoint_number
-*     The endpoint number the data originated from.
+*     The USB endpoint number that the data originated from. Endpoint
+*     numbers correspond to the endpoints defined in the device's
+*     interface_data from the usbconnect instruction.
 *
 * @param data
 *     The base64-encoded USB data.

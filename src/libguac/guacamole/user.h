@@ -541,9 +541,11 @@ struct guac_user {
 /**
      * Handler for USB connect events sent by the Guacamole web-client.
      *
-     * The handler takes the user that connected the device, the device ID,
-     * vendor ID, product ID, device name, serial number, device class,
-     * device subclass, device protocol, and interface data.
+     * The handler takes the user that connected the device, the device ID
+     * (required), vendor ID (required), product ID (required), device name
+     * (required), serial number (optional - may be NULL or empty), device class
+     * (required), device subclass (required), device protocol (required), and
+     * interface data (required).
      *
      * Example:
      * @code

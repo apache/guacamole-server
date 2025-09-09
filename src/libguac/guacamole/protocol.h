@@ -1182,7 +1182,9 @@ int guac_protocol_send_usbdisconnect(guac_socket* socket,
  *     The unique identifier of the USB device.
  *
  * @param endpoint_number
- *     The endpoint number to send data to.
+ *     The USB endpoint number identifying the logical communication channel
+ *     for this data transfer. The valid endpoint numbers for a device are
+ *     provided in the interface_data parameter during usbconnect.
  *
  * @param data
  *     The base64-encoded data to send to the USB device.

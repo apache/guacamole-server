@@ -233,14 +233,14 @@ __guac_instruction_handler __guac_handshake_timezone_handler;
 
 /**
  * Internal initial handler for the usbconnect instruction. When a usbconnect
- * instruction is received, this handler will be called. The client's 
+ * instruction is received, this handler will be called. The user's
  * usbconnect handler will be invoked if defined.
  */
 __guac_instruction_handler __guac_handle_usbconnect;
 
 /**
  * Internal initial handler for the usbdata instruction. When a usbdata
- * instruction is received, this handler will be called. The client's 
+ * instruction is received, this handler will be called. The user's
  * usbdata handler will be invoked if defined.
  */
 __guac_instruction_handler __guac_handle_usbdata;
@@ -248,7 +248,7 @@ __guac_instruction_handler __guac_handle_usbdata;
 /**
  * Internal initial handler for the usbdisconnect instruction. When a 
  * usbdisconnect instruction is received, this handler will be called. 
- * The client's usbdisconnect handler will be invoked if defined.
+ * The user's usbdisconnect handler will be invoked if defined.
  */
 __guac_instruction_handler __guac_handle_usbdisconnect;
 
