@@ -64,24 +64,6 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
     guac_client* client = (guac_client*) rail->custom;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    RAIL_HANDSHAKE_ORDER handshake = {
-
-        /* Build number 7600 (0x1DB0) apparently represents Windows 7 and
-         * compatibility with RDP 7.0. As of this writing, this is the same
-         * build number sent for RAIL connections by xfreerdp. */
-        .buildNumber = 7600
-
-    };
-
-    /* Send client handshake response */
-    guac_client_log(client, GUAC_LOG_TRACE, "Sending RAIL handshake.");
-    pthread_mutex_lock(&(rdp_client->message_lock));
-    status = rail->ClientHandshake(rail, &handshake);
-    pthread_mutex_unlock(&(rdp_client->message_lock));
-
-    if (status != CHANNEL_RC_OK)
-        return status;
-
     RAIL_CLIENT_STATUS_ORDER client_status = {
         .flags =
                 TS_RAIL_CLIENTSTATUS_ALLOWLOCALMOVESIZE

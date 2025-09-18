@@ -100,6 +100,20 @@ static BOOL rdp_freerdp_load_channels(freerdp* instance) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
+    /* Load RAIL plugin if RemoteApp in use */
+    if (settings->remote_app != NULL)
+        guac_rdp_rail_load_plugin(context);
+
+    /* Load SVC plugin instances for all static channels */
+    if (settings->svc_names != NULL) {
+
+        char** current = settings->svc_names;
+        do {
+            guac_rdp_pipe_svc_load_plugin(context, *current);
+        } while (*(++current) != NULL);
+
+    }
+
     /* Load "disp" plugin for display update */
     if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
         guac_rdp_disp_load_plugin(context);
@@ -177,20 +191,6 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Init FreeRDP add-in provider */
     freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
-
-    /* Load RAIL plugin if RemoteApp in use */
-    if (settings->remote_app != NULL)
-        guac_rdp_rail_load_plugin(context);
-
-    /* Load SVC plugin instances for all static channels */
-    if (settings->svc_names != NULL) {
-
-        char** current = settings->svc_names;
-        do {
-            guac_rdp_pipe_svc_load_plugin(context, *current);
-        } while (*(++current) != NULL);
-
-    }
 
     /* Init FreeRDP internal GDI implementation */
     if (!gdi_init(instance, guac_rdp_get_native_pixel_format(FALSE)))
