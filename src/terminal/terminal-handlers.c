@@ -488,6 +488,18 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
             term->char_handler = guac_terminal_apc;
             break;
 
+        /* VT100 DECKPAM (sets the alternate keypad mode) */
+        case '=':
+            term->application_keypad_keys = true;
+            term->char_handler = guac_terminal_echo;
+            break;
+
+        /* VT100 DECKPNM (sets the numeric keypad mode) */
+        case '>':
+            term->application_keypad_keys = false;
+            term->char_handler = guac_terminal_echo;
+            break;
+
         default:
             guac_client_log(term->client, GUAC_LOG_DEBUG,
                     "Unhandled ESC sequence: %c", c);

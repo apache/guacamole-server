@@ -140,6 +140,24 @@ typedef enum guac_terminal_cursor_type {
 } guac_terminal_cursor_type;
 
 /**
+ * All possible families of codes (e.g. vt100) which can be used when you push
+ * the function and keypad keys.
+ */
+typedef enum guac_terminal_func_keys_and_keypad {
+
+    /**
+     * Not set.
+     */
+    GUAC_TERMINAL_FUNC_KEYS_AND_KEYPAD_DEFAULT,
+
+    /**
+     * VT!00+
+     */
+    GUAC_TERMINAL_FUNC_KEYS_AND_KEYPAD_VT100PLUS
+
+} guac_terminal_func_keys_and_keypad;
+
+/**
  * Handler that is invoked whenever the necessary terminal codes are sent to
  * to the given terminal to change the path for future file uploads.
  *
@@ -242,6 +260,12 @@ typedef struct guac_terminal_options {
      * the terminal.
      */
     int backspace;
+
+    /**
+     * The family of codes (e.g. vt100) which will be used when you push
+     * the function and keypad keys.
+     */
+    char* func_keys_and_keypad;
 
 } guac_terminal_options;
 

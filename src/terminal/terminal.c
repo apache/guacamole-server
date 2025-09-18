@@ -143,6 +143,7 @@ void guac_terminal_reset(guac_terminal* term) {
     term->text_selected = false;
     term->selection_committed = false;
     term->application_cursor_keys = false;
+    term->application_keypad_keys = false;
     term->automatic_carriage_return = false;
     term->insert_mode = false;
 
@@ -503,6 +504,13 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Configure backspace */
     term->backspace = options->backspace;
+
+    /* Configure the family of codes for function keys and the keypad */
+    if (options->func_keys_and_keypad == NULL || options->func_keys_and_keypad[0] == 0) {
+        term->func_keys_and_keypad = GUAC_TERMINAL_FUNC_KEYS_AND_KEYPAD_DEFAULT;
+    } else if (strcmp(options->func_keys_and_keypad, "vt100plus") == 0) {
+        term->func_keys_and_keypad = GUAC_TERMINAL_FUNC_KEYS_AND_KEYPAD_VT100PLUS;
+    }
 
     /* Initialize mouse latest click time and counter */
     term->click_timer = 0;
@@ -1529,7 +1537,56 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         /* Typeable keys of number pad */
         else if (keysym >= 0xFFAA && keysym <= 0xFFB9) {
             char value = keysym - 0xFF80;
-            guac_terminal_send_data(term, &value, sizeof(value));
+            if (term->func_keys_and_keypad == GUAC_TERMINAL_FUNC_KEYS_AND_KEYPAD_VT100PLUS &&
+                    term->application_keypad_keys) {
+                /* https://vt100.net/docs/vt100-ug/chapter3.html */
+                switch (value) {
+                    case '0':
+                        return guac_terminal_send_string(term, "\x1BOp");
+                    case '1':
+                        return guac_terminal_send_string(term, "\x1BOq");
+                    case '2':
+                        return guac_terminal_send_string(term, "\x1BOr");
+                    case '3':
+                        return guac_terminal_send_string(term, "\x1BOs");
+                    case '4':
+                        return guac_terminal_send_string(term, "\x1BOt");
+                    case '5':
+                        return guac_terminal_send_string(term, "\x1BOu");
+                    case '6':
+                        return guac_terminal_send_string(term, "\x1BOv");
+                    case '7':
+                        return guac_terminal_send_string(term, "\x1BOw");
+                    case '8':
+                        return guac_terminal_send_string(term, "\x1BOx");
+                    case '9':
+                        return guac_terminal_send_string(term, "\x1BOy");
+                    case '-':
+                        return guac_terminal_send_string(term, "\x1BOm");
+                    case '.':
+                        return guac_terminal_send_string(term, "\x1BOn");
+                    /*
+                     * There is no comma on the regular keypad, so we use '*' to send
+                     * the appropriate code.
+                     */
+                    case '*':
+                        return guac_terminal_send_string(term, "\x1BOl");
+                    /*
+                     * At least in some environments JS does not differentiate regular
+                     * and keypad ENTER and its location property is always 0. So we
+                     * use '+' to send the appropriate ENTER escape code.
+                     */
+                    case '+':
+                        return guac_terminal_send_string(term, "\x1BOM");
+                    /* Just a typeable key */
+                    default:
+                        guac_terminal_send_data(term, &value, sizeof(value));
+                        break;
+                }
+            }
+            else {
+                guac_terminal_send_data(term, &value, sizeof(value));
+            }
         }
 
         /* Non-printable keys */
@@ -1566,11 +1623,22 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
             if (keysym == 0xFF63 || keysym == 0xFF9E) return guac_terminal_send_string(term, "\x1B[2~"); /* Insert */
 
-            if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_send_string(term, "\x1B[[A"); /* F1  */
-            if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_send_string(term, "\x1B[[B"); /* F2  */
-            if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1B[[C"); /* F3  */
-            if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_send_string(term, "\x1B[[D"); /* F4  */
-            if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[[E"); /* F5  */
+            if (term->func_keys_and_keypad == GUAC_TERMINAL_FUNC_KEYS_AND_KEYPAD_VT100PLUS) {
+                /* https://vt100.net/docs/vt100-ug/chapter3.html */
+                if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_send_string(term, "\x1BOP"); /* F1  */
+                if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_send_string(term, "\x1BOQ"); /* F2  */
+                if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1BOR"); /* F3  */
+                if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_send_string(term, "\x1BOS"); /* F4  */
+                /* Send this escape code, although the original VT100 did not have F5 */
+                if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[15~"); /* F5  */
+            }
+            else {
+                if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_send_string(term, "\x1B[[A"); /* F1  */
+                if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_send_string(term, "\x1B[[B"); /* F2  */
+                if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1B[[C"); /* F3  */
+                if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_send_string(term, "\x1B[[D"); /* F4  */
+                if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[[E"); /* F5  */
+            }
 
             if (keysym == 0xFFC3) return guac_terminal_send_string(term, "\x1B[17~"); /* F6  */
             if (keysym == 0xFFC4) return guac_terminal_send_string(term, "\x1B[18~"); /* F7  */
