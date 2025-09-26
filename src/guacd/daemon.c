@@ -44,6 +44,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#ifdef HAVE_PRCTL
+#include <sys/prctl.h>
+#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -134,7 +137,7 @@ static int daemonize() {
 
     /* Change to root directory */
     if (chdir(GUACD_ROOT) < 0) {
-        guacd_log(GUAC_LOG_ERROR, 
+        guacd_log(GUAC_LOG_ERROR,
                 "Unable to change working directory to "
                 GUACD_ROOT);
         return 1;
@@ -146,7 +149,7 @@ static int daemonize() {
     || redirect_fd(STDOUT_FILENO, O_WRONLY)
     || redirect_fd(STDERR_FILENO, O_WRONLY)) {
 
-        guacd_log(GUAC_LOG_ERROR, 
+        guacd_log(GUAC_LOG_ERROR,
                 "Unable to redirect standard file descriptors to "
                 GUACD_DEV_NULL);
         return 1;
@@ -491,7 +494,7 @@ int main(int argc, char* argv[]) {
             fprintf(pidf, "%d\n", getpid());
             fclose(pidf);
         }
-        
+
         /* Fail if could not write PID file*/
         else {
             guacd_log(GUAC_LOG_ERROR, "Could not write PID file: %s", strerror(errno));
@@ -516,6 +519,14 @@ int main(int argc, char* argv[]) {
     struct sigaction signal_stop_action = { .sa_handler = signal_stop_handler };
     sigaction(SIGINT, &signal_stop_action, NULL);
     sigaction(SIGTERM, &signal_stop_action, NULL);
+
+#ifdef HAVE_PRCTL
+    /* Adopt any orphan processes from clients so we can properly terminate and reap */
+    prctl(PR_SET_CHILD_SUBREAPER, 1);
+#else
+    guacd_log(GUAC_LOG_INFO, "prctl not available on this platform. "
+            "Orphan child processes may pile up in the process table.");
+#endif
 
     /* Log listening status */
     guacd_log(GUAC_LOG_INFO, "Listening on host %s, port %s", bound_address, bound_port);
