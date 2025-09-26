@@ -150,7 +150,7 @@ AC_SUBST(UUID_LIBS)
 AC_SUBST(CUNIT_LIBS)
 
 # Library functions
-AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
+AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep prctl])
 
 AC_CHECK_DECL([png_get_io_ptr],
     [AC_DEFINE([HAVE_PNG_GET_IO_PTR],,
@@ -696,7 +696,7 @@ then
 fi
 
 #
-# libVNCserver support for the requestedResize member, which enables the 
+# libVNCserver support for the requestedResize member, which enables the
 # client to pause frame buffer updates during a resize operation. If support
 # for this is missing, Guacamole may still attempt to send the resize requests
 # to the remote display, but there may be odd display behavior just before,
