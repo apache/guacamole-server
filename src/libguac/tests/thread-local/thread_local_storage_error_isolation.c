@@ -100,8 +100,7 @@ static void* error_isolation_worker(void* arg) {
     guac_error = data->expected_error;
     guac_error_message = data->expected_message;
 
-    /* Small delay to increase chance of race conditions if they exist */
-    usleep(1000);
+    /* Removed usleep - it doesn't actually increase race condition probability */
 
     /* Verify error state is still correct */
     if (guac_error != data->expected_error ||

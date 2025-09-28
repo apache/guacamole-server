@@ -111,8 +111,7 @@ void test_thread_local_storage__destructor_cleanup() {
     CU_ASSERT_EQUAL(pthread_create(&thread, NULL, destructor_test_worker, NULL), 0);
     CU_ASSERT_EQUAL(pthread_join(thread, NULL), 0);
     
-    /* Give some time for cleanup */
-    usleep(10000);
+    /* pthread_join ensures thread cleanup is complete */
     
     int final_count;
     pthread_mutex_lock(&destructor_mutex);
