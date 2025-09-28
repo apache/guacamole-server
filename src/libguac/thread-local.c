@@ -34,15 +34,33 @@
  * Structure to hold destructor information for each key.
  */
 typedef struct guac_key_entry {
+
+    /**
+     * Destructor function to call when thread exits to clean up the stored value.
+     * NULL if no cleanup is needed for this key.
+     */
     guac_thread_local_destructor_t destructor;
+
+    /**
+     * Flag indicating whether this key slot is currently in use.
+     * 1 if the key is allocated and active, 0 if the slot is free.
+     */
     int in_use;
+
 } guac_key_entry_t;
 
 /**
  * Thread-local storage entry.
  */
 typedef struct guac_thread_storage {
+
+    /**
+     * Array of thread-specific values for each key.
+     * Each element corresponds to a key index and stores the value
+     * associated with that key for the current thread.
+     */
     void* values[MAX_THREAD_KEYS];
+
 } guac_thread_storage_t;
 
 /**
