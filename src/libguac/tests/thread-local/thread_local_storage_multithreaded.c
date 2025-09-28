@@ -49,10 +49,7 @@ static void* thread_worker(void* arg) {
     *test_value = thread_id * 100;
     
     CU_ASSERT_EQUAL(guac_thread_local_setspecific(test_key, test_value), 0);
-    
-    /* Small delay to increase chance of race conditions */
-    usleep(1000);
-    
+
     /* Verify the value is still correct */
     int* retrieved = (int*)guac_thread_local_getspecific(test_key);
     CU_ASSERT_PTR_NOT_NULL(retrieved);
