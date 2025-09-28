@@ -79,6 +79,23 @@ static pthread_mutex_t key_registry_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uintptr_t next_key_id = 1;
 
 /**
+ * Free list for efficient key allocation.
+ * Points to the first available key index, or -1 if none available.
+ */
+static int free_list_head = 0;
+
+/**
+ * Array implementing the free list linked structure.
+ * Each element points to the next free index, or -1 for end of list.
+ */
+static int free_list_next[MAX_THREAD_KEYS];
+
+/**
+ * Flag indicating whether the free list has been initialized.
+ */
+static int free_list_initialized = 0;
+
+/**
  * Thread-local storage using __thread keyword for better performance.
  */
 static __thread guac_thread_storage_t* thread_storage = NULL;
@@ -108,6 +125,22 @@ static void cleanup_thread_storage(void* storage) {
     
     pthread_mutex_unlock(&key_registry_mutex);
     free(ts);
+}
+
+/**
+ * Initialize the free list for efficient key allocation.
+ * Must be called with key_registry_mutex held.
+ */
+static void init_free_list(void) {
+    if (free_list_initialized) return;
+
+    /* Initialize free list - all keys are initially available */
+    for (int i = 0; i < MAX_THREAD_KEYS - 1; i++) {
+        free_list_next[i] = i + 1;
+    }
+    free_list_next[MAX_THREAD_KEYS - 1] = -1; /* End of list */
+    free_list_head = 0;
+    free_list_initialized = 1;
 }
 
 /**
@@ -141,23 +174,30 @@ int guac_thread_local_key_create(guac_thread_local_key_t* key, guac_thread_local
     if (key == NULL) return EINVAL;
 
     pthread_mutex_lock(&key_registry_mutex);
-    
-    uintptr_t key_id = 0;
-    for (int i = 0; i < MAX_THREAD_KEYS; i++) {
-        if (!key_registry[i].in_use) {
-            key_id = next_key_id++;
-            if (next_key_id == 0) next_key_id = 1; // Avoid key_id of 0
-            
-            key_registry[i].destructor = destructor;
-            key_registry[i].in_use = 1;
-            *key = (key_id << 16) | i; // Combine ID and index for validation
-            break;
-        }
+
+    /* Initialize free list if needed */
+    init_free_list();
+
+    /* Check if any keys are available */
+    if (free_list_head == -1) {
+        pthread_mutex_unlock(&key_registry_mutex);
+        return EAGAIN; /* No keys available */
     }
+
+    /* Allocate from free list head - O(1) operation */
+    int i = free_list_head;
+    free_list_head = free_list_next[i];
+
+    /* Set up the key */
+    uintptr_t key_id = next_key_id++;
+    if (next_key_id == 0) next_key_id = 1; /* Avoid key_id of 0 */
+
+    key_registry[i].destructor = destructor;
+    key_registry[i].in_use = 1;
+    *key = (key_id << 16) | i; /* Combine ID and index for validation */
     
     pthread_mutex_unlock(&key_registry_mutex);
-    
-    return (key_id == 0) ? EAGAIN : 0;
+    return 0;
 }
 
 int guac_thread_local_key_delete(guac_thread_local_key_t key) {
@@ -169,6 +209,10 @@ int guac_thread_local_key_delete(guac_thread_local_key_t key) {
     if (key_registry[index].in_use) {
         key_registry[index].in_use = 0;
         key_registry[index].destructor = NULL;
+
+        /* Return to free list - O(1) operation */
+        free_list_next[index] = free_list_head;
+        free_list_head = index;
     }
     
     pthread_mutex_unlock(&key_registry_mutex);
