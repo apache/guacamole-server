@@ -43,11 +43,30 @@ typedef void (*guac_thread_local_destructor_t)(void*);
 
 /**
  * Once control structure for one-time initialization.
+ *
+ * This structure provides a simple mechanism for ensuring that initialization
+ * code is executed exactly once across multiple threads, using atomic operations
+ * similar to pthread_once.
  */
 typedef struct guac_thread_local_once_t {
+
+    /**
+     * Atomic flag indicating whether initialization has been completed.
+     * Set to 1 when initialization is done, 0 otherwise.
+     * Modified using __sync_bool_compare_and_swap for thread-safe operations.
+     */
     volatile int done;
+
+    /**
+     * Flag indicating whether the mutex has been initialized.
+     */
     int mutex_init;
+
+    /**
+     * Pointer to mutex data for synchronization.
+     */
     void* mutex_data;
+
 } guac_thread_local_once_t;
 
 /**
