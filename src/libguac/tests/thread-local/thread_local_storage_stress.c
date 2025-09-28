@@ -19,6 +19,7 @@
 
 #include <CUnit/CUnit.h>
 #include <guacamole/thread-local.h>
+#include "config.h"
 
 #include <stdlib.h>
 
@@ -26,26 +27,31 @@
  * Test which attempts to create many keys to test resource limits.
  */
 void test_thread_local_storage__key_exhaustion() {
-    guac_thread_local_key_t keys[1025]; /* More than MAX_THREAD_KEYS */
+    /* Allocate array based on configured MAX_THREAD_KEYS */
+    guac_thread_local_key_t* keys = malloc((MAX_THREAD_KEYS + 1) * sizeof(guac_thread_local_key_t));
+    CU_ASSERT_PTR_NOT_NULL(keys);
+
     int created = 0;
-    
+
     /* Try to create more keys than allowed */
-    for (int i = 0; i < 1025; i++) {
+    for (int i = 0; i < MAX_THREAD_KEYS + 1; i++) {
         if (guac_thread_local_key_create(&keys[i], NULL) == 0) {
             created++;
         } else {
             break;
         }
     }
-    
+
     /* Should not be able to create unlimited keys */
     CU_ASSERT_TRUE(created > 0);
-    CU_ASSERT_TRUE(created <= 1024); /* Should respect MAX_THREAD_KEYS */
+    CU_ASSERT_TRUE(created <= MAX_THREAD_KEYS); /* Should respect MAX_THREAD_KEYS */
     
     /* Clean up created keys */
     for (int i = 0; i < created; i++) {
         guac_thread_local_key_delete(keys[i]);
     }
+
+    free(keys);
 }
 
 /**
