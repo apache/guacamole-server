@@ -26,9 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef HAVE_LIBPTHREAD
-#include <pthread.h>
-#endif
 
 /*
  * Error strings
@@ -167,41 +164,59 @@ const char* guac_status_string(guac_status status) {
 
 }
 
-#ifdef HAVE_LIBPTHREAD
+/* Thread-safe implementation using our own thread-local API */
 
-/* Thread-local implementation using __thread for optimal performance */
+#include "guacamole/thread-local.h"
 
-/* 
- * Simple __thread implementation for error handling.
- * Uses static allocation to avoid memory management complexity.
- */
-static __thread guac_status __guac_error_storage;
-static __thread const char* __guac_error_message_storage = NULL;
+static guac_thread_local_key_t error_key;
+static guac_thread_local_key_t error_message_key;
+static guac_thread_local_once_t error_keys_once = GUAC_THREAD_LOCAL_ONCE_INIT;
+
+/* Error storage structure */
+typedef struct {
+    guac_status error;
+    const char* message;
+} guac_error_storage_t;
+
+/* Initialize thread-local keys once */
+static void init_error_keys(void) {
+    guac_thread_local_key_create(&error_key, free);
+    guac_thread_local_key_create(&error_message_key, NULL);
+}
+
+/* Get or create error storage for current thread */
+static guac_error_storage_t* get_error_storage(void) {
+    guac_thread_local_once(&error_keys_once, init_error_keys);
+
+    guac_error_storage_t* storage = guac_thread_local_getspecific(error_key);
+    if (storage == NULL) {
+        storage = guac_mem_zalloc(sizeof(guac_error_storage_t));
+        if (storage != NULL) {
+            guac_thread_local_setspecific(error_key, storage);
+        }
+    }
+    return storage;
+}
+
+/* Fallback storage for error cases */
+static guac_status fallback_error = GUAC_STATUS_INTERNAL_ERROR;
+static const char* fallback_message = NULL;
 
 guac_status* __guac_error() {
-    return &__guac_error_storage;
+    guac_error_storage_t* storage = get_error_storage();
+    if (storage) {
+        return &storage->error;
+    }
+    /* Return fallback if storage allocation fails */
+    return &fallback_error;
 }
 
 const char** __guac_error_message() {
-    return &__guac_error_message_storage;
+    guac_error_storage_t* storage = get_error_storage();
+    if (storage) {
+        return &storage->message;
+    }
+    /* Return fallback if storage allocation fails */
+    return &fallback_message;
 }
-
-#else
-
-/* Default (not-threadsafe) implementation */
-static guac_status __guac_error_unsafe_storage;
-static const char** __guac_error_message_unsafe_storage;
-
-guac_status* __guac_error() {
-    return &__guac_error_unsafe_storage;
-}
-
-const char** __guac_error_message() {
-    return &__guac_error_message_unsafe_storage;
-}
-
-/* Warn about threadsafety */
-#warn No threadsafe implementation of __guac_error exists for your platform, so a default non-threadsafe implementation has been used instead. This may lead to incorrect status codes being reported for failures. Please consider adding support for your platform, or filing a bug report with the Guacamole project.
-
-#endif
 
