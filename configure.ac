@@ -149,6 +149,33 @@ AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(UUID_LIBS)
 AC_SUBST(CUNIT_LIBS)
 
+#
+# Thread-local storage configuration
+#
+
+AC_ARG_WITH([max-thread-keys],
+    [AS_HELP_STRING([--with-max-thread-keys=N],
+        [Maximum number of thread-local keys supported (default: 16384, max: 65536)])],
+    [MAX_THREAD_KEYS=$withval],
+    [MAX_THREAD_KEYS=16384])
+
+# Validate range
+if test "$MAX_THREAD_KEYS" -gt 65536; then
+    AC_MSG_ERROR([
+  --------------------------------------------
+   MAX_THREAD_KEYS cannot exceed 65536 due to
+   key encoding limitations in the implementation.
+   Please choose a value between 1 and 65536.
+  --------------------------------------------])
+fi
+
+if test "$MAX_THREAD_KEYS" -lt 1; then
+    AC_MSG_ERROR([MAX_THREAD_KEYS must be at least 1])
+fi
+
+AC_DEFINE_UNQUOTED([MAX_THREAD_KEYS], [$MAX_THREAD_KEYS],
+    [Maximum number of thread-local keys supported])
+
 # Library functions
 AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
 

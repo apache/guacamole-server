@@ -27,8 +27,16 @@
 
 /**
  * Maximum number of thread-local keys supported.
+ * This value is configurable at build time via --with-max-thread-keys.
+ * Default: 16384, Maximum: 65536 (due to key encoding constraints).
  */
-#define MAX_THREAD_KEYS 1024
+#ifndef MAX_THREAD_KEYS
+#define MAX_THREAD_KEYS 16384
+#endif
+
+#if MAX_THREAD_KEYS > 65536
+#error "MAX_THREAD_KEYS cannot exceed 65536 due to key encoding limitations"
+#endif
 
 /**
  * Structure to hold destructor information for each key.
