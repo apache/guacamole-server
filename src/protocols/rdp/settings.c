@@ -1711,6 +1711,7 @@ void guac_rdp_push_settings(guac_client* client,
         freerdp_settings_set_bool(rdp_settings, FreeRDP_Workarea, TRUE);
         freerdp_settings_set_bool(rdp_settings, FreeRDP_RemoteApplicationMode, TRUE);
         freerdp_settings_set_bool(rdp_settings, FreeRDP_RemoteAppLanguageBarSupported, TRUE);
+        freerdp_settings_set_bool(rdp_settings, FreeRDP_HiDefRemoteApp, guac_settings->enable_gfx);
         freerdp_settings_set_string(rdp_settings, FreeRDP_RemoteApplicationProgram, guac_strdup(guac_settings->remote_app));
         freerdp_settings_set_string(rdp_settings, FreeRDP_ShellWorkingDirectory, guac_strdup(guac_settings->remote_app_dir));
         freerdp_settings_set_string(rdp_settings, FreeRDP_RemoteApplicationCmdLine, guac_strdup(guac_settings->remote_app_args));
@@ -1946,6 +1947,7 @@ void guac_rdp_push_settings(guac_client* client,
         rdp_settings->Workarea = TRUE;
         rdp_settings->RemoteApplicationMode = TRUE;
         rdp_settings->RemoteAppLanguageBarSupported = TRUE;
+        rdp_settings->HiDefRemoteApp = guac_settings->enable_gfx;
         rdp_settings->RemoteApplicationProgram = guac_strdup(guac_settings->remote_app);
         rdp_settings->ShellWorkingDirectory = guac_strdup(guac_settings->remote_app_dir);
         rdp_settings->RemoteApplicationCmdLine = guac_strdup(guac_settings->remote_app_args);
