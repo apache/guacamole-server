@@ -138,12 +138,12 @@ struct guac_rdpdr_device {
      * The DOS name of the device. Max 8 bytes, including terminator.
      */
     const char *dos_name;
-    
+
     /**
      * The stream that stores the RDPDR device announcement for this device.
      */
     wStream* device_announce;
-    
+
     /**
      * The length of the device_announce wStream.
      */
@@ -214,6 +214,9 @@ typedef struct guac_rdpdr {
 wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
         unsigned int completion_id, unsigned int status, int size);
 
+void guac_rdpdr_write_io_completion(wStream* output_stream, guac_rdpdr_device* device,
+        unsigned int completion_id, unsigned int status, int size);
+
 /**
  * Initializes device redirection support (file transfer, printing, etc.) for
  * RDP and handling of the RDPDR channel. If failures occur, messages noting
@@ -245,6 +248,9 @@ guac_rdp_common_svc_receive_handler guac_rdpdr_process_receive;
  * about to be freed.
  */
 guac_rdp_common_svc_terminate_handler guac_rdpdr_process_terminate;
+
+const char* rdpdr_irp_string(uint32_t major);
+const char* scard_get_ioctl_string(UINT32 ioControlCode, BOOL funcName);
 
 #endif
 
