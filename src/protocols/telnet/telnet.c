@@ -28,6 +28,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <guacamole/tcp.h>
+#include <guacamole/string.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/wol-constants.h>
 #include <guacamole/wol.h>
@@ -43,6 +44,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 /**
@@ -386,7 +388,124 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
 
-    int fd = guac_tcp_connect(settings->hostname, settings->port, settings->timeout);
+    int fd = 0;
+
+    if (settings->ssh_tunnel) {
+
+        /* Allocate memory for the SSH tunnel data. */
+        telnet_client->ssh_tunnel = malloc(sizeof(guac_ssh_tunnel));
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH tunneling is enabled, connecting via SSH.");
+
+        /* Associate the guac_client object with the tunnel. */
+        telnet_client->ssh_tunnel->client = client;
+
+        /* Abort if tunnel username is missing */
+        if (settings->ssh_tunnel_username == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "An SSH tunnel-specific username is required if "
+                    "SSH tunneling is enabled.");
+            return NULL;
+        }
+
+        telnet_client->ssh_tunnel->user =
+            guac_common_ssh_create_user(settings->ssh_tunnel_username);
+
+        /* Import SSH tunnel private key, if given */
+        if (settings->ssh_tunnel_private_key != NULL) {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating SSH tunnel with private key.");
+
+            /* Abort if SSH tunnel private key cannot be read */
+            if (guac_common_ssh_user_import_key(telnet_client->ssh_tunnel->user,
+                        settings->ssh_tunnel_private_key,
+                        settings->ssh_tunnel_passphrase)) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "SSH tunnel private key unreadable.");
+                return NULL;
+            }
+
+        }
+
+        /* Otherwise, use specified SSH tunnel password */
+        else {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating SSH tunnel with password.");
+
+            guac_common_ssh_user_set_password(telnet_client->ssh_tunnel->user,
+                    settings->ssh_tunnel_password);
+
+        }
+
+        /* Attempt SSH tunnel connection */
+        telnet_client->ssh_tunnel->session =
+            guac_common_ssh_create_session(client, settings->ssh_tunnel_host,
+                    settings->ssh_tunnel_port, telnet_client->ssh_tunnel->user,
+                    settings->ssh_tunnel_timeout,
+                    settings->ssh_tunnel_alive_interval,
+                    settings->ssh_tunnel_host_key, NULL);
+
+        /* Fail if SSH tunnel connection does not succeed */
+        if (telnet_client->ssh_tunnel->session == NULL) {
+            /* Already aborted within guac_common_ssh_create_session() */
+            return NULL;
+        }
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH session created for tunneling, initializing the tunnel.");
+
+        /* Initialize the tunnel or fail. */
+        if (guac_common_ssh_tunnel_init(telnet_client->ssh_tunnel,
+                settings->hostname, strtol(settings->port, NULL, 10))) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to initialize SSH tunnel, aborting connection.");
+            return NULL;
+        }
+
+        /* If tunnel socket is not returned, bail out. */
+        if (telnet_client->ssh_tunnel->socket_path == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to obtain socket for SSH tunnel, aborting.");
+            return NULL;
+        }
+
+        /* Overwrite the hostname with the path to the socket and zero out port. */
+        settings->hostname = guac_strdup(telnet_client->ssh_tunnel->socket_path);
+        settings->port = 0;
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH tunnel connection succeeded.");
+
+        fd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+        if (fd < 0) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Error opening UNIX socket for telnet connection: %s",
+                strerror(errno));
+            return NULL;
+        }
+
+        struct sockaddr_un socket_addr = {
+            .sun_family = AF_UNIX
+        };
+        strncpy(socket_addr.sun_path, telnet_client->ssh_tunnel->socket_path,
+                sizeof(socket_addr.sun_path) - 1);
+
+        if (connect(fd, (const struct sockaddr *) &socket_addr, sizeof(struct sockaddr_un))) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Error connecting to UNIX socket for SSH tunnel: %s",
+                telnet_client->ssh_tunnel->socket_path);
+            return NULL;
+        }
+
+    }
+
+    /* SSH tunneling is not in use, so open the standard TCP socket. */
+    else
+        fd = guac_tcp_connect(settings->hostname, settings->port, settings->timeout);
 
     /* Open telnet session */
     telnet_t* telnet = telnet_init(__telnet_options, __guac_telnet_event_handler, 0, client);
