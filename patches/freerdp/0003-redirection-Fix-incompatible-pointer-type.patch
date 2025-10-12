@@ -1,0 +1,40 @@
+From f3ed1f1ac367eb21f93c9fba5047447fdccdb5cc Mon Sep 17 00:00:00 2001
+From: Alessandro Bono <alessandro.bono369@gmail.com>
+Date: Wed, 8 May 2024 16:06:26 +0200
+Subject: [PATCH 3/8] redirection: Fix incompatible pointer type
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes the following:
+```
+libfreerdp/core/redirection.c: In function ‘redirection_copy_data’:
+libfreerdp/core/redirection.c:91:31: error: passing argument 1 of ‘redirection_free_data’ from incompatible pointer type [-Wincompatible-pointer-types]
+   91 |         redirection_free_data(dst, plen);
+      |                               ^~~
+      |                               |
+      |                               char **
+libfreerdp/core/redirection.c:80:42: note: expected ‘BYTE **’ {aka ‘unsigned char **’} but argument is of type ‘char **’
+   80 | static void redirection_free_data(BYTE** str, UINT32* length)
+      |                                   ~~~~~~~^~~
+```
+---
+ libfreerdp/core/redirection.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libfreerdp/core/redirection.c b/libfreerdp/core/redirection.c
+index 59c6dbcee..63bc8cc85 100644
+--- a/libfreerdp/core/redirection.c
++++ b/libfreerdp/core/redirection.c
+@@ -86,7 +86,7 @@ static void redirection_free_data(BYTE** str, UINT32* length)
+ 	*str = NULL;
+ }
+ 
+-static BOOL redirection_copy_data(char** dst, UINT32* plen, const char* str, UINT32 len)
++static BOOL redirection_copy_data(BYTE** dst, UINT32* plen, const BYTE* str, UINT32 len)
+ {
+ 	redirection_free_data(dst, plen);
+ 
+-- 
+2.46.0
+

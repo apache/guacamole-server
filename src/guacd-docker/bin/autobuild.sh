@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -52,12 +52,13 @@
 
 VAR_BASE="$1"
 LOCATION="$2"
+PATCHES="${@:3}"
 
 # Pre-populate build control variables such that the custom build prefix is
 # used for C headers, locating libraries, etc.
 export CFLAGS="-I${PREFIX_DIR}/include"
 export LDFLAGS="-L${PREFIX_DIR}/lib"
-export PKG_CONFIG_PATH="${PREFIX_DIR}/lib/pkgconfig" 
+export PKG_CONFIG_PATH="${PREFIX_DIR}/lib/pkgconfig"
 
 # Ensure thread stack size will be 8 MB (glibc's default on Linux) rather than
 # 128 KB (musl's default)
@@ -122,6 +123,12 @@ if [ -e .git ]; then
 
 else
     echo "Building $SRC_DIR ..."
+fi
+
+# Apply patches
+if [ -n "$PATCHES" ]; then
+    echo "Applying patches $PATCHES..."
+    git apply ${BUILD_DIR}/${PATCHES}/*
 fi
 
 # Configure build using CMake or GNU Autotools, whichever happens to be

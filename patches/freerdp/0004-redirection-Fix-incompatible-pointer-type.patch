@@ -1,0 +1,35 @@
+From 7894a7dfc5f811cb5dacc57a09236c11744b1ec8 Mon Sep 17 00:00:00 2001
+From: Alessandro Bono <alessandro.bono369@gmail.com>
+Date: Wed, 8 May 2024 16:06:30 +0200
+Subject: [PATCH 4/8] redirection: Fix incompatible pointer type
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes the following:
+```
+libfreerdp/core/redirection.c: In function ‘freerdp_settings_set_pointer_len’:
+libfreerdp/core/redirection.c:112:31: error: assignment to ‘BYTE **’ {aka ‘unsigned char **’} from incompatible pointer type ‘char **’ [-Wincompatible-pointer-types]
+  112 |                         pdata = &settings->TargetNetAddress;
+      |                               ^
+```
+---
+ libfreerdp/core/redirection.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libfreerdp/core/redirection.c b/libfreerdp/core/redirection.c
+index 63bc8cc85..4872d4b8f 100644
+--- a/libfreerdp/core/redirection.c
++++ b/libfreerdp/core/redirection.c
+@@ -109,7 +109,7 @@ static BOOL freerdp_settings_set_pointer_len(rdpSettings* settings, size_t id, c
+ 	switch (id)
+ 	{
+ 		case FreeRDP_TargetNetAddress:
+-			pdata = &settings->TargetNetAddress;
++			pdata = (BYTE**)&settings->TargetNetAddress;
+ 			plen = &settings->TargetNetAddressCount;
+ 			break;
+ 		case FreeRDP_LoadBalanceInfo:
+-- 
+2.46.0
+

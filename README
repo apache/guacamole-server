@@ -1,3 +1,4 @@
+This repo is a fork of https://github.com/apache/guacamole-server that changes the docker build to be based on debian trixie instead of alpine. It also adds a build based on top of a debian FIPS image.
 
 ------------------------------------------------------------
  About this README
@@ -7,7 +8,7 @@ This README is intended to provide quick and to-the-point documentation for
 technical users intending to compile parts of Apache Guacamole themselves.
 
 Source archives are available from the downloads section of the project website:
- 
+
     http://guacamole.apache.org/
 
 A full manual is available as well:
@@ -55,7 +56,7 @@ the following required dependencies must already be installed:
 
 In addition, the following optional dependencies may be installed in order to
 enable optional features of Guacamole. Note that while the various supported
-protocols are technically optional, you will no doubt wish to install the 
+protocols are technically optional, you will no doubt wish to install the
 dependencies of at least ONE supported protocol, as Guacamole would be useless
 otherwise.
 
@@ -130,7 +131,7 @@ and thus provides the standard configure script.
 
 
 ------------------------------------------------------------
- Running guacd 
+ Running guacd
 ------------------------------------------------------------
 
 If you installed the init script during compile and install, you should be
@@ -146,7 +147,7 @@ guacd itself directly without the init script (as any user):
 
 guacd currently takes several command-line options:
 
-    -b HOST 
+    -b HOST
 
         Changes the host or address that guacd listens on.
 
@@ -168,7 +169,7 @@ guacd currently takes several command-line options:
 
     -f
         Causes guacd to run in the foreground, rather than automatically
-        forking into the background. 
+        forking into the background.
 
 Additional information can be found in the guacd man page:
 
@@ -180,6 +181,6 @@ Additional information can be found in the guacd man page:
 
 Please report any bugs encountered by opening a new issue in the JIRA system
 hosted at:
-    
+
     https://issues.apache.org/jira/browse/GUACAMOLE
 
