@@ -1,0 +1,97 @@
+# Development Dockerfile for guacamole-server
+# Based on npa_publisher/Dockerfile.dev with guacamole-server specific dependencies
+
+FROM artifactory-rd.netskope.io/npa-docker/cpp_build_ubuntu22:1185
+
+WORKDIR /home
+
+#RUN apt-get update && \
+#    apt-get install -y ca-certificates gnupg ubuntu-keyring && \
+RUN apt-get update --allow-unauthenticated || true && \
+    apt-get install -y --allow-unauthenticated ca-certificates gnupg ubuntu-keyring curl && \
+    # Generic approach: Update Ubuntu keyring and refresh keys
+    apt-get install -y --allow-unauthenticated ubuntu-keyring && \
+    # Refresh all Ubuntu keys from keyring package
+    apt-key update || true && \
+    # Alternative: Use the new GPG method for Ubuntu 22.04
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://keyserver.ubuntu.com/pks/lookup?op=get\&search=0x871920D1991BC93C | gpg --dearmor -o /etc/apt/keyrings/ubuntu-archive-keyring.gpg 2>/dev/null || true && \
+    # Configure APT to bypass GPG issues
+    echo 'APT::Cache-Start 2048000000;' > /etc/apt/apt.conf.d/00cache && \
+    echo 'APT::Cache-Grow   512000000;' >> /etc/apt/apt.conf.d/00cache && \
+    echo 'APT::Cache-Limit 2048000000;' >> /etc/apt/apt.conf.d/00cache && \
+    echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99bypass-gpg && \
+    echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99bypass-gpg && \
+    echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99bypass-gpg && \
+    echo 'APT::Get::AllowUnauthenticated "true";' >> /etc/apt/apt.conf.d/99bypass-gpg && \
+    echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/99bypass-gpg && \
+    apt-get update  --allow-unauthenticated && \
+    apt-get install -y --allow-unauthenticated ca-certificates && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    # Core build tools and libraries
+    build-essential cmake autotools-dev automake libtool pkg-config \
+    # Guacamole core dependencies
+    libcairo2-dev libjpeg-turbo8-dev libpng-dev libtool-bin libossp-uuid-dev \
+    # Protocol support libraries
+    libavcodec-dev libavformat-dev libavutil-dev libswscale-dev freerdp2-dev libfreerdp-client2-2 libfreerdp2-2 \
+    # SSH support
+    libssh2-1-dev \
+    # VNC support  
+    libvncserver-dev \
+    # WebSocket support
+    libwebsockets-dev \
+    # Telnet support
+    libtelnet-dev \
+    # SSL/TLS support
+    libssl-dev \
+    # Pulse audio (optional)
+    libpulse-dev \
+    # Development and debugging tools
+    libasan5 bc iftop iptables iproute2 tcpdump bind9-utils stress vim valgrind cppcheck gdb strace ltrace \
+    # Additional utilities
+    curl wget git && \
+    rm -rf /var/lib/apt/lists/*
+
+# # Build curl from source (similar to npa_publisher approach)
+# RUN wget https://github.com/curl/curl/releases/download/curl-8_4_0/curl-8.4.0.tar.gz \
+#     && tar zxvpf curl-8.4.0.tar.gz \
+#     && rm curl-8.4.0.tar.gz \
+#     && ln -s curl-8.4.0 curl
+
+# WORKDIR /home/curl
+# RUN ./configure --disable-shared --with-openssl && make
+
+WORKDIR /home/guacamole-server
+
+# Set environment variables for guacamole development
+ENV GUACAMOLE_PREFIX=/opt/guacamole
+ENV PKG_CONFIG_PATH=/opt/guacamole/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV LD_LIBRARY_PATH=/opt/guacamole/lib:$LD_LIBRARY_PATH
+ENV PATH=/opt/guacamole/bin:/opt/guacamole/sbin:$PATH
+
+# Configure helpful development environment
+RUN echo '\n \
+echo "Configuring Guacamole development environment..."\n \
+echo "=============== Guacamole Server Development ============================"\n \
+echo "\033[92mBuild Directory\033[0m: /home/guacamole-server"\n \
+echo "\033[92mInstall Prefix\033[0m: $GUACAMOLE_PREFIX"\n \
+echo "\033[92mAutoreconf\033[0m: autoreconf -fiv"\n \
+echo "\033[92mConfigure\033[0m: ./configure --prefix=$GUACAMOLE_PREFIX --with-systemd-dir=/etc/systemd/system"\n \
+echo "\033[92mBuild\033[0m: make clean && make -j$(nproc)"\n \
+echo "\033[92mInstall\033[0m: make install"\n \
+echo "\033[92mRun guacd\033[0m: $GUACAMOLE_PREFIX/sbin/guacd -f -L debug"\n \
+echo "\033[92mTest Connection\033[0m: telnet localhost 4822"\n \
+echo "\033[92mDebug with GDB\033[0m: gdb $GUACAMOLE_PREFIX/sbin/guacd"\n \
+echo "\033[92mCheck Dependencies\033[0m: ldd $GUACAMOLE_PREFIX/sbin/guacd"\n \
+echo "\033[92mMemory Check\033[0m: valgrind --leak-check=full $GUACAMOLE_PREFIX/sbin/guacd -f"\n \
+echo "========================================================================="\n \
+' >> /root/.bashrc
+
+# Create guacamole directories
+RUN mkdir -p /opt/guacamole/{bin,sbin,lib,etc,var/log}
+
+# Expose guacd default port
+EXPOSE 4822
+
+CMD ["bash"]
