@@ -403,6 +403,12 @@ struct guac_terminal {
     bool application_cursor_keys;
 
     /**
+     * Whether the keypad numeric keys should send numeric characters (DECKPNM)
+     * or application/alternate sequences (DECKPAM).
+     */
+    bool application_keypad_keys;
+
+    /**
      * Whether a CR should automatically follow a LF, VT, or FF.
      */
     bool automatic_carriage_return;
@@ -473,6 +479,12 @@ struct guac_terminal {
      * ASCII character to send when backspace is pressed.
      */
     char backspace;
+
+    /**
+     * The family of codes (e.g. vt100) which will be used when you push
+     * the function and keypad keys.
+     */
+    guac_terminal_func_keys_and_keypad func_keys_and_keypad;
 
     /**
      * Whether copying from the terminal clipboard should be blocked. If set,
