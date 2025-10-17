@@ -291,6 +291,12 @@ typedef struct guac_ssh_settings {
     int backspace;
 
     /**
+     * The family of codes (e.g. vt100) which will be used when you push
+     * the function and keypad keys.
+     */
+    char* func_keys_and_keypad;
+
+    /**
      * The terminal emulator type that is passed to the remote system.
      */
     char* terminal_type;
