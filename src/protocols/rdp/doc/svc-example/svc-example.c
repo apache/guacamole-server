@@ -28,7 +28,7 @@
  */
 #define SVC_NAME "EXAMPLE"
 
-int main() {
+int main(void) {
 
     ULONG bytes_read;
     ULONG bytes_written;

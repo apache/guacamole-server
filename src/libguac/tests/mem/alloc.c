@@ -25,7 +25,7 @@
  * Test which verifies that guac_mem_alloc() returns NULL for all inputs involving
  * at least one zero value.
  */
-void test_mem__alloc_fail_zero() {
+void test_mem__alloc_fail_zero(void) {
 
     CU_ASSERT_PTR_NULL(guac_mem_alloc(0));
     CU_ASSERT_PTR_NULL(guac_mem_alloc(0, 0));
@@ -44,7 +44,7 @@ void test_mem__alloc_fail_zero() {
  * Test which verifies that guac_mem_alloc() successfully allocates blocks of
  * memory for inputs that can reasonably be expected to succeed.
  */
-void test_mem__alloc_success() {
+void test_mem__alloc_success(void) {
 
     void* ptr;
 
@@ -66,7 +66,7 @@ void test_mem__alloc_success() {
  * Test which verifies that guac_mem_alloc() fails to allocate blocks of memory
  * that exceed the capacity of a size_t.
  */
-void test_mem__alloc_fail_large() {
+void test_mem__alloc_fail_large(void) {
     CU_ASSERT_PTR_NULL(guac_mem_alloc(123, 456, SIZE_MAX));
     CU_ASSERT_PTR_NULL(guac_mem_alloc(SIZE_MAX / 2, SIZE_MAX / 2));
 }

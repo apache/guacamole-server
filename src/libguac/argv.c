@@ -316,7 +316,7 @@ int guac_argv_received(guac_stream* stream, const char* mimetype, const char* na
 
 }
 
-void guac_argv_stop() {
+void guac_argv_stop(void) {
     pthread_mutex_lock(&await_state.lock);
 
     /* Signal any waiting threads that no further argument values will be

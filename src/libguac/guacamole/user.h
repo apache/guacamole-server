@@ -546,7 +546,7 @@ struct guac_user {
  *
  * @return The newly allocated guac_user, or NULL if allocation failed.
  */
-guac_user* guac_user_alloc();
+guac_user* guac_user_alloc(void);
 
 /**
  * Frees the given user and all associated resources.

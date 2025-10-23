@@ -26,7 +26,7 @@
  * Test which verifies basenames are correctly extracted from Windows-style
  * paths.
  */
-void test_fs__basename_windows() {
+void test_fs__basename_windows(void) {
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("\\foo\\bar\\baz"), "baz")
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("\\foo\\bar\\..\\baz\\"), "")
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("bar\\..\\..\\baz\\a\\..\\b"), "b")
@@ -37,7 +37,7 @@ void test_fs__basename_windows() {
 /**
  * Test which verifies basenames are correctly extracted from UNIX-style paths.
  */
-void test_fs__basename_unix() {
+void test_fs__basename_unix(void) {
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("/foo/bar/baz"), "baz")
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("/foo/bar/../baz/"), "")
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("bar/../../baz/a/../b"), "b")
@@ -49,7 +49,7 @@ void test_fs__basename_unix() {
  * Test which verifies basenames are correctly extracted from paths consisting
  * of mixed Windows and UNIX path separators.
  */
-void test_fs__basename_mixed() {
+void test_fs__basename_mixed(void) {
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("\\foo/bar\\baz"), "baz")
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("/foo\\bar/..\\baz/"), "")
     CU_ASSERT_STRING_EQUAL(guac_rdp_fs_basename("bar\\../../baz\\a\\..\\b"), "b")

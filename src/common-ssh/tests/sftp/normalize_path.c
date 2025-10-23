@@ -28,7 +28,7 @@
  * Test which verifies absolute Windows-style paths are correctly normalized to
  * absolute paths with UNIX separators and no relative components.
  */
-void test_sftp__normalize_absolute_windows() {
+void test_sftp__normalize_absolute_windows(void) {
 
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -56,7 +56,7 @@ void test_sftp__normalize_absolute_windows() {
  * Test which verifies absolute UNIX-style paths are correctly normalized to
  * absolute paths with UNIX separators and no relative components.
  */
-void test_sftp__normalize_absolute_unix() {
+void test_sftp__normalize_absolute_unix(void) {
 
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -85,7 +85,7 @@ void test_sftp__normalize_absolute_unix() {
  * separators are correctly normalized to absolute paths with UNIX separators
  * and no relative components.
  */
-void test_sftp__normalize_absolute_mixed() {
+void test_sftp__normalize_absolute_mixed(void) {
 
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -109,7 +109,7 @@ void test_sftp__normalize_absolute_mixed() {
 /**
  * Test which verifies relative Windows-style paths are always rejected.
  */
-void test_sftp__normalize_relative_windows() {
+void test_sftp__normalize_relative_windows(void) {
 
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -128,7 +128,7 @@ void test_sftp__normalize_relative_windows() {
 /**
  * Test which verifies relative UNIX-style paths are always rejected.
  */
-void test_sftp__normalize_relative_unix() {
+void test_sftp__normalize_relative_unix(void) {
 
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -148,7 +148,7 @@ void test_sftp__normalize_relative_unix() {
  * Test which verifies relative paths consisting of mixed Windows and UNIX path
  * separators are always rejected.
  */
-void test_sftp__normalize_relative_mixed() {
+void test_sftp__normalize_relative_mixed(void) {
 
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -208,7 +208,7 @@ static char* generate_path(int length, int max_depth) {
  * Test which verifies that paths exceeding the maximum path length are
  * rejected.
  */
-void test_sftp__normalize_long() {
+void test_sftp__normalize_long(void) {
 
     char* input;
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
@@ -234,7 +234,7 @@ void test_sftp__normalize_long() {
  * Test which verifies that paths exceeding the maximum path depth are
  * rejected.
  */
-void test_sftp__normalize_deep() {
+void test_sftp__normalize_deep(void) {
 
     char* input;
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];

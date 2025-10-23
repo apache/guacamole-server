@@ -29,7 +29,7 @@
  * resulting string. Each resulting string should contain the full result of
  * the concatenation, including null terminator.
  */
-void test_string__strlcat() {
+void test_string__strlcat(void) {
 
     char buffer[1024];
 
@@ -72,7 +72,7 @@ void test_string__strlcat() {
  * many characters as can fit should be appended to the string within the
  * buffer, and the buffer should be null-terminated.
  */
-void test_string__strlcat_truncate() {
+void test_string__strlcat_truncate(void) {
 
     char buffer[1024];
 
@@ -101,7 +101,7 @@ void test_string__strlcat_truncate() {
  * each call should be the size of the input string, while the buffer remains
  * untouched.
  */
-void test_string__strlcat_nospace() {
+void test_string__strlcat_nospace(void) {
 
     /* 0-byte buffer plus 1 guard byte (to test overrun) */
     char buffer[1] = { '\xFF' };
@@ -126,7 +126,7 @@ void test_string__strlcat_nospace() {
  * considered equal to the size of the buffer, however the resulting buffer
  * should not be null-terminated.
  */
-void test_string__strlcat_nonull() {
+void test_string__strlcat_nonull(void) {
 
     char expected[1024];
     memset(expected, 0xFF, sizeof(expected));

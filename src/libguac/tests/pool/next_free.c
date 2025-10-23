@@ -31,7 +31,7 @@
  * unique integers, never repeating a retrieved integer until that integer
  * is returned to the pool.
  */
-void test_pool__next_free() {
+void test_pool__next_free(void) {
 
     guac_pool* pool;
 

@@ -27,7 +27,7 @@
 #include <time.h>
 #endif
 
-guac_timestamp guac_timestamp_current() {
+guac_timestamp guac_timestamp_current(void) {
 
 #ifdef HAVE_CLOCK_GETTIME
 

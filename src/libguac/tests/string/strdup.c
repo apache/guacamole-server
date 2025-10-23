@@ -37,7 +37,7 @@ const char* null_string = NULL;
 /**
  * Verify guac_strdup() behavior when the string is both NULL and not NULL.
  */
-void test_string__strdup() {
+void test_string__strdup(void) {
 
     /* Copy the strings. */
     char* dest_string = guac_strdup(source_string);

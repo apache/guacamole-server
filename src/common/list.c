@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-guac_common_list* guac_common_list_alloc() {
+guac_common_list* guac_common_list_alloc(void) {
 
     guac_common_list* list = guac_mem_alloc(sizeof(guac_common_list));
 

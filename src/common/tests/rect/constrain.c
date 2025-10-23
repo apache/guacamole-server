@@ -25,7 +25,7 @@
  * Test which verifies that guac_common_rect_constrain() restricts a given
  * rectangle to arbitrary bounds.
  */
-void test_rect__constrain() {
+void test_rect__constrain(void) {
 
     guac_common_rect max;
     guac_common_rect rect;

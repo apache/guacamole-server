@@ -72,7 +72,7 @@ static void verify_conversion(
  * to every other supported encoding, with all line endings preserved verbatim
  * (not normalized).
  */
-void test_iconv__preserve() {
+void test_iconv__preserve(void) {
     for (int i = 0; i < NUM_SUPPORTED_ENCODINGS; i++) {
         for (int j = 0; j < NUM_SUPPORTED_ENCODINGS; j++) {
 
@@ -92,7 +92,7 @@ void test_iconv__preserve() {
  * to every other supported encoding, normalizing all line endings to
  * Unix-style line endings.
  */
-void test_iconv__normalize_unix() {
+void test_iconv__normalize_unix(void) {
     for (int i = 0; i < NUM_SUPPORTED_ENCODINGS; i++) {
         for (int j = 0; j < NUM_SUPPORTED_ENCODINGS; j++) {
 
@@ -112,7 +112,7 @@ void test_iconv__normalize_unix() {
  * to every other supported encoding, normalizing all line endings to
  * Windows-style line endings.
  */
-void test_iconv__normalize_crlf() {
+void test_iconv__normalize_crlf(void) {
     for (int i = 0; i < NUM_SUPPORTED_ENCODINGS; i++) {
         for (int j = 0; j < NUM_SUPPORTED_ENCODINGS; j++) {
 

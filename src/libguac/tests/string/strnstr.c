@@ -26,7 +26,7 @@
 /**
  * Verify guac_strnstr() behaviors:
  */
-void test_string__strnstr() {
+void test_string__strnstr(void) {
     char haystack[8] = {'a', 'h', 'i', ' ', 't', 'u', 'n', 'a'};
     char* result;
 

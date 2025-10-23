@@ -1895,7 +1895,6 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
     guac_common_surface_bitmap_rect* current = surface->bitmap_queue;
     int i, j;
     int original_queue_length;
-    int flushed = 0;
 
     original_queue_length = surface->bitmap_queue_length;
 
@@ -1942,8 +1941,6 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
 
             /* Flush as bitmap otherwise */
             else if (surface->dirty) {
-
-                flushed++;
 
                 int opaque = __guac_common_surface_is_opaque(surface,
                             &surface->dirty_rect);

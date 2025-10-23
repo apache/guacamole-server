@@ -28,7 +28,7 @@
  * Test which verifies that guac_parser correctly parses Guacamole instructions
  * from arbitrary blocks of data passed to guac_parser_append().
  */
-void test_parser__append() {
+void test_parser__append(void) {
 
     /* Allocate parser */
     guac_parser* parser = guac_parser_alloc();

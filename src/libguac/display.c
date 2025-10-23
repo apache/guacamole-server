@@ -56,7 +56,7 @@
  *     The number of available processors, or zero if this value cannot be
  *     determined for any reason.
  */
-static unsigned long guac_display_nproc() {
+static unsigned long guac_display_nproc(void) {
 
 #if defined(HAVE_SCHED_GETAFFINITY)
 

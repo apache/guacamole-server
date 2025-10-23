@@ -23,7 +23,7 @@
 /**
  * Test which verifies rectangle initialization via guac_rect_init().
  */
-void test_rect__init() {
+void test_rect__init(void) {
 
     guac_rect max;
 

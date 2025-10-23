@@ -140,7 +140,7 @@ int guac_socket_select(guac_socket* socket, int usec_timeout) {
 
 }
 
-guac_socket* guac_socket_alloc() {
+guac_socket* guac_socket_alloc(void) {
 
     guac_socket* socket = guac_mem_alloc(sizeof(guac_socket));
 

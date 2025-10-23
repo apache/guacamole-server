@@ -114,7 +114,7 @@ int guac_argv_received(guac_stream* stream, const char* mimetype, const char* na
  * guac_argv_await() that is currently blocking will return, and any future
  * calls to guac_argv_await() will return immediately without blocking.
  */
-void guac_argv_stop();
+void guac_argv_stop(void);
 
 /**
  * Convenience implementation of the "argv" instruction handler which

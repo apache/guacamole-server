@@ -25,7 +25,7 @@
 
 #include <stdlib.h>
 
-guacenc_layer* guacenc_layer_alloc() {
+guacenc_layer* guacenc_layer_alloc(void) {
 
     /* Allocate new layer */
     guacenc_layer* layer = (guacenc_layer*) guac_mem_zalloc(sizeof(guacenc_layer));

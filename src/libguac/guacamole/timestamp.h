@@ -37,7 +37,7 @@
  * @return
  *     An arbitrary millisecond timestamp.
  */
-guac_timestamp guac_timestamp_current();
+guac_timestamp guac_timestamp_current(void);
 
 /**
  * Sleeps for the given number of milliseconds.

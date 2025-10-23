@@ -196,7 +196,7 @@ static int lock_conflicts(const char* path, const char* filename, short lock_typ
  * Verify general guac_openat() behavior when creating files within
  * directories, optionally first creating that directory.
  */
-void test_file__openat() {
+void test_file__openat(void) {
 
     int fd;
     char filename[1024];
@@ -309,7 +309,7 @@ void test_file__openat() {
  * Verify guac_openat() behavior when the filename provided contains path
  * components.
  */
-void test_file__openat_not_filename() {
+void test_file__openat_not_filename(void) {
 
     int fd;
 
@@ -350,7 +350,7 @@ void test_file__openat_not_filename() {
 /**
  * Verify guac_openat() behavior when locking is requested vs. not requested.
  */
-void test_file__openat_locked() {
+void test_file__openat_locked(void) {
 #ifdef __MINGW32__
     /* Skipped under Windows platforms (see documentation for GUAC_O_LOCKED) */
 #else
