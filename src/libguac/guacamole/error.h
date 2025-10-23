@@ -44,7 +44,7 @@ const char* guac_status_string(guac_status status);
  */
 #define guac_error (*__guac_error())
 
-guac_status* __guac_error();
+guac_status* __guac_error(void);
 
 /**
  * Returns a message describing the error which occurred during the last
@@ -57,7 +57,7 @@ guac_status* __guac_error();
  */
 #define guac_error_message (*__guac_error_message())
 
-const char** __guac_error_message();
+const char** __guac_error_message(void);
 
 /**
  * Returns a human-readable explanation of the status code given.
@@ -74,7 +74,7 @@ const char* guac_status_string(guac_status status);
  */
 #define guac_error (*__guac_error())
 
-guac_status* __guac_error();
+guac_status* __guac_error(void);
 
 /**
  * Returns a message describing the error which occurred during the last
@@ -87,7 +87,7 @@ guac_status* __guac_error();
  */
 #define guac_error_message (*__guac_error_message())
 
-const char** __guac_error_message();
+const char** __guac_error_message(void);
 
 #endif
 

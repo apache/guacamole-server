@@ -23,7 +23,7 @@
 /**
  * Test which verifies intersection testing via guac_rect_intersects().
  */
-void test_rect__intersects() {
+void test_rect__intersects(void) {
 
     int res;
 

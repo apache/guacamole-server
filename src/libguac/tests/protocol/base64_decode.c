@@ -24,7 +24,7 @@
  * Tests that libguac's in-place base64 decoding function properly decodes
  * valid base64 and fails for invalid base64.
  */
-void test_protocol__decode_base64() {
+void test_protocol__decode_base64(void) {
 
     /* Test strings */
     char test_HELLO[]     = "SEVMTE8=";

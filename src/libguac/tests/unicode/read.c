@@ -23,7 +23,7 @@
 /**
  * Test which verifies that guac_utf8_read() properly parses UTF-8.
  */
-void test_unicode__utf8_read() {
+void test_unicode__utf8_read(void) {
 
     int codepoint;
 

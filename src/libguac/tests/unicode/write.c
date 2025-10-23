@@ -24,7 +24,7 @@
  * Test which verifies that guac_utf8_write() properly encodes Unicode
  * codepoints as UTF-8.
  */
-void test_unicode__utf8_write() {
+void test_unicode__utf8_write(void) {
 
     char buffer[16];
 

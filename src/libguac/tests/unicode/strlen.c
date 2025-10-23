@@ -44,7 +44,7 @@
  * Test which verifies that guac_utf8_strlen() properly calculates the length
  * of UTF-8 strings.
  */
-void test_unicode__utf8_strlen() {
+void test_unicode__utf8_strlen(void) {
     CU_ASSERT_EQUAL(0, guac_utf8_strlen(""));
     CU_ASSERT_EQUAL(1, guac_utf8_strlen(UTF8_4b));
     CU_ASSERT_EQUAL(2, guac_utf8_strlen(UTF8_4b UTF8_1b));

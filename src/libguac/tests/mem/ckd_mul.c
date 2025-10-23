@@ -25,7 +25,7 @@
  * Test which verifies that guac_mem_ckd_mul() calculates zero values for all
  * inputs involving at least one zero value.
  */
-void test_mem__ckd_mul_zero() {
+void test_mem__ckd_mul_zero(void) {
 
     size_t result = SIZE_MAX;
 
@@ -65,7 +65,7 @@ void test_mem__ckd_mul_zero() {
  * Test which verifies that guac_mem_ckd_mul() successfully calculates expected
  * values for relatively small integer inputs.
  */
-void test_mem__ckd_mul_small() {
+void test_mem__ckd_mul_small(void) {
 
     size_t result = SIZE_MAX;
 
@@ -85,7 +85,7 @@ void test_mem__ckd_mul_small() {
  * relatively large integer inputs, including inputs that cause overflow beyond
  * the capacity of a size_t.
  */
-void test_mem__ckd_mul_large() {
+void test_mem__ckd_mul_large(void) {
 
     size_t result = 0;
 

@@ -88,7 +88,7 @@ typedef struct guacenc_layer {
  *     A newly-allocated and initialized guacenc_layer, or NULL if allocation
  *     fails.
  */
-guacenc_layer* guacenc_layer_alloc();
+guacenc_layer* guacenc_layer_alloc(void);
 
 /**
  * Frees all memory associated with the given layer object. If the layer

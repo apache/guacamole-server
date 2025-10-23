@@ -29,7 +29,7 @@
  * Test which verifies that each call to guac_generate_id() produces a
  * different string.
  */
-void test_id__unique() {
+void test_id__unique(void) {
 
     char* id1 = guac_generate_id('x');
     char* id2 = guac_generate_id('x');
@@ -50,7 +50,7 @@ void test_id__unique() {
  * Test which verifies that guac_generate_id() produces strings are in the
  * correct UUID-based format.
  */
-void test_id__format() {
+void test_id__format(void) {
 
     unsigned int ignore;
 
@@ -71,7 +71,7 @@ void test_id__format() {
  * Test which verifies that guac_generate_id() takes the specified prefix
  * character into account when generating the ID string.
  */
-void test_id__prefix() {
+void test_id__prefix(void) {
 
     char* id;
     
