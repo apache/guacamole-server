@@ -27,7 +27,7 @@
  * Verify guac_strlcpy() behavior when the string fits the buffer without
  * truncation.
  */
-void test_string__strlcpy() {
+void test_string__strlcpy(void) {
 
     char buffer[1024];
 
@@ -57,7 +57,7 @@ void test_string__strlcpy() {
  * Verify guac_strlcpy() behavior when the string must be truncated to fit the
  * buffer.
  */
-void test_string__strlcpy_truncate() {
+void test_string__strlcpy_truncate(void) {
 
     char buffer[1024];
 
@@ -81,7 +81,7 @@ void test_string__strlcpy_truncate() {
 /**
  * Verify guac_strlcpy() behavior with zero buffer sizes.
  */
-void test_string__strlcpy_nospace() {
+void test_string__strlcpy_nospace(void) {
 
     /* 0-byte buffer plus 1 guard byte (to test overrun) */
     char buffer[1] = { '\xFF' };

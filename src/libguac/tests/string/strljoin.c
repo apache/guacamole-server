@@ -50,7 +50,7 @@ const char* const empty_x10[] = { "", "", "", "", "", "", "", "", "", "" };
  * resulting string. Each resulting string should contain the full result of
  * the join operation, including null terminator.
  */
-void test_string__strljoin() {
+void test_string__strljoin(void) {
 
     char buffer[1024];
 
@@ -88,7 +88,7 @@ void test_string__strljoin() {
  * characters as can fit should be appended to the string within the buffer,
  * and the buffer should be null-terminated.
  */
-void test_string__strljoin_truncate() {
+void test_string__strljoin_truncate(void) {
 
     char buffer[1024];
 
@@ -124,7 +124,7 @@ void test_string__strljoin_truncate() {
  * each call should be the size of the input string, while the buffer remains
  * untouched.
  */
-void test_string__strljoin_nospace() {
+void test_string__strljoin_nospace(void) {
 
     /* 0-byte buffer plus 1 guard byte (to test overrun) */
     char buffer[1] = { '\xFF' };

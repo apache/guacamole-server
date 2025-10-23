@@ -258,7 +258,7 @@ static void verify_send_receive(int send_interval) {
  * Verify that the base fifo implementation functions correctly when events
  * are sent slower than they are read.
  */
-void test_fifo__slow_add() {
+void test_fifo__slow_add(void) {
 
     /* Add context for subsequent logging of sent/received values to STDOUT */
     printf("-------- %s() --------\n", __func__);
@@ -272,7 +272,7 @@ void test_fifo__slow_add() {
  * Verify that the base fifo implementation functions correctly when events
  * are sent faster than they are read.
  */
-void test_fifo__fast_add() {
+void test_fifo__fast_add(void) {
 
     /* Add context for subsequent logging of sent/received values to STDOUT */
     printf("-------- %s() --------\n", __func__);
@@ -286,7 +286,7 @@ void test_fifo__fast_add() {
  * Verify that the base fifo implementation functions correctly when events
  * are sent at roughly the same speed as the reading thread.
  */
-void test_fifo__interleaved() {
+void test_fifo__interleaved(void) {
 
     /* Add context for subsequent logging of sent/received values to STDOUT */
     printf("-------- %s() --------\n", __func__);

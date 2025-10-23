@@ -27,7 +27,7 @@
  * Test which verifies that guac_mem_ckd_mul_or_die() calculates zero values
  * for all inputs involving at least one zero value.
  */
-void test_mem__ckd_mul_or_die_zero() {
+void test_mem__ckd_mul_or_die_zero(void) {
 
     CU_ASSERT_EQUAL(guac_mem_ckd_mul_or_die(0), 0);
     CU_ASSERT_EQUAL(guac_mem_ckd_mul_or_die(0, 0), 0);
@@ -47,7 +47,7 @@ void test_mem__ckd_mul_or_die_zero() {
  * Test which verifies that guac_mem_ckd_mul_or_die() successfully calculates
  * expected values for relatively small integer inputs.
  */
-void test_mem__ckd_mul_or_die_small() {
+void test_mem__ckd_mul_or_die_small(void) {
     CU_ASSERT_EQUAL(guac_mem_ckd_mul_or_die(123), 123);
     CU_ASSERT_EQUAL(guac_mem_ckd_mul_or_die(123, 456), 123 * 456);
     CU_ASSERT_EQUAL(guac_mem_ckd_mul_or_die(123, 456, 789), 123 * 456 * 789);
@@ -57,7 +57,7 @@ void test_mem__ckd_mul_or_die_small() {
  * Test which verifies that guac_mem_ckd_mul_or_die() behaves as expected for
  * relatively large integer inputs.
  */
-void test_mem__ckd_mul_or_die_large() {
+void test_mem__ckd_mul_or_die_large(void) {
 
     CU_ASSERT_EQUAL(guac_mem_ckd_mul_or_die(SIZE_MAX), SIZE_MAX);
 

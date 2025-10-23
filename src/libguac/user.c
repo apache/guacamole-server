@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-guac_user* guac_user_alloc() {
+guac_user* guac_user_alloc(void) {
 
     guac_user* user = guac_mem_zalloc(sizeof(guac_user));
     int i;

@@ -111,7 +111,7 @@ static void guac_common_ssh_openssl_locking_callback(int mode, int n,
  * @return
  *     An ID which uniquely identifies the current thread.
  */
-static unsigned long guac_common_ssh_openssl_id_callback() {
+static unsigned long guac_common_ssh_openssl_id_callback(void) {
     return (unsigned long) pthread_self();
 }
 
@@ -202,7 +202,7 @@ int guac_common_ssh_init(guac_client* client) {
 
 }
 
-void guac_common_ssh_uninit() {
+void guac_common_ssh_uninit(void) {
 #ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
     guac_common_ssh_openssl_free_locks(CRYPTO_num_locks());
 #endif

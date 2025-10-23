@@ -44,7 +44,7 @@
 #define GUAC_FIPS_ENABLED 0
 #endif
 
-int guac_fips_enabled() {
+int guac_fips_enabled(void) {
 
     return GUAC_FIPS_ENABLED;
 

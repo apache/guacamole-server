@@ -150,7 +150,7 @@ static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
  * a process which does not have a PGID separate from the main guacd process
  * can result in guacd itself being terminated.
  */
-static void guacd_kill_current_proc_group() {
+static void guacd_kill_current_proc_group(void) {
 
     /* Forcibly kill all children within process group */
     if (kill(0, SIGKILL))

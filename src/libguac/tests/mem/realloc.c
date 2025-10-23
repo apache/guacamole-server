@@ -26,7 +26,7 @@
  * involving at least one zero value (reallocation to zero bytes is not an
  * error but equivalent freeing the memory).
  */
-void test_mem__realloc_success_zero() {
+void test_mem__realloc_success_zero(void) {
 
     void* ptr;
 
@@ -72,7 +72,7 @@ void test_mem__realloc_success_zero() {
  * Test which verifies that guac_mem_realloc() successfully allocates blocks of
  * memory for inputs that can reasonably be expected to succeed.
  */
-void test_mem__realloc_success() {
+void test_mem__realloc_success(void) {
 
     void* ptr;
 
@@ -100,7 +100,7 @@ void test_mem__realloc_success() {
  * Test which verifies that guac_mem_realloc() fails to allocate blocks of
  * memory that exceed the capacity of a size_t.
  */
-void test_mem__realloc_fail_large() {
+void test_mem__realloc_fail_large(void) {
 
     void* ptr;
 

@@ -35,7 +35,7 @@ int guacd_conf_parse_file(guacd_config* conf, int fd);
  * Loads the configuration from any of several default locations, if found. If
  * parsing fails, NULL is returned, and an error message is printed to stderr.
  */
-guacd_config* guacd_conf_load();
+guacd_config* guacd_conf_load(void);
 
 #endif
 

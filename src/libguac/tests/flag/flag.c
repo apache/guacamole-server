@@ -111,7 +111,7 @@ static int wait_for_flag(guac_flag* flag, int set_flags, int clear_flags) {
  * Verifies that a thread waiting on a particular event will NOT be notified if
  * absolutely zero events ever occur.
  */
-void test_flag__ignore_total_silence() {
+void test_flag__ignore_total_silence(void) {
 
     guac_flag test_flag;
     guac_flag_init(&test_flag);
@@ -127,7 +127,7 @@ void test_flag__ignore_total_silence() {
  * Verifies that a thread waiting on a particular event will NOT be notified if
  * that event never occurs, even if other events are occurring.
  */
-void test_flag__ignore_uninteresting_events() {
+void test_flag__ignore_uninteresting_events(void) {
 
     guac_flag test_flag;
     guac_flag_init(&test_flag);
@@ -146,7 +146,7 @@ void test_flag__ignore_uninteresting_events() {
  * Verifies that a thread waiting on a particular event will be notified when
  * that event occurs.
  */
-void test_flag__wake_for_interesting_events() {
+void test_flag__wake_for_interesting_events(void) {
 
     guac_flag test_flag;
     guac_flag_init(&test_flag);

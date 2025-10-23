@@ -251,7 +251,7 @@ static void* guac_client_pending_users_thread(void* data) {
 
 }
 
-guac_client* guac_client_alloc() {
+guac_client* guac_client_alloc(void) {
 
     int i;
 

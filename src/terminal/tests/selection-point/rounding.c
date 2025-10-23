@@ -27,7 +27,7 @@
  * guac_terminal_selection_point_round_up() both correctly
  * calculate normalized column values for a point.
  */
-void test_selection_point__rounding() {
+void test_selection_point__rounding(void) {
 
     guac_terminal_selection_point a = {
         .column = 1,
@@ -51,7 +51,7 @@ void test_selection_point__rounding() {
  * guac_terminal_selection_point_round_up() both correctly
  * calculate normalized column values for points with wide characters.
  */
-void test_selection_point__rounding_wide() {
+void test_selection_point__rounding_wide(void) {
 
     guac_terminal_selection_point a = {
         .column = 1,

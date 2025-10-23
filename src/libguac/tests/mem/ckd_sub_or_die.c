@@ -27,7 +27,7 @@
  * Test which verifies that guac_mem_ckd_sub_or_die() calculates results
  * correctly for all inputs involving at least one zero value.
  */
-void test_mem__ckd_sub_or_die_zero() {
+void test_mem__ckd_sub_or_die_zero(void) {
 
     CU_ASSERT_EQUAL(guac_mem_ckd_sub_or_die(0), 0);
     CU_ASSERT_EQUAL(guac_mem_ckd_sub_or_die(0, 0), 0);
@@ -46,7 +46,7 @@ void test_mem__ckd_sub_or_die_zero() {
  * expected values for relatively small integer inputs, including inputs that
  * cause overflow beyond zero.
  */
-void test_mem__ckd_sub_or_die_small() {
+void test_mem__ckd_sub_or_die_small(void) {
 
     CU_ASSERT_EQUAL(guac_mem_ckd_sub_or_die(123), 123);
     CU_ASSERT_EQUAL(guac_mem_ckd_sub_or_die(456, 123), 456 - 123);
@@ -62,7 +62,7 @@ void test_mem__ckd_sub_or_die_small() {
  * relatively large integer inputs, including inputs that cause overflow beyond
  * zero.
  */
-void test_mem__ckd_sub_or_die_large() {
+void test_mem__ckd_sub_or_die_large(void) {
 
     CU_ASSERT_EQUAL(guac_mem_ckd_sub_or_die(SIZE_MAX), SIZE_MAX);
     CU_ASSERT_EQUAL(guac_mem_ckd_sub_or_die(SIZE_MAX, SIZE_MAX / 2), SIZE_MAX - (SIZE_MAX / 2));

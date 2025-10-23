@@ -26,7 +26,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-guacenc_buffer* guacenc_buffer_alloc() {
+guacenc_buffer* guacenc_buffer_alloc(void) {
     return guac_mem_zalloc(sizeof(guacenc_buffer));
 }
 

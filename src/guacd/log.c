@@ -130,7 +130,7 @@ void guacd_log_guac_error(guac_client_log_level level, const char* message) {
 
 }
 
-void guacd_log_handshake_failure() {
+void guacd_log_handshake_failure(void) {
 
     if (guac_error == GUAC_STATUS_CLOSED)
         guacd_log(GUAC_LOG_DEBUG,

@@ -25,7 +25,7 @@
  * Test which verifies that guac_mem_free() sets the provided pointer to NULL after
  * freeing.
  */
-void test_mem__free_assigns_null() {
+void test_mem__free_assigns_null(void) {
     void* ptr = guac_mem_alloc(123);
     CU_ASSERT_PTR_NOT_NULL(ptr);
     guac_mem_free(ptr);
@@ -36,7 +36,7 @@ void test_mem__free_assigns_null() {
  * Test which verifies that guac_mem_free_const() can be used to free constant
  * pointers, but that those pointers are not set to NULL after freeing.
  */
-void test_mem__free_const() {
+void test_mem__free_const(void) {
     const void* ptr = guac_mem_alloc(123);
     CU_ASSERT_PTR_NOT_NULL(ptr);
     guac_mem_free_const(ptr);
@@ -47,7 +47,7 @@ void test_mem__free_const() {
  * Test which verifies that guac_mem_free() does nothing if provided a NULL
  * pointer.
  */
-void test_mem__free_null() {
+void test_mem__free_null(void) {
     void* ptr = NULL;
     guac_mem_free(ptr);
     CU_PASS("Nothing freed (segfault did not occur)");
@@ -57,7 +57,7 @@ void test_mem__free_null() {
  * Test which verifies that guac_mem_free_const() does nothing if provided a NULL
  * pointer.
  */
-void test_mem__free_null_const() {
+void test_mem__free_null_const(void) {
     const void* ptr = NULL;
     guac_mem_free_const(ptr);
     CU_PASS("Nothing freed (segfault did not occur)");

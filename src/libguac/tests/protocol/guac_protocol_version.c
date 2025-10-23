@@ -25,7 +25,7 @@
  * Test which verifies that conversion of the guac_protocol_version enum to
  * string values succeeds and produces the expected results.
  */
-void test_guac_protocol__version_to_string() {
+void test_guac_protocol__version_to_string(void) {
     
     guac_protocol_version version_a = GUAC_PROTOCOL_VERSION_1_5_0;
     guac_protocol_version version_b = GUAC_PROTOCOL_VERSION_1_0_0;
@@ -43,7 +43,7 @@ void test_guac_protocol__version_to_string() {
  * guac_protocol_version enum values, and that versions that do not match
  * any version get the correct unknown value.
  */
-void test_guac_protocol__string_to_version() {
+void test_guac_protocol__string_to_version(void) {
     
     char* str_version_a = "VERSION_1_3_0";
     char* str_version_b = "VERSION_1_1_0";
@@ -61,7 +61,7 @@ void test_guac_protocol__string_to_version() {
  * Test which verifies that the comparisons between guac_protocol_version enum
  * values produces the expected results.
  */
-void test_gauc_protocol__version_comparison() {
+void test_gauc_protocol__version_comparison(void) {
     
     CU_ASSERT_TRUE(GUAC_PROTOCOL_VERSION_1_3_0 > GUAC_PROTOCOL_VERSION_1_0_0);
     CU_ASSERT_TRUE(GUAC_PROTOCOL_VERSION_UNKNOWN < GUAC_PROTOCOL_VERSION_1_1_0);

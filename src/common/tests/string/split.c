@@ -28,7 +28,7 @@
  * Test which verifies that guac_split() splits a string on occurrences of a
  * given character.
  */
-void test_string__split() {
+void test_string__split(void) {
 
     /* Split test string */
     char** tokens = guac_split("this is a test string", ' ');

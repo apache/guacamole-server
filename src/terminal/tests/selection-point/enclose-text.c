@@ -26,7 +26,7 @@
  * Verifies that guac_terminal_selection_points_enclose_text() correctly 
  * calculates if the range contains a full character.
  */
-void test_selection_point__enclose_text() {
+void test_selection_point__enclose_text(void) {
 
     guac_terminal_selection_point a = {
         .column = 1,
@@ -70,7 +70,7 @@ void test_selection_point__enclose_text() {
  * Verifies that guac_terminal_selection_points_enclose_text() correctly 
  * calculates if the range contains a full character with wide characters.
  */
-void test_selection_point__enclose_wide_text() {
+void test_selection_point__enclose_wide_text(void) {
 
     guac_terminal_selection_point a = {
         .column = 1,

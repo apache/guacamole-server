@@ -28,6 +28,6 @@
  *      A non-zero value if FIPS mode is enabled, or zero if FIPS mode is
  *      not enabled.
  */
-int guac_fips_enabled();
+int guac_fips_enabled(void);
 
 #endif

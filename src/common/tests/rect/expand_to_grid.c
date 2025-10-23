@@ -25,7 +25,7 @@
  * Test which verifies guac_common_rect_expand_to_grid() properly shifts and
  * resizes rectangles to fit an NxN grid.
  */
-void test_rect__expand_to_grid() {
+void test_rect__expand_to_grid(void) {
 
     int cell_size = 16;
 
