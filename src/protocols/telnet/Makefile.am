@@ -50,11 +50,13 @@ noinst_HEADERS = \
 
 libguac_client_telnet_la_CFLAGS = \
     -Werror -Wall -Iinclude       \
+    @COMMON_SSH_INCLUDE@          \
     @LIBGUAC_INCLUDE@             \
     @TERMINAL_INCLUDE@
 
 libguac_client_telnet_la_LIBADD = \
     @COMMON_LTLIB@                \
+    @COMMON_SSH_LTLIB@            \
     @LIBGUAC_LTLIB@               \
     @TERMINAL_LTLIB@
 
