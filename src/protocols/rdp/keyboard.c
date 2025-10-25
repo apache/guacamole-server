@@ -27,7 +27,6 @@
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
 #include <guacamole/rwlock.h>
-
 #include <stdlib.h>
 
 /**
@@ -562,7 +561,229 @@ static void guac_rdp_keyboard_send_missing_key(guac_rdp_keyboard* keyboard,
 
     guac_client* client = keyboard->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+     
+    /* If system modifiers (Ctrl/Alt) are held, prefer sending US scancode so
+     * that shortcuts like Ctrl+C/V/A work even in Unicode/failsafe layout. */
+    int ctrl_or_alt_pressed =
+          guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LCTRL)
+       || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RCTRL)
+       || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LALT)
+       || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RALT);
 
+    /* Normalize Cyrillic letters to Latin equivalents when Ctrl/Alt pressed
+     * so that shortcuts like Ctrl+C, Ctrl+V, etc. work even in Russian layout.
+     */
+    if (ctrl_or_alt_pressed) {
+
+       
+/* Treat Ctrl or Alt (but NOT AltGr) as shortcut modifiers */
+int ctrl_pressed =
+      guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LCTRL)
+   || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RCTRL);
+
+int alt_pressed =
+      guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LALT)
+   || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RALT);
+
+/* AltGr appears as Ctrl+Alt together; don’t hijack that. */
+int altgr = ctrl_pressed && alt_pressed;
+
+/* We only force scancodes for real shortcuts: Ctrl-only OR Alt-only. */
+int shortcut_mod = !altgr && (ctrl_pressed || alt_pressed);
+
+if (shortcut_mod) {
+    /* Map both Latin and Russian keysyms for C/V to US scancodes.
+     * US Set 1 scancodes: C=0x2E, V=0x2F.
+     * This makes Ctrl+C / Ctrl+V work in ru-RU and en-US equally.
+     */
+    int sc = 0;
+
+    switch (keysym) {
+            /* --- Ctrl+C --- */
+            case 'c': case 'C':
+            case 0x441:  /* Cyrillic small 'с' */
+            case 0x421:  /* Cyrillic capital 'С' */
+                sc = 0x2E; /* US 'C' key */
+                break;
+
+            /* --- Ctrl+V --- */
+            case 'v': case 'V':
+            case 0x43C:  /* Cyrillic small 'м' */
+            case 0x41C:  /* Cyrillic capital 'М' */
+                sc = 0x2F; /* US 'V' key */
+                break;
+
+            default:
+                sc = 0;
+        }
+
+    if (sc) {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+            "Shortcut: modifiers active, sending US scancode 0x%X for keysym 0x%X",
+            sc, keysym);
+        /* press + release with no extended flags */
+        guac_rdp_send_key_event(rdp_client, sc, 0, 1);
+        guac_rdp_send_key_event(rdp_client, sc, 0, 0);
+        return;
+    }
+}
+        switch (keysym) {
+            /* Lowercase Cyrillic */
+            case 0x430: keysym = 'f'; break; // а
+            case 0x431: keysym = ','; break; // б
+            case 0x432: keysym = 'd'; break; // в
+            case 0x433: keysym = 'u'; break; // г
+            case 0x434: keysym = 'l'; break; // д
+            case 0x435: keysym = 't'; break; // е
+            case 0x436: keysym = ';'; break; // ж
+            case 0x437: keysym = 'p'; break; // з
+            case 0x438: keysym = 'b'; break; // и
+            case 0x439: keysym = 'q'; break; // й
+            case 0x43A: keysym = 'r'; break; // к
+            case 0x43B: keysym = 'k'; break; // л
+            case 0x43C: keysym = 'v'; break; // м
+            case 0x43D: keysym = 'y'; break; // н
+            case 0x43E: keysym = 'j'; break; // о
+            case 0x43F: keysym = 'g'; break; // п
+            case 0x440: keysym = 'h'; break; // р
+            case 0x441: keysym = 'c'; break; // с
+            case 0x442: keysym = 'n'; break; // т
+            case 0x443: keysym = 'e'; break; // у
+            case 0x444: keysym = 'a'; break; // ф
+            case 0x445: keysym = '['; break; // х
+            case 0x446: keysym = 'w'; break; // ц
+            case 0x447: keysym = 'x'; break; // ч
+            case 0x448: keysym = 'i'; break; // ш
+            case 0x449: keysym = 'o'; break; // щ
+            case 0x44A: keysym = ']'; break; // ъ
+            case 0x44B: keysym = 's'; break; // ы
+            case 0x44C: keysym = 'm'; break; // ь
+            case 0x44D: keysym = '\''; break; // э
+            case 0x44E: keysym = '.'; break; // ю
+            case 0x44F: keysym = 'z'; break; // я
+
+            /* Uppercase Cyrillic */
+            case 0x410: keysym = 'F'; break; // А
+            case 0x411: keysym = '<'; break; // Б
+            case 0x412: keysym = 'D'; break; // В
+            case 0x413: keysym = 'U'; break; // Г
+            case 0x414: keysym = 'L'; break; // Д
+            case 0x415: keysym = 'T'; break; // Е
+            case 0x416: keysym = ':'; break; // Ж
+            case 0x417: keysym = 'P'; break; // З
+            case 0x418: keysym = 'B'; break; // И
+            case 0x419: keysym = 'Q'; break; // Й
+            case 0x41A: keysym = 'R'; break; // К
+            case 0x41B: keysym = 'K'; break; // Л
+            case 0x41C: keysym = 'V'; break; // М
+            case 0x41D: keysym = 'Y'; break; // Н
+            case 0x41E: keysym = 'J'; break; // О
+            case 0x41F: keysym = 'G'; break; // П
+            case 0x420: keysym = 'H'; break; // Р
+            case 0x421: keysym = 'C'; break; // С
+            case 0x422: keysym = 'N'; break; // Т
+            case 0x423: keysym = 'E'; break; // У
+            case 0x424: keysym = 'A'; break; // Ф
+            case 0x425: keysym = '{'; break; // Х
+            case 0x426: keysym = 'W'; break; // Ц
+            case 0x427: keysym = 'X'; break; // Ч
+            case 0x428: keysym = 'I'; break; // Ш
+            case 0x429: keysym = 'O'; break; // Щ
+            case 0x42A: keysym = '}'; break; // Ъ
+            case 0x42B: keysym = 'S'; break; // Ы
+            case 0x42C: keysym = 'M'; break; // Ь
+            case 0x42D: keysym = '"'; break; // Э
+            case 0x42E: keysym = '>'; break; // Ю
+            case 0x42F: keysym = 'Z'; break; // Я
+        }
+    }
+
+    if (ctrl_or_alt_pressed) {
+        /* Map ASCII letters/digits to PC/AT set 1 scancodes (US layout).
+         * This is enough for common shortcuts (A, C, V, X, Z, Y, ...). */
+        int sc = 0;
+           /* Normalize X11-style keysyms (0x1000000 + Unicode) to plain Unicode */
+        if ((keysym & 0xFF000000) == 0x01000000)
+            keysym &= 0x00FFFFFF;
+
+        switch (keysym) {
+            /* digits 0-9 */
+            case '1': sc = 0x02; break; case '2': sc = 0x03; break;
+            case '3': sc = 0x04; break; case '4': sc = 0x05; break;
+            case '5': sc = 0x06; break; case '6': sc = 0x07; break;
+            case '7': sc = 0x08; break; case '8': sc = 0x09; break;
+            case '9': sc = 0x0A; break; case '0': sc = 0x0B; break;
+            
+            /* Latin letters A-Z (both cases) */
+            case 'a': case 'A': sc = 0x1E; break;
+            case 'b': case 'B': sc = 0x30; break;
+            case 'c': case 'C': sc = 0x2E; break;
+            case 'd': case 'D': sc = 0x20; break;
+            case 'e': case 'E': sc = 0x12; break;
+            case 'f': case 'F': sc = 0x21; break;
+            case 'g': case 'G': sc = 0x22; break;
+            case 'h': case 'H': sc = 0x23; break;
+            case 'i': case 'I': sc = 0x17; break;
+            case 'j': case 'J': sc = 0x24; break;
+            case 'k': case 'K': sc = 0x25; break;
+            case 'l': case 'L': sc = 0x26; break;
+            case 'm': case 'M': sc = 0x32; break;
+            case 'n': case 'N': sc = 0x31; break;
+            case 'o': case 'O': sc = 0x18; break;
+            case 'p': case 'P': sc = 0x19; break;
+            case 'q': case 'Q': sc = 0x10; break;
+            case 'r': case 'R': sc = 0x13; break;
+            case 's': case 'S': sc = 0x1F; break;
+            case 't': case 'T': sc = 0x14; break;
+            case 'u': case 'U': sc = 0x16; break;
+            case 'v': case 'V': sc = 0x2F; break;
+            case 'w': case 'W': sc = 0x11; break;
+            case 'x': case 'X': sc = 0x2D; break;
+            case 'y': case 'Y': sc = 0x15; break;
+            case 'z': case 'Z': sc = 0x2C; break;
+            
+            /* Russian Cyrillic letters - most common shortcuts */
+            /* Lowercase Cyrillic */
+            case 0x0444: case 0x0424: sc = 0x1E; break; /* ф/Ф -> A */
+            case 0x0438: case 0x0418: sc = 0x30; break; /* и/И -> B */
+            case 0x0441: case 0x0421: sc = 0x2E; break; /* с/С -> C */
+            case 0x0432: case 0x0412: sc = 0x20; break; /* в/В -> D */
+            case 0x0443: case 0x0423: sc = 0x12; break; /* у/У -> E */
+            case 0x0430: case 0x0410: sc = 0x21; break; /* а/А -> F */
+            case 0x043f: case 0x041f: sc = 0x22; break; /* п/П -> G */
+            case 0x0440: case 0x0420: sc = 0x23; break; /* р/Р -> H */
+            case 0x0448: case 0x0428: sc = 0x17; break; /* ш/Ш -> I */
+            case 0x043e: case 0x041e: sc = 0x24; break; /* о/О -> J */
+            case 0x043b: case 0x041b: sc = 0x25; break; /* л/Л -> K */
+            case 0x0434: case 0x0414: sc = 0x26; break; /* д/Д -> L */
+            case 0x044c: case 0x042c: sc = 0x32; break; /* ь/Ь -> M */
+            case 0x0442: case 0x0422: sc = 0x31; break; /* т/Т -> N */
+            case 0x0449: case 0x0429: sc = 0x18; break; /* щ/Щ -> O */
+            case 0x0437: case 0x0417: sc = 0x19; break; /* з/З -> P */
+            case 0x0439: case 0x0419: sc = 0x10; break; /* й/Й -> Q */
+            case 0x043a: case 0x041a: sc = 0x13; break; /* к/К -> R */
+            case 0x044b: case 0x042b: sc = 0x1F; break; /* ы/Ы -> S */
+            case 0x0435: case 0x0415: sc = 0x14; break; /* е/Е -> T */
+            case 0x0433: case 0x0413: sc = 0x16; break; /* г/Г -> U */
+            case 0x043c: case 0x041c: sc = 0x2F; break; /* м/М -> V */
+            case 0x0446: case 0x0426: sc = 0x11; break; /* ц/Ц -> W */
+            case 0x0447: case 0x0427: sc = 0x2D; break; /* ч/Ч -> X */
+            case 0x043d: case 0x041d: sc = 0x15; break; /* н/Н -> Y */
+            case 0x044f: case 0x042f: sc = 0x2C; break; /* я/Я -> Z */ 
+            
+            
+            default: sc = 0; break;
+        }
+        if (sc) {
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                "Sending keysym 0x%x as US scancode 0x%X due to modifiers",
+                keysym, sc);
+            /* send press+release; 'flags' = 0 for regular keys */
+            guac_rdp_send_key_event(rdp_client, sc, 0, 1);
+            guac_rdp_send_key_event(rdp_client, sc, 0, 0);
+            return;
+        }
+    }
     /* Attempt to type using dead keys */
     if (!guac_rdp_decompose_keysym(keyboard, keysym))
         return;
@@ -738,3 +959,4 @@ complete:
     return TRUE;
 
 }
+
