@@ -1406,3 +1406,38 @@ const char* guac_protocol_version_to_string(guac_protocol_version version) {
     
 }
 
+int guac_protocol_send_usbdisconnect(guac_socket* socket, 
+        const char* device_id) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "13.usbdisconnect,")
+        || __guac_socket_write_length_string(socket, device_id)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_usbdata(guac_socket* socket, const char* device_id,
+        int endpoint_number, const char* data) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "7.usbdata,")
+        || __guac_socket_write_length_string(socket, device_id)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, endpoint_number)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, data)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
