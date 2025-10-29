@@ -27,7 +27,7 @@
  * Verifies that guac_kubernetes_append_endpoint_param() correctly appends
  * parameters to URLs that do not already have a query string.
  */
-void test_url__append_no_query() {
+void test_url__append_no_query(void) {
 
     char url[256] = "http://example.net";
 
@@ -40,7 +40,7 @@ void test_url__append_no_query() {
  * Verifies that guac_kubernetes_append_endpoint_param() correctly appends
  * parameters to URLs that already have a query string.
  */
-void test_url__append_existing_query() {
+void test_url__append_existing_query(void) {
 
     char url[256] = "http://example.net?foo=test%20value";
 
@@ -53,7 +53,7 @@ void test_url__append_existing_query() {
  * Verifies that guac_kubernetes_append_endpoint_param() refuses to overflow
  * the bounds of the provided buffer.
  */
-void test_url__append_bounds() {
+void test_url__append_bounds(void) {
 
     char url[256];
 

@@ -26,7 +26,7 @@
  * Verifies that guac_kubernetes_escape_url_component() correctly escapes
  * characters that would otherwise have special meaning within URLs.
  */
-void test_url__escape_special() {
+void test_url__escape_special(void) {
 
     char value[256];
 
@@ -39,7 +39,7 @@ void test_url__escape_special() {
  * Verifies that guac_kubernetes_escape_url_component() leaves strings
  * untouched if they contain no characters requiring escaping.
  */
-void test_url__escape_nospecial() {
+void test_url__escape_nospecial(void) {
 
     char value[256];
 
@@ -52,7 +52,7 @@ void test_url__escape_nospecial() {
  * Verifies that guac_kubernetes_escape_url_component() refuses to overflow the
  * bounds of the provided buffer.
  */
-void test_url__escape_bounds() {
+void test_url__escape_bounds(void) {
 
     char value[256];
 

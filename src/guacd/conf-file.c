@@ -171,7 +171,7 @@ int guacd_conf_parse_file(guacd_config* conf, int fd) {
 
 }
 
-guacd_config* guacd_conf_load() {
+guacd_config* guacd_conf_load(void) {
 
     guacd_config* conf = guac_mem_alloc(sizeof(guacd_config));
     if (conf == NULL)

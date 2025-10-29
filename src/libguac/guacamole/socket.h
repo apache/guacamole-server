@@ -127,7 +127,7 @@ struct guac_socket {
  * @returns A newly-allocated guac_socket, or NULL if the guac_socket could
  *          not be allocated.
  */
-guac_socket* guac_socket_alloc();
+guac_socket* guac_socket_alloc(void);
 
 /**
  * Frees the given guac_socket and all associated resources.

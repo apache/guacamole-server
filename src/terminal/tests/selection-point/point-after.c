@@ -26,7 +26,7 @@
  * Verifies that guac_terminal_selection_point_is_after() correctly
  * determins the order of two points.
  */
-void test_selection_point__is_point_after() {
+void test_selection_point__is_point_after(void) {
 
     guac_terminal_selection_point a = {
         .column = 1,

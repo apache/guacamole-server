@@ -72,7 +72,7 @@ typedef struct guacenc_cursor {
  *     A newly-allocated and initialized guacenc_cursor, or NULL if allocation
  *     fails.
  */
-guacenc_cursor* guacenc_cursor_alloc();
+guacenc_cursor* guacenc_cursor_alloc(void);
 
 /**
  * Frees all memory associated with the given cursor object. If the cursor

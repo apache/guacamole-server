@@ -73,7 +73,7 @@ typedef struct guac_common_list {
  *
  * @return A newly-allocated list.
  */
-guac_common_list* guac_common_list_alloc();
+guac_common_list* guac_common_list_alloc(void);
 
 /**
  * A handler that will be invoked with the data pointer of each element of

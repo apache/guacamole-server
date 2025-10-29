@@ -157,7 +157,7 @@ guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
 
 }
 
-const char* guac_common_ssh_key_error() {
+const char* guac_common_ssh_key_error(void) {
 
     /* Return static error string */
     return ERR_reason_error_string(ERR_get_error());

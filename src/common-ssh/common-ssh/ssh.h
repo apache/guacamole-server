@@ -93,7 +93,7 @@ int guac_common_ssh_init(guac_client* client);
  * This function must be called once no other guac_common_ssh_*() functions
  * will be used.
  */
-void guac_common_ssh_uninit();
+void guac_common_ssh_uninit(void);
 
 /**
  * Connects to the SSH server running at the given hostname and port, and
