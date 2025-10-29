@@ -28,7 +28,7 @@
  * of layers available to each guac_client, and that doing so does not disturb
  * the similar pool of buffers.
  */
-void test_client__layer_pool() {
+void test_client__layer_pool(void) {
 
     guac_client* client;
 

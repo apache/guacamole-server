@@ -116,7 +116,7 @@ static void read_expected_instructions(int fd) {
  * received over a guac_socket. A child process is forked to write a series of
  * instructions which are read and verified by the parent process.
  */
-void test_parser__read() {
+void test_parser__read(void) {
 
     int fd[2];
 

@@ -93,7 +93,7 @@ struct guac_parser {
  * @return The newly allocated parser, or NULL if an error occurs during
  *         allocation, in which case guac_error will be set appropriately.
  */
-guac_parser* guac_parser_alloc();
+guac_parser* guac_parser_alloc(void);
 
 /**
  * Appends data from the given buffer to the given parser. The data will be

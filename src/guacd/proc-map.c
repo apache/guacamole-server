@@ -128,7 +128,7 @@ static guac_common_list_element* __guacd_proc_find(guac_common_list* bucket,
 
 }
 
-guacd_proc_map* guacd_proc_map_alloc() {
+guacd_proc_map* guacd_proc_map_alloc(void) {
 
     guacd_proc_map* map = guac_mem_alloc(sizeof(guacd_proc_map));
     map->processes = guac_common_list_alloc();

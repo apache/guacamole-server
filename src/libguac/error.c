@@ -184,21 +184,21 @@ static void __guac_mem_free_pointer(void* pointer) {
 
 }
 
-static void __guac_alloc_error_key() {
+static void __guac_alloc_error_key(void) {
 
     /* Create key, destroy any allocated variable on thread exit */
     pthread_key_create(&__guac_error_key, __guac_mem_free_pointer);
 
 }
 
-static void __guac_alloc_error_message_key() {
+static void __guac_alloc_error_message_key(void) {
 
     /* Create key, destroy any allocated variable on thread exit */
     pthread_key_create(&__guac_error_message_key, __guac_mem_free_pointer);
 
 }
 
-guac_status* __guac_error() {
+guac_status* __guac_error(void) {
 
     /* Pointer for thread-local data */
     guac_status* status;
@@ -219,7 +219,7 @@ guac_status* __guac_error() {
 
 }
 
-const char** __guac_error_message() {
+const char** __guac_error_message(void) {
 
     /* Pointer for thread-local data */
     const char** message;
@@ -249,11 +249,11 @@ const char** __guac_error_message() {
 static guac_status __guac_error_unsafe_storage;
 static const char** __guac_error_message_unsafe_storage;
 
-guac_status* __guac_error() {
+guac_status* __guac_error(void) {
     return &__guac_error_unsafe_storage;
 }
 
-const char** __guac_error_message() {
+const char** __guac_error_message(void) {
     return &__guac_error_message_unsafe_storage;
 }
 

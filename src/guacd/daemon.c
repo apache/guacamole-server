@@ -101,7 +101,7 @@ static int redirect_fd(int fd, int flags) {
  *    still the original caller. This function does not return for the original
  *    caller if daemonization succeeds.
  */
-static int daemonize() {
+static int daemonize(void) {
 
     pid_t pid;
 
@@ -202,7 +202,7 @@ static void guacd_openssl_locking_callback(int mode, int n,
  * @return
  *     An ID which uniquely identifies the current thread.
  */
-static unsigned long guacd_openssl_id_callback() {
+static unsigned long guacd_openssl_id_callback(void) {
     return (unsigned long) pthread_self();
 }
 

@@ -25,7 +25,7 @@
  * Test which verifies that guac_common_rect_extend() expands the given
  * rectangle as necessary to contain at least the given bounds.
  */
-void test_rect__extend() {
+void test_rect__extend(void) {
 
     guac_common_rect max;
     guac_common_rect rect;

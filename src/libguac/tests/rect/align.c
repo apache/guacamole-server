@@ -24,7 +24,7 @@
  * Test which verifies guac_rect_align() properly shifts and resizes rectangles
  * to fit an NxN grid.
  */
-void test_rect__align() {
+void test_rect__align(void) {
 
     /* A cell size of 4 is 2^4 (16) */
     const int cell_size = 4;

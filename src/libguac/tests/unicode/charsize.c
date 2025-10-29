@@ -24,7 +24,7 @@
  * Test which verifies that guac_utf8_charsize() correctly determines the
  * length of UTF-8 characters from the leading byte of that character.
  */
-void test_unicode__utf8_charsize() {
+void test_unicode__utf8_charsize(void) {
     CU_ASSERT_EQUAL(1, guac_utf8_charsize('g'));
     CU_ASSERT_EQUAL(2, guac_utf8_charsize('\xC4'));
     CU_ASSERT_EQUAL(3, guac_utf8_charsize('\xE7'));

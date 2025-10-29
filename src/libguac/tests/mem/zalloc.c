@@ -25,7 +25,7 @@
  * Test which verifies that guac_mem_zalloc() returns NULL for all inputs involving
  * at least one zero value.
  */
-void test_mem__zalloc_fail_zero() {
+void test_mem__zalloc_fail_zero(void) {
 
     CU_ASSERT_PTR_NULL(guac_mem_zalloc(0));
     CU_ASSERT_PTR_NULL(guac_mem_zalloc(0, 0));
@@ -70,7 +70,7 @@ static int is_all_zeroes(void* ptr, size_t length) {
  * memory for inputs that can reasonably be expected to succeed, and that each
  * block is zeroed out.
  */
-void test_mem__zalloc_success() {
+void test_mem__zalloc_success(void) {
 
     void* ptr;
 
@@ -95,7 +95,7 @@ void test_mem__zalloc_success() {
  * Test which verifies that guac_mem_zalloc() fails to allocate blocks of memory
  * that exceed the capacity of a size_t.
  */
-void test_mem__zalloc_fail_large() {
+void test_mem__zalloc_fail_large(void) {
     CU_ASSERT_PTR_NULL(guac_mem_zalloc(123, 456, SIZE_MAX));
     CU_ASSERT_PTR_NULL(guac_mem_zalloc(SIZE_MAX / 2, SIZE_MAX / 2));
 }
