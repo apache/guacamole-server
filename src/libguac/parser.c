@@ -37,7 +37,7 @@ static void guac_parser_reset(guac_parser* parser) {
     parser->__element_length = 0;
 }
 
-guac_parser* guac_parser_alloc() {
+guac_parser* guac_parser_alloc(void) {
 
     /* Allocate space for parser */
     guac_parser* parser = guac_mem_alloc(sizeof(guac_parser));

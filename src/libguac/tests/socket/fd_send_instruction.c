@@ -107,7 +107,7 @@ static void read_expected_instructions(int fd) {
  * implements writing of instructions. A child process is forked to write a
  * series of instructions which are read and verified by the parent process.
  */
-void test_socket__fd_send_instruction() {
+void test_socket__fd_send_instruction(void) {
 
     int fd[2];
 

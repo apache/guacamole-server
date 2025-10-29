@@ -25,7 +25,7 @@
 
 #include <stdlib.h>
 
-guacenc_cursor* guacenc_cursor_alloc() {
+guacenc_cursor* guacenc_cursor_alloc(void) {
 
     /* Allocate new cursor */
     guacenc_cursor* cursor = (guacenc_cursor*) guac_mem_alloc(sizeof(guacenc_cursor));

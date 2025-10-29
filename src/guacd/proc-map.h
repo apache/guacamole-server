@@ -68,7 +68,7 @@ typedef struct guacd_proc_map {
  * @return
  *     A newly-allocated client process map.
  */
-guacd_proc_map* guacd_proc_map_alloc();
+guacd_proc_map* guacd_proc_map_alloc(void);
 
 /**
  * Free all resources allocated for the provided map. Note that this function

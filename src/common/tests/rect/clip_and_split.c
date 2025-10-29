@@ -25,7 +25,7 @@
  * Test which verifies that guac_common_rect_clip_and_split() divides a
  * rectangle into subrectangles after removing a "hole" rectangle.
  */
-void test_rect__clip_and_split() {
+void test_rect__clip_and_split(void) {
 
     int res;
 

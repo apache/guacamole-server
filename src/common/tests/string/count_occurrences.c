@@ -25,7 +25,7 @@
  * Test which verifies that guac_count_occurrences() counts the number of
  * occurrences of an arbitrary character within a given string.
  */
-void test_string__guac_count_occurrences() {
+void test_string__guac_count_occurrences(void) {
     CU_ASSERT_EQUAL(4, guac_count_occurrences("this is a test string", 's'));
     CU_ASSERT_EQUAL(3, guac_count_occurrences("this is a test string", 'i'));
     CU_ASSERT_EQUAL(0, guac_count_occurrences("", 's'));

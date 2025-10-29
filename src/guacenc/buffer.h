@@ -82,7 +82,7 @@ typedef struct guacenc_buffer {
  *     A newly-allocated and initialized guacenc_buffer, or NULL if allocation
  *     fails.
  */
-guacenc_buffer* guacenc_buffer_alloc();
+guacenc_buffer* guacenc_buffer_alloc(void);
 
 /**
  * Frees all memory associated with the given buffer object. If the buffer
