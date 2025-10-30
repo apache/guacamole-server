@@ -1617,13 +1617,9 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
     }
 
     /* Stop on ECMA-48 ST (String Terminator */
-    else if (c == 0x9C || c == 0x5C || c == 0x07)
-        term->char_handler = guac_terminal_echo;
-
-    /* Stop on unrecognized character */
-    else {
+    else if (c == 0x9C || c == 0x5C || c == 0x07) {
         guac_client_log(term->client, GUAC_LOG_DEBUG,
-                "Unexpected character in OSC: 0x%X", c);
+                        "Unhandled OSC command: %d", operation);
         term->char_handler = guac_terminal_echo;
     }
 
