@@ -22,6 +22,7 @@
 
 #include <guacamole/unicode.h>
 #include <stdint.h>
+#include <endian.h>
 
 /**
  * Lookup table for Unicode code points, indexed by CP-1252 codepoint.
@@ -109,7 +110,7 @@ int GUAC_READ_UTF16(const char** input, int remaining) {
         return 0;
 
     /* Read two bytes as integer */
-    value = *((uint16_t*) *input);
+    value = le16toh(*((uint16_t*) *input));
     *input += 2;
 
     return value;
@@ -213,7 +214,7 @@ void GUAC_WRITE_UTF16(char** output, int remaining, int value) {
         return;
 
     /* Write two bytes as integer */
-    *((uint16_t*) *output) = value;
+    *((uint16_t*) *output) = htole16(value);
     *output += 2;
 
 }
