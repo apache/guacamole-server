@@ -42,6 +42,9 @@
 #include "print-job.h"
 #include "rdp.h"
 #include "settings.h"
+#include "channels/rdpecam/rdpecam_sink.h"
+#include "channels/rdpecam/rdpecam_caps.h"
+#include "plugins/guacrdpecam/guacrdpecam.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
@@ -74,8 +77,12 @@
 #include <winpr/synch.h>
 #include <winpr/wtypes.h>
 
+#include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
+
+
 
 /**
  * Initializes and loads the necessary FreeRDP plugins based on the current
@@ -131,6 +138,26 @@ static BOOL rdp_freerdp_load_channels(freerdp* instance) {
 
         /* Downgrade the lock to allow for concurrent read access */
         guac_rwlock_release_lock(&(rdp_client->lock));
+    }
+
+    /* Load "RDPECAM" plugin for camera redirection */
+    if (settings->enable_rdpecam) {
+        if (guac_argv_register(GUAC_RDPECAM_ARG_CAPABILITIES,
+                guac_rdp_rdpecam_capabilities_callback, NULL, 0)) {
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Unable to register RDPECAM capability handler;"
+                    " dynamic media type negotiation may be limited.");
+        }
+
+        /* Initialize sink pointer to NULL. Each device will create its own sink.
+         * When a device starts streaming, rdp_client->rdpecam_sink will be set
+         * to point to that device's sink so the browser knows where to push frames. */
+        guac_rwlock_acquire_write_lock(&(rdp_client->lock));
+        rdp_client->rdpecam_sink = NULL;
+        guac_rwlock_release_lock(&(rdp_client->lock));
+
+        /* Load plugin without holding lock to avoid deadlock with parent read lock */
+        guac_rdp_rdpecam_load_plugin(GUAC_RDP_CONTEXT(instance));
     }
 
     /* Load "cliprdr" service if not disabled */
