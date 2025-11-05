@@ -44,7 +44,8 @@ void guac_terminal_select_redraw(guac_terminal* terminal) {
         int end_row = terminal->selection_end_row + terminal->scroll_offset;
         int end_column = terminal->selection_end_column;
 
-        guac_terminal_display_select(terminal->display, start_row, start_column, end_row, end_column);
+        guac_terminal_display_select(terminal->display, start_row,
+                start_column, end_row, end_column, terminal->rectangle_selection);
 
     }
 
@@ -173,11 +174,17 @@ void guac_terminal_select_update(guac_terminal* terminal,
             int new_start_column = guac_terminal_selection_point_round_up(start);
             int new_end_column = guac_terminal_selection_point_round_down(end);
 
+            if (terminal->rectangle_selection && new_start_column > new_end_column) {
+                new_start_column = guac_terminal_selection_point_round_up(end);
+                new_end_column = guac_terminal_selection_point_round_down(start);
+            }
+
             /* Only notify terminal if actual selection has changed */
             if (terminal->selection_start_row != start->row ||
                 terminal->selection_start_column != new_start_column ||
                 terminal->selection_end_row != end->row ||
-                terminal->selection_end_column != new_end_column) {
+                terminal->selection_end_column != new_end_column ||
+                !terminal->text_selected) {
 
                 terminal->selection_start_row = start->row;
                 terminal->selection_start_column = new_start_column;
@@ -342,7 +349,7 @@ void guac_terminal_select_end(guac_terminal* terminal) {
     for (int row = start_row; row <= end_row; row++) {
 
         /* Add a newline only if the previous line was not wrapped */
-        if (!last_row_was_wrapped)
+        if (!last_row_was_wrapped || (terminal->rectangle_selection && row != start_row))
             guac_common_clipboard_append(terminal->clipboard, "\n", 1);
 
         /* Append next row from desired region, adjusting the start/end column
@@ -351,8 +358,8 @@ void guac_terminal_select_end(guac_terminal* terminal) {
          * copied in their entirety. */
         int length = guac_terminal_buffer_get_columns(terminal->current_buffer, &characters, &last_row_was_wrapped, row);
         guac_terminal_clipboard_append_characters(terminal, characters, length,
-            (row == start_row) ? start_col : 0,
-            (row == end_row)   ? end_col   : length - 1);
+            (row == start_row || terminal->rectangle_selection) ? start_col : 0,
+            (row == end_row   || terminal->rectangle_selection) ? end_col   : length - 1);
 
     }
 

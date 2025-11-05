@@ -362,6 +362,16 @@
 #define GUAC_TERMINAL_KEY_KP_F4       0xFF94
 
 /**
+ * Latin 1 capital A grave, it's the first character of the accented range.
+ */
+#define GUAC_TERMINAL_LATIN1_CAPITAL_AGRAVE    192
+
+/**
+ * Latin 1 small y umlaut, it's the latest character of the accented range.
+ */
+#define GUAC_TERMINAL_LATIN1_Y_UMLAUT          255
+
+/**
  * Hex ASCII code for Tab.
  */
 #define GUAC_TERMINAL_ASCII_TAB                "\x09"
