@@ -834,8 +834,8 @@ void guac_terminal_scroll_up(guac_terminal* term,
         /* Scroll up visibly */
         guac_terminal_display_copy_rows(term->display, start_row + amount, end_row, -amount);
 
-        /* Advance by scroll amount */
-        guac_terminal_buffer_scroll_up(term->current_buffer, amount);
+        /* Advance and increase buffer length by scroll amount */
+        guac_terminal_buffer_scroll_up(term->current_buffer, amount, true);
 
         /* Reset scrollbar bounds */
         guac_terminal_scrollbar_set_bounds(term->scrollbar,
@@ -1225,7 +1225,7 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
                     shift_amount, term->display->height - 1, -shift_amount);
 
             /* Update buffer top and cursor row based on shift */
-            guac_terminal_buffer_scroll_up(term->current_buffer, shift_amount);
+            guac_terminal_buffer_scroll_up(term->current_buffer, shift_amount, false);
             term->cursor_row  -= shift_amount;
             if (term->visible_cursor_row != -1)
                 term->visible_cursor_row -= shift_amount;
@@ -1295,6 +1295,10 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
 
                     /* Draw characters at top from scroll */
                     __guac_terminal_redraw_rect(term, 0, 0, shift_amount - 1, width-1);
+
+                    /* Draw characters from scroll at bottom */
+                    __guac_terminal_redraw_rect(term, term->display->height - shift_amount,
+                            0, term->display->height - 1, width-1);
 
                 }
 
