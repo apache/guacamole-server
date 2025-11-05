@@ -360,9 +360,29 @@ void guac_terminal_display_dup(
 
 /**
  * Draws the text selection rectangle from the given coordinates to the given end coordinates.
+ *
+ * @param display
+ *     The terminal display to draw selection.
+ *
+ * @param start_row
+ *      The row to start draw selection.
+ *
+ * @param start_col
+ *      The column to start draw selection.
+ *
+ * @param end_row
+ *      The row to end draw selection.
+ *
+ * @param end_col
+ *      The column to end draw selection.
+ *
+ * @param rectangle
+ *      True if rectangular selection (selection is always start to end col),
+ *      False if normal selection (All columns for middle-rows).
+ *
  */
 void guac_terminal_display_select(guac_terminal_display* display,
-        int start_row, int start_col, int end_row, int end_col);
+        int start_row, int start_col, int end_row, int end_col, bool rectangle);
 
 /**
  * Clears the currently-selected region, removing the highlight.
