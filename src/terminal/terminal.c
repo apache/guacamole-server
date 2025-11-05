@@ -1296,6 +1296,10 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
                     /* Draw characters at top from scroll */
                     __guac_terminal_redraw_rect(term, 0, 0, shift_amount - 1, width-1);
 
+                    /* Draw characters from scroll at bottom */
+                    __guac_terminal_redraw_rect(term, term->display->height - shift_amount,
+                            0, term->display->height - 1, width-1);
+
                 }
 
             }
