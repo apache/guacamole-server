@@ -91,8 +91,13 @@ void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
  * @param amount
  *     The number of rows to scroll upwards. Zero and negative values have no
  *     effect.
+ *
+ * @param increase_length
+ *     Whether the length of the buffer should be increased to account for
+ *     newly added rows. If false, the length of the buffer remains unchanged.
  */
-void guac_terminal_buffer_scroll_up(guac_terminal_buffer* buffer, int amount);
+void guac_terminal_buffer_scroll_up(guac_terminal_buffer* buffer, int amount,
+        bool increase_length);
 
 /**
  * Scrolls the contents of the given buffer down by the given number of rows.
