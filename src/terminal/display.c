@@ -1082,10 +1082,6 @@ int guac_terminal_display_set_font(guac_terminal_display* display,
         return 1;
     }
 
-    /* Save effective size of current display */
-    int pixel_width = display->width * display->char_width;
-    int pixel_height = display->height * display->char_height;
-
     /* Calculate character dimensions using metrics */
     display->char_width =
         pango_font_metrics_get_approximate_digit_width(metrics) / PANGO_SCALE;
@@ -1097,15 +1093,6 @@ int guac_terminal_display_set_font(guac_terminal_display* display,
     PangoFontDescription* old_font_desc = display->font_desc;
     display->font_desc = font_desc;
     pango_font_description_free(old_font_desc);
-
-    /* Recalculate dimensions which will fit within current surface */
-    int new_width = pixel_width / display->char_width;
-    int new_height = pixel_height / display->char_height;
-
-    /* Resize display if dimensions have changed */
-    if (new_width != display->width || new_height != display->height)
-        guac_terminal_display_resize(display, new_width, new_height);
-
 
     return 0;
 
