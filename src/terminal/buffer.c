@@ -427,16 +427,20 @@ void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
 
 }
 
-void guac_terminal_buffer_scroll_up(guac_terminal_buffer* buffer, int amount) {
+void guac_terminal_buffer_scroll_up(guac_terminal_buffer* buffer, int amount,
+        bool increase_length) {
 
     if (amount <= 0)
         return;
 
     buffer->top = (buffer->top + amount) % buffer->available;
 
-    buffer->length += amount;
-    if (buffer->length > buffer->available)
-        buffer->length = buffer->available;
+    /* Increase buffer length only if new row is added */
+    if (increase_length) {
+        buffer->length += amount;
+        if (buffer->length > buffer->available)
+            buffer->length = buffer->available;
+    }
 
 }
 
