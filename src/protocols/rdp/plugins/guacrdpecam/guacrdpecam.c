@@ -614,38 +614,57 @@ static void* guac_rdp_rdpecam_dequeue_thread(void* arg) {
 
     while (true) {
 
-        /* Snapshot current state; the loop will sleep with the lock released. */
+        /* Lock mutex to check state and wait on condition variable if needed. */
         pthread_mutex_lock(&device->lock);
-        bool should_stop = device->stopping;
+
+        /* Check if we should stop */
+        if (device->stopping) {
+            pthread_mutex_unlock(&device->lock);
+            break;
+        }
+
+        /* Wait for channel to be available */
+        while (!device->stream_channel && !device->stopping) {
+            pthread_cond_wait(&device->credits_signal, &device->lock);
+        }
+        if (device->stopping) {
+            pthread_mutex_unlock(&device->lock);
+            break;
+        }
+
+        /* Wait for streaming to start */
+        while (!device->streaming && !device->stopping) {
+            pthread_cond_wait(&device->credits_signal, &device->lock);
+        }
+        if (device->stopping) {
+            pthread_mutex_unlock(&device->lock);
+            break;
+        }
+
+        /* Wait for active sender role */
+        while (!device->is_active_sender && !device->stopping) {
+            pthread_cond_wait(&device->credits_signal, &device->lock);
+        }
+        if (device->stopping) {
+            pthread_mutex_unlock(&device->lock);
+            break;
+        }
+
+        /* Wait for credits to be available */
+        while (device->credits == 0 && !device->stopping) {
+            pthread_cond_wait(&device->credits_signal, &device->lock);
+        }
+        if (device->stopping) {
+            pthread_mutex_unlock(&device->lock);
+            break;
+        }
+
+        /* Snapshot state for use after unlocking */
         bool is_streaming = device->streaming;
         bool is_active_sender = device->is_active_sender;
         uint32_t available_credits = device->credits;
         IWTSVirtualChannel* current_channel = device->stream_channel;
         pthread_mutex_unlock(&device->lock);
-
-        if (should_stop)
-            break;
-
-        if (!current_channel) {
-            usleep(10000);
-            continue;
-        }
-
-        /* Streaming proceeds only after the host sends StartStreams. */
-        if (!is_streaming) {
-            usleep(50000);
-            continue;
-        }
-
-        if (!is_active_sender) {
-            usleep(10000);
-            continue;
-        }
-
-        if (available_credits == 0) {
-            usleep(10000);
-            continue;
-        }
 
         /* We have credits; attempt to pull a frame from the shared sink. */
         uint8_t* frame_data = NULL;
@@ -771,6 +790,7 @@ static void* guac_rdp_rdpecam_dequeue_thread(void* arg) {
                     pthread_mutex_lock(&device->lock);
                     device->streaming = false;
                     device->is_active_sender = false;
+                    pthread_cond_broadcast(&device->credits_signal);
                     pthread_mutex_unlock(&device->lock);
                     pthread_mutex_lock(&sink->lock);
                     sink->streaming = false;
@@ -1020,6 +1040,7 @@ static UINT guac_rdp_rdpecam_handle_data(guac_client* client, IWTSVirtualChannel
                     device->streaming = false;
                     device->is_active_sender = false;
                     device->need_keyframe = true;
+                    pthread_cond_broadcast(&device->credits_signal);
                     pthread_mutex_unlock(&device->lock);
 
                     guac_client_log(client, GUAC_LOG_DEBUG,
@@ -1358,6 +1379,7 @@ static UINT guac_rdp_rdpecam_handle_data(guac_client* client, IWTSVirtualChannel
                                 old_device->credits = 0;
                                 old_device->stream_channel = NULL;
                                 old_device->stream_channel_id = 0;
+                                pthread_cond_broadcast(&old_device->credits_signal);
                                 pthread_mutex_unlock(&old_device->lock);
                                 guac_client_log(client, GUAC_LOG_DEBUG,
                                         "RDPECAM stopped streaming on device %s for camera switch",
@@ -1401,6 +1423,7 @@ static UINT guac_rdp_rdpecam_handle_data(guac_client* client, IWTSVirtualChannel
                     device->stopping = false;
                     device->stream_channel = channel;
                     device->stream_channel_id = channel_id;
+                    pthread_cond_broadcast(&device->credits_signal);
                     pthread_mutex_unlock(&device->lock);
 
                     rdpecam_channel_callback->is_stream_channel = true;
@@ -1495,8 +1518,10 @@ static UINT guac_rdp_rdpecam_handle_data(guac_client* client, IWTSVirtualChannel
                 uint32_t stream_index = 0;
 
                 pthread_mutex_lock(&device->lock);
-                if (!device->stream_channel)
+                if (!device->stream_channel) {
                     device->stream_channel = channel;
+                    pthread_cond_broadcast(&device->credits_signal);
+                }
                 rdpecam_channel_callback->is_stream_channel = true;
                 outstanding = device->credits;
                 stream_index = device->stream_index;
@@ -1504,6 +1529,7 @@ static UINT guac_rdp_rdpecam_handle_data(guac_client* client, IWTSVirtualChannel
                 device->streaming = false;
                 device->is_active_sender = false;
                 device->need_keyframe = true;
+                pthread_cond_broadcast(&device->credits_signal);
                 pthread_mutex_unlock(&device->lock);
 
                 guac_rdpecam_sink* sink = device->sink;
@@ -1614,6 +1640,7 @@ static UINT guac_rdp_rdpecam_handle_data(guac_client* client, IWTSVirtualChannel
                     if (device->stream_channel != channel) {
                         device->stream_channel = channel;
                         device->stream_channel_id = channel_id;
+                        pthread_cond_broadcast(&device->credits_signal);
                     }
                     rdpecam_channel_callback->is_stream_channel = true;
                     uint32_t before = device->credits;
