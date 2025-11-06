@@ -33,9 +33,12 @@ ACLOCAL_AMFLAGS = -I m4
 check_PROGRAMS = test_rdp
 TESTS = $(check_PROGRAMS)
 
-test_rdp_SOURCES =      \
-    fs/basename.c       \
-    fs/normalize_path.c
+test_rdp_SOURCES =              \
+    fs/basename.c               \
+    fs/normalize_path.c          \
+    rdpecam/rdpecam_sink_test.c \
+    rdpecam/rdpecam_proto_test.c \
+    rdpecam/rdpecam_caps_test.c
 
 test_rdp_CFLAGS =                \
     -Werror -Wall -pedantic      \
@@ -45,7 +48,8 @@ test_rdp_CFLAGS =                \
 test_rdp_LDADD =               \
     @CUNIT_LIBS@               \
     @LIBGUAC_CLIENT_RDP_LTLIB@ \
-    @LIBGUAC_LTLIB@
+    @LIBGUAC_LTLIB@           \
+    @RDP_LIBS@
 
 #
 # Autogenerate test runner
