@@ -149,6 +149,13 @@ static BOOL rdp_freerdp_load_channels(freerdp* instance) {
                     " dynamic media type negotiation may be limited.");
         }
 
+        if (guac_argv_register(GUAC_RDPECAM_ARG_CAPABILITIES_UPDATE,
+                guac_rdp_rdpecam_capabilities_update_callback, NULL, 0)) {
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Unable to register RDPECAM capability update handler;"
+                    " dynamic camera enable/disable may be limited.");
+        }
+
         /* Initialize sink pointer to NULL. Each device will create its own sink.
          * When a device starts streaming, rdp_client->rdpecam_sink will be set
          * to point to that device's sink so the browser knows where to push frames. */
