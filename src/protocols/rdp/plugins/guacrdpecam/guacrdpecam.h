@@ -33,6 +33,7 @@
 
 /* Forward declaration */
 typedef struct guac_rdp_client guac_rdp_client;
+struct guac_rdp_rdpecam_device_mapping;
 
 /**
  * The name of the RDPECAM control/enumeration dynamic virtual channel.
@@ -285,6 +286,13 @@ typedef struct guac_rdp_rdpecam_plugin {
      * back to the correct browser device.
      */
     wHashTable* device_id_map;
+
+    /**
+     * Linked list of device ID to channel mappings owned by the plugin.
+     * Maintained alongside device_id_map to ensure allocated strings are
+     * freed when mappings are removed.
+     */
+    struct guac_rdp_rdpecam_device_mapping* device_id_mappings;
 
     /**
      * The guac_client instance associated with the RDP connection using the
