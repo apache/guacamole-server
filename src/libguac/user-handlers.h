@@ -106,6 +106,13 @@ __guac_instruction_handler __guac_handle_key;
 __guac_instruction_handler __guac_handle_audio;
 
 /**
+ * Internal initial handler for the video instruction. When a video
+ * instruction is received, this handler will be called. The client's video
+ * handler will be invoked if defined.
+ */
+__guac_instruction_handler __guac_handle_video;
+
+/**
  * Internal initial handler for the clipboard instruction. When a clipboard
  * instruction is received, this handler will be called. The client's clipboard
  * handler will be invoked if defined.
