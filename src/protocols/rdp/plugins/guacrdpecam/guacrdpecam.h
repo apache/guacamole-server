@@ -265,7 +265,6 @@ typedef struct guac_rdp_rdpecam_plugin {
      * terminated.
      */
     guac_rdp_rdpecam_listener_callback* control_listener_callback;
-    guac_rdp_rdpecam_listener_callback* device0_listener_callback;
 
     /**
      * Hash table for managing multiple device channels.
