@@ -26,6 +26,7 @@
 #include <guacamole/user.h>
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -67,11 +68,30 @@ size_t guac_rdp_rdpecam_sanitize_device_name(const char* name, char* sanitized, 
     return pos;
 }
 
-int guac_rdp_rdpecam_capabilities_callback(guac_user* user,
-        const char* mimetype, const char* name, const char* value, void* data) {
-
-    guac_client* client = user ? user->client : NULL;
-    guac_rdp_client* rdp_client = client ? (guac_rdp_client*) client->data : NULL;
+/**
+ * Parses RDPECAM capabilities string and updates the RDP client's device
+ * capabilities. This is a shared implementation used by both the initial
+ * capabilities callback and the update callback.
+ *
+ * @param client
+ *     The guac_client instance.
+ *
+ * @param rdp_client
+ *     The RDP client data (must have write lock held).
+ *
+ * @param value
+ *     The capability string to parse. Must not be NULL.
+ *
+ * @param is_update
+ *     Whether this is an update (true) or initial capabilities (false).
+ *     Affects log messages only.
+ *
+ * @return
+ *     The number of devices parsed, or 0 on error.
+ */
+static unsigned int guac_rdp_rdpecam_parse_capabilities(
+        guac_client* client, guac_rdp_client* rdp_client,
+        const char* value, bool is_update) {
 
     if (!client || !rdp_client || !value)
         return 0;
@@ -82,8 +102,6 @@ int guac_rdp_rdpecam_capabilities_callback(guac_user* user,
         return 0;
     memcpy(copy, value, len + 1);
 
-    guac_rwlock_acquire_write_lock(&(rdp_client->lock));
-    
     /* Free old device capabilities */
     for (unsigned int i = 0; i < rdp_client->rdpecam_device_caps_count; i++) {
         guac_rdp_rdpecam_device_caps* caps = &rdp_client->rdpecam_device_caps[i];
@@ -96,6 +114,12 @@ int guac_rdp_rdpecam_capabilities_callback(guac_user* user,
         caps->format_count = 0;
     }
     rdp_client->rdpecam_device_caps_count = 0;
+
+    /* Empty string simply clears capabilities */
+    if (len == 0) {
+        guac_mem_free(copy);
+        return 0;
+    }
 
     /* Parse multi-device capabilities format (required):
      * "DEVICE_ID:DEVICE_NAME|640x480@30/1,...;DEVICE_ID:DEVICE_NAME|320x240@30/1,..."
@@ -237,7 +261,8 @@ int guac_rdp_rdpecam_capabilities_callback(guac_user* user,
         if (format_count > 0) {
             device_count++;
             guac_client_log(client, GUAC_LOG_DEBUG,
-                    "RDPECAM device %u: id='%s', name='%s', formats=%u",
+                    "RDPECAM %s device %u: id='%s', name='%s', formats=%u",
+                    is_update ? "update" : "initial",
                     device_count - 1,
                     caps->device_id,
                     caps->device_name ? caps->device_name : "(none)",
@@ -263,7 +288,27 @@ int guac_rdp_rdpecam_capabilities_callback(guac_user* user,
     }
 
     rdp_client->rdpecam_device_caps_count = device_count;
-    
+
+    guac_mem_free(copy);
+    return device_count;
+}
+
+int guac_rdp_rdpecam_capabilities_callback(guac_user* user,
+        const char* mimetype, const char* name, const char* value, void* data) {
+
+    guac_client* client = user ? user->client : NULL;
+    guac_rdp_client* rdp_client = client ? (guac_rdp_client*) client->data : NULL;
+
+    if (!client || !rdp_client || !value)
+        return 0;
+
+    bool is_update = (name && strcmp(name, GUAC_RDPECAM_ARG_CAPABILITIES_UPDATE) == 0);
+
+    guac_rwlock_acquire_write_lock(&(rdp_client->lock));
+
+    unsigned int device_count = guac_rdp_rdpecam_parse_capabilities(
+            client, rdp_client, value, is_update);
+
     /* Set flag to notify plugin that capabilities have been updated. */
     rdp_client->rdpecam_caps_updated = 1;
 
@@ -275,246 +320,8 @@ int guac_rdp_rdpecam_capabilities_callback(guac_user* user,
     guac_rwlock_release_lock(&(rdp_client->lock));
 
     guac_client_log(client, GUAC_LOG_DEBUG,
-            "RDPECAM capabilities updated (%u devices), notifying plugin", device_count);
+            "RDPECAM %s capability data processed (%u devices), notifying plugin",
+            is_update ? "update" : "initial", device_count);
 
-    guac_mem_free(copy);
     return 0;
 }
-
-int guac_rdp_rdpecam_capabilities_update_callback(guac_user* user,
-        const char* mimetype, const char* name, const char* value, void* data) {
-
-    guac_client* client = user ? user->client : NULL;
-    guac_rdp_client* rdp_client = client ? (guac_rdp_client*) client->data : NULL;
-
-    if (!client || !rdp_client || !value)
-        return 0;
-
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "RDPECAM capability update received: %zu bytes", strlen(value));
-
-    /* Handle empty capability string (all cameras disabled) */
-    if (strlen(value) == 0) {
-        guac_rwlock_acquire_write_lock(&(rdp_client->lock));
-
-        /* Free old device capabilities */
-        for (unsigned int i = 0; i < rdp_client->rdpecam_device_caps_count; i++) {
-            guac_rdp_rdpecam_device_caps* caps = &rdp_client->rdpecam_device_caps[i];
-            if (caps->device_id)
-                guac_mem_free(caps->device_id);
-            if (caps->device_name)
-                guac_mem_free(caps->device_name);
-            caps->device_id = NULL;
-            caps->device_name = NULL;
-            caps->format_count = 0;
-        }
-        rdp_client->rdpecam_device_caps_count = 0;
-
-        /* Set flag and notify plugin */
-        rdp_client->rdpecam_caps_updated = 1;
-        if (rdp_client->rdpecam_caps_notify)
-            rdp_client->rdpecam_caps_notify(client);
-
-        guac_rwlock_release_lock(&(rdp_client->lock));
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "RDPECAM all cameras disabled, notifying plugin");
-        return 0;
-    }
-
-    /* Reuse the same parsing logic as the initial capabilities callback */
-    size_t len = strlen(value);
-    char* copy = guac_mem_alloc(len + 1);
-    if (!copy)
-        return 0;
-    memcpy(copy, value, len + 1);
-
-    guac_rwlock_acquire_write_lock(&(rdp_client->lock));
-
-    /* Free old device capabilities */
-    for (unsigned int i = 0; i < rdp_client->rdpecam_device_caps_count; i++) {
-        guac_rdp_rdpecam_device_caps* caps = &rdp_client->rdpecam_device_caps[i];
-        if (caps->device_id)
-            guac_mem_free(caps->device_id);
-        if (caps->device_name)
-            guac_mem_free(caps->device_name);
-        caps->device_id = NULL;
-        caps->device_name = NULL;
-        caps->format_count = 0;
-    }
-    rdp_client->rdpecam_device_caps_count = 0;
-
-    /* Parse multi-device capabilities (same format as initial capabilities) */
-    unsigned int device_count = 0;
-    char* device_saveptr = NULL;
-    char* device_entry = strtok_r(copy, ";", &device_saveptr);
-
-    if (!device_entry) {
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "RDPECAM capability update in invalid format (expected semicolon-separated device list)");
-        guac_mem_free(copy);
-        guac_rwlock_release_lock(&(rdp_client->lock));
-        return 0;
-    }
-
-    while (device_entry && device_count < GUAC_RDP_RDPECAM_MAX_DEVICES) {
-        guac_rdp_rdpecam_device_caps* caps = &rdp_client->rdpecam_device_caps[device_count];
-
-        /* Find pipe separator (between device info and formats) */
-        char* formats_str = device_entry;
-        char* pipe_pos = strchr(device_entry, '|');
-        char* device_info = NULL;
-
-        if (!pipe_pos) {
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "RDPECAM skipping device entry without pipe separator: '%s'", device_entry);
-            device_entry = strtok_r(NULL, ";", &device_saveptr);
-            continue;
-        }
-
-        *pipe_pos = '\0';
-        device_info = device_entry;
-        formats_str = pipe_pos + 1;
-
-        /* Parse device ID and name */
-        char* device_id_parsed = NULL;
-        char* device_name_parsed = NULL;
-
-        if (!device_info || !*device_info) {
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "RDPECAM skipping device entry without device info");
-            device_entry = strtok_r(NULL, ";", &device_saveptr);
-            continue;
-        }
-
-        char* colon_pos = strchr(device_info, ':');
-        if (!colon_pos) {
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "RDPECAM skipping device entry without device ID: '%s'", device_info);
-            device_entry = strtok_r(NULL, ";", &device_saveptr);
-            continue;
-        }
-
-        *colon_pos = '\0';
-        device_id_parsed = device_info;
-        device_name_parsed = colon_pos + 1;
-
-        if (!device_id_parsed || !*device_id_parsed) {
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "RDPECAM skipping device entry with empty device ID");
-            device_entry = strtok_r(NULL, ";", &device_saveptr);
-            continue;
-        }
-
-        /* Store device ID */
-        size_t id_len = strlen(device_id_parsed);
-        caps->device_id = guac_mem_alloc(id_len + 1);
-        if (!caps->device_id) {
-            guac_client_log(client, GUAC_LOG_ERROR,
-                    "RDPECAM failed to allocate device ID string");
-            device_entry = strtok_r(NULL, ";", &device_saveptr);
-            continue;
-        }
-        memcpy(caps->device_id, device_id_parsed, id_len + 1);
-
-        /* Sanitize and store device name */
-        if (device_name_parsed && *device_name_parsed) {
-            char sanitized[256];
-            size_t sanitized_len = guac_rdp_rdpecam_sanitize_device_name(
-                    device_name_parsed, sanitized, sizeof(sanitized));
-
-            if (sanitized_len > 0) {
-                caps->device_name = guac_mem_alloc(sanitized_len + 1);
-                if (caps->device_name) {
-                    memcpy(caps->device_name, sanitized, sanitized_len + 1);
-                }
-            }
-        }
-
-        /* Parse formats */
-        unsigned int format_count = 0;
-        char* format_saveptr = NULL;
-        char* format_token = strtok_r(formats_str, ",", &format_saveptr);
-
-        while (format_token && format_count < GUAC_RDP_RDPECAM_MAX_FORMATS) {
-            /* Trim whitespace */
-            while (isspace((unsigned char) *format_token))
-                format_token++;
-
-            char* end = format_token + strlen(format_token);
-            while (end > format_token && isspace((unsigned char) *(end - 1)))
-                *(--end) = '\0';
-
-            unsigned int width = 0;
-            unsigned int height = 0;
-            unsigned int fps_num = 0;
-            unsigned int fps_den = 1;
-
-            int parsed = sscanf(format_token, "%ux%u@%u/%u", &width, &height, &fps_num, &fps_den);
-            if (parsed < 4) {
-                fps_den = 1;
-                parsed = sscanf(format_token, "%ux%u@%u", &width, &height, &fps_num);
-            }
-
-            if (parsed >= 3 && width && height && fps_num) {
-                guac_rdp_rdpecam_format* fmt = &caps->formats[format_count++];
-                fmt->width = width;
-                fmt->height = height;
-                fmt->fps_num = fps_num;
-                fmt->fps_den = fps_den ? fps_den : 1;
-            }
-            else {
-                guac_client_log(client, GUAC_LOG_DEBUG,
-                        "RDPECAM ignored unparseable format entry: '%s'", format_token);
-            }
-
-            format_token = strtok_r(NULL, ",", &format_saveptr);
-        }
-
-        caps->format_count = format_count;
-
-        /* Only add device if it has valid formats */
-        if (format_count > 0) {
-            device_count++;
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "RDPECAM update device %u: id='%s', name='%s', formats=%u",
-                    device_count - 1,
-                    caps->device_id,
-                    caps->device_name ? caps->device_name : "(none)",
-                    format_count);
-        } else {
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "RDPECAM skipping device '%s' (id='%s') with no valid formats",
-                    caps->device_name ? caps->device_name : "(unnamed)",
-                    caps->device_id);
-            if (caps->device_id) {
-                guac_mem_free(caps->device_id);
-                caps->device_id = NULL;
-            }
-            if (caps->device_name) {
-                guac_mem_free(caps->device_name);
-                caps->device_name = NULL;
-            }
-        }
-
-        device_entry = strtok_r(NULL, ";", &device_saveptr);
-    }
-
-    rdp_client->rdpecam_device_caps_count = device_count;
-
-    /* Set flag to notify plugin that capabilities have been updated */
-    rdp_client->rdpecam_caps_updated = 1;
-
-    /* Notify plugin to process the update (compare old vs new and add/remove devices) */
-    if (rdp_client->rdpecam_caps_notify)
-        rdp_client->rdpecam_caps_notify(client);
-
-    guac_rwlock_release_lock(&(rdp_client->lock));
-
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "RDPECAM capability update processed (%u devices), notifying plugin", device_count);
-
-    guac_mem_free(copy);
-    return 0;
-}
-

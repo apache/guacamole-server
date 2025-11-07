@@ -293,8 +293,8 @@ void test_rdpecam_caps__capabilities_update_empty(void) {
     CU_ASSERT_EQUAL(rdp_client->rdpecam_device_caps_count, 1);
 
     /* Then clear them with empty update */
-    int result = guac_rdp_rdpecam_capabilities_update_callback(user, NULL,
-            GUAC_RDPECAM_ARG_CAPABILITIES_UPDATE, "", NULL);
+    int result = guac_rdp_rdpecam_capabilities_callback(user, NULL,
+            GUAC_RDPECAM_ARG_CAPABILITIES, "", NULL);
 
     CU_ASSERT_EQUAL(result, 0);
     CU_ASSERT_EQUAL(rdp_client->rdpecam_device_caps_count, 0);
