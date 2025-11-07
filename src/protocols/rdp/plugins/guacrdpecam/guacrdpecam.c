@@ -269,42 +269,18 @@ void guac_rdp_rdpecam_caps_notify(guac_client* client) {
         }
     }
 
-    /* Since HashTable_GetKeys is broken in WinPR, we can't reliably iterate device_id_map
-     * to find what needs to be removed. Instead, we'll:
-     * 1. Scan all channel slots to find channels that should be removed (not in new capabilities)
-     * 2. Send removal notifications for those channels (whether Windows opened them or not)
-     * 3. Clear device_id_map completely
-     * 4. Rebuild it from new capabilities
-     * This avoids the HashTable_GetKeys API compatibility issue entirely. */
-
     guac_client_log(client, GUAC_LOG_DEBUG,
-            "RDPECAM caps_notify: removing all previously advertised channels before rebuild");
+            "RDPECAM caps_notify: removing previously advertised channels before rebuild");
 
-    /* Step 1: Since we're about to clear and rebuild device_id_map, send DeviceRemovedNotification
-     * for ALL channel slots (0-10) to ensure Windows cleans up any previously advertised devices.
-     * Windows will ignore removals for channels that were never advertised. */
+    /* Send DeviceRemovedNotification for each channel currently mapped. */
+    while (plugin->device_id_mappings) {
+        guac_rdp_rdpecam_device_mapping* mapping = plugin->device_id_mappings;
+        plugin->device_id_mappings = mapping->next;
 
-    char channels_to_remove[11][64];  /* Slots 0-10 should cover most reasonable scenarios */
-    unsigned int remove_count = 0;
-
-    for (unsigned int slot = 0; slot <= 10 && slot < GUAC_RDP_RDPECAM_MAX_DEVICES; slot++) {
-        snprintf(channels_to_remove[remove_count], sizeof(channels_to_remove[remove_count]),
-                "RDCamera_Device_%u", slot);
-        remove_count++;
-    }
-
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "RDPECAM caps_notify: will send removal for slots 0-%u to clean up old advertisements",
-            remove_count - 1);
-
-    /* Step 2: Send removal notifications for all slots */
-    for (unsigned int i = 0; i < remove_count; i++) {
-        char* channel_name = channels_to_remove[i];
-
+        const char* channel_name = mapping->channel_name;
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "RDPECAM sending removal for channel '%s'", channel_name);
 
-        /* Send DeviceRemovedNotification to Windows */
         wStream* rs = Stream_New(NULL, 256);
         if (rs && rdpecam_build_device_removed(rs, channel_name)) {
             Stream_SealLength(rs);
@@ -339,26 +315,20 @@ void guac_rdp_rdpecam_caps_notify(guac_client* client) {
             pthread_cond_broadcast(&device->credits_signal);
             pthread_mutex_unlock(&device->lock);
 
-            /* Remove from devices hash table */
             HashTable_Remove(plugin->devices, channel_name);
-
-            /* Remove associated browser mapping */
-            guac_rdp_rdpecam_mapping_remove_by_channel(plugin, channel_name);
-
-            /* Destroy device resources (threads, sinks, etc.) */
             guac_rdpecam_device_destroy(device);
         }
-        else {
-            /* Ensure any lingering mapping for this channel is removed */
-            guac_rdp_rdpecam_mapping_remove_by_channel(plugin, channel_name);
-        }
+
+        if (plugin->device_id_map)
+            HashTable_Remove(plugin->device_id_map, (void*) mapping->device_id_key);
+
+        if (mapping->channel_name)
+            guac_mem_free(mapping->channel_name);
+        guac_mem_free(mapping);
 
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "RDPECAM caps_notify: completed removal notification for channel '%s'", channel_name);
     }
-
-    /* Step 3: Clear and rebuild device_id_map to avoid stale entries */
-    guac_rdp_rdpecam_mapping_clear(plugin);
 
     guac_client_log(client, GUAC_LOG_DEBUG,
             "RDPECAM caps_notify: starting device addition phase");
