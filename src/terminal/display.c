@@ -486,6 +486,11 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
     start_column = guac_terminal_fit_to_range(start_column, 0, display->width - 1);
     end_column   = guac_terminal_fit_to_range(end_column,   0, display->width - 1);
 
+    if (start_column > end_column) {
+        guac_client_log(display->client, GUAC_LOG_TRACE, "display_set_columns: Adjusted range is empty [%d,%d], returning.", start_column, end_column);
+        return;
+    }
+
     size_t start_offset = guac_mem_ckd_add_or_die(guac_mem_ckd_mul_or_die(row, display->width), start_column);
     guac_terminal_operation* current = &(display->operations[start_offset]);
 
