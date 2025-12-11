@@ -20,8 +20,6 @@
 #ifndef GUACLOG_H
 #define GUACLOG_H
 
-#include "config.h"
-
 /**
  * The default log level below which no messages should be logged.
  */

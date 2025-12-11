@@ -20,8 +20,6 @@
 #ifndef GUAC_COMMON_SSH_BUFFER_H
 #define GUAC_COMMON_SSH_BUFFER_H
 
-#include "config.h"
-
 #include <openssl/bn.h>
 #include <stdint.h>
 

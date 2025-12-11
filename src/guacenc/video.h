@@ -20,7 +20,6 @@
 #ifndef GUACENC_VIDEO_H
 #define GUACENC_VIDEO_H
 
-#include "config.h"
 #include "buffer.h"
 
 #include <guacamole/timestamp.h>

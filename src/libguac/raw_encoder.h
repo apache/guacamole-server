@@ -20,8 +20,6 @@
 #ifndef GUAC_RAW_ENCODER_H
 #define GUAC_RAW_ENCODER_H
 
-#include "config.h"
-
 #include "guacamole/audio.h"
 
 /**

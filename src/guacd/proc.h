@@ -20,8 +20,6 @@
 #ifndef GUACD_PROC_H
 #define GUACD_PROC_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 #include <guacamole/parser.h>
 

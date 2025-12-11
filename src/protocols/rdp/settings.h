@@ -20,7 +20,6 @@
 #ifndef GUAC_RDP_SETTINGS_H
 #define GUAC_RDP_SETTINGS_H
 
-#include "config.h"
 #include "keymap.h"
 
 #include <freerdp/freerdp.h>

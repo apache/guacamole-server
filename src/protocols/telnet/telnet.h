@@ -20,7 +20,6 @@
 #ifndef GUAC_TELNET_H
 #define GUAC_TELNET_H
 
-#include "config.h"
 #include "settings.h"
 #include "terminal/terminal.h"
 

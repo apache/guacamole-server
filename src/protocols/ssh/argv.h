@@ -20,8 +20,6 @@
 #ifndef GUAC_SSH_ARGV_H
 #define GUAC_SSH_ARGV_H
 
-#include "config.h"
-
 #include <guacamole/argv.h>
 #include <guacamole/user.h>
 

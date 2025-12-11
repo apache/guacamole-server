@@ -20,8 +20,6 @@
 #ifndef GUACENC_LOG_H
 #define GUACENC_LOG_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 
 #include <stdarg.h>

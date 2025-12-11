@@ -20,8 +20,6 @@
 #ifndef GUACENC_H
 #define GUACENC_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 
 /**

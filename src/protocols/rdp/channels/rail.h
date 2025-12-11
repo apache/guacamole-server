@@ -20,8 +20,6 @@
 #ifndef GUAC_RDP_CHANNELS_RAIL_H
 #define GUAC_RDP_CHANNELS_RAIL_H
 
-#include "config.h"
-
 #include <freerdp/freerdp.h>
 #include <freerdp/window.h>
 

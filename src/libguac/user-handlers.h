@@ -28,8 +28,6 @@
  * @file user-handlers.h
  */
 
-#include "config.h"
-
 #include "guacamole/client.h"
 #include "guacamole/timestamp.h"
 
