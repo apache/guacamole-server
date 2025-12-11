@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "common/clipboard.h"
 #include "common/cursor.h"
 #include "common/iconv.h"

@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "argv.h"
 #include "beep.h"
 #include "channels/audio-input/audio-buffer.h"
