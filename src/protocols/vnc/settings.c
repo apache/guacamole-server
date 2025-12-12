@@ -28,6 +28,7 @@
 #include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -452,9 +453,9 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
 
-    settings->port =
-        guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_PORT, 0);
+    settings->port = (unsigned short)
+        guac_user_parse_args_int_bound(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_PORT, 0, -1, USHRT_MAX);
 
     settings->username =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
@@ -523,9 +524,9 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
                 IDX_DEST_HOST, NULL);
 
     /* VNC repeater port */
-    settings->dest_port =
-        guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_DEST_PORT, 0);
+    settings->dest_port = (unsigned short)
+        guac_user_parse_args_int_bound(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_DEST_PORT, 0, -1, USHRT_MAX);
 #endif
 
     /* Set encodings if specified */
@@ -587,8 +588,8 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
 
     /* Port for SFTP connection */
     settings->sftp_port =
-        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_SFTP_PORT, "22");
+        guac_user_parse_args_int_string_bound(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SFTP_PORT, "22", -1, USHRT_MAX);
 
     /* SFTP connection timeout */
     settings->sftp_timeout =
@@ -715,8 +716,8 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         
         /* Parse the WoL broadcast port. */
         settings->wol_udp_port = (unsigned short)
-            guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+            guac_user_parse_args_int_bound(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT, -1, USHRT_MAX);
         
         /* Parse the WoL wait time. */
         settings->wol_wait_time =

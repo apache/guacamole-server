@@ -29,6 +29,7 @@
 #include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -457,8 +458,8 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
 
     /* Read port */
     settings->port =
-        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_SSH_DEFAULT_PORT);
+        guac_user_parse_args_int_string_bound(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_PORT, GUAC_SSH_DEFAULT_PORT, -1, USHRT_MAX);
 
     /* Parse the timeout value. */
     settings->timeout =
@@ -587,8 +588,8 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
                 IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
         
         settings->wol_udp_port = (unsigned short)
-            guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+            guac_user_parse_args_int_bound(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT, -1, USHRT_MAX);
         
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,

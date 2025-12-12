@@ -59,5 +59,12 @@
  */
 #define GUAC_WOL_PORT 9
 
+/**
+ * The maximum length (in characters) of the decimal string form of a TCP/UDP
+ * port number, including the null terminator. The largest valid port number is
+ * 65535 (5 digits), so the buffer must be at least 6 bytes long.
+ */
+#define GUAC_WOL_PORT_STRLEN 6
+
 #endif /* GUAC_WOL_CONSTANTS_H */
 
