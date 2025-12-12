@@ -361,13 +361,12 @@ void* guac_vnc_client_thread(void* data) {
          */
         if (settings->wol_wait_time > 0) {
             guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
-                    "and pausing for %d seconds.", settings->wol_wait_time);
+                "and retrying connection check %d times every %d seconds.",
+                GUAC_WOL_DEFAULT_CONNECT_RETRIES, settings->wol_wait_time);
 
-            /* char representation of a port should be, at most, 5 characters plus terminator. */
-            char* str_port = guac_mem_alloc(6);
-            if (guac_itoa(str_port, settings->port) < 1) {
-                guac_client_log(client, GUAC_LOG_ERROR, "Failed to convert port to integer for WOL function.");
-                guac_mem_free(str_port);
+            char str_port[GUAC_USHORT_STRING_BUFSIZE];
+            if (guac_itoa_safe(str_port, sizeof(str_port), settings->port) < 1) {
+                guac_client_log(client, GUAC_LOG_ERROR, "Failed to convert port to string for WOL function.");
                 return NULL;
             }
 
@@ -378,26 +377,27 @@ void* guac_vnc_client_thread(void* data) {
                     settings->wol_wait_time,
                     GUAC_WOL_DEFAULT_CONNECT_RETRIES,
                     settings->hostname,
-                    (const char *) str_port,
+                    str_port,
                     GUAC_WOL_DEFAULT_CONNECTION_TIMEOUT)) {
-                guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet or connect to remote system.");
-                guac_mem_free(str_port);
+                guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet, or connect to remote server.");
                 return NULL;
             }
-
-            guac_mem_free(str_port);
-
         }
 
-        /* Just send the packet and continue the connection, or return if failed. */
-        else if(guac_wol_wake(settings->wol_mac_addr,
+        /* Just send the packet, or return NULL if failed. */
+        else {
+            guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet.");
+
+            if (guac_wol_wake(settings->wol_mac_addr,
                     settings->wol_broadcast_addr,
                     settings->wol_udp_port)) {
-            guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet.");
-            return NULL;
+                guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet.");
+                return NULL;
+            }
         }
+
     }
-    
+
     /* Configure clipboard encoding */
     if (guac_vnc_set_clipboard_encoding(client, settings->clipboard_encoding)) {
         guac_client_log(client, GUAC_LOG_INFO, "Using non-standard VNC "

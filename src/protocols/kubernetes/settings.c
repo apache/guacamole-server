@@ -22,6 +22,7 @@
 #include "terminal/terminal.h"
 
 #include <guacamole/mem.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 
 #include <stdlib.h>
@@ -278,9 +279,9 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
                 IDX_HOSTNAME, "");
 
     /* Read port */
-    settings->port =
-        guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_KUBERNETES_DEFAULT_PORT);
+    settings->port = (unsigned short)
+        guac_user_parse_args_int_bounded(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_PORT, GUAC_KUBERNETES_DEFAULT_PORT, GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
 
     /* Read Kubernetes namespace */
     settings->kubernetes_namespace =
