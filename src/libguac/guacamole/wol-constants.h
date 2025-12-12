@@ -20,6 +20,8 @@
 #ifndef GUAC_WOL_CONSTANTS_H
 #define GUAC_WOL_CONSTANTS_H
 
+#include "guacamole/string.h"
+
 /**
  * Header file that provides constants and defaults related to libguac
  * Wake-on-LAN support.
