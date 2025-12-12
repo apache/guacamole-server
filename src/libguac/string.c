@@ -45,18 +45,19 @@
  */
 #define REMAINING(n, length) (((n) < (length)) ? 0 : ((n) - (length)))
 
-int guac_itoa(char* restrict dest, unsigned int integer) {
+int guac_itoa_safe(char* restrict dest, size_t dest_size, int integer)
+{
+    int str_size = snprintf(dest, dest_size, "%d", integer);
 
-    /* Determine size of string. */
-    int str_size = snprintf(dest, 0, "%i", integer);
-
-    /* If an error occurs, just return that and skip the conversion. */
     if (str_size < 0)
         return str_size;
 
-    /* Do the conversion and return. */
-    return snprintf(dest, (str_size + 1), "%i", integer);
+    /* Return an error if the string was truncated. */
+    if ((size_t)str_size >= dest_size)
+        return -1;
 
+    /* Return the number of characters written (excluding the terminator). */
+    return str_size;
 }
 
 size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n) {

@@ -29,6 +29,7 @@
 #include <guacamole/wol-constants.h>
 
 #include <sys/types.h>
+#include <limits.h>
 #include <regex.h>
 #include <stdlib.h>
 #include <string.h>
@@ -447,8 +448,8 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
 
     /* Read port */
     settings->port =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_TELNET_DEFAULT_PORT);
+        guac_user_parse_args_int_string_bound(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_PORT, GUAC_TELNET_DEFAULT_PORT, -1, USHRT_MAX);
 
     /* Read connection timeout */
     settings->timeout =
@@ -556,8 +557,8 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         
         /* Parse the WoL broadcast port. */
         settings->wol_udp_port = (unsigned short)
-            guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+            guac_user_parse_args_int_bound(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT, -1, USHRT_MAX);
         
         /* Parse the WoL wait time. */
         settings->wol_wait_time =

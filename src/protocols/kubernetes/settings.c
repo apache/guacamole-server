@@ -278,9 +278,9 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
                 IDX_HOSTNAME, "");
 
     /* Read port */
-    settings->port =
-        guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_KUBERNETES_DEFAULT_PORT);
+    settings->port = (unsigned short)
+        guac_user_parse_args_int_bound(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_PORT, GUAC_KUBERNETES_DEFAULT_PORT, -1, USHRT_MAX);
 
     /* Read Kubernetes namespace */
     settings->kubernetes_namespace =
