@@ -20,8 +20,6 @@
 #ifndef _GUAC_VNC_CLIPBOARD_H
 #define _GUAC_VNC_CLIPBOARD_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 #include <guacamole/user.h>
 #include <rfb/rfbclient.h>

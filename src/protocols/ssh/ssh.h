@@ -20,8 +20,6 @@
 #ifndef GUAC_SSH_H
 #define GUAC_SSH_H
 
-#include "config.h"
-
 #include "common/clipboard.h"
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"

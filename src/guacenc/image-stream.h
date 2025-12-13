@@ -20,7 +20,6 @@
 #ifndef GUACENC_IMAGE_STREAM_H
 #define GUACENC_IMAGE_STREAM_H
 
-#include "config.h"
 #include "buffer.h"
 
 #include <cairo/cairo.h>

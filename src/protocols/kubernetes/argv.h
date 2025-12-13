@@ -20,7 +20,6 @@
 #ifndef GUAC_KUBERNETES_ARGV_H
 #define GUAC_KUBERNETES_ARGV_H
 
-#include "config.h"
 #include "kubernetes.h"
 
 #include <guacamole/argv.h>

@@ -20,8 +20,6 @@
 #ifndef __GUAC_COMMON_ICONV_H
 #define __GUAC_COMMON_ICONV_H
 
-#include "config.h"
-
 /**
  * Function which reads a character from the given string data, returning
  * the Unicode codepoint read, updating the string pointer to point to the

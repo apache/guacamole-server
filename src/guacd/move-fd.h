@@ -20,8 +20,6 @@
 #ifndef GUACD_MOVE_FD_H
 #define GUACD_MOVE_FD_H
 
-#include "config.h"
-
 /**
  * Sends the given file descriptor along the given socket, allowing the
  * receiving process to use that file descriptor normally. Returns non-zero on

@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "common-ssh/sftp.h"
 #include "rdp.h"
 #include "sftp.h"

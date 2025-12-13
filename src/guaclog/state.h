@@ -20,7 +20,6 @@
 #ifndef GUACLOG_STATE_H
 #define GUACLOG_STATE_H
 
-#include "config.h"
 #include "keydef.h"
 
 #include <stdbool.h>

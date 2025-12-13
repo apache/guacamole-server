@@ -20,8 +20,6 @@
 #ifndef GUAC_SSH_PIPE_H
 #define GUAC_SSH_PIPE_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
 /**

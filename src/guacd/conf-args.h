@@ -20,8 +20,6 @@
 #ifndef _GUACD_CONF_ARGS_H
 #define _GUACD_CONF_ARGS_H
 
-#include "config.h"
-
 #include "conf.h"
 
 /**

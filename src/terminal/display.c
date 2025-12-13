@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "common/surface.h"
 #include "terminal/common.h"
 #include "terminal/display.h"

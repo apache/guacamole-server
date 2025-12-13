@@ -20,7 +20,6 @@
 #ifndef GUACENC_CURSOR_H
 #define GUACENC_CURSOR_H
 
-#include "config.h"
 #include "buffer.h"
 
 #include <guacamole/protocol.h>

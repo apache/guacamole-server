@@ -26,8 +26,6 @@
  * @file terminal-handlers.h
  */
 
-#include "config.h"
-
 #include "display.h"
 #include "terminal.h"
 
