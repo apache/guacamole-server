@@ -20,8 +20,6 @@
 #ifndef _GUAC_SSH_AGENT_H
 #define _GUAC_SSH_AGENT_H
 
-#include "config.h"
-
 #include "ssh_key.h"
 
 /**

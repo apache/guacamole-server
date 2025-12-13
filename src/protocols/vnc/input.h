@@ -20,8 +20,6 @@
 #ifndef GUAC_VNC_INPUT_H
 #define GUAC_VNC_INPUT_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
 /**

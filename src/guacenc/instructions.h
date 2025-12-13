@@ -20,7 +20,6 @@
 #ifndef GUACENC_INSTRUCTIONS_H
 #define GUACENC_INSTRUCTIONS_H
 
-#include "config.h"
 #include "display.h"
 
 /**

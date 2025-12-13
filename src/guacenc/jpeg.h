@@ -20,7 +20,6 @@
 #ifndef GUACENC_JPEG_H
 #define GUACENC_JPEG_H
 
-#include "config.h"
 #include "image-stream.h"
 
 /**

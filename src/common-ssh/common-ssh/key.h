@@ -20,8 +20,6 @@
 #ifndef GUAC_COMMON_SSH_KEY_H
 #define GUAC_COMMON_SSH_KEY_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 #include <libssh2.h>
 

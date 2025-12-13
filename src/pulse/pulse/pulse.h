@@ -20,8 +20,6 @@
 #ifndef GUAC_PULSE_H
 #define GUAC_PULSE_H
 
-#include "config.h"
-
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/user.h>

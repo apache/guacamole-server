@@ -20,8 +20,6 @@
 #ifndef _GUAC_SSH_CLIPBOARD_H
 #define _GUAC_SSH_CLIPBOARD_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 

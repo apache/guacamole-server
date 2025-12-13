@@ -20,8 +20,6 @@
 #ifndef GUAC_COMMON_JSON_H
 #define GUAC_COMMON_JSON_H
 
-#include "config.h"
-
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 

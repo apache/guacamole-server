@@ -20,7 +20,6 @@
 #ifndef GUACENC_WEBP_H
 #define GUACENC_WEBP_H
 
-#include "config.h"
 #include "image-stream.h"
 
 /**

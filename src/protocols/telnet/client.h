@@ -20,7 +20,6 @@
 #ifndef GUAC_TELNET__CLIENT_H
 #define GUAC_TELNET__CLIENT_H
 
-#include "config.h"
 #include "terminal/terminal.h"
 
 #include <pthread.h>

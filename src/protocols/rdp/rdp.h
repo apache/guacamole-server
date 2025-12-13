@@ -26,7 +26,6 @@
 #include "channels/rdpei.h"
 #include "common/clipboard.h"
 #include "common/list.h"
-#include "config.h"
 #include "fs.h"
 #include "input.h"
 #include "keyboard.h"

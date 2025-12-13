@@ -20,8 +20,6 @@
 #ifndef GUACENC_BUFFER_H
 #define GUACENC_BUFFER_H
 
-#include "config.h"
-
 #include <cairo/cairo.h>
 
 #include <stdbool.h>

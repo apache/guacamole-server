@@ -20,8 +20,6 @@
 #ifndef ARGV_H
 #define ARGV_H
 
-#include "config.h"
-
 #include <guacamole/argv.h>
 #include <guacamole/user.h>
 

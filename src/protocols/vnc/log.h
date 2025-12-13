@@ -20,8 +20,6 @@
 #ifndef GUAC_VNC_LOG_H
 #define GUAC_VNC_LOG_H
 
-#include "config.h"
-
 #include "client.h"
 #include "common/iconv.h"
 

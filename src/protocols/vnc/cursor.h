@@ -20,8 +20,6 @@
 #ifndef GUAC_VNC_CURSOR_H
 #define GUAC_VNC_CURSOR_H
 
-#include "config.h"
-
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>
 

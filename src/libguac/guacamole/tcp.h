@@ -26,8 +26,6 @@
  * @file tcp.h
  */
 
-#include "config.h"
-
 #include <stddef.h>
 
 /**

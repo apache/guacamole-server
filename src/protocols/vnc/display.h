@@ -20,8 +20,6 @@
 #ifndef GUAC_VNC_DISPLAY_H
 #define GUAC_VNC_DISPLAY_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>

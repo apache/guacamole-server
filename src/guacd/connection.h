@@ -20,8 +20,6 @@
 #ifndef GUACD_CONNECTION_H
 #define GUACD_CONNECTION_H
 
-#include "config.h"
-
 #include "proc-map.h"
 
 #ifdef ENABLE_SSL
