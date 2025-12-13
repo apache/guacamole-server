@@ -20,7 +20,6 @@
 #ifndef __GUAC_COMMON_SURFACE_H
 #define __GUAC_COMMON_SURFACE_H
 
-#include "config.h"
 #include "rect.h"
 
 #include <cairo/cairo.h>

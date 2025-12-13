@@ -20,8 +20,6 @@
 #ifndef GUAC_SSH_SETTINGS_H
 #define GUAC_SSH_SETTINGS_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
 #include <stdbool.h>

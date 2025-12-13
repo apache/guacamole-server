@@ -20,8 +20,6 @@
 #ifndef GUACENC_PARSE_H
 #define GUACENC_PARSE_H
 
-#include "config.h"
-
 #include <guacamole/timestamp.h>
 
 /**

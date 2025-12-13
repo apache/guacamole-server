@@ -20,8 +20,6 @@
 #ifndef GUACENC_ENCODE_H
 #define GUACENC_ENCODE_H
 
-#include "config.h"
-
 #include <stdbool.h>
 
 /**

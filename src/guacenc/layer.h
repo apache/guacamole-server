@@ -20,7 +20,6 @@
 #ifndef GUACENC_LAYER_H
 #define GUACENC_LAYER_H
 
-#include "config.h"
 #include "buffer.h"
 
 /**

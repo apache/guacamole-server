@@ -20,8 +20,6 @@
 #ifndef GUAC_SSH_TTYMODE_H
 #define GUAC_SSH_TTYMODE_H
 
-#include "config.h"
-
 #include <stdint.h>
 
 /**

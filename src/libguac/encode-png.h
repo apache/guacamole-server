@@ -20,8 +20,6 @@
 #ifndef GUAC_ENCODE_PNG_H
 #define GUAC_ENCODE_PNG_H
 
-#include "config.h"
-
 #include "guacamole/socket.h"
 #include "guacamole/stream.h"
 

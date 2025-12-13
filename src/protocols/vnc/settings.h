@@ -20,8 +20,6 @@
 #ifndef __GUAC_VNC_SETTINGS_H
 #define __GUAC_VNC_SETTINGS_H
 
-#include "config.h"
-
 #include <stdbool.h>
 
 /**

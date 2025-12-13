@@ -20,7 +20,6 @@
 #ifndef GUACLOG_INSTRUCTIONS_H
 #define GUACLOG_INSTRUCTIONS_H
 
-#include "config.h"
 #include "state.h"
 
 /**

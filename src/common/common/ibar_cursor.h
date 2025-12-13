@@ -20,8 +20,6 @@
 #ifndef GUAC_COMMON_IBAR_CURSOR_H
 #define GUAC_COMMON_IBAR_CURSOR_H
 
-#include "config.h"
-
 #include <cairo/cairo.h>
 #include <guacamole/user.h>
 

@@ -20,7 +20,6 @@
 #ifndef _GUACD_PROC_MAP_H
 #define _GUACD_PROC_MAP_H
 
-#include "config.h"
 #include "common/list.h"
 #include "proc.h"
 

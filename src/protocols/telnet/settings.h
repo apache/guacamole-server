@@ -20,8 +20,6 @@
 #ifndef GUAC_TELNET_SETTINGS_H
 #define GUAC_TELNET_SETTINGS_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
 #include <sys/types.h>
