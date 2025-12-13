@@ -20,8 +20,6 @@
 #ifndef __GUAC_COMMON_STRING_H
 #define __GUAC_COMMON_STRING_H
 
-#include "config.h"
-
 #include <stddef.h>
 
 /**

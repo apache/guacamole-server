@@ -20,8 +20,6 @@
 #ifndef GUAC_RDP_GDI_H
 #define GUAC_RDP_GDI_H
 
-#include "config.h"
-
 #include <freerdp/freerdp.h>
 #include <guacamole/protocol.h>
 

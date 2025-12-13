@@ -20,8 +20,6 @@
 #ifndef __GUAC_COMMON_IO_H
 #define __GUAC_COMMON_IO_H
 
-#include "config.h"
-
 /**
  * Writes absolutely all bytes from within the given buffer, returning an error
  * only if the required writes fail.

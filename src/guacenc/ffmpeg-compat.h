@@ -20,7 +20,6 @@
 #ifndef GUACENC_FFMPEG_COMPAT_H
 #define GUACENC_FFMPEG_COMPAT_H
 
-#include "config.h"
 #include "video.h"
 
 #include <libavcodec/avcodec.h>

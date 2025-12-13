@@ -20,8 +20,6 @@
 #ifndef __GUAC_LIST_H
 #define __GUAC_LIST_H
 
-#include "config.h"
-
 #include <pthread.h>
 
 /**

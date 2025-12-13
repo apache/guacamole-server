@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/rail.h"
 #include "plugins/channels.h"
 #include "rdp.h"

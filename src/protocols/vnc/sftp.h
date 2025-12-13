@@ -20,8 +20,6 @@
 #ifndef GUAC_VNC_SFTP_H
 #define GUAC_VNC_SFTP_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
 /**

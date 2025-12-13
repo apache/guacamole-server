@@ -20,8 +20,6 @@
 #ifndef GUAC_VNC_VNC_H
 #define GUAC_VNC_VNC_H
 
-#include "config.h"
-
 #include "common/clipboard.h"
 #include "common/iconv.h"
 #include "display.h"

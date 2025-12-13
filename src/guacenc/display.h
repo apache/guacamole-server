@@ -20,7 +20,6 @@
 #ifndef GUACENC_DISPLAY_H
 #define GUACENC_DISPLAY_H
 
-#include "config.h"
 #include "buffer.h"
 #include "cursor.h"
 #include "image-stream.h"

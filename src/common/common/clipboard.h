@@ -20,8 +20,6 @@
 #ifndef __GUAC_CLIPBOARD_H
 #define __GUAC_CLIPBOARD_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 #include <pthread.h>
 

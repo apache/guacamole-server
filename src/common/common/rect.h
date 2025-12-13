@@ -20,8 +20,6 @@
 #ifndef __GUAC_COMMON_RECT_H
 #define __GUAC_COMMON_RECT_H
 
-#include "config.h"
-
 /**
  * Simple representation of a rectangle, having a defined corner and dimensions.
  */

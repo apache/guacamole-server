@@ -20,8 +20,6 @@
 #ifndef GUACLOG_INTERPRET_H
 #define GUACLOG_INTERPRET_H
 
-#include "config.h"
-
 #include <stdbool.h>
 
 /**
