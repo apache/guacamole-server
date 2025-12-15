@@ -78,6 +78,11 @@ guac_recording* guac_recording_create(guac_client* client,
     recording->include_keys = include_keys;
     recording->include_clipboard = include_clipboard;
 
+    if (include_clipboard)
+        recording->clipboard_stream = guac_client_alloc_stream(client);
+    else
+        recording->clipboard_stream = NULL;
+
     /* Replace client socket with wrapped recording socket only if including
      * output within the recording */
     if (include_output)
@@ -134,7 +139,7 @@ void guac_recording_report_key(guac_recording* recording,
 
 }
 
-void guac_recording_report_clipboard(guac_recording* recording, guac_stream* stream, char* mimetype) {
+void guac_recording_report_clipboard_begin(guac_recording* recording, guac_stream* stream, char* mimetype) {
     /* Report clipboard only if recording should contain it */
     if (recording->include_clipboard)
         guac_protocol_send_clipboard(recording->socket, stream, mimetype);
@@ -150,4 +155,36 @@ void guac_recording_report_clipboard_end(guac_recording* recording, guac_stream*
     /* Report clipboard only if recording should contain it */
     if (recording->include_clipboard)
         guac_protocol_send_end(recording->socket, stream);
+}
+
+void guac_recording_report_clipboard(guac_recording* recording,
+        const char* mimetype, const char* data, int length) {
+
+    /* Report clipboard only if recording should contain clipboard changes */
+    if (!recording->include_clipboard || !recording->clipboard_stream)
+        return;
+
+    guac_socket* socket = recording->socket;
+    guac_stream* stream = recording->clipboard_stream;
+
+    const char* current = data;
+    int remaining = length;
+
+    guac_protocol_send_clipboard(socket, stream, mimetype);
+
+    while (remaining > 0) {
+
+        int block_size = GUAC_RECORDING_CLIPBOARD_BLOCK_SIZE;
+        if (remaining < block_size)
+            block_size = remaining;
+
+        guac_protocol_send_blob(socket, stream, current, block_size);
+
+        remaining -= block_size;
+        current += block_size;
+
+    }
+
+    guac_protocol_send_end(socket, stream);
+
 }

@@ -40,7 +40,8 @@ int guac_telnet_clipboard_handler(guac_user* user, guac_stream* stream,
 
     /* Report clipboard within recording */
     if (telnet_client->recording != NULL)
-        guac_recording_report_clipboard(telnet_client->recording, stream, mimetype);
+        guac_recording_report_clipboard_begin(telnet_client->recording, stream,
+                mimetype);
 
     return 0;
 }
@@ -74,4 +75,3 @@ int guac_telnet_clipboard_end_handler(guac_user* user, guac_stream* stream) {
 
     return 0;
 }
-

@@ -521,6 +521,13 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
         guac_common_clipboard_reset(clipboard->clipboard, "text/plain");
         guac_common_clipboard_append(clipboard->clipboard, received_data, length);
         guac_common_clipboard_send(clipboard->clipboard, client);
+
+        /* Record clipboard if recording is active */
+        if (rdp_client->recording != NULL)
+            guac_recording_report_clipboard(rdp_client->recording,
+                    clipboard->clipboard->mimetype,
+                    clipboard->clipboard->buffer,
+                    clipboard->clipboard->length);
     }
 
     guac_mem_free(received_data);
@@ -698,7 +705,8 @@ int guac_rdp_clipboard_handler(guac_user* user, guac_stream* stream,
 
     /* Report clipboard within recording */
     if (rdp_client->recording != NULL)
-        guac_recording_report_clipboard(rdp_client->recording, stream, mimetype);
+        guac_recording_report_clipboard_begin(rdp_client->recording, stream,
+                mimetype);
 
     return 0;
 

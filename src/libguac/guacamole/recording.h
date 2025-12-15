@@ -49,6 +49,11 @@
 #define GUAC_COMMON_RECORDING_MAX_NAME_LENGTH 2048
 
 /**
+ * The block size to use when sending clipboard data in a recording.
+ */
+#define GUAC_RECORDING_CLIPBOARD_BLOCK_SIZE 4096
+
+/**
  * An in-progress session recording, attached to a guac_client instance such
  * that output Guacamole instructions may be dynamically intercepted and
  * written to a file.
@@ -60,6 +65,12 @@ typedef struct guac_recording {
      * to any particular user.
      */
     guac_socket* socket;
+
+    /**
+     * The stream used for recording clipboard data. This stream is allocated
+     * once during recording creation and reused for all clipboard events.
+     */
+    guac_stream* clipboard_stream;
 
     /**
      * Non-zero if output which is broadcast to each connected client
@@ -286,7 +297,7 @@ void guac_recording_report_key(guac_recording* recording,
  * @param mimetype
  *     The clipboard data mimetype
  */
-void guac_recording_report_clipboard(guac_recording* recording,
+void guac_recording_report_clipboard_begin(guac_recording* recording,
         guac_stream* stream, char* mimetype);
 
 /**
@@ -319,5 +330,22 @@ void guac_recording_report_clipboard_blob(guac_recording* recording,
 void guac_recording_report_clipboard_end(guac_recording* recording,
         guac_stream* stream);
 
-#endif
+/**
+ * Reports clipboard data within the recording.
+ *
+ * @param recording
+ *     The guac_recording to write clipboard data to.
+ *
+ * @param mimetype
+ *     The mimetype of the clipboard data (e.g., "text/plain").
+ *
+ * @param data
+ *     The clipboard data buffer.
+ *
+ * @param length
+ *     The length of the clipboard data in bytes.
+ */
+void guac_recording_report_clipboard(guac_recording* recording,
+        const char* mimetype, const char* data, int length);
 
+#endif
