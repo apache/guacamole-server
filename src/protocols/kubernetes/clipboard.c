@@ -41,7 +41,7 @@ int guac_kubernetes_clipboard_handler(guac_user* user, guac_stream* stream,
 
     /* Report clipboard within recording */
     if (kubernetes_client->recording != NULL)
-        guac_recording_report_clipboard(kubernetes_client->recording, stream, mimetype);
+        guac_recording_report_clipboard_begin(kubernetes_client->recording, stream, mimetype);
 
     return 0;
 }
@@ -78,4 +78,3 @@ int guac_kubernetes_clipboard_end_handler(guac_user* user,
 
     return 0;
 }
-
