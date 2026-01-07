@@ -932,7 +932,8 @@ void* guac_rdp_client_thread(void* data) {
                 !settings->recording_exclude_mouse,
                 !settings->recording_exclude_touch,
                 settings->recording_include_keys,
-                settings->recording_write_existing);
+                settings->recording_write_existing,
+                settings->recording_include_clipboard);
     }
 
     /* Continue handling connections until error or client disconnect */
