@@ -125,6 +125,32 @@ typedef enum guac_rdp_security {
 } guac_rdp_security;
 
 /**
+ * The authentication packages supported by freerdp and thus guacd.
+ */
+typedef enum guac_rdp_auth_package {
+
+    /**
+     * NTLM-based authentication, which is still the default for Windows, but
+     * is being phased out in favor of Kerberos due to security concerns.
+     */
+    GUAC_AUTH_PKG_NTLM,
+
+    /**
+     * Kerberos-based authentication, which is supported by FreeRDP3 and is
+     * the new standard for RDP connections due to its superior security as
+     * compared with NTLM.
+     */
+    GUAC_AUTH_PKG_KERBEROS,
+
+    /**
+     * Allow guacd and the server to negotiatoin without preferring one or the
+     * other.
+     */
+    GUAC_AUTH_PKG_ANY
+
+} guac_rdp_auth_package;
+
+/**
  * All supported combinations screen resize methods.
  */
 typedef enum guac_rdp_resize_method {
@@ -294,6 +320,24 @@ typedef struct guac_rdp_settings {
      * The type of security to use for the connection.
      */
     guac_rdp_security security_mode;
+
+    /**
+     * The authentication package to use.
+     */
+    guac_rdp_auth_package auth_pkg;
+
+    /**
+     * When using kerberos-based authentication, the URL of the KDC, if something
+     * other than the system-level kerberos configuration should be used.
+     */
+    char* kdc_url;
+
+    /**
+     * When using kerberos-based authentication, the location of the kerberos
+     * ticket cache to use, relative to GUACAMOLE_HOME, if the system-level
+     * cache file should not be used.
+     */
+    char* kerberos_cache;
 
     /**
      * Whether bad server certificates should be ignored.
