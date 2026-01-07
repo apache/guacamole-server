@@ -301,6 +301,156 @@ typedef struct guac_telnet_settings {
      */
     int wol_wait_time;
 
+#ifdef ENABLE_COMMON_SSH
+    /**
+     * Whether SFTP should be enabled for the VNC connection.
+     */
+    bool enable_sftp;
+
+    /**
+     * The hostname of the SSH server to connect to for SFTP.
+     */
+    char* sftp_hostname;
+
+    /**
+     * The public SSH host key.
+     */
+    char* sftp_host_key;
+
+    /**
+     * The port of the SSH server to connect to for SFTP.
+     */
+    char* sftp_port;
+
+    /**
+     * The username to provide when authenticating with the SSH server for
+     * SFTP.
+     */
+    char* sftp_username;
+
+    /**
+     * The password to provide when authenticating with the SSH server for
+     * SFTP (if not using a private key).
+     */
+    char* sftp_password;
+
+    /**
+     * The base64-encoded private key to use when authenticating with the SSH
+     * server for SFTP (if not using a password).
+     */
+    char* sftp_private_key;
+
+    /**
+     * The passphrase to use to decrypt the provided base64-encoded private
+     * key.
+     */
+    char* sftp_passphrase;
+
+    /**
+     * The default location for file uploads within the SSH server. This will
+     * apply only to uploads which do not use the filesystem guac_object (where
+     * the destination directory is otherwise ambiguous).
+     */
+    char* sftp_directory;
+
+    /**
+     * The path of the directory within the SSH server to expose as a
+     * filesystem guac_object.
+     */
+    char* sftp_root_directory;
+
+    /**
+     * The interval at which SSH keepalive messages are sent to the server for
+     * SFTP connections.  The default is 0 (disabling keepalives), and a value
+     * of 1 is automatically increased to 2 by libssh2 to avoid busy loop corner
+     * cases.
+     */
+    int sftp_server_alive_interval;
+    
+    /**
+     * Whether file downloads over SFTP should be blocked.  If set to "true",
+     * the local client will not be able to download files from the SFTP server.
+     * If set to "false" or not set, file downloads will be allowed.
+     */
+    bool sftp_disable_download;
+    
+    /**
+     * Whether file uploads over SFTP should be blocked.  If set to "true", the
+     * local client will not be able to upload files to the SFTP server.  If set
+     * to "false" or not set, file uploads will be allowed.
+     */
+    bool sftp_disable_upload;
+
+    /**
+     * Whether to enable tunneling of this connection through the specified
+     * SSH server. If set to "true", guacd will attempt to connect to the SSH
+     * server and tunnel all of the traffic through the SSH connection. If
+     * set to "false" or not set, SSH tunneling will not be used.
+     */
+    bool ssh_tunnel;
+
+    /**
+     * The hostname or address of the host through which traffic should be
+     * tunneled over SSH. If tunneling is enabled, this is required, or the
+     * connection will be aborted.
+     */
+    char* ssh_tunnel_host;
+
+    /**
+     * The port on which to connect to the SSH server to tunnel traffic, if
+     * SSH tunneling is enabled. If not specified, this will default to 22, the
+     * normal SSH port.
+     */
+    char* ssh_tunnel_port;
+
+    /**
+     * The public key of the SSH host through which this connection will be
+     * tunneled. If unset, no host key checking will be done and the connection
+     * will be attempted regardless of the identity of the remote host.
+     */
+    char* ssh_tunnel_host_key;
+
+    /**
+     * The username to use when connecting to the SSH host to tunnel traffic.
+     * This is required if SSH tunneling is enabled.
+     */
+    char* ssh_tunnel_username;
+
+    /**
+     * The password to use when connecting to the SSH host to tunnel traffic,
+     * if password authentication is used.
+     */
+    char* ssh_tunnel_password;
+
+    /**
+     * The private key to use to authenticate to the SSH server to tunnel traffic,
+     * if key-based authentication is used.
+     */
+    char* ssh_tunnel_private_key;
+
+    /**
+     * The passphrase of the private key to use to decrypt the private key when
+     * using key-based authentication, if the key is encrypted.
+     */
+    char* ssh_tunnel_passphrase;
+
+    /**
+     * The interval at which keepalive messages will be sent to the SSH server
+     * over which the connection is being tunneled. The default is 0, meaning
+     * that keepalive messages will be disabled. The minimum value is 2 to avoid
+     * busy loop scenarios, and a value of 1 is automatically increased to 2 by
+     * the underlying libssh2 implementation.
+     */
+    int ssh_tunnel_alive_interval;
+
+    /**
+     * The maximum amount of time, in seconds, that a connection to the SSH
+     * tunnel host may take to succeed.
+     */
+    int ssh_tunnel_timeout;
+
+#endif
+
 } guac_telnet_settings;
 
 /**

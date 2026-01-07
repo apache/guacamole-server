@@ -48,6 +48,7 @@
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
+#include "common-ssh/tunnel.h"
 #include "common-ssh/user.h"
 #endif
 
@@ -919,6 +920,97 @@ void* guac_rdp_client_thread(void* data) {
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "SFTP connection succeeded.");
 
+    }
+
+    /* If SSH tunneling is enabled, we set up the tunnel and redirect the connection. */
+    if (settings->ssh_tunnel) {
+
+        /* Allocate memory for the SSH tunnel data. */
+        rdp_client->ssh_tunnel = malloc(sizeof(guac_ssh_tunnel));
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH tunneling is enabled, connecting via SSH.");
+
+        /* Associate the guac_client object with the tunnel. */
+        rdp_client->ssh_tunnel->client = client;
+
+        /* Abort if tunnel username is missing */
+        if (settings->ssh_tunnel_username == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "An SSH tunnel-specific username is required if "
+                    "SSH tunneling is enabled.");
+            return NULL;
+        }
+
+        rdp_client->ssh_tunnel->user =
+            guac_common_ssh_create_user(settings->ssh_tunnel_username);
+
+        /* Import SSH tunnel private key, if given */
+        if (settings->ssh_tunnel_private_key != NULL) {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating SSH tunnel with private key.");
+
+            /* Abort if SSH tunnel private key cannot be read */
+            if (guac_common_ssh_user_import_key(rdp_client->ssh_tunnel->user,
+                        settings->ssh_tunnel_private_key,
+                        settings->ssh_tunnel_passphrase)) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "SSH tunnel private key unreadable.");
+                return NULL;
+            }
+
+        }
+
+        /* Otherwise, use specified SSH tunnel password */
+        else {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating SSH tunnel with password.");
+
+            guac_common_ssh_user_set_password(rdp_client->ssh_tunnel->user,
+                    settings->ssh_tunnel_password);
+
+        }
+
+        /* Attempt SSH tunnel connection */
+        rdp_client->ssh_tunnel->session =
+            guac_common_ssh_create_session(client, settings->ssh_tunnel_host,
+                    settings->ssh_tunnel_port, rdp_client->ssh_tunnel->user,
+		    settings->ssh_tunnel_timeout,
+                    settings->ssh_tunnel_alive_interval,
+                    settings->ssh_tunnel_host_key, NULL);
+
+        /* Fail if SSH tunnel connection does not succeed */
+        if (rdp_client->ssh_tunnel->session == NULL) {
+            /* Already aborted within guac_common_ssh_create_session() */
+            return NULL;
+        }
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH session created for tunneling, initializing the tunnel.");
+
+        /* Initialize the tunnel or fail. */
+        if (guac_common_ssh_tunnel_init(rdp_client->ssh_tunnel,
+                settings->hostname, settings->port)) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to initialize SSH tunnel, aborting connection.");
+            return NULL;
+        }
+
+        /* If tunnel socket is not returned, bail out. */
+        if (rdp_client->ssh_tunnel->socket_path == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to obtain socket for SSH tunnel, aborting.");
+            return NULL;
+        }
+
+        /* Overwrite the hostname with the path to the socket and zero out port. */
+        settings->hostname = guac_strdup(rdp_client->ssh_tunnel->socket_path);
+        settings->port = 0;
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SSH tunnel connection succeeded.");
     }
 #endif
 

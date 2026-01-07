@@ -26,6 +26,7 @@
 #include <guacamole/client.h>
 #include <guacamole/fips.h>
 #include <guacamole/mem.h>
+#include <guacamole/socket-unix.h>
 #include <guacamole/string.h>
 #include <guacamole/tcp.h>
 #include <libssh2.h>
@@ -473,10 +474,20 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         int timeout, int keepalive, const char* host_key,
         guac_ssh_credential_handler* credential_handler) {
 
-    int fd = guac_tcp_connect(hostname, port, timeout);
+    int fd;
+    struct stat sb;
+
+    /* Hostname is a UNIX socket */
+    if (stat(hostname, &sb) == 0 && (sb.st_mode & S_IFMT) == S_IFSOCK)
+        fd = guac_socket_unix_connect(hostname);
+
+    /* Hostname is IP-based */
+    else
+        fd = guac_tcp_connect(hostname, port, timeout);
+
     if (fd < 0) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-            "Failed to open TCP connection to %s on %s.", hostname, port);
+            "Failed to open SSH connection to %s on %s", hostname, port);
         return NULL;
     }
 

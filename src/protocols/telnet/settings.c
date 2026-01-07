@@ -22,6 +22,7 @@
 #include "argv.h"
 #include "common/defaults.h"
 #include "common/clipboard.h"
+#include "common-ssh/ssh-constants.h"
 #include "settings.h"
 #include "terminal/terminal.h"
 
@@ -73,6 +74,33 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "wol-broadcast-addr",
     "wol-udp-port",
     "wol-wait-time",
+
+#ifdef ENABLE_COMMON_SSH
+    "enable-sftp",
+    "sftp-hostname",
+    "sftp-host-key",
+    "sftp-port",
+    "sftp-username",
+    "sftp-password",
+    "sftp-private-key",
+    "sftp-passphrase",
+    "sftp-directory",
+    "sftp-root-directory",
+    "sftp-server-alive-interval",
+    "sftp-disable-download",
+    "sftp-disable-upload",
+    "ssh-tunnel",
+    "ssh-tunnel-host",
+    "ssh-tunnel-port",
+    "ssh-tunnel-host-key",
+    "ssh-tunnel-username",
+    "ssh-tunnel-password",
+    "ssh-tunnel-private-key",
+    "ssh-tunnel-passphrase",
+    "ssh-tunnel-alive-interval",
+    "ssh-tunnel-timeout",
+#endif
+
     NULL
 };
 
@@ -306,6 +334,143 @@ enum TELNET_ARGS_IDX {
      * wait at all (0 seconds).
      */
     IDX_WOL_WAIT_TIME,
+
+#ifdef ENABLE_COMMON_SSH
+    /**
+     * "true" if SFTP should be enabled for the connection, "false" or
+     * blank otherwise.
+     */
+    IDX_ENABLE_SFTP,
+
+    /**
+     * The hostname of the SSH server to connect to for SFTP. If blank, the
+     * hostname of the telnet server will be used.
+     */
+    IDX_SFTP_HOSTNAME,
+
+    /**
+     * The public SSH host key to identify the SFTP server.
+     */
+    IDX_SFTP_HOST_KEY,
+
+    /**
+     * The port of the SSH server to connect to for SFTP. If blank, the default
+     * SSH port of "22" will be used.
+     */
+    IDX_SFTP_PORT,
+
+    /**
+     * The username to provide when authenticating with the SSH server for
+     * SFTP.
+     */
+    IDX_SFTP_USERNAME,
+
+    /**
+     * The password to provide when authenticating with the SSH server for
+     * SFTP (if not using a private key).
+     */
+    IDX_SFTP_PASSWORD,
+
+    /**
+     * The base64-encoded private key to use when authenticating with the SSH
+     * server for SFTP (if not using a password).
+     */
+    IDX_SFTP_PRIVATE_KEY,
+
+    /**
+     * The passphrase to use to decrypt the provided base64-encoded private
+     * key.
+     */
+    IDX_SFTP_PASSPHRASE,
+
+    /**
+     * The default location for file uploads within the SSH server. This will
+     * apply only to uploads which do not use the filesystem guac_object (where
+     * the destination directory is otherwise ambiguous).
+     */
+    IDX_SFTP_DIRECTORY,
+
+    /**
+     * The path of the directory within the SSH server to expose as a
+     * filesystem guac_object. If omitted, "/" will be used by default.
+     */
+    IDX_SFTP_ROOT_DIRECTORY,
+
+    /**
+     * The interval at which SSH keepalive messages are sent to the server for
+     * SFTP connections.  The default is 0 (disabling keepalives), and a value
+     * of 1 is automatically incremented to 2 by libssh2 to avoid busy loop corner
+     * cases.
+     */
+    IDX_SFTP_SERVER_ALIVE_INTERVAL,
+    
+    /**
+     * If set to "true", file downloads over SFTP will be blocked.  If set to
+     * "false" or not set, file downloads will be allowed.
+     */
+    IDX_SFTP_DISABLE_DOWNLOAD,
+    
+    /**
+     * If set to "true", file uploads over SFTP will be blocked.  If set to
+     * "false" or not set, file uploads will be allowed.
+     */
+    IDX_SFTP_DISABLE_UPLOAD,
+
+    /**
+     * True if SSH tunneling should be enabled. If false or not set, SSH
+     * tunneling will not be used.
+     */
+    IDX_SSH_TUNNEL,
+
+    /**
+     * The hostname or IP address of the SSH server to use for tunneling.
+     */
+    IDX_SSH_TUNNEL_HOST,
+
+    /**
+     * The TCP port of the SSH server to use for tunneling.
+     */
+    IDX_SSH_TUNNEL_PORT,
+
+    /**
+     * If host key checking should be done, the public key of the SSH host
+     * to be used for tunneling.
+     */
+    IDX_SSH_TUNNEL_HOST_KEY,
+
+    /**
+     * The username for authenticating to the SSH hsot for tunneling.
+     */
+    IDX_SSH_TUNNEL_USERNAME,
+
+    /**
+     * The password to use to authenticate to the SSH host for tunneling.
+     */
+    IDX_SSH_TUNNEL_PASSWORD,
+
+    /**
+     * The private key to use to authenticate to the SSH host for tunneling,
+     * as an alternative to password-based authentication.
+     */
+    IDX_SSH_TUNNEL_PRIVATE_KEY,
+
+    /**
+     * The passphrase to use to decrypt the private key.
+     */
+    IDX_SSH_TUNNEL_PASSPHRASE,
+
+    /**
+     * The interval at which keepalive packets should be sent to the SSH
+     * tunneling server, or zero if keepalive should be disabled.
+     */
+    IDX_SSH_TUNNEL_ALIVE_INTERVAL,
+
+    /**
+     * The maximum amount of time, in seconds, that the SSH connection to
+     * the tunnel host may take to succeed.
+     */
+    IDX_SSH_TUNNEL_TIMEOUT,
+#endif
 
     TELNET_ARGS_COUNT
 };
@@ -606,6 +771,123 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         
     }
 
+#ifdef ENABLE_COMMON_SSH
+    /* SFTP enable/disable */
+    settings->enable_sftp =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_ENABLE_SFTP, false);
+
+    /* If SFTP is not enabled, no reason to parse the rest. */
+    if (settings->enable_sftp) {
+        /* Hostname for SFTP connection */
+        settings->sftp_hostname =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_HOSTNAME, settings->hostname);
+
+        /* The public SSH host key. */
+        settings->sftp_host_key =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_HOST_KEY, NULL);
+
+        /* Port for SFTP connection */
+        settings->sftp_port =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_PORT, "22");
+
+        /* Username for SSH/SFTP authentication */
+        settings->sftp_username =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_USERNAME, "");
+
+        /* Password for SFTP (if not using private key) */
+        settings->sftp_password =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_PASSWORD, "");
+
+        /* Private key for SFTP (if not using password) */
+        settings->sftp_private_key =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_PRIVATE_KEY, NULL);
+
+        /* Passphrase for decrypting the SFTP private key (if applicable */
+        settings->sftp_passphrase =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_PASSPHRASE, "");
+
+        /* Default upload directory */
+        settings->sftp_directory =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_DIRECTORY, NULL);
+
+        /* SFTP root directory */
+        settings->sftp_root_directory =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_ROOT_DIRECTORY, GUAC_COMMON_SSH_SFTP_DEFAULT_ROOT);
+
+        /* Default keepalive value */
+        settings->sftp_server_alive_interval =
+            guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_SERVER_ALIVE_INTERVAL,
+                    GUAC_COMMON_SSH_DEFAULT_ALIVE_INTERVAL);
+
+        settings->sftp_disable_download =
+            guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_DISABLE_DOWNLOAD, false);
+
+        settings->sftp_disable_upload =
+            guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SFTP_DISABLE_UPLOAD, false);
+    }
+
+    /* Parse SSH tunneling. */
+    settings->ssh_tunnel =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_SSH_TUNNEL, false);
+    
+    /* Only parse remaining tunneling settings if it has been enabled. */
+    if (settings->ssh_tunnel) {
+
+        settings->ssh_tunnel_host =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_HOST, NULL);
+
+        settings->ssh_tunnel_port =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PORT, GUAC_COMMON_SSH_DEFAULT_PORT);
+
+        settings->ssh_tunnel_host_key =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_HOST_KEY, NULL);
+
+        settings->ssh_tunnel_username =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_USERNAME, NULL);
+
+        settings->ssh_tunnel_password =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PASSWORD, NULL);
+
+        settings->ssh_tunnel_private_key =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PRIVATE_KEY, NULL);
+
+        settings->ssh_tunnel_passphrase =
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_PASSPHRASE, NULL);
+
+        settings->ssh_tunnel_alive_interval =
+            guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_ALIVE_INTERVAL,
+                    GUAC_COMMON_SSH_DEFAULT_ALIVE_INTERVAL);
+
+        settings->ssh_tunnel_timeout =
+            guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_SSH_TUNNEL_TIMEOUT,
+                    GUAC_COMMON_SSH_DEFAULT_TIMEOUT);
+
+    }
+#endif
+
     /* Parsing was successful */
     return settings;
 
@@ -645,6 +927,23 @@ void guac_telnet_settings_free(guac_telnet_settings* settings) {
     /* Free WoL settings. */
     guac_mem_free(settings->wol_mac_addr);
     guac_mem_free(settings->wol_broadcast_addr);
+
+    /* Free SSH and SFTP settings. */
+    guac_mem_free(settings->sftp_hostname);
+    guac_mem_free(settings->sftp_host_key);
+    guac_mem_free(settings->sftp_username);
+    guac_mem_free(settings->sftp_password);
+    guac_mem_free(settings->sftp_private_key);
+    guac_mem_free(settings->sftp_passphrase);
+    guac_mem_free(settings->sftp_directory);
+    guac_mem_free(settings->sftp_root_directory);
+    guac_mem_free(settings->ssh_tunnel_host);
+    guac_mem_free(settings->ssh_tunnel_host_key);
+    guac_mem_free(settings->ssh_tunnel_port);
+    guac_mem_free(settings->ssh_tunnel_username);
+    guac_mem_free(settings->ssh_tunnel_password);
+    guac_mem_free(settings->ssh_tunnel_private_key);
+    guac_mem_free(settings->ssh_tunnel_passphrase);
 
     /* Free overall structure */
     guac_mem_free(settings);
