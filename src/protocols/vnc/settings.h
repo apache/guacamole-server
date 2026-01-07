@@ -45,7 +45,7 @@ typedef struct guac_vnc_settings {
     /**
      * The port of the VNC server (or repeater) to connect to.
      */
-    int port;
+    unsigned short port;
 
     /**
      * The username given in the arguments.
@@ -110,7 +110,7 @@ typedef struct guac_vnc_settings {
     /**
      * The VNC port to connect to, if using a repeater.
      */
-    int dest_port;
+    unsigned short dest_port;
 #endif
 
 #ifdef ENABLE_VNC_LISTEN

@@ -369,12 +369,15 @@ char* guac_user_parse_args_string(guac_user* user, const char** arg_names,
     /* Pull parameter value from argv */
     const char* value = argv[index];
 
-    /* Use default value if blank */
-    if (value[0] == 0) {
+    /* Use default_value if value is NULL, or an empty string */
+    if (value == NULL || value[0] == 0) {
 
         /* NULL is a completely legal default value */
-        if (default_value == NULL)
+        if (default_value == NULL) {
+            guac_user_log(user, GUAC_LOG_DEBUG, "Parameter \"%s\" omitted. No default value provided.",
+                    arg_names[index]);
             return NULL;
+        }
 
         /* Log use of default */
         guac_user_log(user, GUAC_LOG_DEBUG, "Parameter \"%s\" omitted. Using "
@@ -389,8 +392,8 @@ char* guac_user_parse_args_string(guac_user* user, const char** arg_names,
 
 }
 
-int guac_user_parse_args_int(guac_user* user, const char** arg_names,
-        const char** argv, int index, int default_value) {
+char* guac_user_parse_args_int_string_bounded(guac_user* user, const char** arg_names,
+        const char** argv, int index, const char* default_value, int min, int max) {
 
     char* parse_end;
     long parsed_value;
@@ -398,8 +401,65 @@ int guac_user_parse_args_int(guac_user* user, const char** arg_names,
     /* Pull parameter value from argv */
     const char* value = argv[index];
 
-    /* Use default value if blank */
-    if (value[0] == 0) {
+    /* Use default_value if value is NULL, or an empty string */
+    if (value == NULL || value[0] == 0) {
+
+        /* NULL is a completely legal default value */
+        if (default_value == NULL) {
+            guac_user_log(user, GUAC_LOG_DEBUG, "Parameter \"%s\" omitted. No default value provided.",
+                    arg_names[index]);
+
+            return NULL;
+        }
+
+        /* Log use of default */
+        guac_user_log(user, GUAC_LOG_DEBUG, "Parameter \"%s\" omitted. Using "
+                "default value of \"%s\".", arg_names[index], default_value);
+
+        return guac_strdup(default_value);
+
+    }
+
+    /* Parse value using strtol, checking for errors */
+    errno = 0;
+    parsed_value = strtol(value, &parse_end, 10);
+
+    /* Check for parsing errors or invalid range */
+    if (errno != 0 || *parse_end != '\0' || parsed_value < min || parsed_value > max) {
+
+        /* NULL is a completely legal default value */
+        if (default_value == NULL) {
+            guac_user_log(user, GUAC_LOG_WARNING, "Specified value \"%s\" for "
+                    "parameter \"%s\" is not valid. No default value provided",
+                    value, arg_names[index]);
+
+            return NULL;
+        }
+
+        /* Log use of default */
+        guac_user_log(user, GUAC_LOG_WARNING, "Specified value \"%s\" for "
+                "parameter \"%s\" is not valid. Using default value "
+                "of \"%s\".", value, arg_names[index], default_value);
+
+        return guac_strdup(default_value);
+
+    }
+
+    /* Otherwise use provided value */
+    return guac_strdup(value);
+}
+
+int guac_user_parse_args_int_bounded(guac_user* user, const char** arg_names,
+        const char** argv, int index, int default_value, int min, int max) {
+
+    char* parse_end;
+    long parsed_value;
+
+    /* Pull parameter value from argv */
+    const char* value = argv[index];
+
+    /* Use default_value if value is NULL, or an empty string */
+    if (value == NULL || value[0] == 0) {
 
         /* Log use of default */
         guac_user_log(user, GUAC_LOG_DEBUG, "Parameter \"%s\" omitted. Using "
@@ -413,16 +473,12 @@ int guac_user_parse_args_int(guac_user* user, const char** arg_names,
     errno = 0;
     parsed_value = strtol(value, &parse_end, 10);
 
-    /* Ensure parsed value is within the legal range of an int */
-    if (parsed_value < INT_MIN || parsed_value > INT_MAX)
-        errno = ERANGE;
-
-    /* Resort to default if input is invalid */
-    if (errno != 0 || *parse_end != '\0') {
+    /* Check for parsing errors or invalid range */
+    if (errno != 0 || *parse_end != '\0' || parsed_value < min || parsed_value > max) {
 
         /* Log use of default */
         guac_user_log(user, GUAC_LOG_WARNING, "Specified value \"%s\" for "
-                "parameter \"%s\" is not a valid integer. Using default value "
+                "parameter \"%s\" is not valid. Using default value "
                 "of %i.", value, arg_names[index], default_value);
 
         return default_value;
@@ -430,7 +486,15 @@ int guac_user_parse_args_int(guac_user* user, const char** arg_names,
     }
 
     /* Parsed successfully */
-    return parsed_value;
+    return (int)parsed_value;
+
+}
+
+int guac_user_parse_args_int(guac_user* user, const char** arg_names,
+        const char** argv, int index, int default_value) {
+
+    return guac_user_parse_args_int_bounded(user, arg_names, argv, index,
+                   default_value, GUAC_ITOA_INT_MIN, GUAC_ITOA_INT_MAX);
 
 }
 
@@ -440,8 +504,8 @@ int guac_user_parse_args_boolean(guac_user* user, const char** arg_names,
     /* Pull parameter value from argv */
     const char* value = argv[index];
 
-    /* Use default value if blank */
-    if (value[0] == 0) {
+    /* Use default_value if value is NULL, or an empty string */
+    if (value == NULL || value[0] == 0) {
 
         /* Log use of default */
         guac_user_log(user, GUAC_LOG_DEBUG, "Parameter \"%s\" omitted. Using "

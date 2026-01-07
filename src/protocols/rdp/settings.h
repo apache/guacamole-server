@@ -163,7 +163,7 @@ typedef struct guac_rdp_settings {
     /**
      * The port to connect to.
      */
-    int port;
+    unsigned short port;
 
     /**
      * The timeout, in seconds, to wait for the remote host to respond.
@@ -623,7 +623,7 @@ typedef struct guac_rdp_settings {
      * FreeRDP prior to 1.2 which have gateway support ignore this value, and
      * instead use a hard-coded value of 443.
      */
-    int gateway_port;
+    unsigned short gateway_port;
 
     /**
      * The domain of the user authenticating with the remote desktop gateway,

@@ -933,6 +933,98 @@ char* guac_user_parse_args_string(guac_user* user, const char** arg_names,
         const char** argv, int index, const char* default_value);
 
 /**
+ * Automatically handles a single argument received from a joining user,
+ * returning a newly-allocated string containing that value. The argument
+ * is parsed as an integer and checked to ensure it is within the specified
+ * bounds. If the argument provided by the user is blank, a newly-allocated
+ * string containing the default value is returned. If the integer is out of
+ * bounds, the default value is returned.
+ *
+ * @param user
+ *     The user joining the connection and providing the given arguments.
+ *
+ * @param arg_names
+ *     A NULL-terminated array of argument names, corresponding to the provided
+ *     array of argument values. This array must be exactly the same size as
+ *     the argument value array, with one additional entry for the NULL
+ *     terminator.
+ *
+ * @param argv
+ *     An array of all argument values, corresponding to the provided array of
+ *     argument names. This array must be exactly the same size as the argument
+ *     name array, with the exception of the NULL terminator.
+ *
+ * @param index
+ *     The index of the entry in both the arg_names and argv arrays which
+ *     corresponds to the argument being parsed.
+ *
+ * @param default_value
+ *     The value to return if the provided argument is blank or invalid. If this
+ *     value is not NULL, the returned value will be a newly-allocated string
+ *     containing this value.
+ *
+ * @param min
+ *     The minimum allowed value for the parsed integer. If the parsed integer is
+ *     less than this value, the default value will be returned.
+ *
+ * @param max
+ *     The maximum allowed value for the parsed integer. If the parsed integer is
+ *     greater than this value, the default value will be returned.
+ *
+ * @return
+ *     A newly-allocated string containing the provided argument value, parsed as
+ *     an integer and checked against the specified bounds. If the argument is blank,
+ *     or if the integer is out of bounds, the function returns a newly-allocated string
+ *     containing the default value. If the default value is NULL and the provided
+ *     argument is blank or invalid, NULL is returned.
+ */
+char* guac_user_parse_args_int_string_bounded(guac_user* user, const char** arg_names,
+        const char** argv, int index, const char* default_value, int min, int max);
+
+/**
+ * Automatically handles a single integer argument received from a joining
+ * user, returning the integer value of that argument. The argument is checked
+ * to ensure it is within the specified bounds. If the argument is blank,
+ * invalid, or out of bounds, the default value is returned.
+ *
+ * @param user
+ *     The user joining the connection and providing the given arguments.
+ *
+ * @param arg_names
+ *     A NULL-terminated array of argument names, corresponding to the provided
+ *     array of argument values. This array must be exactly the same size as
+ *     the argument value array, with one additional entry for the NULL
+ *     terminator.
+ *
+ * @param argv
+ *     An array of all argument values, corresponding to the provided array of
+ *     argument names. This array must be exactly the same size as the argument
+ *     name array, with the exception of the NULL terminator.
+ *
+ * @param index
+ *     The index of the entry in both the arg_names and argv arrays which
+ *     corresponds to the argument being parsed.
+ *
+ * @param default_value
+ *     The value to return if the provided argument is blank, invalid, or out of bounds.
+ *
+ * @param min
+ *     The minimum allowed value for the argument. If the parsed value is less
+ *     than this, the default value will be returned.
+ *
+ * @param max
+ *     The maximum allowed value for the argument. If the parsed value is greater
+ *     than this, the default value will be returned.
+ *
+ * @return
+ *     The integer value parsed from the provided argument value, if it is valid
+ *     and within the specified bounds. If the argument is blank, invalid, or out of bounds,
+ *     the default value is returned.
+ */
+int guac_user_parse_args_int_bounded(guac_user* user, const char** arg_names,
+        const char** argv, int index, int default_value, int min, int max);
+
+/**
  * Automatically handles a single integer argument received from a joining
  * user, returning the integer value of that argument. If the argument provided
  * by the user is blank or invalid, the default value is returned.
