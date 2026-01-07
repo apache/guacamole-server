@@ -57,8 +57,11 @@ guac_user* guac_user_alloc(void) {
     user->processing_lag = 0;
     user->active = 1;
 
-    /* Allocate stream pool */
-    user->__stream_pool = guac_pool_alloc(0);
+    /* Allocate stream pool. Use GUAC_USER_MAX_STREAMS as min_size to prefer
+     * new indices over reused ones up to the maximum, avoiding race conditions
+     * where acknowledgements for closed streams could be misdelivered to
+     * newly-allocated streams that reused the same index. */
+    user->__stream_pool = guac_pool_alloc(GUAC_USER_MAX_STREAMS);
 
     /* Initialize streams */
     user->__input_streams = guac_mem_alloc(sizeof(guac_stream), GUAC_USER_MAX_STREAMS);
