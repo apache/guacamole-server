@@ -1155,5 +1155,44 @@ guac_protocol_version guac_protocol_string_to_version(const char* version_string
  */
 const char* guac_protocol_version_to_string(guac_protocol_version version);
 
-#endif
+/**
+ * Sends a usbdisconnect instruction over the given guac_socket connection,
+ * requesting that the client disconnect the specified USB device.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param device_id
+ *     The unique identifier of the USB device that should be disconnected.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_usbdisconnect(guac_socket* socket, 
+        const char* device_id);
 
+/**
+ * Sends a usbdata instruction over the given guac_socket connection,
+ * sending USB data to a specific endpoint on a client-side USB device.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param device_id
+ *     The unique identifier of the USB device.
+ *
+ * @param endpoint_number
+ *     The USB endpoint number identifying the logical communication channel
+ *     for this data transfer. The valid endpoint numbers for a device are
+ *     provided in the interface_data parameter during usbconnect.
+ *
+ * @param data
+ *     The base64-encoded data to send to the USB device.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_usbdata(guac_socket* socket, const char* device_id,
+        int endpoint_number, const char* data);
+
+#endif

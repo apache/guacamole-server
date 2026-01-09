@@ -684,6 +684,11 @@ typedef struct guac_rdp_settings {
      */
     int wol_wait_time;
 
+    /**
+     * Whether USB redirection is enabled.
+     */
+    int usb_enabled;
+
 } guac_rdp_settings;
 
 /**
@@ -771,4 +776,3 @@ int guac_rdp_get_height(freerdp* rdp);
 int guac_rdp_get_depth(freerdp* rdp);
 
 #endif
-
