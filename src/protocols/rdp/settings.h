@@ -125,6 +125,28 @@ typedef enum guac_rdp_security {
 } guac_rdp_security;
 
 /**
+ * Supported modes of the RDP gateway.
+ */
+typedef enum guac_rdp_gateway_type {
+    
+    /**
+     * Automatically detect the type of gateway in use.
+     */
+    GUAC_RDP_GATEWAY_AUTO,
+            
+    /**
+     * Set the mode of the RDP gateway to HTTP.
+     */
+    GUAC_RDP_GATEWAY_HTTP,
+            
+    /**
+     * Set the mode of the RDP gateway to RPC.
+     */
+    GUAC_RDP_GATEWAY_RPC
+    
+} guac_rdp_gateway_type;
+
+/**
  * All supported combinations screen resize methods.
  */
 typedef enum guac_rdp_resize_method {
@@ -629,6 +651,12 @@ typedef struct guac_rdp_settings {
      * instead use a hard-coded value of 443.
      */
     int gateway_port;
+    
+    /**
+     * Set the mode of the RDP gateway. The gateway can either be auto-detected,
+     * or can be forced to HTTP or RPC mode.
+     */
+    guac_rdp_gateway_type gateway_type;
 
     /**
      * The domain of the user authenticating with the remote desktop gateway,
