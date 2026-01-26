@@ -43,11 +43,61 @@
  */
 #define GUAC_COMMON_SSH_SFTP_UPLOAD_BUFFER_SIZE (256 * 1024)
 
+/**
+ * Internal state tracking structure for an in-progress SFTP file upload.
+ *
+ * This structure manages the buffered write strategy for SFTP uploads,
+ * accumulating incoming blob data in a local buffer before flushing to the
+ * remote server. This approach reduces the number of SFTP round-trips and
+ * improves upload throughput, particularly for high-latency connections.
+ *
+ * The upload lifecycle is as follows:
+ *   1. Allocated when a file stream is initiated via
+ *      guac_common_ssh_sftp_handle_file_stream().
+ *   2. Populated incrementally by guac_common_ssh_sftp_blob_handler() as
+ *      blob messages arrive from the Guacamole client.
+ *   3. Flushed to the remote file via guac_common_ssh_sftp_upload_flush()
+ *      when the buffer is full or the stream ends.
+ *   4. Freed by guac_common_ssh_sftp_end_handler() when the upload completes.
+ *
+ * @see guac_common_ssh_sftp_handle_file_stream()
+ * @see guac_common_ssh_sftp_blob_handler()
+ * @see guac_common_ssh_sftp_upload_flush()
+ * @see guac_common_ssh_sftp_end_handler()
+ */
 typedef struct guac_common_ssh_sftp_upload_state {
-    LIBSSH2_SFTP_HANDLE* file;            /* Underlying SFTP file handle */
-    char                 buffer[GUAC_COMMON_SSH_SFTP_UPLOAD_BUFFER_SIZE]; /* Buffered upload data */
-    int                  buffered_length; /* Bytes currently buffered */
-    int                  error;           /* Non-zero if a write error occurred */
+
+    /**
+     * The underlying libssh2 SFTP file handle for the remote file being
+     * written. This handle is opened when the upload begins and closed
+     * when the stream ends. May be NULL if the file failed to open.
+     */
+    LIBSSH2_SFTP_HANDLE* file;
+
+    /**
+     * Local buffer for accumulating upload data before writing to the remote
+     * file. Data from incoming Guacamole blob messages is copied here until
+     * the buffer is full or the upload ends, at which point it is flushed
+     * via libssh2_sftp_write(). The buffer size is defined by
+     * GUAC_COMMON_SSH_SFTP_UPLOAD_BUFFER_SIZE.
+     */
+    char buffer[GUAC_COMMON_SSH_SFTP_UPLOAD_BUFFER_SIZE];
+
+    /**
+     * The number of bytes currently stored in the buffer awaiting flush.
+     * This value ranges from 0 to GUAC_COMMON_SSH_SFTP_UPLOAD_BUFFER_SIZE.
+     * Reset to 0 after each successful flush operation.
+     */
+    int buffered_length;
+
+    /**
+     * Error flag indicating whether a write failure has occurred during
+     * this upload. Once set to non-zero, subsequent blob handlers will
+     * immediately report failure without attempting further writes.
+     * A value of 0 indicates no error; non-zero indicates failure.
+     */
+    int error;
+
 } guac_common_ssh_sftp_upload_state;
 
 /**
@@ -72,27 +122,57 @@ typedef struct guac_common_ssh_sftp_upload_state {
 static void guac_common_ssh_sftp_upload_flush(guac_user* user,
     guac_common_ssh_sftp_upload_state* state) {
 
+    /*
+     * Guard: Skip flush if any of the following conditions are true:
+     *   - A previous write error has already occurred
+     *   - The buffer is empty (nothing to flush)
+     *   - The file handle is invalid (file never opened successfully)
+     */
     if (state->error || state->buffered_length <= 0 || state->file == NULL)
         return;
 
+    /*
+     * Track our position within the buffer. We use an offset rather than
+     * modifying the buffer pointer so we can calculate remaining bytes easily.
+     */
     int offset = 0;
+
+    /*
+     * Write loop: Continue until all buffered data has been written.
+     *
+     * libssh2_sftp_write() may perform a "short write" where fewer bytes are
+     * written than requested. This is normal behavior (not an error) and
+     * simply means we need to retry with the remaining data. We only treat
+     * a return value of 0 or negative as an actual failure.
+     */
     while (offset < state->buffered_length) {
+
+        /* Attempt to write remaining buffered data starting at current offset */
         ssize_t written = libssh2_sftp_write(state->file,
                 state->buffer + offset, state->buffered_length - offset);
+
+        /* Check for write failure (0 = no progress, negative = error) */
         if (written <= 0) {
             guac_user_log(user, GUAC_LOG_INFO,
                     "Buffered SFTP write failed after %d bytes (attempt returned %zd)",
                     offset, written);
-            state->error = 1;
+            state->error = 1;  /* Mark error to prevent further write attempts */
             break;
         }
+
+        /* Advance offset by the number of bytes successfully written */
         offset += (int)written;
     }
 
+    /* Log successful flush for debugging purposes */
     if (!state->error)
         guac_user_log(user, GUAC_LOG_DEBUG,
                 "Flushed %d buffered bytes to remote file", state->buffered_length);
 
+    /*
+     * Reset buffer length regardless of success or failure. On error, we don't
+     * want to retry the same data; on success, the buffer is now empty.
+     */
     state->buffered_length = 0;
 }
 
