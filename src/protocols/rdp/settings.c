@@ -832,9 +832,10 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 IDX_HOSTNAME, "");
 
     /* If port specified, use it, otherwise use an appropriate default */
-    settings->port =
-        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv, IDX_PORT,
-                settings->security_mode == GUAC_SECURITY_VMCONNECT ? RDP_DEFAULT_VMCONNECT_PORT : RDP_DEFAULT_PORT);
+    settings->port = (unsigned short)
+        guac_user_parse_args_int_bounded(user, GUAC_RDP_CLIENT_ARGS, argv, IDX_PORT,
+                settings->security_mode == GUAC_SECURITY_VMCONNECT ? RDP_DEFAULT_VMCONNECT_PORT : RDP_DEFAULT_PORT,
+                GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
 
     /* Look for timeout settings and parse or set defaults. */
     settings->timeout =
@@ -1109,8 +1110,8 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
 
     /* Port for SFTP connection */
     settings->sftp_port =
-        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SFTP_PORT, "22");
+        guac_user_parse_args_int_string_bounded(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_PORT, "22", GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
 
     /* SFTP timeout */
     settings->sftp_timeout =
@@ -1260,9 +1261,9 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 IDX_GATEWAY_HOSTNAME, NULL);
 
     /* If gateway port specified, use it */
-    settings->gateway_port =
-        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_GATEWAY_PORT, 443);
+    settings->gateway_port = (unsigned short)
+        guac_user_parse_args_int_bounded(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_GATEWAY_PORT, 443, GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
 
     /* Set gateway domain */
     settings->gateway_domain =
@@ -1330,7 +1331,7 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     if (settings->wol_send_packet) {
         
         /* If WoL has been requested but no MAC address given, log a warning. */
-        if(strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
+        if (strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
             guac_user_log(user, GUAC_LOG_WARNING, "WoL was enabled, but no "
                     "MAC address was provided. WoL will not be sent.");
             settings->wol_send_packet = 0;
@@ -1348,8 +1349,8 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         
         /* Parse the WoL broadcast port. */
         settings->wol_udp_port = (unsigned short)
-            guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+            guac_user_parse_args_int_bounded(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT, GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
         
         /* Parse the WoL wait time. */
         settings->wol_wait_time =
