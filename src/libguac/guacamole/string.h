@@ -26,26 +26,77 @@
  * @file string.h
  */
 
+#include <limits.h>
 #include <stddef.h>
 #include <string.h>
 
 /**
- * Convert the provided unsigned integer into a string, returning the number of
+ *  String buffer size needed to represent 'int', and 'unsigned
+ *  short' in decimal format. This includes the NULL terminator.
+ * 
+ *  Integer size can vary by platform, but short size is consistent across
+ *  all modern platforms.
+ */
+#if   (__SIZEOF_INT__ == 2)     /* INT_MIN: '-32768' */
+    #define GUAC_INT_STRING_BUFSIZE 7
+#elif (__SIZEOF_INT__ == 4)     /* INT_MIN: '-2147483648' */
+    #define GUAC_INT_STRING_BUFSIZE 12
+#elif (__SIZEOF_INT__ == 8)     /* INT_MIN: '-9223372036854775808' */
+    #define GUAC_INT_STRING_BUFSIZE 21
+#else
+    #error Unsupported int size
+#endif
+
+#define GUAC_USHORT_STRING_BUFSIZE 6   /* '65535' */
+
+/**
+ * Convenience macros for the minimum and maximum values for int and and
+ * unsigned short data types.
+ */
+#define GUAC_ITOA_INT_MIN     INT_MIN
+#define GUAC_ITOA_INT_MAX     INT_MAX
+
+#define GUAC_ITOA_USHORT_MAX  USHRT_MAX
+#define GUAC_ITOA_USHORT_MIN  0
+
+/**
+ * Convert the provided integer into a string, returning the number of
  * characters written into the destination string, or a negative value if an
  * error occurs.
  *
  * @param dest
  *     The destination string to copy the data into, which should already be
  *     allocated and at a size that can handle the string representation of the
- *     inteer.
+ *     integer (at least GUAC_INT_STRING_BUFSIZE bytes).
  *
  * @param integer
- *     The unsigned integer to convert to a string.
+ *     The integer to convert to a string.
  * 
  * @return
- *     The number of characters written into the dest string.
+ *     The number of characters written into the dest string (excluding the
+ *     null terminator), or a negative value if an error occurs.
  */
-int guac_itoa(char* restrict dest, unsigned int integer);
+int guac_itoa(char* restrict dest, int integer);
+
+/**
+ * Converts the given integer to a string safely. The resulting string will be
+ * written into the provided buffer, ensuring that the buffer is not exceeded.
+ * The conversion will fail if the buffer is too small to hold the result.
+ *
+ * @param dest
+ *     The buffer to write the converted string into.
+ *
+ * @param dest_size
+ *     The size of the provided buffer, in bytes.
+ *
+ * @param integer
+ *     The integer to convert to a string.
+ *
+ * @return
+ *     The number of characters written (excluding the null terminator), or a
+ *     negative value if an error occurs (-1 if the buffer was too small).
+ */
+int guac_itoa_safe(char* restrict dest, size_t dest_size, int integer);
 
 /**
  * Copies a limited number of bytes from the given source string to the given

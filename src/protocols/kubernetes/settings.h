@@ -61,7 +61,7 @@ typedef struct guac_kubernetes_settings {
     /**
      * The port of the Kubernetes server to connect to.
      */
-    int port;
+    unsigned short port;
 
     /**
      * The name of the Kubernetes namespace of the pod containing the container
