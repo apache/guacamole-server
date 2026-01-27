@@ -26,10 +26,12 @@
 #include "terminal/terminal.h"
 
 #include <guacamole/mem.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
 
 #include <sys/types.h>
+#include <limits.h>
 #include <regex.h>
 #include <stdlib.h>
 #include <string.h>
@@ -461,8 +463,8 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
 
     /* Read port */
     settings->port =
-        guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_TELNET_DEFAULT_PORT);
+        guac_user_parse_args_int_string_bounded(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_PORT, GUAC_TELNET_DEFAULT_PORT, GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
 
     /* Read connection timeout */
     settings->timeout =
@@ -578,7 +580,7 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
     if (settings->wol_send_packet) {
         
         /* If WoL has been enabled but no MAC provided, log warning and disable. */
-        if(strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
+        if (strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
             guac_user_log(user, GUAC_LOG_WARNING, "WoL was enabled, but no "
                     "MAC address was provided. WoL will not be sent.");
             settings->wol_send_packet = false;
@@ -596,8 +598,8 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         
         /* Parse the WoL broadcast port. */
         settings->wol_udp_port = (unsigned short)
-            guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+            guac_user_parse_args_int_bounded(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT, GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
         
         /* Parse the WoL wait time. */
         settings->wol_wait_time =

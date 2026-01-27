@@ -26,9 +26,11 @@
 #include "settings.h"
 
 #include <guacamole/mem.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -459,9 +461,9 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
 
-    settings->port =
-        guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_PORT, 0);
+    settings->port = (unsigned short)
+        guac_user_parse_args_int_bounded(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_PORT, 0, GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
 
     settings->username =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
@@ -530,9 +532,9 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
                 IDX_DEST_HOST, NULL);
 
     /* VNC repeater port */
-    settings->dest_port =
-        guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_DEST_PORT, 0);
+    settings->dest_port = (unsigned short)
+        guac_user_parse_args_int_bounded(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_DEST_PORT, 0, GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
 #endif
 
     /* Set encodings if specified */
@@ -594,8 +596,8 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
 
     /* Port for SFTP connection */
     settings->sftp_port =
-        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_SFTP_PORT, "22");
+        guac_user_parse_args_int_string_bounded(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SFTP_PORT, "22", GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
 
     /* SFTP connection timeout */
     settings->sftp_timeout =
@@ -725,7 +727,7 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     if (settings->wol_send_packet) {
         
         /* If WoL has been enabled but no MAC provided, log warning and disable. */
-        if(strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
+        if (strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
             guac_user_log(user, GUAC_LOG_WARNING, "WoL was enabled, but no "
                     "MAC address was provided. WoL will not be sent.");
             settings->wol_send_packet = false;
@@ -743,8 +745,8 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         
         /* Parse the WoL broadcast port. */
         settings->wol_udp_port = (unsigned short)
-            guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+            guac_user_parse_args_int_bounded(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT, GUAC_ITOA_USHORT_MIN, GUAC_ITOA_USHORT_MAX);
         
         /* Parse the WoL wait time. */
         settings->wol_wait_time =
