@@ -33,7 +33,6 @@
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
 #include "color.h"
-#include "config.h"
 #include "error.h"
 #include "fs.h"
 #include "gdi.h"
@@ -53,6 +52,7 @@
 
 #include <freerdp/addin.h>
 #include <freerdp/channels/channels.h>
+#include <freerdp/client.h>
 #include <freerdp/client/channels.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/gdi/gdi.h>
@@ -76,6 +76,7 @@
 #include <winpr/synch.h>
 #include <winpr/wtypes.h>
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -327,6 +328,149 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
 
 }
 
+#ifdef HAVE_FREERDP_AAD_SUPPORT
+#include "aad.h"
+
+/**
+ * Callback invoked by FreeRDP when an Azure AD access token is required.
+ *
+ * @param instance
+ *     The FreeRDP instance associated with the RDP session.
+ *
+ * @param tokenType
+ *     The type of access token being requested (ACCESS_TOKEN_TYPE_AAD or
+ *     ACCESS_TOKEN_TYPE_AVD).
+ *
+ * @param token
+ *     Pointer to a string which will receive the access token. This function
+ *     must allocate and populate this string.
+ *
+ * @param count
+ *     Number of additional variadic arguments.
+ *
+ * @param ...
+ *     Additional arguments (for AAD: scope and req_cnf)
+ *
+ * @return
+ *     TRUE if an access token was successfully obtained, FALSE otherwise.
+ */
+static BOOL rdp_freerdp_get_access_token(freerdp* instance,
+        AccessTokenType tokenType, char** token, size_t count, ...) {
+
+    rdpContext* context = GUAC_RDP_CONTEXT(instance);
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+
+    *token = NULL;
+
+    /* Only handle ACCESS_TOKEN_TYPE_AAD for now */
+    if (tokenType != ACCESS_TOKEN_TYPE_AAD) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "AAD: Unsupported token type: %d", tokenType);
+        return FALSE;
+    }
+
+    /* Extract scope and req_cnf from variadic arguments */
+    if (count < 2) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "AAD: Expected 2 arguments (scope and req_cnf)");
+        return FALSE;
+    }
+
+    va_list ap;
+    va_start(ap, count);
+    const char* scope = va_arg(ap, const char*);
+    const char* req_cnf = va_arg(ap, const char*);
+    va_end(ap);
+
+    /* Prompt for missing credentials if the client supports it */
+    if (settings->username == NULL || settings->password == NULL) {
+
+        if (!guac_client_owner_supports_required(client)) {
+            guac_client_log(client, GUAC_LOG_ERROR,
+                    "AAD: Username and password are required for AAD "
+                    "authentication, and client does not support prompting");
+            return FALSE;
+        }
+
+        char* required_params[3] = {NULL};
+        int i = 0;
+
+        if (settings->username == NULL) {
+            guac_argv_register(GUAC_RDP_ARGV_USERNAME,
+                    guac_rdp_argv_callback, NULL, 0);
+            required_params[i++] = GUAC_RDP_ARGV_USERNAME;
+        }
+
+        if (settings->password == NULL) {
+            guac_argv_register(GUAC_RDP_ARGV_PASSWORD,
+                    guac_rdp_argv_callback, NULL, 0);
+            required_params[i++] = GUAC_RDP_ARGV_PASSWORD;
+        }
+
+        required_params[i] = NULL;
+
+        guac_client_owner_send_required(client,
+                (const char**) required_params);
+        guac_argv_await((const char**) required_params);
+
+        /* Check that credentials were provided */
+        if (settings->username == NULL || settings->password == NULL) {
+            guac_client_log(client, GUAC_LOG_ERROR,
+                    "AAD: Username and password are required for AAD "
+                    "authentication");
+            return FALSE;
+        }
+    }
+
+    /* Read client ID from FreeRDP settings (GatewayAvdClientID), which
+     * defaults to Microsoft's well-known AVD client ID */
+    const char* client_id = freerdp_settings_get_string(
+            context->settings, FreeRDP_GatewayAvdClientID);
+    if (client_id == NULL || strlen(client_id) == 0) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "AAD: No client ID available from FreeRDP settings");
+        return FALSE;
+    }
+
+    /* Use "common" tenant for multi-tenant authentication */
+    const char* tenant_id = GUAC_AAD_DEFAULT_TENANT_ID;
+
+    /* Decode the FreeRDP scope, which arrives pre-URL-encoded (e.g., %3A
+     * instead of :). We must decode it to avoid double-encoding. */
+    char* decoded_scope = guac_rdp_percent_decode(scope);
+
+    /* Prepare AAD parameters */
+    guac_rdp_aad_params params = {
+        .tenant_id = (char*) tenant_id,
+        .client_id = (char*) client_id,
+        .username = settings->username,
+        .password = settings->password,
+        .scope = decoded_scope,
+        .req_cnf = (char*) req_cnf
+    };
+
+    /* Retrieve access token via automated auth code flow */
+    char* access_token = guac_rdp_aad_get_token_authcode(client, &params);
+
+    if (access_token == NULL) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "AAD: Failed to obtain access token");
+        guac_mem_free(decoded_scope);
+        return FALSE;
+    }
+
+    *token = access_token;
+    guac_mem_free(decoded_scope);
+
+    guac_client_log(client, GUAC_LOG_INFO,
+        "AAD: Obtained access token");
+
+    return TRUE;
+}
+#endif
+
 #ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
 /**
  * Callback invoked by FreeRDP when the SSL/TLS certificate of the RDP server
@@ -552,6 +696,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
     #endif
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
+
+#ifdef HAVE_FREERDP_AAD_SUPPORT
+    rdp_inst->GetAccessToken = rdp_freerdp_get_access_token;
+#endif
 
 #ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
     rdp_inst->VerifyCertificateEx = rdp_freerdp_verify_certificate;

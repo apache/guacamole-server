@@ -38,6 +38,7 @@ nodist_libguac_client_rdp_la_SOURCES =  \
     _generated_keymaps.c
 
 libguac_client_rdp_la_SOURCES =                  \
+    aad.c                                        \
     argv.c                                       \
     beep.c                                       \
     channels/audio-input/audio-buffer.c          \
@@ -84,6 +85,7 @@ libguac_client_rdp_la_SOURCES =                  \
     user.c
 
 noinst_HEADERS =                                 \
+    aad.h                                        \
     argv.h                                       \
     beep.h                                       \
     channels/audio-input/audio-buffer.h          \
@@ -141,7 +143,8 @@ libguac_client_rdp_la_LDFLAGS = \
     -version-info 0:0:0         \
     @CAIRO_LIBS@                \
     @PTHREAD_LIBS@              \
-    @RDP_LIBS@
+    @RDP_LIBS@                  \
+    @CURL_LIBS@
 
 libguac_client_rdp_la_LIBADD = \
     @COMMON_LTLIB@             \

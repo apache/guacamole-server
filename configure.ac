@@ -1156,6 +1156,21 @@ then
     [AC_MSG_RESULT([no])])
 fi
 
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_DECLS([FreeRDP_AadSecurity],
+                   [have_freerdp_aad=yes], [have_freerdp_aad=no],
+                   [#include <freerdp/settings.h>])
+
+    if test "x${have_freerdp_aad}" = "xyes"
+    then
+        PKG_CHECK_MODULES([CURL], [libcurl],
+            [AC_DEFINE([HAVE_FREERDP_AAD_SUPPORT],,
+                [Defined if FreeRDP supports Azure AD authentication and libcurl is available])],
+            [AC_MSG_WARN([libcurl not found - Azure AD authentication disabled])])
+    fi
+fi
+
 # Restore CPPFLAGS, removing FreeRDP-specific options needed for testing
 CPPFLAGS="$OLDCPPFLAGS"
 

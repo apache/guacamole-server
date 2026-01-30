@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "common/json.h"
 #include "download.h"
 #include "fs.h"
