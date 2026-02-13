@@ -1166,6 +1166,10 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
             && terminal->visible_cursor_col >= start_column
             && terminal->visible_cursor_col <= end_column) {
 
+        /* Avoid overwriting wide glyphs with cursor overlay. */
+        if (character->width > 1)
+            return;
+
         /* Create copy of character with cursor attribute set */
         guac_terminal_char cursor_character = *character;
         cursor_character.attributes.cursor = true;
