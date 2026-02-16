@@ -624,9 +624,12 @@ static int guac_rdp_handle_connection(guac_client* client) {
         do {
 
             /* Handle any queued FreeRDP events (this may result in RDP messages
-             * being sent), aborting later if FreeRDP event handling fails */
-            if (!guac_rdp_handle_events(rdp_client))
+             * being sent), aborting immediately if FreeRDP event handling fails
+             * to prevent the event loop from spins on a transport-level failure */
+            if (!guac_rdp_handle_events(rdp_client)) {
                 wait_result = -1;
+                break;
+            }
 
             /* Test whether the RDP server is closing the connection */
 #ifdef HAVE_DISCONNECT_CONTEXT
