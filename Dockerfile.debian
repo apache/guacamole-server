@@ -73,7 +73,7 @@ ARG FREERDP_OPTS="\
     -DWITH_SWSCALE=OFF \
     -DWITH_WAYLAND=OFF \
     -DWITH_X11=OFF \
-    -DWITH_X264=OFF \
+    -DWITH_X264=ON \
     -DWITH_XCURSOR=ON \
     -DWITH_XEXT=ON \
     -DWITH_XI=OFF \
@@ -160,7 +160,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev                    \
     libpango1.0-dev               \
     libpulse-dev                  \
-    uuid-dev
+    uuid-dev                      \
+    libx264-dev
 
 
 # Copy generic, automatic build script
@@ -298,6 +299,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libpangocairo-1.0-0           \
         fonts-dejavu                  \
         libpulse0                     \
+        x264                          \
         fonts-liberation           && \
     xargs apt-get install -y < ${PREFIX_DIR}/DEPENDENCIES && \
     apt-get clean
