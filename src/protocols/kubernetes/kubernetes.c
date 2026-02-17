@@ -36,6 +36,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * Callback invoked by libwebsockets for events related to a WebSocket being
@@ -252,6 +253,7 @@ void* guac_kubernetes_client_thread(void* data) {
     options->font_size = settings->font_size;
     options->color_scheme = settings->color_scheme;
     options->backspace = settings->backspace;
+    options->linux_console_keys = strcmp(settings->terminal_type, "linux") == 0;
 
     /* Create terminal */
     kubernetes_client->term = guac_terminal_create(client, options);

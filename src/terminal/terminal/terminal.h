@@ -238,6 +238,13 @@ typedef struct guac_terminal_options {
      */
     int backspace;
 
+    /**
+     * Whether to use Linux terminal type compatibility mode for key encoding.
+     * When true, key sequences match those expected by a Linux console
+     * ($TERM=linux). When false, standard xterm/VT220 sequences are used.
+     */
+    bool linux_console_keys;
+
 } guac_terminal_options;
 
 /**
