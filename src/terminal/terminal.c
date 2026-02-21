@@ -1551,8 +1551,9 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
                 return guac_terminal_send_string(term, backspace_str);
             }
             if (keysym == 0xFF09 || keysym == 0xFF89) return guac_terminal_send_string(term, "\x09"); /* Tab */
+            if (keysym == 0xFF0A) return guac_terminal_send_string(term, "\x0A");                     /* Line Feed */
             if (keysym == 0xFF0D || keysym == 0xFF8D) return guac_terminal_send_string(term, "\x0D"); /* Enter */
-            if (keysym == 0xFF1B) return guac_terminal_send_string(term, "\x1B"); /* Esc */
+            if (keysym == 0xFF1B) return guac_terminal_send_string(term, "\x1B");                     /* Esc */
 
             if (keysym == 0xFF50 || keysym == 0xFF95) return guac_terminal_send_string(term, "\x1B[1~"); /* Home */
 
