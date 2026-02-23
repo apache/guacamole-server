@@ -247,6 +247,7 @@ rdp_keymaps =                                \
     $(srcdir)/keymaps/pt_br_qwerty.keymap    \
     $(srcdir)/keymaps/pt_pt_qwerty.keymap    \
     $(srcdir)/keymaps/ro_ro_qwerty.keymap    \
+    $(srcdir)/keymaps/ru_ru_qwerty.keymap    \
     $(srcdir)/keymaps/sv_se_qwerty.keymap    \
     $(srcdir)/keymaps/da_dk_qwerty.keymap    \
     $(srcdir)/keymaps/tr_tr_qwerty.keymap
