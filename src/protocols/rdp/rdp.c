@@ -764,7 +764,7 @@ void* guac_rdp_client_thread(void* data) {
 
         /* Just send the packet, or return NULL if failed. */
         else {
-            guac_client_log(client, GUAC_LOG_DEBUG, "Sending RDP Wake-on-LAN packet.");
+            guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet.");
 
             if (guac_wol_wake(settings->wol_mac_addr,
                     settings->wol_broadcast_addr,
