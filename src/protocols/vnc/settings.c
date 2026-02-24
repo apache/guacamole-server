@@ -89,6 +89,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "recording-exclude-output",
     "recording-exclude-mouse",
     "recording-include-keys",
+    "recording-include-clipboard",
     "create-recording-path",
     "recording-write-existing",
     "clipboard-buffer-size",
@@ -354,6 +355,16 @@ enum VNC_ARGS_IDX {
      * as passwords, credit card numbers, etc.
      */
     IDX_RECORDING_INCLUDE_KEYS,
+
+    /**
+     * Whether clipboard paste data should be included in the session recording.
+     * Clipboard data is NOT included by default within the recording,
+     * as doing so has privacy and security implications. Including clipboard data
+     * may be necessary in certain auditing contexts, but should only be done
+     * with caution. Clipboard data can easily contain sensitive information, such
+     * as passwords, credit card numbers, etc.
+     */
+    IDX_RECORDING_INCLUDE_CLIPBOARD,
 
     /**
      * Whether the specified screen recording path should automatically be
@@ -677,6 +688,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->recording_include_keys =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_RECORDING_INCLUDE_KEYS, false);
+
+    /* Parse clipboard inclusion flag */
+    settings->recording_include_clipboard =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_RECORDING_INCLUDE_CLIPBOARD, false);
 
     /* Parse path creation flag */
     settings->create_recording_path =
