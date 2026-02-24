@@ -49,6 +49,11 @@
 #define GUAC_COMMON_RECORDING_MAX_NAME_LENGTH 2048
 
 /**
+ * The block size to use when sending clipboard data in a recording.
+ */
+#define GUAC_RECORDING_CLIPBOARD_BLOCK_SIZE 4096
+
+/**
  * An in-progress session recording, attached to a guac_client instance such
  * that output Guacamole instructions may be dynamically intercepted and
  * written to a file.
@@ -60,6 +65,12 @@ typedef struct guac_recording {
      * to any particular user.
      */
     guac_socket* socket;
+
+    /**
+     * The stream used for recording clipboard data. This stream is allocated
+     * once during recording creation and reused for all clipboard events.
+     */
+    guac_stream* clipboard_stream;
 
     /**
      * Non-zero if output which is broadcast to each connected client
@@ -94,6 +105,15 @@ typedef struct guac_recording {
      * passwords, credit card numbers, etc.
      */
     int include_keys;
+
+    /**
+     * Non-zero if clipboard paste data should be included in the session
+     * recording, zero otherwise. Including clipboard data within the recording may
+     * be necessary in certain auditing contexts, but should only be done with
+     * caution. Clipboard can easily contain sensitive information, such as
+     * passwords, credit card numbers, etc.
+     */
+    int include_clipboard;
 
 } guac_recording;
 
@@ -152,6 +172,13 @@ typedef struct guac_recording {
  *     Non-zero if writing to an existing file should be allowed, or zero
  *     otherwise.
  *
+ * @param include_clipboard
+ *     Non-zero if clipboard paste data should be included in the session
+ *     recording, zero otherwise. Including clipboard data within the recording may
+ *     be necessary in certain auditing contexts, but should only be done with
+ *     caution. Clipboard can easily contain sensitive information, such as
+ *     passwords, credit card numbers, etc.
+ *
  * @return
  *     A new guac_recording structure representing the in-progress
  *     recording if the recording file has been successfully created and a
@@ -160,7 +187,7 @@ typedef struct guac_recording {
 guac_recording* guac_recording_create(guac_client* client,
         const char* path, const char* name, int create_path,
         int include_output, int include_mouse, int include_touch,
-        int include_keys, int allow_write_existing);
+        int include_keys, int allow_write_existing, int include_clipboard);
 
 /**
  * Frees the resources associated with the given in-progress recording. Note
@@ -256,5 +283,69 @@ void guac_recording_report_touch(guac_recording* recording,
 void guac_recording_report_key(guac_recording* recording,
         int keysym, int pressed);
 
-#endif
+/**
+ * Reports a clipboard paste instruction within the recording.
+ * The full structure consists of clipboard instruction, one or more
+ * blob instructions and end instruction.
+ *
+ * @param recording
+ *     The guac_recording associated with the clipboard instruction.
+ *
+ * @param stream
+ *     The guac_stream allocated for the clipboard paste instruction.
+ *
+ * @param mimetype
+ *     The clipboard data mimetype
+ */
+void guac_recording_report_clipboard_begin(guac_recording* recording,
+        guac_stream* stream, char* mimetype);
 
+/**
+ * Report a clipboard paste blob within the recording.
+ *
+ * @param recording
+ *     The guac_recording associated with the clipboard instruction.
+ *
+ * @param stream
+ *     The guac_stream associated with the clipboard instruction.
+ *
+ * @param data
+ *     The clipboard blob data.
+ *
+ * @param length
+ *     Length of the blob data.
+ */
+void guac_recording_report_clipboard_blob(guac_recording* recording,
+        guac_stream* stream, void* data, int length);
+
+/**
+ * Report a clipboard paste end instruction within the recording.
+ *
+ * @param recording
+ *     The guac_recording associated with the clipboard instruction.
+ *
+ * @param stream
+ *     The guac_stream associated with the clipboard instruction.
+ */
+void guac_recording_report_clipboard_end(guac_recording* recording,
+        guac_stream* stream);
+
+/**
+ * Reports clipboard data within the recording.
+ *
+ * @param recording
+ *     The guac_recording to write clipboard data to.
+ *
+ * @param mimetype
+ *     The mimetype of the clipboard data (e.g., "text/plain").
+ *
+ * @param data
+ *     The clipboard data buffer.
+ *
+ * @param length
+ *     The length of the clipboard data in bytes.
+ */
+void guac_recording_report_clipboard(guac_recording* recording,
+        const char* mimetype, const char* data, int length);
+
+#endif
