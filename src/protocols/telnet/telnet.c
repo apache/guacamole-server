@@ -502,7 +502,8 @@ void* guac_telnet_client_thread(void* data) {
          */
         if (settings->wol_wait_time > 0) {
             guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
-                "and pausing for %d seconds.", settings->wol_wait_time);
+                "and retrying connection check %d times every %d seconds.",
+                GUAC_WOL_DEFAULT_CONNECT_RETRIES, settings->wol_wait_time);
 
             /* Send the Wake-on-LAN request and wait until the server is responsive. */
             if (guac_wol_wake_and_wait(settings->wol_mac_addr,
@@ -513,17 +514,21 @@ void* guac_telnet_client_thread(void* data) {
                     settings->hostname,
                     settings->port,
                     settings->timeout)) {
-                guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet or connect to remote server.");
+                guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet, or connect to remote server.");
                 return NULL;
             }
         }
 
-        /* Just send the packet and continue the connection, or return if failed. */
-        else if (guac_wol_wake(settings->wol_mac_addr,
+        /* Just send the packet, or return NULL if failed. */
+        else {
+            guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet.");
+
+            if (guac_wol_wake(settings->wol_mac_addr,
                     settings->wol_broadcast_addr,
                     settings->wol_udp_port)) {
-            guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet.");
-            return NULL;
+                guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet.");
+                return NULL;
+            }
         }
     }
 
@@ -625,4 +630,3 @@ void* guac_telnet_client_thread(void* data) {
     return NULL;
 
 }
-
