@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include "guacamole/error.h"
 #include "guacamole/rwlock.h"
+#include "guacamole/thread-local.h"
 
 /**
  * The value indicating that the current thread holds neither the read or write
@@ -49,7 +50,7 @@ void guac_rwlock_init(guac_rwlock* lock) {
     pthread_rwlock_init(&(lock->lock), &lock_attributes);
 
     /* Initialize the  flags to 0, as threads won't have acquired it yet */
-    pthread_key_create(&(lock->key), (void *) 0);
+    guac_thread_local_key_create(&(lock->key), (void *) 0);
 
 }
 
@@ -59,7 +60,7 @@ void guac_rwlock_destroy(guac_rwlock* lock) {
     pthread_rwlock_destroy(&(lock->lock));
 
     /* Destroy the thread-local key */
-    pthread_key_delete(lock->key);
+    guac_thread_local_key_delete(lock->key);
 
 }
 
@@ -148,7 +149,7 @@ static int would_overflow_count(uintptr_t current_count) {
 
 int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
 
-    uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
+    uintptr_t key_value = (uintptr_t) guac_thread_local_getspecific(reentrant_rwlock->key);
     uintptr_t flag = get_lock_flag(key_value);
     uintptr_t count = get_lock_count(key_value);
 
@@ -165,7 +166,7 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
 
     /* If the current thread already holds the write lock, increment the count */
     if (flag == GUAC_REENTRANT_LOCK_WRITE_LOCK) {
-        pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
+        guac_thread_local_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
                 flag, count + 1));
 
         /* This thread already has the lock */
@@ -186,7 +187,7 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
     pthread_rwlock_wrlock(&(reentrant_rwlock->lock));
 
     /* Mark that the current thread has the lock, and increment the count */
-    pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
+    guac_thread_local_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
             GUAC_REENTRANT_LOCK_WRITE_LOCK, count + 1));
 
     return 0;
@@ -195,7 +196,7 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
 
 int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
 
-    uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
+    uintptr_t key_value = (uintptr_t) guac_thread_local_getspecific(reentrant_rwlock->key);
     uintptr_t flag = get_lock_flag(key_value);
     uintptr_t count = get_lock_count(key_value);
 
@@ -217,7 +218,7 @@ int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
     ) {
 
         /* Increment the depth counter */
-        pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
+        guac_thread_local_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
                 flag, count + 1));
 
         /* This thread already has the lock */
@@ -228,7 +229,7 @@ int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
     pthread_rwlock_rdlock(&(reentrant_rwlock->lock));
 
     /* Set the flag that the current thread has the read lock */
-    pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
+    guac_thread_local_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
                 GUAC_REENTRANT_LOCK_READ_LOCK, 1));
 
     return 0;
@@ -237,7 +238,7 @@ int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
 
 int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock) {
 
-    uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
+    uintptr_t key_value = (uintptr_t) guac_thread_local_getspecific(reentrant_rwlock->key);
     uintptr_t flag = get_lock_flag(key_value);
     uintptr_t count = get_lock_count(key_value);
 
@@ -261,14 +262,14 @@ int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock) {
         pthread_rwlock_unlock(&(reentrant_rwlock->lock));
 
         /* Set the flag that the current thread holds no locks */
-        pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
+        guac_thread_local_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
                 GUAC_REENTRANT_LOCK_NO_LOCK, 0));
 
         return 0;
     }
 
     /* Do not release the lock since it's still in use - just decrement */
-    pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
+    guac_thread_local_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
             flag, count - 1));
 
     return 0;
