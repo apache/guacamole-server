@@ -34,7 +34,7 @@ ARG BUILD_ARCHITECTURE
 # default, this is detected automatically.
 ARG BUILD_JOBS
 
-# The directory that will house the guacamole-server source during the build 
+# The directory that will house the guacamole-server source during the build
 ARG BUILD_DIR=/tmp/guacamole-server
 
 # FreeRDP version (default to version 2)
@@ -85,7 +85,7 @@ ARG FREERDP_OPTS="\
     -DWITH_OPENH264=OFF \
     -DWITH_OPENSSL=ON \
     -DWITH_OSS=OFF \
-    -DWITH_PCSC=OFF \
+    -DWITH_PCSC=ON \
     -DWITH_PKCS11=OFF \
     -DWITH_PULSE=OFF \
     -DWITH_SERVER=OFF \
@@ -183,7 +183,8 @@ RUN apk add --no-cache                \
         sdl2-dev                      \
         sdl2_ttf-dev                  \
         util-linux-dev                \
-        webkit2gtk-dev
+        webkit2gtk-dev \
+        pcsc-lite-dev
 
 # Copy generic, automatic build script
 COPY ./src/guacd-docker/bin/autobuild.sh ${BUILD_DIR}/src/guacd-docker/bin/
@@ -308,6 +309,47 @@ ARG PREFIX_DIR
 
 # Copy build artifacts into this stage
 COPY --from=guacamole-server ${PREFIX_DIR} ${PREFIX_DIR}
+
+RUN apk add --no-cache \
+    git \
+    build-base \
+    autoconf \
+    automake \
+    libtool \
+    linux-pam-dev \
+    libusb-dev \
+    wget \
+    xz \
+    meson \
+    ninja \
+    flex \
+    bison \
+    python3 \
+    py3-pip \
+    eudev-dev \
+    polkit \
+    polkit-dev \
+    pcsc-lite-dev
+
+# Download vsmartcard emulator and install
+RUN apk add --no-cache \
+    help2man
+
+RUN cd /opt && \
+    wget https://github.com/frankmorgner/vsmartcard/releases/download/virtualsmartcard-0.10/virtualsmartcard-0.10.tar.gz && \
+    tar -xzf virtualsmartcard-0.10.tar.gz && \
+    cd virtualsmartcard-0.10 && \
+    ./configure --sysconfdir=/etc && \
+    make && make install && \
+    chmod 777 /opt/virtualsmartcard-0.10/src/vpicc && \
+    mkdir /run/pcscd && chmod 777 /run/pcscd
+
+# Clone and build pcsc-lite from source
+RUN git clone https://github.com/LudovicRousseau/PCSC.git /opt/pcsc-lite && \
+    cd /opt/pcsc-lite && \
+    meson setup builddir -Dlibsystemd=false && \
+    meson compile -C builddir && \
+    meson install -C builddir
 
 # Bring runtime environment up to date and install runtime dependencies
 RUN apk add --no-cache                \
