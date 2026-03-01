@@ -259,6 +259,8 @@ guac_display_layer* guac_display_add_layer(guac_display* display, guac_layer* la
     display_layer->layer = layer;
     display_layer->opaque = opaque;
 
+    pthread_mutex_init(&display_layer->path_lock, NULL);
+
     /* Init tracking of pending and last frames (NOTE: We need not acquire the
      * display-wide last_frame.lock here as this new layer will not actually be
      * part of the last frame layer list until the pending frame is flushed) */
@@ -363,6 +365,8 @@ void guac_display_remove_layer(guac_display_layer* display_layer) {
 
     guac_mem_free(display_layer->last_frame.buffer);
     guac_mem_free(display_layer->pending_frame_cells);
+
+    pthread_mutex_destroy(&display_layer->path_lock);
 
     guac_mem_free(display_layer);
 
