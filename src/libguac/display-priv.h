@@ -516,6 +516,12 @@ struct guac_display_layer {
      */
     int opaque;
 
+    /**
+     * Lock used to ensure sequences of Guacamole protocol path instructions
+     * for this layer are not interleaved when sent from concurrent threads.
+     */
+    pthread_mutex_t path_lock;
+
     /* ---------------- LAYER PREVIOUS FRAME STATE ---------------- */
 
     /**

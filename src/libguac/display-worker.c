@@ -101,14 +101,20 @@ static void guac_display_layer_clear_non_opaque(guac_display_layer* display_laye
     guac_socket* socket = client->socket;
 
     /* Clear destination region only if necessary due to the relevant layer
-     * being non-opaque */
+     * being non-opaque. The rect+cfill pair must be sent atomically to
+     * prevent interleaving with concurrent workers operating on the same
+     * layer. */
     if (!display_layer->opaque) {
+
+        pthread_mutex_lock(&display_layer->path_lock);
 
         guac_protocol_send_rect(socket, layer, dirty->left, dirty->top,
                 guac_rect_width(dirty), guac_rect_height(dirty));
 
         guac_protocol_send_cfill(socket, GUAC_COMP_ROUT, layer,
                 0x00, 0x00, 0x00, 0xFF);
+
+        pthread_mutex_unlock(&display_layer->path_lock);
 
     }
 
