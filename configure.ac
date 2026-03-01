@@ -812,8 +812,9 @@ then
     ],
     [AC_MSG_RESULT([no])],
     [AC_MSG_RESULT([yes])]
-    [AC_MSG_ERROR([
+    [AC_MSG_WARN([
   --------------------------------------------
+   !!! WARNING !!!
    You are building against a development version of FreeRDP. Non-release
    versions of FreeRDP may have differences in behavior that are impossible to
    check for at build time. This may result in memory leaks or other strange
@@ -821,8 +822,8 @@ then
 
    *** PLEASE USE A RELEASED VERSION OF FREERDP IF POSSIBLE ***
 
-   If you are ABSOLUTELY CERTAIN that building against this version of FreeRDP
-   is OK, rerun configure with the --enable-allow-freerdp-snapshots
+   You can suppress this warning by re-running the configure script with the
+   --enable-allow-freerdp-snapshots flag.
   --------------------------------------------])])
 
 fi
