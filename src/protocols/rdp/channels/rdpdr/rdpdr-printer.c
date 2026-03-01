@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/rdpdr/rdpdr-printer.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "print-job.h"

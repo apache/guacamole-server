@@ -118,6 +118,11 @@ typedef enum guac_rdp_security {
     GUAC_SECURITY_VMCONNECT,
 
     /**
+     * Azure Active Directory authentication.
+     */
+    GUAC_SECURITY_AAD,
+
+    /**
      * Negotiate a security method supported by both server and client.
      */
     GUAC_SECURITY_ANY
@@ -766,4 +771,3 @@ int guac_rdp_get_height(freerdp* rdp);
 int guac_rdp_get_depth(freerdp* rdp);
 
 #endif
-

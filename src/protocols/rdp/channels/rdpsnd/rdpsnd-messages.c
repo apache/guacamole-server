@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/rdpsnd/rdpsnd-messages.h"
 #include "channels/rdpsnd/rdpsnd.h"
 #include "rdp.h"
