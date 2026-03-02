@@ -43,6 +43,9 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/audio-input/audio-buffer.c          \
     channels/audio-input/audio-input.c           \
     channels/cliprdr.c                           \
+    channels/rdpecam/rdpecam.c                   \
+    channels/rdpecam/rdpecam_caps.c              \
+    channels/rdpecam/rdpecam_sink.c              \
     channels/common-svc.c                        \
     channels/disp.c                              \
     channels/pipe-svc.c                          \
@@ -89,6 +92,9 @@ noinst_HEADERS =                                 \
     channels/audio-input/audio-buffer.h          \
     channels/audio-input/audio-input.h           \
     channels/cliprdr.h                           \
+    channels/rdpecam/rdpecam.h                   \
+    channels/rdpecam/rdpecam_caps.h              \
+    channels/rdpecam/rdpecam_sink.h              \
     channels/common-svc.h                        \
     channels/disp.h                              \
     channels/pipe-svc.h                          \
@@ -120,6 +126,8 @@ noinst_HEADERS =                                 \
     plugins/channels.h                           \
     plugins/guacai/guacai-messages.h             \
     plugins/guacai/guacai.h                      \
+    plugins/guacrdpecam/guacrdpecam.h            \
+    plugins/guacrdpecam/rdpecam_proto.h          \
     plugins/ptr-string.h                         \
     pointer.h                                    \
     print-job.h                                  \
@@ -153,7 +161,8 @@ libguac_client_rdp_la_LIBADD = \
 
 freerdp_LTLIBRARIES =            \
     libguac-common-svc-client.la \
-    libguacai-client.la
+    libguacai-client.la          \
+    libguacrdpecam-client.la
 
 freerdpdir = @FREERDP_PLUGIN_DIR@
 
@@ -201,6 +210,34 @@ libguacai_client_la_LDFLAGS =      \
 libguacai_client_la_LIBADD = \
     @COMMON_LTLIB@           \
     @LIBGUAC_LTLIB@
+
+#
+# RDPECAM (Camera Redirection) - FreeRDP plugin
+#
+
+libguacrdpecam_client_la_SOURCES = \
+    plugins/guacrdpecam/guacrdpecam.c \
+    plugins/guacrdpecam/rdpecam_proto.c
+
+libguacrdpecam_client_la_CFLAGS = \
+    @COMMON_INCLUDE@         \
+    @COMMON_SSH_INCLUDE@     \
+    @LIBGUAC_INCLUDE@        \
+    @RDP_CFLAGS@
+
+libguacrdpecam_client_la_LDFLAGS = \
+    -module -avoid-version -shared \
+    @PTHREAD_LIBS@                 \
+    @RDP_LIBS@
+
+libguacrdpecam_client_la_LIBADD = \
+    @COMMON_LTLIB@           \
+    @LIBGUAC_LTLIB@          \
+    libguac-client-rdp.la
+
+#
+# RDPECAM (Camera Redirection) - included in main RDP library
+#
 
 #
 # Optional SFTP support

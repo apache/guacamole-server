@@ -790,6 +790,29 @@ then
 
 fi
 
+# Check for WinPR HashTable_Insert (may be missing on older FreeRDP/WinPR 2.x)
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([for HashTable_Insert in WinPR])
+    SAVE_LIBS="$LIBS"
+    LIBS="$RDP_LIBS $LIBS"
+    AC_LINK_IFELSE([AC_LANG_SOURCE([[ 
+        #include <winpr/collections.h>
+        int main(void) {
+            wHashTable* t = HashTable_New(FALSE);
+            const char* k = "k"; const char* v = "v";
+            (void)HashTable_Insert(t, k, v);
+            return 0;
+        }
+    ]])],
+    [AC_MSG_RESULT([yes])
+     AC_DEFINE([HAVE_WINPR_HASHTABLE_INSERT], 1, [WinPR provides HashTable_Insert])],
+    [AC_MSG_RESULT([no])])
+    LIBS="$SAVE_LIBS"
+fi
+
+/* Removed unused WinPR HashTable checks; only HashTable_Insert is required */
+
 # It is difficult or impossible to test for variations in FreeRDP behavior in
 # between releases, as the change in behavior may not (yet) be associated with
 # a corresponding change in version number and may not have any detectable

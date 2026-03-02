@@ -129,6 +129,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-write-existing",
     "resize-method",
     "enable-audio-input",
+    "enable-rdpecam",
     "enable-touch",
     "read-only",
 
@@ -604,6 +605,12 @@ enum RDP_ARGS_IDX {
      * connection, "false" or blank otherwise.
      */
     IDX_ENABLE_AUDIO_INPUT,
+
+    /**
+     * "true" if camera redirection (RDPECAM) should be enabled for the RDP
+     * connection, "false" or blank otherwise.
+     */
+    IDX_ENABLE_RDPECAM,
 
     /**
      * "true" if multi-touch support should be enabled for the RDP connection,
@@ -1260,6 +1267,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->enable_audio_input =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_ENABLE_AUDIO_INPUT, 0);
+
+    /* Camera redirection enable/disable */
+    settings->enable_rdpecam =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_RDPECAM, 1);
 
     /* Set gateway hostname */
     settings->gateway_hostname =
