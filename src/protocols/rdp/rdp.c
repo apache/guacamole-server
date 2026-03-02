@@ -313,15 +313,24 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
         guac_argv_await((const char**) params);
         
         /* Free old values and get new values from settings. */
-        guac_mem_free(*username);
-        guac_mem_free(*password);
-        guac_mem_free(*domain);
-        *username = guac_strdup(settings->username);
-        *password = guac_strdup(settings->password);
-        *domain = guac_strdup(settings->domain);
+        if (username != NULL) {
+            guac_mem_free(*username);
+            *username = guac_strdup(settings->username);
+        }
+
+        if (password != NULL) {
+            guac_mem_free(*password);
+            *password = guac_strdup(settings->password);
+        }
+
+        if (domain != NULL) {
+            guac_mem_free(*domain);
+            *domain = guac_strdup(settings->domain);
+        }
         
     }
     
+    guac_client_log(client, GUAC_LOG_INFO, "aaa10");
     /* Always return TRUE allowing connection to retry. */
     return TRUE;
 
@@ -586,6 +595,18 @@ static int guac_rdp_handle_connection(guac_client* client) {
      */
     guac_rwlock_release_lock(&(rdp_client->lock));
     guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+
+    /*
+     * Prompt for credentials if guacamole if always_prompt_for_credentials is
+     * set on a connection. The purpose of this is to allow the administrator
+     * to force the use of the Guacamole web form to prompt for credentials,
+     * instead of relying on it being done inside the desktop session itself.
+     * (GUACAMOLE-2045)
+     */
+    if (rdp_client->settings->always_prompt_for_credentials) {
+        guac_client_log(client, GUAC_LOG_INFO, "Forcing credential prompt");
+        rdp_freerdp_authenticate(rdp_inst, NULL, NULL, NULL);
+    }
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
