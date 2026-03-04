@@ -643,6 +643,11 @@ void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
 int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
         int keysym, int pressed, guac_rdp_key_source source) {
 
+    /* Map LF to CR: LF has no RDP equivalent so it would fall through to
+     * UnicodeKeyboardEvent() which maps LF to 'J'. */
+    if (keysym == 0xFF0A)
+        keysym = 0xFF0D;
+
     /* Synchronize lock keys states, if this has not yet been done */
     if (!keyboard->synchronized) {
 
