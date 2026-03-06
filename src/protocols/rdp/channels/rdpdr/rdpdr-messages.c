@@ -124,7 +124,7 @@ static void guac_rdpdr_send_client_capability(guac_rdp_common_svc* svc) {
     Stream_Write_UINT16(output_stream, PAKID_CORE_CLIENT_CAPABILITY);
 
     /* Capability count + padding */
-    Stream_Write_UINT16(output_stream, 3);
+    Stream_Write_UINT16(output_stream, 4);
     Stream_Write_UINT16(output_stream, 0); /* Padding */
 
     /* General capability header */
@@ -156,6 +156,11 @@ static void guac_rdpdr_send_client_capability(guac_rdp_common_svc* svc) {
     Stream_Write_UINT16(output_stream, CAP_DRIVE_TYPE);
     Stream_Write_UINT16(output_stream, 8);
     Stream_Write_UINT32(output_stream, DRIVE_CAPABILITY_VERSION_02);
+
+    /* Smartcard support header */
+    Stream_Write_UINT16(output_stream, CAP_SMARTCARD_TYPE);       // Capability type
+    Stream_Write_UINT16(output_stream, 8);                        // Length of capability
+    Stream_Write_UINT32(output_stream, SMARTCARD_CAPABILITY_VERSION_01); // Version
 
     guac_rdp_common_svc_write(svc, output_stream);
     guac_client_log(svc->client, GUAC_LOG_DEBUG, "Capabilities sent.");
@@ -192,14 +197,14 @@ static void guac_rdpdr_send_client_device_list_announce_request(guac_rdp_common_
     /* Get the stream for each of the devices. */
     Stream_Write_UINT32(output_stream, rdpdr->devices_registered);
     for (int i=0; i<rdpdr->devices_registered; i++) {
-        
+
         Stream_Write(output_stream,
                 Stream_Buffer(rdpdr->devices[i].device_announce),
                 rdpdr->devices[i].device_announce_len);
 
         guac_client_log(svc->client, GUAC_LOG_DEBUG, "Registered device %i (%s)",
                 rdpdr->devices[i].device_id, rdpdr->devices[i].device_name);
-        
+
     }
 
     guac_rdp_common_svc_write(svc, output_stream);
@@ -219,7 +224,7 @@ void guac_rdpdr_process_server_announce(guac_rdp_common_svc* svc,
                 "Device redirection may not work as expected.");
         return;
     }
-    
+
     Stream_Read_UINT16(input_stream, major);
     Stream_Read_UINT16(input_stream, minor);
     Stream_Read_UINT32(input_stream, client_id);
@@ -258,7 +263,7 @@ void guac_rdpdr_process_device_reply(guac_rdp_common_svc* svc,
                 "Device redirection may not work as expected.");
         return;
     }
-    
+
     Stream_Read_UINT32(input_stream, device_id);
     Stream_Read_UINT32(input_stream, ntstatus);
 
@@ -301,7 +306,7 @@ void guac_rdpdr_process_device_iorequest(guac_rdp_common_svc* svc,
                 "redirection may not work as expected.");
         return;
     }
-    
+
     /* Read header */
     Stream_Read_UINT32(input_stream, iorequest.device_id);
     Stream_Read_UINT32(input_stream, iorequest.file_id);
@@ -309,7 +314,7 @@ void guac_rdpdr_process_device_iorequest(guac_rdp_common_svc* svc,
     Stream_Read_UINT32(input_stream, iorequest.major_func);
     Stream_Read_UINT32(input_stream, iorequest.minor_func);
 
-    /* If printer, run printer handlers */
+    /* If printer or smartcard, run handlers */
     if (iorequest.device_id >= 0 && iorequest.device_id < rdpdr->devices_registered) {
 
         /* Call handler on device */
@@ -337,7 +342,7 @@ void guac_rdpdr_process_server_capability(guac_rdp_common_svc* svc,
                 "Device redirection may not work as expected.");
         return;
     }
-    
+
     /* Read header */
     Stream_Read_UINT16(input_stream, count);
     Stream_Seek(input_stream, 2);
@@ -356,7 +361,7 @@ void guac_rdpdr_process_server_capability(guac_rdp_common_svc* svc,
                     "expected.");
             break;
         }
-        
+
         Stream_Read_UINT16(input_stream, type);
         Stream_Read_UINT16(input_stream, length);
 
@@ -368,7 +373,7 @@ void guac_rdpdr_process_server_capability(guac_rdp_common_svc* svc,
                     "expected.");
             break;
         }
-        
+
         /* Ignore all for now */
         guac_client_log(svc->client, GUAC_LOG_DEBUG, "Ignoring server capability set type=0x%04x, length=%i", type, length);
         Stream_Seek(input_stream, length - 4);
