@@ -116,6 +116,7 @@ noinst_HEADERS =              \
     display-builtin-cursors.h \
     display-plan.h            \
     display-priv.h            \
+    eintr.h                   \
     encode-jpeg.h             \
     encode-png.h              \
     id.h                      \

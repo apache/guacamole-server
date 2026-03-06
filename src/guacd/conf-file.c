@@ -22,6 +22,7 @@
 #include "conf.h"
 #include "conf-file.h"
 #include "conf-parse.h"
+#include "eintr.h"
 
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
@@ -134,7 +135,11 @@ int guacd_conf_parse_file(guacd_config* conf, int fd) {
     int parsed = 0;
 
     /* Attempt to fill remaining space in buffer */
-    while ((chars_read = read(fd, buffer + length, sizeof(buffer) -  length)) > 0) {
+    while (1) {
+        GUAC_EINTR_RETRY(chars_read, read(fd, buffer + length, sizeof(buffer) - length));
+
+        if (chars_read <= 0)
+            break;
 
         length += chars_read;
 

@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "eintr.h"
 #include "log.h"
 #include "move-fd.h"
 #include "proc.h"
@@ -393,7 +394,12 @@ cleanup_client:
 
     /* Verify whether children were all properly reaped */
     pid_t child_pid;
-    while ((child_pid = waitpid(0, NULL, WNOHANG)) > 0) {
+    while (1) {
+        GUAC_EINTR_RETRY(child_pid, waitpid(0, NULL, WNOHANG));
+
+        if (child_pid <= 0)
+            break;
+
         guacd_log(GUAC_LOG_DEBUG, "Automatically reaped unreaped "
                 "(zombie) child process with PID %i.", child_pid);
     }
@@ -503,7 +509,12 @@ static void guacd_proc_kill(guacd_proc* proc) {
 
     /* Wait for all processes within process group to terminate */
     pid_t child_pid;
-    while ((child_pid = waitpid(-proc->pid, NULL, 0)) > 0 || errno == EINTR) {
+    while (1) {
+        GUAC_EINTR_RETRY(child_pid, waitpid(-proc->pid, NULL, 0));
+
+        if (child_pid <= 0)
+            break;
+
         guacd_log(GUAC_LOG_DEBUG, "Child process %i of connection \"%s\" has terminated",
             child_pid, proc->client->connection_id);
     }
