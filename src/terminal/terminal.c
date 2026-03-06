@@ -148,6 +148,7 @@ void guac_terminal_reset(guac_terminal* term) {
     term->application_keypad_keys = false;
     term->automatic_carriage_return = false;
     term->insert_mode = false;
+    term->bracketed_paste_mode = false;
 
     /* Reset tabs */
     term->tab_interval = 8;
@@ -1432,6 +1433,141 @@ int guac_terminal_send_string(guac_terminal* term, const char* data) {
 
 }
 
+#define IS_UTF8_START_1_BYTE(c) ((c & 0x80) == 0x00)
+#define IS_UTF8_START_2_BYTE(c) ((c & 0xe0) == 0xc0)
+#define IS_UTF8_START_3_BYTE(c) ((c & 0xf0) == 0xe0)
+#define IS_UTF8_START_4_BYTE(c) ((c & 0xf8) == 0xf0)
+#define IS_UTF8_CONTINUATION(c) ((c & 0xc0) == 0x80)
+
+int guac_terminal_send_clipboard(guac_terminal *term) {
+
+    /* Allocate a temporary buffer for filtering the clipboard contents.
+     * As we're removing characters, we know it will be at most the size
+     * of the original plus the two bracketed paste markers. */
+    char *filtered = guac_mem_alloc(term->clipboard->length +
+            strlen(GUAC_TERMINAL_BRACKETED_PASTE_START) +
+            strlen(GUAC_TERMINAL_BRACKETED_PASTE_STOP));
+    uint8_t *src_ptr = (uint8_t *)term->clipboard->buffer;
+    uint8_t *src_end = (uint8_t *)(term->clipboard->buffer + term->clipboard->length);
+    uint8_t *dst_ptr = (uint8_t *)filtered;
+
+    /* Keep track of exactly how much data we've sieved */
+    int filtered_len = 0;
+
+    /* Send the paste start sequence */
+    if (term->bracketed_paste_mode) {
+        size_t seq_len = strlen(GUAC_TERMINAL_BRACKETED_PASTE_START);
+        memcpy(dst_ptr, GUAC_TERMINAL_BRACKETED_PASTE_START, seq_len);
+        dst_ptr += seq_len;
+        filtered_len += seq_len;
+    }
+
+    while (src_ptr < src_end) {
+
+        /* Allow UTF-8 codepoints.
+         * A valid UTF-8 sequence is between one and four bytes in length, and
+         * we can confirm the validity by testing the start bits of each byte.
+         *
+         * A Unicode codepoint is only valid for the smallest UTF-8 sequence that
+         * it fits into; larger UTF-8 sequences can only contain larger codepoints.
+         * Therefore, some bits in the sequence are required to be used as part of
+         * the codepoint number.
+         *
+         * If the sequence is valid, copy it in full. */
+
+        /* UTF-8 1-byte codepoint (U+0000 to U+007F)
+         * Start bits:  0xxxxxxx */
+        if (IS_UTF8_START_1_BYTE(src_ptr[0])) {
+
+            /* Exclude Unicode CO (U+0000 to U+001F) control characters, except
+             * for tab (U+0009), line feed (U+000A) and carriage return (U+000D). */
+            if (!((src_ptr[0] >= 0x00) && (src_ptr[0] < 0x20)) ||
+                   (src_ptr[0] == 0x09) || (src_ptr[0] == 0x0a) || (src_ptr[0] == 0x0d)) {
+                dst_ptr[0] = src_ptr[0];
+                dst_ptr++;
+                filtered_len++;
+                src_ptr++;
+                continue;
+            }
+        }
+
+        /* UTF-8 2-byte codepoint (U+0080 to U+07FF)
+         * Start bits:  110xxxxx 10xxxxxx
+         * Required:    xxxYYYYx xxxxxxxx */
+        else if (IS_UTF8_START_2_BYTE(src_ptr[0])) {
+            if ((src_ptr + 1 < src_end) &&
+                    IS_UTF8_CONTINUATION(src_ptr[1]) &&
+                    ((src_ptr[0] & 0x1e) != 0x00)) {
+
+                /* Exclude Unicode C1 (U+0080 to U+009F) control characters: 11000010 100xxxxx */
+                if ((src_ptr[0] != 0xc2) || ((src_ptr[1] & 0xe0) != 0x80)) {
+                    dst_ptr[0] = src_ptr[0];
+                    dst_ptr[1] = src_ptr[1];
+                    dst_ptr += 2;
+                    filtered_len += 2;
+                    src_ptr += 2;
+                    continue;
+                }
+            }
+        }
+
+        /* UTF-8 3-byte codepoint (U+0800 to U+FFFF)
+         * Start bits:  1110xxxx 10xxxxxx 10xxxxxx
+         * Required:    xxxxYYYY xxYxxxxx xxxxxxxx */
+        else if (IS_UTF8_START_3_BYTE(src_ptr[0])) {
+            if ((src_ptr + 2 < src_end) &&
+                    IS_UTF8_CONTINUATION(src_ptr[1]) &&
+                    IS_UTF8_CONTINUATION(src_ptr[2]) &&
+                    (((src_ptr[0] & 0x0f) != 0x00) ||
+                     ((src_ptr[1] & 0x20) != 0x00))) {
+                dst_ptr[0] = src_ptr[0];
+                dst_ptr[1] = src_ptr[1];
+                dst_ptr[2] = src_ptr[2];
+                dst_ptr += 3;
+                filtered_len += 3;
+                src_ptr += 3;
+                continue;
+            }
+        }
+
+        /* UTF-8 4-byte codepoint (U+010000 to U+10FFFF)
+         * Start bits:  11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+         * Required:    xxxxxYYY xxYYxxxx xxxxxxxx xxxxxxxx */
+        else if (IS_UTF8_START_4_BYTE(src_ptr[0])) {
+            if ((src_ptr + 3 < src_end) &&
+                    IS_UTF8_CONTINUATION(src_ptr[1]) &&
+                    IS_UTF8_CONTINUATION(src_ptr[2]) &&
+                    IS_UTF8_CONTINUATION(src_ptr[3]) &&
+                    (((src_ptr[0] & 0x07) != 0x00) ||
+                     ((src_ptr[1] & 0x30) != 0x00))) {
+                dst_ptr[0] = src_ptr[0];
+                dst_ptr[1] = src_ptr[1];
+                dst_ptr[2] = src_ptr[2];
+                dst_ptr[3] = src_ptr[3];
+                dst_ptr += 4;
+                filtered_len += 4;
+                src_ptr += 4;
+                continue;
+            }
+        }
+
+        /* If the sequence is invalid, skip to the next byte. */
+        src_ptr++;
+    }
+
+    /* Send the paste stop sequence */
+    if (term->bracketed_paste_mode) {
+        size_t seq_len = strlen(GUAC_TERMINAL_BRACKETED_PASTE_STOP);
+        memcpy(dst_ptr, GUAC_TERMINAL_BRACKETED_PASTE_STOP, seq_len);
+        dst_ptr += seq_len;
+        filtered_len += seq_len;
+    }
+
+    int result = guac_terminal_send_data(term, filtered, filtered_len);
+    guac_mem_free(filtered);
+    return result;
+}
+
 static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
     /* Ignore user input if terminal is not started */
@@ -1463,7 +1599,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
         /* Ctrl+Shift+V or Cmd+v (mac style) shortcuts for paste */
         if ((keysym == 'V' && term->mod_ctrl) || (keysym == 'v' && term->mod_meta))
-            return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+            return guac_terminal_send_clipboard(term);
 
         /* If Shift+Tab (Backtab), send the appropriate escape sequence */
         if (term->mod_shift && keysym == 0xFF09) {
@@ -2325,7 +2461,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
 
     /* Paste contents of clipboard on right or middle mouse button up */
     if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE))
-        return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+        return guac_terminal_send_clipboard(term);
 
     /* If left mouse button was just released, stop selection */
     if (released_mask & GUAC_CLIENT_MOUSE_LEFT)
