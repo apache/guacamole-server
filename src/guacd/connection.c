@@ -71,7 +71,8 @@ static int __write_all(int fd, char* buffer, int length) {
     int remaining_length = length;
     while (remaining_length > 0) {
 
-        int written = write(fd, buffer, remaining_length);
+        int written;
+        GUAC_RETRY_EINTR(written, write(fd, buffer, remaining_length));
         if (written < 0)
             return -1;
 
@@ -140,7 +141,12 @@ void* guacd_connection_io_thread(void* data) {
     pthread_create(&write_thread, NULL, guacd_connection_write_thread, params);
 
     /* Transfer data from file descriptor to socket */
-    while ((length = read(params->fd, buffer, sizeof(buffer))) > 0) {
+    while (1) {
+        GUAC_RETRY_EINTR(length, read(params->fd, buffer, sizeof(buffer)));
+
+        if (length <= 0)
+            break;
+
         if (guac_socket_write(params->socket, buffer, length))
             break;
         guac_socket_flush(params->socket);
@@ -329,7 +335,8 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
             guacd_proc_map_add(map, proc);
 
             /* Wait for child to finish */
-            waitpid(proc->pid, NULL, 0);
+            pid_t wait_result;
+            GUAC_RETRY_EINTR(wait_result, waitpid(proc->pid, NULL, 0));
 
             /* Remove client */
             if (guacd_proc_map_remove(map, proc->client->connection_id) == NULL)
