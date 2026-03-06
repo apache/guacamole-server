@@ -20,6 +20,9 @@
 #include "config.h"
 #include "common/io.h"
 
+#include <guacamole/error.h>
+
+#include <errno.h>
 #include <unistd.h>
 
 int guac_common_write(int fd, void* buffer, int length) {
@@ -29,7 +32,8 @@ int guac_common_write(int fd, void* buffer, int length) {
     while (length > 0) {
 
         /* Attempt write */
-        int bytes_written = write(fd, bytes, length);
+        int bytes_written;
+        GUAC_RETRY_EINTR(bytes_written, write(fd, bytes, length));
         if (bytes_written < 0)
             return bytes_written;
 
@@ -51,7 +55,8 @@ int guac_common_read(int fd, void* buffer, int length) {
     while (length > 0) {
 
         /* Attempt read */
-        int bytes_read = read(fd, bytes, length);
+        int bytes_read;
+        GUAC_RETRY_EINTR(bytes_read, read(fd, bytes, length));
         if (bytes_read < 0)
             return bytes_read;
 

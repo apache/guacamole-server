@@ -21,7 +21,9 @@
 #include "terminal/types.h"
 
 #include <guacamole/assert.h>
+#include <guacamole/error.h>
 
+#include <errno.h>
 #include <stdbool.h>
 #include <unistd.h>
 
@@ -97,7 +99,8 @@ int guac_terminal_write_all(int fd, const char* buffer, int size) {
     while (remaining > 0) {
 
         /* Attempt to write data */
-        int ret_val = write(fd, buffer, remaining);
+        int ret_val;
+        GUAC_RETRY_EINTR(ret_val, write(fd, buffer, remaining));
         if (ret_val <= 0)
             return -1;
 
