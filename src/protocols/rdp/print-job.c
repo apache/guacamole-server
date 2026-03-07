@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "eintr.h"
 #include "print-job.h"
 #include "rdp.h"
 
@@ -399,7 +400,11 @@ static void* guac_rdp_print_job_output_thread(void* data) {
             "process...");
 
     /* Read continuously while data remains */
-    while ((length = read(job->output_fd, buffer, sizeof(buffer))) > 0) {
+    while (1) {
+        GUAC_EINTR_RETRY(length, read(job->output_fd, buffer, sizeof(buffer)));
+
+        if (length <= 0)
+            break;
 
         /* Wait for client to be ready for blob */
         if (guac_rdp_print_job_wait_for_ack(job)) {
@@ -627,7 +632,8 @@ int guac_rdp_print_job_write(guac_rdp_print_job* job,
      * on other threads sending outstanding messages (resulting in deadlock if
      * those messages are blocked) */
     int unlock_status = pthread_mutex_unlock(&(rdp_client->message_lock));
-    int write_status = write(job->input_fd, buffer, length);
+    int write_status;
+    GUAC_EINTR_RETRY(write_status, write(job->input_fd, buffer, length));
 
     /* Restore RDP message lock state */
     if (!unlock_status)

@@ -22,6 +22,7 @@
 #include "argv.h"
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
+#include "eintr.h"
 #include "settings.h"
 #include "sftp.h"
 #include "ssh.h"
@@ -558,8 +559,11 @@ void* ssh_client_thread(void* data) {
                 .revents = 0,
             }};
 
+            int wait_result;
             /* Wait up to computed timeout */
-            if (poll(fds, 1, timeout) < 0)
+            GUAC_EINTR_RETRY(wait_result, poll(fds, 1, timeout));
+
+            if (wait_result < 0)
                 break;
 
         }

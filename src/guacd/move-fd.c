@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "eintr.h"
 #include "move-fd.h"
 
 /* Required for CMSG_* macros on BSD */
@@ -58,7 +59,10 @@ int guacd_send_fd(int sock, int fd) {
     memcpy(CMSG_DATA(control), &fd, sizeof(fd));
 
     /* Send file descriptor */
-    return (sendmsg(sock, &message, 0) == sizeof(message_data));
+    ssize_t result;
+    GUAC_EINTR_RETRY(result, sendmsg(sock, &message, 0));
+
+    return (result == sizeof(message_data));
 
 }
 
@@ -82,7 +86,10 @@ int guacd_recv_fd(int sock) {
     message.msg_controllen = sizeof(buffer);
 
     /* Receive file descriptor */
-    if (recvmsg(sock, &message, 0) == sizeof(message_data)) {
+    ssize_t result;
+    GUAC_EINTR_RETRY(result, recvmsg(sock, &message, 0));
+
+    if (result == sizeof(message_data)) {
 
         /* Validate payload */
         if (message_data[0] != 'G') {

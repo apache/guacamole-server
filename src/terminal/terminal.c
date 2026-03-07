@@ -22,6 +22,7 @@
 #include "common/clipboard.h"
 #include "common/cursor.h"
 #include "common/iconv.h"
+#include "eintr.h"
 #include "terminal/buffer.h"
 #include "terminal/color-scheme.h"
 #include "terminal/common.h"
@@ -641,7 +642,10 @@ int guac_terminal_render_frame(guac_terminal* terminal) {
 
 int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size) {
     int stdin_fd = terminal->stdin_pipe_fd[0];
-    return read(stdin_fd, c, size);
+    int retval;
+
+    GUAC_EINTR_RETRY(retval, read(stdin_fd, c, size));
+    return retval;
 }
 
 void guac_terminal_notify(guac_terminal* terminal) {
