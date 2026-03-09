@@ -766,10 +766,19 @@ void guac_terminal_commit_cursor(guac_terminal* term) {
 
         guac_terminal_char* characters;
         int length = guac_terminal_buffer_get_columns(term->current_buffer, &characters, NULL, term->visible_cursor_row);
-        if (term->visible_cursor_col < length)
-            guac_terminal_display_set_columns(term->display, term->visible_cursor_row + term->scroll_offset,
-                    term->visible_cursor_col, term->visible_cursor_col, &characters[term->visible_cursor_col]);
+        if (term->visible_cursor_col < length) {
+            guac_terminal_char* char_at_cursor = &characters[term->visible_cursor_col];
+            int char_width = char_at_cursor->width;
 
+            int clear_start_col = term->visible_cursor_col;
+            int clear_end_col = term->visible_cursor_col + char_width - 1;
+
+            if (clear_end_col >= length)
+                clear_end_col = length - 1;
+
+            guac_terminal_display_set_columns(term->display, term->visible_cursor_row + term->scroll_offset,
+                                              clear_start_col, clear_end_col, char_at_cursor);
+        }
     }
 
     /* Set cursor if should be visible */
@@ -779,9 +788,19 @@ void guac_terminal_commit_cursor(guac_terminal* term) {
 
         guac_terminal_char* characters;
         int length = guac_terminal_buffer_get_columns(term->current_buffer, &characters, NULL, term->cursor_row);
-        if (term->cursor_col < length)
+        if (term->cursor_col < length) {
+            guac_terminal_char* char_at_cursor = &characters[term->cursor_col];
+            int char_width = char_at_cursor->width;
+
+            int set_start_col = term->cursor_col;
+            int set_end_col = term->cursor_col + char_width - 1;
+
+            if (set_end_col >= length)
+                set_end_col = length - 1;
+
             guac_terminal_display_set_columns(term->display, term->cursor_row + term->scroll_offset,
-                    term->cursor_col, term->cursor_col, &characters[term->cursor_col]);
+                                              set_start_col, set_end_col, char_at_cursor);
+        }
 
         term->visible_cursor_row = term->cursor_row;
         term->visible_cursor_col = term->cursor_col;
@@ -1158,9 +1177,18 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
         guac_terminal_char cursor_character = *character;
         cursor_character.attributes.cursor = true;
 
-        __guac_terminal_set_columns(terminal, row,
-                terminal->visible_cursor_col, terminal->visible_cursor_col, &cursor_character);
+        int cursor_redraw_start_col = terminal->visible_cursor_col;
+        int cursor_redraw_end_col = terminal->visible_cursor_col + character->width - 1;
 
+        if (cursor_redraw_start_col < start_column)
+            cursor_redraw_start_col = start_column;
+        if (cursor_redraw_end_col > end_column)
+            cursor_redraw_end_col = end_column;
+
+        __guac_terminal_set_columns(terminal, row,
+                                    cursor_redraw_start_col,
+                                    cursor_redraw_end_col,
+                                    &cursor_character);
     }
 
 }
