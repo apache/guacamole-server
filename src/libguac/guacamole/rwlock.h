@@ -39,27 +39,11 @@
  */
 
 /**
- * A structure packaging together a pthread rwlock along with a key to a
- * thread-local property to keep track of the current status of the lock,
- * allowing the functions defined in this header to provide reentrant behavior.
- * Note that both the lock and key must be initialized before being provided
- * to any of these functions.
+ * A reentrant read-write lock. Callers must use only the guac_rwlock_*
+ * functions to acquire and release this lock. Using pthread rwlock functions
+ * directly will break the reentrant tracking.
  */
-typedef struct guac_rwlock {
-
-    /**
-     * A non-reentrant pthread rwlock to be wrapped by the local lock,
-     * functions providing reentrant behavior.
-     */
-    pthread_rwlock_t lock;
-
-    /**
-     * A key to access a thread-local property tracking any ownership of the
-     * lock by the current thread.
-     */
-    pthread_key_t key;
-
-} guac_rwlock;
+typedef pthread_rwlock_t guac_rwlock;
 
 /**
  * Initialize the provided guac reentrant rwlock. The lock will be configured to be
@@ -79,11 +63,9 @@ void guac_rwlock_init(guac_rwlock* lock);
 void guac_rwlock_destroy(guac_rwlock* lock);
 
 /**
- * Acquire the write lock for the provided guac reentrant rwlock, if the key does not
- * indicate that the write lock is already acquired. If the key indicates that
- * the read lock is already acquired, the read lock will be dropped before the
- * write lock is acquired. The thread local property associated with the key
- * will be updated as necessary to track the thread's ownership of the lock.
+ * Acquires the write lock for the provided guac reentrant rwlock, or increments
+ * its hold count if the current thread already holds it. If the current thread
+ * holds a read lock, it will be released and a write lock acquired.
  *
  * If an error occurs while attempting to acquire the lock, a non-zero value is
  * returned, and guac_error is set appropriately.
@@ -99,10 +81,8 @@ void guac_rwlock_destroy(guac_rwlock* lock);
 int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock);
 
 /**
- * Acquire the read lock for the provided guac reentrant rwlock, if the key does not
- * indicate that the read or write lock is already acquired. The thread local
- * property associated with the key will be updated as necessary to track the
- * thread's ownership of the lock.
+ * Acquires the read lock for the provided guac reentrant rwlock, or increments
+ * its hold count if the current thread already holds a read or write lock.
  *
  * If an error occurs while attempting to acquire the lock, a non-zero value is
  * returned, and guac_error is set appropriately.
@@ -118,10 +98,9 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock);
 int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock);
 
 /**
- * Release the rwlock associated with the provided guac reentrant rwlock if this
- * is the last level of the lock held by this thread. Otherwise, the thread
- * local property associated with the key will be updated as needed to ensure
- * that the correct number of release requests will finally release the lock.
+ * Releases the rwlock associated with the provided guac reentrant rwlock if
+ * this is the last level held by the current thread. Otherwise, decrements the
+ * hold count to reflect the pending release.
  *
  * If an error occurs while attempting to release the lock, a non-zero value is
  * returned, and guac_error is set appropriately.
