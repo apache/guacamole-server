@@ -156,6 +156,7 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
          * is freed) */
         if (current->pending_frame.buffer == NULL) {
             GUAC_ASSERT(current->pending_frame.buffer_is_external);
+            current = current->pending_frame.next;
             continue;
         }
 
