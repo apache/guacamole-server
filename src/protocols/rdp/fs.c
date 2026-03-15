@@ -22,6 +22,7 @@
 #include "upload.h"
 
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 #include <guacamole/mem.h>
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
@@ -424,7 +425,7 @@ int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, uint64_t offset,
 
     /* Attempt read */
     lseek(file->fd, offset, SEEK_SET);
-    bytes_read = read(file->fd, buffer, length);
+    GUAC_RETRY_EINTR(bytes_read, read(file->fd, buffer, length));
 
     /* Translate errno on error */
     if (bytes_read < 0)
@@ -448,7 +449,7 @@ int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, uint64_t offset,
 
     /* Attempt write */
     lseek(file->fd, offset, SEEK_SET);
-    bytes_written = write(file->fd, buffer, length);
+    GUAC_RETRY_EINTR(bytes_written, write(file->fd, buffer, length));
 
     /* Translate errno on error */
     if (bytes_written < 0)

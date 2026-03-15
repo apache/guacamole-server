@@ -18,12 +18,13 @@
  */
 
 #include "config.h"
+#include "wait-fd.h"
 
 #include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "guacamole/socket.h"
-#include "wait-fd.h"
 
+#include <errno.h>
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -106,7 +107,7 @@ ssize_t guac_socket_fd_write(guac_socket* socket,
         retval = send(data->fd, buffer, count, 0);
 #else
         /* Use write() for all other platforms */
-        retval = write(data->fd, buffer, count);
+        GUAC_RETRY_EINTR(retval, write(data->fd, buffer, count));
 #endif
 
         /* Record errors in guac_error */
@@ -154,7 +155,7 @@ static ssize_t guac_socket_fd_read_handler(guac_socket* socket,
     retval = recv(data->fd, buf, count, 0);
 #else
     /* Use read() for all other platforms */
-    retval = read(data->fd, buf, count);
+    GUAC_RETRY_EINTR(retval, read(data->fd, buf, count));
 #endif
 
     /* Record errors in guac_error */
