@@ -17,9 +17,12 @@
  * under the License.
  */
 
+#include <limits.h>
 #include <pthread.h>
 #include <stdint.h>
+
 #include "guacamole/error.h"
+#include "guacamole/mem.h"
 #include "guacamole/rwlock.h"
 
 /**
@@ -38,6 +41,159 @@
  */
 #define GUAC_REENTRANT_LOCK_WRITE_LOCK 2
 
+/**
+ * The maximum number of distinct guac_rwlock instances a single thread may
+ * hold simultaneously.
+ */
+#define GUAC_RWLOCK_MAX_HELD 16
+
+/**
+ * Per-lock state tracked for a single thread. One slot is allocated per
+ * distinct lock that the thread currently holds.
+ */
+typedef struct guac_rwlock_thread_state {
+
+    /**
+     * The lock this slot describes. NULL indicates the slot is empty.
+     */
+    guac_rwlock* lock;
+
+    /**
+     * Which lock the current thread holds: GUAC_REENTRANT_LOCK_NO_LOCK,
+     * GUAC_REENTRANT_LOCK_READ_LOCK, or GUAC_REENTRANT_LOCK_WRITE_LOCK.
+     */
+    int flag;
+
+    /**
+     * The reentrant depth, representing the number of times the current thread
+     * has acquired this lock without a corresponding release.
+     */
+    unsigned int count;
+
+} guac_rwlock_thread_state;
+
+/**
+ * A single process wide key whose per-thread value is a pointer to that
+ * thread's array of guac_rwlock_thread_state entries. Created exactly once
+ * via pthread_once.
+ */
+static pthread_key_t guac_rwlock_key;
+static pthread_once_t guac_rwlock_key_init = PTHREAD_ONCE_INIT;
+
+/**
+ * Destructor registered with pthread_key_create that frees the per-thread
+ * guac_rwlock_thread_state array when a thread exits.
+ *
+ * @param pointer
+ *     Pointer to the per-thread state array to free.
+ */
+static void guac_rwlock_free_pointer(void* pointer) {
+
+    guac_mem_free(pointer);
+
+}
+
+/**
+ * Creates the single global thread-local key. Invoked exactly once via
+ * pthread_once.
+ */
+static void guac_rwlock_create_key(void) {
+
+    pthread_key_create(&guac_rwlock_key, guac_rwlock_free_pointer);
+
+}
+
+/**
+ * Returns the per-thread state array, allocating and registering it on first
+ * use.
+ *
+ * @return
+ *     A pointer to the calling thread's guac_rwlock_thread_state array, or
+ *     NULL if allocation fails.
+ */
+static guac_rwlock_thread_state* guac_rwlock_get_thread_states(void) {
+
+    pthread_once(&guac_rwlock_key_init, guac_rwlock_create_key);
+
+    guac_rwlock_thread_state* states = pthread_getspecific(guac_rwlock_key);
+    if (states == NULL) {
+        states = guac_mem_zalloc(sizeof(guac_rwlock_thread_state), GUAC_RWLOCK_MAX_HELD);
+        pthread_setspecific(guac_rwlock_key, states);
+    }
+
+    return states;
+
+}
+
+/**
+ * Returns the state slot for the given lock for the current thread, or NULL
+ * if the current thread does not hold that lock.
+ *
+ * @param lock
+ *     The lock whose state slot should be retrieved.
+ *
+ * @return
+ *     The state slot for the given lock, or NULL if the current thread does
+ *     not hold that lock.
+ */
+static guac_rwlock_thread_state* guac_rwlock_state_get(guac_rwlock* lock) {
+
+    guac_rwlock_thread_state* states = guac_rwlock_get_thread_states();
+
+    for (int i = 0; i < GUAC_RWLOCK_MAX_HELD; i++) {
+        if (states[i].lock == lock)
+            return &states[i];
+    }
+
+    return NULL;
+
+}
+
+/**
+ * Returns the state slot for the given lock for the current thread, creating
+ * and initializing a new slot if one does not already exist. Returns NULL if
+ * all slots are in use.
+ *
+ * @param lock
+ *     The lock whose state slot should be retrieved or created.
+ *
+ * @return
+ *     The state slot for the given lock, or NULL if all slots are in use.
+ */
+static guac_rwlock_thread_state* guac_rwlock_state_get_or_create(guac_rwlock* lock) {
+
+    guac_rwlock_thread_state* states = guac_rwlock_get_thread_states();
+
+    guac_rwlock_thread_state* empty = NULL;
+    for (int i = 0; i < GUAC_RWLOCK_MAX_HELD; i++) {
+        if (states[i].lock == lock)
+            return &states[i];
+        if (empty == NULL && states[i].lock == NULL)
+            empty = &states[i];
+    }
+
+    if (empty != NULL) {
+        empty->lock = lock;
+        empty->flag = GUAC_REENTRANT_LOCK_NO_LOCK;
+        empty->count = 0;
+    }
+
+    return empty;
+
+}
+
+/**
+ * Clears a state slot, marking it as empty so it can be reused.
+ *
+ * @param state
+ *     The state slot to clear.
+ */
+static void guac_rwlock_state_clear(guac_rwlock_thread_state* state) {
+    state->lock = NULL;
+    state->flag = GUAC_REENTRANT_LOCK_NO_LOCK;
+    state->count = 0;
+}
+
 void guac_rwlock_init(guac_rwlock* lock) {
 
     /* Configure to allow sharing this lock with child processes */
@@ -46,115 +202,31 @@ void guac_rwlock_init(guac_rwlock* lock) {
     pthread_rwlockattr_setpshared(&lock_attributes, PTHREAD_PROCESS_SHARED);
 
     /* Initialize the rwlock */
-    pthread_rwlock_init(&(lock->lock), &lock_attributes);
-
-    /* Initialize the  flags to 0, as threads won't have acquired it yet */
-    pthread_key_create(&(lock->key), (void *) 0);
+    pthread_rwlock_init(lock, &lock_attributes);
+    pthread_rwlockattr_destroy(&lock_attributes);
 
 }
 
 void guac_rwlock_destroy(guac_rwlock* lock) {
 
     /* Destroy the rwlock */
-    pthread_rwlock_destroy(&(lock->lock));
-
-    /* Destroy the thread-local key */
-    pthread_key_delete(lock->key);
-
-}
-
-/**
- * Clean up and destroy the provided guac reentrant rwlock.
- *
- * @param lock
- *     The guac reentrant rwlock to be destroyed.
- */
-void guac_rwlock_destroy(guac_rwlock* lock);
-
-/**
- * Extract and return the flag indicating which lock is held, if any, from the
- * provided key value. The flag is always stored in the least-significant
- * nibble of the value.
- *
- * @param value
- *     The key value containing the flag.
- *
- * @return
- *     The flag indicating which lock is held, if any.
- */
-static uintptr_t get_lock_flag(uintptr_t value) {
-    return value & 0xF;
-}
-
-/**
- * Extract and return the lock count from the provided key. This returned value
- * is the difference between the number of lock and unlock requests made by the
- * current thread. This count is always stored in the remaining value after the
- * least-significant nibble where the flag is stored.
- *
- * @param value
- *     The key value containing the count.
- *
- * @return
- *     The difference between the number of lock and unlock requests made by
- *     the current thread.
- */
-static uintptr_t get_lock_count(uintptr_t value) {
-    return value >> 4;
-}
-
-/**
- * Given a flag indicating if and how the current thread controls a lock, and
- * a count of the depth of lock requests, return a value containing the flag
- * in the least-significant nibble, and the count in the rest.
- *
- * @param flag
- *     A flag indicating which lock, if any, is held by the current thread.
- *
- * @param count
- *     The depth of the lock attempt by the current thread, i.e. the number of
- *     lock requests minus unlock requests.
- *
- * @return
- *     A value containing the flag in the least-significant nibble, and the
- *     count in the rest, cast to a void* for thread-local storage.
- */
-static void* get_value_from_flag_and_count(
-        uintptr_t flag, uintptr_t count) {
-    return (void*) ((flag & 0xF) | count << 4);
-}
-
-/**
- * Return zero if adding one to the current count would overflow the storage
- * allocated to the count, or a non-zero value otherwise.
- *
- * @param current_count
- *     The current count for a lock that the current thread is trying to
- *     reentrantly acquire.
- *
- * @return
- *     Zero if adding one to the current count would overflow the storage
- *     allocated to the count, or a non-zero value otherwise.
- */
-static int would_overflow_count(uintptr_t current_count) {
-
-    /**
-     * The count will overflow if it's already equal or greater to the maximum
-     * possible value that can be stored in a uintptr_t excluding the first nibble.
-     */
-    return current_count >= (UINTPTR_MAX >> 4);
+    pthread_rwlock_destroy(lock);
 
 }
 
 int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
 
-    uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
-    uintptr_t flag = get_lock_flag(key_value);
-    uintptr_t count = get_lock_count(key_value);
+    guac_rwlock_thread_state* state = guac_rwlock_state_get_or_create(reentrant_rwlock);
+
+    if (state == NULL) {
+        guac_error = GUAC_STATUS_TOO_MANY;
+        guac_error_message = "Unable to acquire write lock because there's"
+                " too many locks held simultaneously by this thread";
+        return 1;
+    }
 
     /* If acquiring this lock again would overflow the counter storage */
-    if (would_overflow_count(count)) {
-
+    if (state->count >= UINT_MAX) {
         guac_error = GUAC_STATUS_TOO_MANY;
         guac_error_message = "Unable to acquire write lock because there's"
                 " insufficient space to store another level of lock depth";
@@ -164,9 +236,8 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
     }
 
     /* If the current thread already holds the write lock, increment the count */
-    if (flag == GUAC_REENTRANT_LOCK_WRITE_LOCK) {
-        pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
-                flag, count + 1));
+    if (state->flag == GUAC_REENTRANT_LOCK_WRITE_LOCK) {
+        state->count++;
 
         /* This thread already has the lock */
         return 0;
@@ -179,15 +250,32 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
      * write lock by another function without the caller knowing about it. This
      * shouldn't cause any issues, however.
      */
-    if (flag == GUAC_REENTRANT_LOCK_READ_LOCK)
-        pthread_rwlock_unlock(&(reentrant_rwlock->lock));
+    if (state->flag == GUAC_REENTRANT_LOCK_READ_LOCK) {
+        int unlock_err = pthread_rwlock_unlock(reentrant_rwlock);
+        if (unlock_err) {
+            guac_error = GUAC_STATUS_SEE_ERRNO;
+            guac_error_message = "Unable to release read lock for write lock upgrade";
+            return 1;
+        }
+    }
 
     /* Acquire the write lock */
-    pthread_rwlock_wrlock(&(reentrant_rwlock->lock));
+    int err = pthread_rwlock_wrlock(reentrant_rwlock);
+    if (err) {
 
-    /* Mark that the current thread has the lock, and increment the count */
-    pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
-            GUAC_REENTRANT_LOCK_WRITE_LOCK, count + 1));
+        /* The read lock was released above but the write lock was not acquired,
+         * so the current thread no longer holds any lock */
+        if (state->flag == GUAC_REENTRANT_LOCK_READ_LOCK)
+            guac_rwlock_state_clear(state);
+
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Unable to acquire write lock";
+        return 1;
+
+    }
+
+    state->flag = GUAC_REENTRANT_LOCK_WRITE_LOCK;
+    state->count++;
 
     return 0;
 
@@ -195,12 +283,20 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
 
 int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
 
-    uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
-    uintptr_t flag = get_lock_flag(key_value);
-    uintptr_t count = get_lock_count(key_value);
+    guac_rwlock_thread_state* state = guac_rwlock_state_get_or_create(reentrant_rwlock);
+
+    if (state == NULL) {
+
+        guac_error = GUAC_STATUS_TOO_MANY;
+        guac_error_message = "Unable to acquire read lock because there's"
+                " too many locks held simultaneously by this thread";
+
+        return 1;
+
+    }
 
     /* If acquiring this lock again would overflow the counter storage */
-    if (would_overflow_count(count)) {
+    if (state->count >= UINT_MAX) {
 
         guac_error = GUAC_STATUS_TOO_MANY;
         guac_error_message = "Unable to acquire read lock because there's"
@@ -212,24 +308,28 @@ int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
 
     /* The current thread may read if either the read or write lock is held */
     if (
-            flag == GUAC_REENTRANT_LOCK_READ_LOCK ||
-            flag == GUAC_REENTRANT_LOCK_WRITE_LOCK
+            state->flag == GUAC_REENTRANT_LOCK_READ_LOCK ||
+            state->flag == GUAC_REENTRANT_LOCK_WRITE_LOCK
     ) {
 
         /* Increment the depth counter */
-        pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
-                flag, count + 1));
+        state->count++;
 
         /* This thread already has the lock */
         return 0;
     }
 
     /* Acquire the lock */
-    pthread_rwlock_rdlock(&(reentrant_rwlock->lock));
+    int err = pthread_rwlock_rdlock(reentrant_rwlock);
+    if (err) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Unable to acquire read lock";
+        return 1;
+    }
 
     /* Set the flag that the current thread has the read lock */
-    pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
-                GUAC_REENTRANT_LOCK_READ_LOCK, 1));
+    state->flag  = GUAC_REENTRANT_LOCK_READ_LOCK;
+    state->count = 1;
 
     return 0;
 
@@ -237,15 +337,13 @@ int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
 
 int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock) {
 
-    uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
-    uintptr_t flag = get_lock_flag(key_value);
-    uintptr_t count = get_lock_count(key_value);
+    guac_rwlock_thread_state* state = guac_rwlock_state_get(reentrant_rwlock);
 
     /*
      * Return an error if an attempt is made to release a lock that the current
      * thread does not control.
      */
-    if (count <= 0) {
+    if (state == NULL || state->count == 0) {
 
         guac_error = GUAC_STATUS_INVALID_ARGUMENT;
         guac_error_message = "Unable to free rwlock because it's not held by"
@@ -256,20 +354,18 @@ int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock) {
     }
 
     /* Release the lock if this is the last locked level */
-    if (count == 1) {
+    if (state->count == 1) {
 
-        pthread_rwlock_unlock(&(reentrant_rwlock->lock));
+        pthread_rwlock_unlock(reentrant_rwlock);
 
         /* Set the flag that the current thread holds no locks */
-        pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
-                GUAC_REENTRANT_LOCK_NO_LOCK, 0));
+        guac_rwlock_state_clear(state);
 
         return 0;
     }
 
     /* Do not release the lock since it's still in use - just decrement */
-    pthread_setspecific(reentrant_rwlock->key, get_value_from_flag_and_count(
-            flag, count - 1));
+    state->count--;
 
     return 0;
 
