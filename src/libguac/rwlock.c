@@ -25,6 +25,11 @@
 #include "guacamole/mem.h"
 #include "guacamole/rwlock.h"
 
+/* Coverity seems to have trouble understanding this reentrant read/write lock
+ * implementation, so we dynamically replace the internals of guac_rwlock with
+ * simpler but nearly equivalent models. */
+
+#ifndef __COVERITY__
 /**
  * The value indicating that the current thread holds neither the read or write
  * locks.
@@ -193,6 +198,7 @@ static void guac_rwlock_state_clear(guac_rwlock_thread_state* state) {
     state->flag = GUAC_REENTRANT_LOCK_NO_LOCK;
     state->count = 0;
 }
+#endif
 
 void guac_rwlock_init(guac_rwlock* lock) {
 
@@ -215,6 +221,10 @@ void guac_rwlock_destroy(guac_rwlock* lock) {
 }
 
 int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
+#ifdef __COVERITY__
+    __coverity_recursive_lock_acquire__(*reentrant_rwlock);
+    return 0;
+#else
 
     guac_rwlock_thread_state* state = guac_rwlock_state_get_or_create(reentrant_rwlock);
 
@@ -279,9 +289,14 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
 
     return 0;
 
+#endif
 }
 
 int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
+#ifdef __COVERITY__
+    __coverity_recursive_lock_acquire__(*reentrant_rwlock);
+    return 0;
+#else
 
     guac_rwlock_thread_state* state = guac_rwlock_state_get_or_create(reentrant_rwlock);
 
@@ -333,9 +348,14 @@ int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
 
     return 0;
 
+#endif
 }
 
 int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock) {
+#ifdef __COVERITY__
+    __coverity_recursive_lock_release__(*reentrant_rwlock);
+    return 0;
+#else
 
     guac_rwlock_thread_state* state = guac_rwlock_state_get(reentrant_rwlock);
 
@@ -369,4 +389,5 @@ int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock) {
 
     return 0;
 
+#endif
 }
