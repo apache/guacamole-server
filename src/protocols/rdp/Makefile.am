@@ -25,6 +25,7 @@
 
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
+AM_CPPFLAGS = -DWITHOUT_FREERDP_3x_DEPRECATED
 
 lib_LTLIBRARIES = libguac-client-rdp.la
 SUBDIRS = . tests
