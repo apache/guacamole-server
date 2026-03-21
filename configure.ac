@@ -18,7 +18,7 @@
 #
 
 AC_PREREQ([2.61])
-AC_INIT([guacamole-server], [1.6.1])
+AC_INIT([guacamole-server], [1.6.0])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
@@ -47,7 +47,6 @@ AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslo
 AC_DEFINE([_GNU_SOURCE],   [1], [Uses GNU-specific APIs (if available)])
 AC_DEFINE([_XOPEN_SOURCE], [700], [Uses X/Open and POSIX APIs])
 AC_DEFINE([__BSD_VISIBLE], [1], [Uses BSD-specific APIs (if available)])
-AC_DEFINE([_GNU_SOURCE], [1], [Use GNU sources (if available)])
 
 # Check for availability of non-portable sched_getaffinity() function (one of
 # several possible routes for determining the number of available processors)
@@ -77,9 +76,6 @@ AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
               AC_DEFINE([HAVE_LIBPTHREAD],,
                         [Whether libpthread was found])])
 
-# Check for pthread_setattr_default_np
-AC_CHECK_DECLS([pthread_setattr_default_np], , , [[#include <pthread.h>]])
-            
 # librt
 AC_CHECK_FUNC([timer_create], [AC_MSG_RESULT([timer_create was found without librt.])],
               [AC_CHECK_LIB([rt], [timer_create],
@@ -154,7 +150,7 @@ AC_SUBST(UUID_LIBS)
 AC_SUBST(CUNIT_LIBS)
 
 # Library functions
-AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep prctl])
+AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
 
 AC_CHECK_DECL([png_get_io_ptr],
     [AC_DEFINE([HAVE_PNG_GET_IO_PTR],,
@@ -233,14 +229,6 @@ AC_ARG_WITH(systemd_dir,
             ],systemd_dir=$withval)
 AM_CONDITIONAL([ENABLE_SYSTEMD], [test "x${systemd_dir}" != "x"])
 AC_SUBST(systemd_dir)
-
-# Systemd user
-AC_ARG_WITH(systemd_user,
-            [AS_HELP_STRING([--with-systemd-user=<username>],
-                            [the user configured in the systemd unit to run guacd @<:@default=daemon@:>@])],
-            [systemd_user=$withval],
-            [systemd_user=daemon])
-AC_SUBST(systemd_user)
 
 # guacd config file
 AC_ARG_WITH(guacd_conf,
@@ -700,7 +688,7 @@ then
 fi
 
 #
-# libVNCserver support for the requestedResize member, which enables the
+# libVNCserver support for the requestedResize member, which enables the 
 # client to pause frame buffer updates during a resize operation. If support
 # for this is missing, Guacamole may still attempt to send the resize requests
 # to the remote display, but there may be odd display behavior just before,
@@ -750,27 +738,27 @@ OLDCPPFLAGS="$CPPFLAGS"
 
 if test "x$with_rdp" != "xno"
 then
-    freerdp_version="(2.x)"
+    freerdp_version="(3.x)"
     have_freerdp=yes
-    PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+    PKG_CHECK_MODULES([RDP], [freerdp3 freerdp-client3 winpr3],
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror -Wno-error=deprecated-declarations $CPPFLAGS"]
                       [AS_IF([test "x${FREERDP_PLUGIN_DIR}" = "x"],
-                             [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
+                             [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp3`/freerdp3"])],
                       [freerdp_version=
                        have_freerdp=no])
 fi
 
 if test "x$with_rdp" != "xno" -a "x${have_freerdp}" = "xno"
 then
-    freerdp_version="(3.x)"
+    freerdp_version="(2.x)"
     have_freerdp=yes
-    PKG_CHECK_MODULES([RDP], [freerdp3 freerdp-client3 winpr3],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+    PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror -Wno-error=deprecated-declarations $CPPFLAGS"]
                       [AS_IF([test "x${FREERDP_PLUGIN_DIR}" = "x"],
-                             [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp3`/freerdp3"])],
+                             [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
                       [AC_MSG_WARN([
   --------------------------------------------
-   Unable to find FreeRDP.
+   Unable to find FreeRDP 3.x or FreeRDP 2.x.
    RDP will be disabled.
   --------------------------------------------])
                        freerdp_version=
@@ -812,9 +800,8 @@ then
     ],
     [AC_MSG_RESULT([no])],
     [AC_MSG_RESULT([yes])]
-    [AC_MSG_WARN([
+    [AC_MSG_ERROR([
   --------------------------------------------
-   !!! WARNING !!!
    You are building against a development version of FreeRDP. Non-release
    versions of FreeRDP may have differences in behavior that are impossible to
    check for at build time. This may result in memory leaks or other strange
@@ -822,8 +809,8 @@ then
 
    *** PLEASE USE A RELEASED VERSION OF FREERDP IF POSSIBLE ***
 
-   You can suppress this warning by re-running the configure script with the
-   --enable-allow-freerdp-snapshots flag.
+   If you are ABSOLUTELY CERTAIN that building against this version of FreeRDP
+   is OK, rerun configure with the --enable-allow-freerdp-snapshots
   --------------------------------------------])])
 
 fi
@@ -1448,7 +1435,6 @@ AC_CONFIG_FILES([Makefile
                  src/common-ssh/Makefile
                  src/common-ssh/tests/Makefile
                  src/terminal/Makefile
-                 src/terminal/tests/Makefile
                  src/libguac/Makefile
                  src/libguac/tests/Makefile
                  src/guacd/Makefile
@@ -1497,7 +1483,6 @@ AM_COND_IF([ENABLE_INIT], [build_init="${init_dir}"], [build_init=no])
 #
 
 AM_COND_IF([ENABLE_SYSTEMD], [build_systemd="${systemd_dir}"], [build_systemd=no])
-AM_COND_IF([ENABLE_SYSTEMD], [build_systemd_user="${systemd_user}"], [build_systemd_user=no])
 
 #
 # FreeRDP plugins
@@ -1549,7 +1534,6 @@ $PACKAGE_NAME version $PACKAGE_VERSION
    FreeRDP plugins: ${build_rdp_plugins}
    Init scripts: ${build_init}
    Systemd units: ${build_systemd}
-   Systemd user: ${build_systemd_user}
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
