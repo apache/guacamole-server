@@ -33,6 +33,16 @@
 #include <stdlib.h>
 
 /**
+ * X11 keysym for line feed.
+ */
+#define GUAC_RDP_KEYSYM_LINE_FEED 0xFF0A
+
+/**
+ * X11 keysym for carriage return.
+ */
+#define GUAC_RDP_KEYSYM_CARRIAGE_RETURN 0xFF0D
+
+/**
  * Translates the given keysym into the corresponding lock flag, as would be
  * required by the RDP synchronize event. If the given keysym does not
  * represent a lock key, zero is returned.
@@ -642,6 +652,11 @@ void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
 
 int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
         int keysym, int pressed, guac_rdp_key_source source) {
+
+    /* Map LF to CR: LF has no RDP equivalent so it would fall through to
+     * UnicodeKeyboardEvent() which maps LF to 'J'. */
+    if (keysym == GUAC_RDP_KEYSYM_LINE_FEED)
+        keysym = GUAC_RDP_KEYSYM_CARRIAGE_RETURN;
 
     /* Synchronize lock keys states, if this has not yet been done */
     if (!keyboard->synchronized) {

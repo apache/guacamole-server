@@ -50,6 +50,11 @@
 #define GUAC_TERMINAL_DEFAULT_MAX_SCROLLBACK 1000
 
 /**
+ * ASCII carriage return.
+ */
+#define GUAC_TERMINAL_ASCII_CR "\x0D"
+
+/**
  * The default ASCII code to use for the backspace key.
  */
 #define GUAC_TERMINAL_DEFAULT_BACKSPACE 127
