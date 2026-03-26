@@ -1410,6 +1410,38 @@ int guac_terminal_send_data(guac_terminal* term, const char* data, int length) {
 
 }
 
+/**
+ * Sends clipboard contents to stdin, converting LF to CR. CR works as Enter
+ * on Windows (natively) and Linux/macOS (PTY ICRNL converts CR to LF).
+ *
+ * @param term
+ *     The terminal whose clipboard contents should be sent to stdin.
+ *
+ * @return
+ *     Zero if the clipboard contents were sent successfully, non-zero if an
+ *     error occurred.
+ */
+static int guac_terminal_send_clipboard(guac_terminal* term) {
+
+    int length = term->clipboard->length;
+    if (length <= 0)
+        return 0;
+
+    char* buf = guac_mem_alloc(length);
+    if (buf == NULL)
+        return -1;
+
+    /* Copy clipboard, converting \n (LF) to \r (CR). */
+    const char* src = term->clipboard->buffer;
+    for (int i = 0; i < length; i++)
+        buf[i] = (src[i] == '\n') ? '\r' : src[i];
+
+    int ret = guac_terminal_send_data(term, buf, length);
+    guac_mem_free(buf);
+    return ret;
+
+}
+
 int guac_terminal_send_string(guac_terminal* term, const char* data) {
 
     /* Block all other sources of input if input is coming from a stream */
@@ -1451,7 +1483,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
         /* Ctrl+Shift+V or Cmd+v (mac style) shortcuts for paste */
         if ((keysym == 'V' && term->mod_ctrl) || (keysym == 'v' && term->mod_meta))
-            return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+            return guac_terminal_send_clipboard(term);
 
         /* If Shift+Tab (Backtab), send the appropriate escape sequence */
         if (term->mod_shift && keysym == 0xFF09) {
@@ -1551,8 +1583,8 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
                 return guac_terminal_send_string(term, backspace_str);
             }
             if (keysym == 0xFF09 || keysym == 0xFF89) return guac_terminal_send_string(term, "\x09"); /* Tab */
-            if (keysym == 0xFF0A) return guac_terminal_send_string(term, "\x0A");                     /* Line Feed */
-            if (keysym == 0xFF0D || keysym == 0xFF8D) return guac_terminal_send_string(term, "\x0D"); /* Enter */
+            if (keysym == 0xFF0A) return guac_terminal_send_string(term, GUAC_TERMINAL_ASCII_CR);                     /* Line Feed -> CR */
+            if (keysym == 0xFF0D || keysym == 0xFF8D) return guac_terminal_send_string(term, GUAC_TERMINAL_ASCII_CR); /* Enter */
             if (keysym == 0xFF1B) return guac_terminal_send_string(term, "\x1B");                     /* Esc */
 
             if (keysym == 0xFF50 || keysym == 0xFF95) return guac_terminal_send_string(term, "\x1B[1~"); /* Home */
@@ -1777,7 +1809,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
 
     /* Paste contents of clipboard on right or middle mouse button up */
     if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE))
-        return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+        return guac_terminal_send_clipboard(term);
 
     /* If left mouse button was just released, stop selection */
     if (released_mask & GUAC_CLIENT_MOUSE_LEFT)
