@@ -35,6 +35,7 @@
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 #include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
@@ -560,8 +561,11 @@ void* ssh_client_thread(void* data) {
                 .revents = 0,
             }};
 
+            int wait_result;
             /* Wait up to computed timeout */
-            if (poll(fds, 1, timeout) < 0)
+            GUAC_RETRY_EINTR(wait_result, poll(fds, 1, timeout));
+
+            if (wait_result < 0)
                 break;
 
         }

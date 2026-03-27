@@ -18,7 +18,6 @@
  */
 
 #include "config.h"
-
 #include "guacamole/error.h"
 #include "guacamole/tcp.h"
 #include "guacamole/timestamp.h"
@@ -300,8 +299,9 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
     }
 
     /* Send the packet and return number of bytes sent. */
-    int bytes = sendto(wol_socket, packet, GUAC_WOL_PACKET_SIZE, 0,
-            (struct sockaddr*) &wol_dest, wol_dest_size);
+    ssize_t bytes;
+    GUAC_RETRY_EINTR(bytes, sendto(wol_socket, packet, GUAC_WOL_PACKET_SIZE, 0,
+            (struct sockaddr*) &wol_dest, wol_dest_size));
     close(wol_socket);
     return bytes;
  

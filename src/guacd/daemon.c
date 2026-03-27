@@ -515,7 +515,8 @@ int main(int argc, char* argv[]) {
                 "Child processes may pile up in the process table.");
     }
 
-    /* Clean up and exit if SIGINT or SIGTERM signals are caught */
+    /* Clean up and exit if SIGINT or SIGTERM signals are caught; don't set
+       SA_RESTART as we rely on accept() to return EINTR.*/
     struct sigaction signal_stop_action = { .sa_handler = signal_stop_handler };
     sigaction(SIGINT, &signal_stop_action, NULL);
     sigaction(SIGTERM, &signal_stop_action, NULL);
