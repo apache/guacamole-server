@@ -37,8 +37,6 @@ github:
 
   # Automatically link/update JIRA when referenced
   autolink_jira: GUACAMOLE
-  notifications:
-    jira_options: link label
 
   # Require merge commits for all PR merges
   enabled_merge_buttons:
@@ -52,3 +50,6 @@ github:
     main: {}
     next: {}
     patch: {}
+
+notifications:
+  jira_options: link label
