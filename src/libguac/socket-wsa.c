@@ -93,7 +93,9 @@ ssize_t guac_socket_wsa_write(guac_socket* socket,
     /* Write until completely written */
     while (count > 0) {
 
-        int retval = send(data->sock, buffer, count, 0);
+        int retval;
+        GUAC_RETRY_UNTIL(retval, send(data->sock, buffer, count, 0),
+                retval < 0 && WSAGetLastError() == WSAEINTR);
 
         /* Record errors in guac_error */
         if (retval < 0) {
@@ -134,7 +136,9 @@ static ssize_t guac_socket_wsa_read_handler(guac_socket* socket,
     guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
 
     /* Read from socket */
-    int retval = recv(data->sock, buf, count, 0);
+    int retval;
+    GUAC_RETRY_UNTIL(retval, recv(data->sock, buf, count, 0),
+            retval < 0 && WSAGetLastError() == WSAEINTR);
 
     /* Record errors in guac_error */
     if (retval < 0) {
@@ -327,19 +331,26 @@ static int guac_socket_wsa_select_handler(guac_socket* socket,
     struct timeval timeout;
     int retval;
 
-    /* Initialize fd_set with single underlying socket handle */
-    FD_ZERO(&sockets);
-    FD_SET(data->sock, &sockets);
-
     /* No timeout if usec_timeout is negative */
-    if (usec_timeout < 0)
-        retval = select(0, &sockets, NULL, NULL, NULL);
+    if (usec_timeout < 0) {
+        do {
+            /* On retry, fd_set contents are undefined. */
+            FD_ZERO(&sockets);
+            FD_SET(data->sock, &sockets);
+            retval = select(0, &sockets, NULL, NULL, NULL);
+        } while (retval < 0 && WSAGetLastError() == WSAEINTR);
+    }
 
     /* Handle timeout if specified */
     else {
-        timeout.tv_sec  = usec_timeout / 1000000;
-        timeout.tv_usec = usec_timeout % 1000000;
-        retval = select(0, &sockets, NULL, NULL, &timeout);
+        do {
+            timeout.tv_sec  = usec_timeout / 1000000;
+            timeout.tv_usec = usec_timeout % 1000000;
+            /* On retry, fd_set contents are undefined. */
+            FD_ZERO(&sockets);
+            FD_SET(data->sock, &sockets);
+            retval = select(0, &sockets, NULL, NULL, &timeout);
+        } while (retval < 0 && WSAGetLastError() == WSAEINTR);
     }
 
     /* Properly set guac_error */

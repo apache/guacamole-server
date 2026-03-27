@@ -357,7 +357,11 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
     guacd_proc_self = proc;
 
     /* Clean up and exit if SIGINT or SIGTERM signals are caught */
-    struct sigaction signal_stop_action = { .sa_handler = signal_stop_handler };
+    struct sigaction signal_stop_action = {
+        .sa_handler = signal_stop_handler,
+        /* Restart system calls interrupted by signal delivery */
+        .sa_flags = SA_RESTART
+    };
     sigaction(SIGINT, &signal_stop_action, NULL);
     sigaction(SIGTERM, &signal_stop_action, NULL);
 
@@ -393,7 +397,12 @@ cleanup_client:
 
     /* Verify whether children were all properly reaped */
     pid_t child_pid;
-    while ((child_pid = waitpid(0, NULL, WNOHANG)) > 0) {
+    while (1) {
+        GUAC_RETRY_EINTR(child_pid, waitpid(0, NULL, WNOHANG));
+
+        if (child_pid <= 0)
+            break;
+
         guacd_log(GUAC_LOG_DEBUG, "Automatically reaped unreaped "
                 "(zombie) child process with PID %i.", child_pid);
     }
@@ -503,7 +512,12 @@ static void guacd_proc_kill(guacd_proc* proc) {
 
     /* Wait for all processes within process group to terminate */
     pid_t child_pid;
-    while ((child_pid = waitpid(-proc->pid, NULL, 0)) > 0 || errno == EINTR) {
+    while (1) {
+        GUAC_RETRY_EINTR(child_pid, waitpid(-proc->pid, NULL, 0));
+
+        if (child_pid <= 0)
+            break;
+
         guacd_log(GUAC_LOG_DEBUG, "Child process %i of connection \"%s\" has terminated",
             child_pid, proc->client->connection_id);
     }

@@ -24,6 +24,7 @@
 #include "terminal/terminal.h"
 
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
@@ -75,7 +76,8 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
     while (remaining > 0) {
 
         /* Attempt to write data */
-        int ret_val = write(fd, buffer, remaining);
+        int ret_val;
+        GUAC_RETRY_EINTR(ret_val, write(fd, buffer, remaining));
         if (ret_val <= 0)
             return -1;
 
@@ -478,8 +480,12 @@ static int __guac_telnet_wait(int socket_fd) {
         .revents = 0,
     }};
 
+    int wait_result;
+
     /* Wait for one second */
-    return poll(fds, 1, 1000);
+    GUAC_RETRY_EINTR(wait_result, poll(fds, 1, 1000));
+
+    return wait_result;
 
 }
 
@@ -614,7 +620,8 @@ void* guac_telnet_client_thread(void* data) {
         if (wait_result == 0)
             continue;
 
-        int bytes_read = read(telnet_client->socket_fd, buffer, sizeof(buffer));
+        int bytes_read;
+        GUAC_RETRY_EINTR(bytes_read, read(telnet_client->socket_fd, buffer, sizeof(buffer)));
         if (bytes_read <= 0)
             break;
 

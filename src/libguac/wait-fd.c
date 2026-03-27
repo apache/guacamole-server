@@ -19,6 +19,9 @@
 
 #include "config.h"
 
+#include "guacamole/error.h"
+#include <errno.h>
+
 #ifdef ENABLE_WINSOCK
 #    include <winsock2.h>
 #else
@@ -39,17 +42,29 @@ int guac_wait_for_fd(int fd, int usec_timeout) {
         .revents = 0
     }};
 
+    int retval;
+
     /* No timeout if usec_timeout is negative */
-    if (usec_timeout < 0)
-        return poll(fds, 1, -1);
+    if (usec_timeout < 0) {
+        GUAC_RETRY_EINTR(retval, poll(fds, 1, -1));
+        return retval;
+    }
 
     /* Handle timeout if specified, rounding up to poll()'s granularity */
-    return poll(fds, 1, (usec_timeout + 999) / 1000);
+    GUAC_RETRY_EINTR(retval, poll(fds, 1, (usec_timeout + 999) / 1000));
+    return retval;
 
 }
 #else
 int guac_wait_for_fd(int fd, int usec_timeout) {
 
+    /* Prevent overflowing fd_set. */
+    if (fd >= FD_SETSIZE) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    int retval;
     fd_set fds;
 
     /* Initialize fd_set with single underlying file descriptor */
@@ -57,8 +72,10 @@ int guac_wait_for_fd(int fd, int usec_timeout) {
     FD_SET(fd, &fds);
 
     /* No timeout if usec_timeout is negative */
-    if (usec_timeout < 0)
-        return select(fd + 1, &fds, NULL, NULL, NULL); 
+    if (usec_timeout < 0) {
+        GUAC_RETRY_EINTR(retval, select(fd + 1, &fds, NULL, NULL, NULL));
+        return retval;
+    }
 
     /* Handle timeout if specified */
     struct timeval timeout = {
@@ -66,7 +83,11 @@ int guac_wait_for_fd(int fd, int usec_timeout) {
         .tv_usec = usec_timeout % 1000000
     };
 
-    return select(fd + 1, &fds, NULL, NULL, &timeout);
+    /* Linux (kernel/glibc verified): select() does not modify
+       fd_set on -1, and updates struct timeval to reflect elapsed
+       time on EINTR, so neither needs reinitialization on retry. */
+    GUAC_RETRY_EINTR(retval, select(fd + 1, &fds, NULL, NULL, &timeout));
+    return retval;
 
 }
 #endif
