@@ -218,8 +218,6 @@ void guac_display_free(guac_display* display) {
     /* All locks, FIFOs, etc. are now unused and can be safely destroyed */
     guac_flag_destroy(&display->render_state);
     guac_fifo_destroy(&display->ops);
-    guac_rwlock_destroy(&display->last_frame.lock);
-    guac_rwlock_destroy(&display->pending_frame.lock);
 
     /* Free all layers within the pending_frame list (NOTE: This will also free
      * those layers from the last_frame list) */
@@ -230,6 +228,9 @@ void guac_display_free(guac_display* display) {
      * and not on the pending_frame list */
     while (display->last_frame.layers != NULL)
         guac_display_free_layer(display->last_frame.layers);
+
+    guac_rwlock_destroy(&display->last_frame.lock);
+    guac_rwlock_destroy(&display->pending_frame.lock);
 
     guac_mem_free(display);
 
