@@ -468,6 +468,10 @@ static int rdp_guac_client_wait_for_events(guac_client* client,
 
     }
 
+    /* Bail out if FreeRDP has recorded a connection error */
+    if (freerdp_get_last_error(GUAC_RDP_CONTEXT(rdp_inst)) != FREERDP_ERROR_SUCCESS)
+        return -1;
+
     /* Wait was successful */
     return 1;
 
@@ -625,8 +629,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
             /* Handle any queued FreeRDP events (this may result in RDP messages
              * being sent), aborting later if FreeRDP event handling fails */
-            if (!guac_rdp_handle_events(rdp_client))
+            if (!guac_rdp_handle_events(rdp_client)) {
                 wait_result = -1;
+                break;
+            }
 
             /* Test whether the RDP server is closing the connection */
 #ifdef HAVE_DISCONNECT_CONTEXT
