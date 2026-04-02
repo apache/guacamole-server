@@ -624,7 +624,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
         if (wait_result < 0)
             break;
 
-        int connection_closing;
+        int connection_closing = 0;
         do {
 
             /* Handle any queued FreeRDP events (this may result in RDP messages
