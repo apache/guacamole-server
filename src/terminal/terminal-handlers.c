@@ -1560,6 +1560,14 @@ int guac_terminal_xterm_palette(guac_terminal* term, unsigned char c) {
 
 }
 
+int guac_terminal_unknown_osc(guac_terminal* term, unsigned char c) {
+    /* Stop on ECMA-48 ST (String Terminator */
+    if (c == 0x9C || c == 0x5C || c == 0x07)
+        term->char_handler = guac_terminal_echo;
+
+    return 0;
+}
+
 int guac_terminal_osc(guac_terminal* term, unsigned char c) {
 
     static int operation = 0;
@@ -1598,6 +1606,10 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
         /* xterm 256-color palette redefinition */
         else if (operation == 4)
             term->char_handler = guac_terminal_xterm_palette;
+
+        /* Unknown OSC */
+        else
+            term->char_handler = guac_terminal_unknown_osc;
 
         /* Reset parameter for next OSC */
         operation = 0;
