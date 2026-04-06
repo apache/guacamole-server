@@ -1309,7 +1309,7 @@ int guac_terminal_set_directory(guac_terminal* term, unsigned char c) {
     static char filename[2048];
     static int length = 0;
 
-    /* Stop on ECMA-48 ST (String Terminator */
+    /* Stop on ECMA-48 ST (String Terminator) */
     if (c == 0x9C || c == 0x5C || c == 0x07) {
         filename[length++] = '\0';
         term->char_handler = guac_terminal_echo;
@@ -1334,7 +1334,7 @@ int guac_terminal_download(guac_terminal* term, unsigned char c) {
     static char filename[2048];
     static int length = 0;
 
-    /* Stop on ECMA-48 ST (String Terminator */
+    /* Stop on ECMA-48 ST (String Terminator) */
     if (c == 0x9C || c == 0x5C || c == 0x07) {
         filename[length++] = '\0';
         term->char_handler = guac_terminal_echo;
@@ -1456,7 +1456,7 @@ int guac_terminal_window_title(guac_terminal* term, unsigned char c) {
 
     guac_socket* socket = term->client->socket;
 
-    /* Stop on ECMA-48 ST (String Terminator */
+    /* Stop on ECMA-48 ST (String Terminator) */
     if (c == 0x9C || c == 0x5C || c == 0x07) {
 
         /* Terminate and reset stored title */
@@ -1552,12 +1552,20 @@ int guac_terminal_xterm_palette(guac_terminal* term, unsigned char c) {
 
     }
 
-    /* Stop on ECMA-48 ST (String Terminator */
+    /* Stop on ECMA-48 ST (String Terminator) */
     if (c == 0x9C || c == 0x5C || c == 0x07)
         term->char_handler = guac_terminal_echo;
 
     return 0;
 
+}
+
+int guac_terminal_unknown_osc(guac_terminal* term, unsigned char c) {
+    /* Stop on ECMA-48 ST (String Terminator) */
+    if (c == 0x9C || c == 0x5C || c == 0x07)
+        term->char_handler = guac_terminal_echo;
+
+    return 0;
 }
 
 int guac_terminal_osc(guac_terminal* term, unsigned char c) {
@@ -1599,12 +1607,16 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
         else if (operation == 4)
             term->char_handler = guac_terminal_xterm_palette;
 
+        /* Unknown OSC */
+        else
+            term->char_handler = guac_terminal_unknown_osc;
+
         /* Reset parameter for next OSC */
         operation = 0;
 
     }
 
-    /* Stop on ECMA-48 ST (String Terminator */
+    /* Stop on ECMA-48 ST (String Terminator) */
     else if (c == 0x9C || c == 0x5C || c == 0x07)
         term->char_handler = guac_terminal_echo;
 

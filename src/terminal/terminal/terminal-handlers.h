@@ -186,6 +186,21 @@ int guac_terminal_window_title(guac_terminal* term, unsigned char c);
 int guac_terminal_xterm_palette(guac_terminal* term, unsigned char c);
 
 /**
+ * Handles the remaining characters of an unrecognized OSC sequence, discarding
+ * them until the sequence is terminated. OSC sequences are terminated by either
+ * the ECMA-48 String Terminator (ST), which may appear as ESC \ (0x1B 0x5C),
+ * the single-character ST (0x9C), or BEL (0x07). This handler is used when the
+ * OSC operation code is not recognized by the terminal emulator.
+ *
+ * @param term
+ *     The terminal that received the given character of data.
+ *
+ * @param c
+ *     The character that was received by the given terminal.
+ */
+int guac_terminal_unknown_osc(guac_terminal* term, unsigned char c);
+
+/**
  * Handles the remaining characters of an Operating System Code (OSC) sequence,
  * typically initiated with "ESC ]".
  *
