@@ -725,6 +725,36 @@ static int guac_rdp_handle_connection(guac_client* client) {
     return 0;
 
 fail:
+
+    /* Clean up resources allocated before the failure point to prevent leaking
+     * the display, FreeRDP instance, keyboard, and SVC list on every failed
+     * connection attempt */
+
+    if (rdp_client->keyboard != NULL) {
+        guac_rdp_keyboard_free(rdp_client->keyboard);
+        rdp_client->keyboard = NULL;
+    }
+
+    if (rdp_client->available_svc != NULL) {
+        guac_common_list_free(rdp_client->available_svc, NULL);
+        rdp_client->available_svc = NULL;
+    }
+
+    if (rdp_inst != NULL) {
+
+        if (GUAC_RDP_CONTEXT(rdp_inst) != NULL) {
+            gdi_free(rdp_inst);
+            freerdp_context_free(rdp_inst);
+        }
+
+        freerdp_free(rdp_inst);
+    }
+
+    if (rdp_client->display != NULL) {
+        guac_display_free(rdp_client->display);
+        rdp_client->display = NULL;
+    }
+
     guac_rwlock_release_lock(&(rdp_client->lock));
     return 1;
 
