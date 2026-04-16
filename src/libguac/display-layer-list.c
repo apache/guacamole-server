@@ -181,13 +181,10 @@ static void XFW_guac_display_layer_buffer_resize(guac_display_layer_state* frame
 static void PFW_LFW_guac_display_layer_state_init(guac_display_layer_state* last_frame,
         guac_display_layer_state* pending_frame) {
 
-    last_frame->width = pending_frame->width = GUAC_DISPLAY_RESIZE_FACTOR;
-    last_frame->height = pending_frame->height = GUAC_DISPLAY_RESIZE_FACTOR;
+    pending_frame->width = GUAC_DISPLAY_RESIZE_FACTOR;
+    pending_frame->height = GUAC_DISPLAY_RESIZE_FACTOR;
     last_frame->opacity = pending_frame->opacity = 0xFF;
     last_frame->parent = pending_frame->parent = GUAC_DEFAULT_LAYER;
-
-    XFW_guac_display_layer_buffer_resize(last_frame,
-            last_frame->width, last_frame->height);
 
     XFW_guac_display_layer_buffer_resize(pending_frame,
             pending_frame->width, pending_frame->height);
