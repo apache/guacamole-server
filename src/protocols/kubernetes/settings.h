@@ -246,6 +246,16 @@ typedef struct guac_kubernetes_settings {
     bool recording_include_keys;
 
     /**
+     * Whether clipboard paste data should be included in the session recording.
+     * Clipboard data is NOT included by default within the recording,
+     * as doing so has privacy and security implications. Including clipboard data
+     * may be necessary in certain auditing contexts, but should only be done
+     * with caution. Clipboard data can easily contain sensitive information, such
+     * as passwords, credit card numbers, etc.
+     */
+    bool recording_include_clipboard;
+
+    /**
      * Whether existing files should be appended to when creating a new recording.
      * Disabled by default.
      */
