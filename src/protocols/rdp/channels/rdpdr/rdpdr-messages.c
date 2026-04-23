@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "rdp.h"

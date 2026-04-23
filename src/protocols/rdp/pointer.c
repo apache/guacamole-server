@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "color.h"
 #include "gdi.h"
 #include "pointer.h"

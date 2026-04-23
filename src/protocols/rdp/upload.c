@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "fs.h"
 #include "rdp.h"
 #include "upload.h"

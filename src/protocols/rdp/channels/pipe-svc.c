@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/common-svc.h"
 #include "channels/pipe-svc.h"
 #include "common/list.h"

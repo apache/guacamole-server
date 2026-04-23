@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/audio-input/audio-input.h"
 #include "plugins/channels.h"

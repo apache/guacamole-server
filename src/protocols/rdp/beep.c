@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "beep.h"
 #include "rdp.h"
 #include "settings.h"

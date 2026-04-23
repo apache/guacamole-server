@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/common-svc.h"
 #include "channels/rdpsnd/rdpsnd.h"
 #include "channels/rdpsnd/rdpsnd-messages.h"
