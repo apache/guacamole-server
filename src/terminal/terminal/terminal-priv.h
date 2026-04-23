@@ -433,6 +433,12 @@ struct guac_terminal {
     int mod_shift;
 
     /**
+     * Whether to use Linux terminal type compatibility mode for key encoding.
+     * See guac_terminal_options.linux_console_keys.
+     */
+    bool linux_console_keys;
+
+    /**
      * The current mouse button state.
      */
     int mouse_mask;
