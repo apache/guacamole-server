@@ -310,14 +310,15 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
 
     }
 
-    /* Synchronize mouse cursor */
+    /* Avoid sending a zero-size cursor instruction if no cursor has been set */
     guac_display_layer* cursor = display->cursor_buffer;
-    guac_protocol_send_cursor(socket,
-            display->last_frame.cursor_hotspot_x,
-            display->last_frame.cursor_hotspot_y,
-            cursor->layer, 0, 0,
-            cursor->last_frame.width,
-            cursor->last_frame.height);
+    if (cursor->last_frame.width > 0 && cursor->last_frame.height > 0)
+        guac_protocol_send_cursor(socket,
+                display->last_frame.cursor_hotspot_x,
+                display->last_frame.cursor_hotspot_y,
+                cursor->layer, 0, 0,
+                cursor->last_frame.width,
+                cursor->last_frame.height);
 
     /* Synchronize mouse location */
     guac_protocol_send_mouse(socket, display->last_frame.cursor_x, display->last_frame.cursor_y,
