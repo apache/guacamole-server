@@ -78,6 +78,9 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "console-audio",
     "server-layout",
     "security",
+    "auth-pkg",
+    "kdc-url",
+    "kerberos-cache",
     "ignore-cert",
     "cert-tofu",
     "cert-fingerprints",
@@ -295,6 +298,28 @@ enum RDP_ARGS_IDX {
      * mode is negotiated ("any").
      */
     IDX_SECURITY,
+
+    /**
+     * The authentication package to use based on the underlying FreeRDP support
+     * for alternatives to NTML. Currently FreeRDP2 only supports NTLM, while
+     * FreeRDP3 introduces support for Kerberos and continues to support NTLM.
+     * The default is to negotiate between guacd and the remote server.
+     */
+    IDX_AUTH_PKG,
+
+    /**
+     * When kerberos authentication is in use, the URL of the KDC server to use
+     * for ticket validation. If not specified, guacd will use the underlying
+     * system's kerberos configuration.
+     */
+    IDX_KDC_URL,
+
+    /**
+     * When kerberos authentication is in use, the path to the kerberos ticket
+     * cache, relative to GUACAMOLE_HOME. If not specified, the default system
+     * cache of the underlying system on which guacd is running will be used.
+     */
+    IDX_KERBEROS_CACHE,
 
     /**
      * "true" if validity of the RDP server's certificate should be ignored,
@@ -831,6 +856,30 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_log(user, GUAC_LOG_INFO, "No security mode specified. Defaulting to security mode negotiation with server.");
         settings->security_mode = GUAC_SECURITY_ANY;
     }
+
+    /* Use kerberos authentication */
+    if (strcmp(argv[IDX_AUTH_PKG], "kerberos") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Authentication package: Kerberos");
+        settings->auth_pkg = GUAC_AUTH_PKG_KERBEROS;
+    }
+
+    else if (strcmp(argv[IDX_AUTH_PKG], "ntlm") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Authentication package: NTLM");
+        settings->auth_pkg = GUAC_AUTH_PKG_NTLM;
+    }
+
+    else {
+        guac_user_log(user, GUAC_LOG_INFO, "No authentication package requested, defaulting to negotiate.");
+        settings->auth_pkg = GUAC_AUTH_PKG_ANY;
+    }
+
+    /* Set KDC URL */
+    settings->kdc_url = guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS,
+            argv, IDX_KDC_URL, NULL);
+
+    /* Set Kerberos cache */
+    settings->kerberos_cache = guac_user_parse_args_string(user,
+            GUAC_RDP_CLIENT_ARGS, argv, IDX_KERBEROS_CACHE, NULL);
 
     /* Set hostname */
     settings->hostname =
@@ -1411,6 +1460,8 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     guac_mem_free(settings->timezone);
     guac_mem_free(settings->username);
     guac_mem_free(settings->printer_name);
+    guac_mem_free(settings->kdc_url);
+    guac_mem_free(settings->kerberos_cache);
 
     /* Free channel name array */
     if (settings->svc_names != NULL) {
@@ -1698,6 +1749,29 @@ void guac_rdp_push_settings(guac_client* client,
 
     }
 
+    /* Set the authentication package to use. */
+    switch(guac_settings->auth_pkg) {
+
+        case GUAC_AUTH_PKG_NTLM:
+            freerdp_settings_set_string(rdp_settings, FreeRDP_AuthenticationPackageList, "ntlm,!kerberos");
+            break;
+
+        case GUAC_AUTH_PKG_KERBEROS:
+            freerdp_settings_set_string(rdp_settings, FreeRDP_AuthenticationPackageList, "!ntlm,kerberos");
+            break;
+
+        case GUAC_AUTH_PKG_ANY:
+            freerdp_settings_set_string(rdp_settings, FreeRDP_AuthenticationPackageList, "ntlm,kerberos");
+            break;
+
+    }
+
+    if (guac_settings->kdc_url != NULL)
+        freerdp_settings_set_string(rdp_settings, FreeRDP_KerberosKdcUrl, guac_strdup(guac_settings->kdc_url));
+
+    if (guac_settings->kerberos_cache != NULL)
+        freerdp_settings_set_string(rdp_settings, FreeRDP_KerberosCache, guac_strdup(guac_settings->kerberos_cache));
+
     /* Security */
     freerdp_settings_set_bool(rdp_settings, FreeRDP_Authentication, !guac_settings->disable_authentication);
     freerdp_settings_set_bool(rdp_settings, FreeRDP_IgnoreCertificate, guac_settings->ignore_certificate);
@@ -1935,6 +2009,29 @@ void guac_rdp_push_settings(guac_client* client,
             break;
 
     }
+
+    /* Set the authentication package preferences */
+    switch(guac_settings->auth_pkg) {
+        
+        case GUAC_AUTH_PKG_NTLM:
+            rdp_settings->AuthenticationPackageList = "ntlm,!kerberos";
+            break;
+        
+        case GUAC_AUTH_PKG_KERBEROS:
+            rdp_settings->AuthenticationPackageList = "!ntlm,kerberos";
+            break;
+
+        case GUAC_AUTH_PKG_ANY:
+            rdp_settings->AuthenticationPackageList = "ntlm,kerberos";
+            break;
+
+    }
+
+    /* Kerberos KDC URL */
+    rdp_settings->KerberosKdcUrl = guac_strdup(guac_settings->kdc_url);
+
+    /* Kerberos ticket cache */
+    rdp_settings->KerberosCache = guac_strdup(guac_settings->kerberos_cache);
 
     /* Security */
     rdp_settings->Authentication = !guac_settings->disable_authentication;
