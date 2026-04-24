@@ -22,6 +22,8 @@
 
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/cliprdr.h"
+#include "channels/rdpecam/rdpecam.h"
+#include "channels/rdpecam/rdpecam_caps.h"
 #include "channels/disp.h"
 #include "channels/rdpei.h"
 #include "common/clipboard.h"
@@ -70,6 +72,19 @@
  * The maximum number of input events to allow in the event queue.
  */
 #define GUAC_RDP_INPUT_EVENT_QUEUE_SIZE 4096
+
+struct guac_rdpecam_sink;
+
+/* Forward declaration for RDPECAM plugin */
+struct guac_rdp_rdpecam_plugin;
+
+/**
+ * Callback invoked when RDPECAM capabilities have been updated on the core
+ * side. Implemented by the RDPECAM plugin and set at runtime to allow the
+ * plugin to react immediately (e.g., send DeviceAddedNotification) without
+ * creating link-time dependencies between DSOs.
+ */
+typedef void (*guac_rdp_rdpecam_caps_notify_fn)(struct guac_client* client);
 
 /**
  * RDP-specific client data.
@@ -173,6 +188,42 @@ typedef struct guac_rdp_client {
      * Audio input buffer, if audio input is enabled.
      */
     guac_rdp_audio_buffer* audio_input;
+
+    /**
+     * RDPECAM sink, if camera redirection is enabled.
+     */
+    struct guac_rdpecam_sink* rdpecam_sink;
+
+    /**
+     * Per-device camera capabilities reported by the browser via
+     * rdpecam-capabilities. Each entry represents one camera device.
+     */
+    guac_rdp_rdpecam_device_caps rdpecam_device_caps[GUAC_RDP_RDPECAM_MAX_DEVICES];
+
+    /**
+     * Number of valid entries within rdpecam_device_caps array.
+     */
+    unsigned int rdpecam_device_caps_count;
+
+    /**
+     * Flag indicating that new RDPECAM capabilities have been received
+     * and need to be processed by the plugin. The plugin should check this
+     * flag and clear it after sending device notifications.
+     */
+    int rdpecam_caps_updated;
+
+    /**
+     * Reference to the RDPECAM plugin instance, if loaded.
+     * Used by capabilities callback to send device notifications.
+     */
+    struct guac_rdp_rdpecam_plugin* rdpecam_plugin;
+
+    /**
+     * Optional callback set by the RDPECAM plugin to be invoked when
+     * capabilities are updated. This avoids cross-library linking by allowing
+     * the core to trigger plugin behavior via a function pointer.
+     */
+    guac_rdp_rdpecam_caps_notify_fn rdpecam_caps_notify;
 
     /**
      * The filesystem being shared, if any.
