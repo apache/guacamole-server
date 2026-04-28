@@ -256,8 +256,35 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
 
         const guac_layer* layer = current->layer;
 
-        guac_rect layer_bounds;
-        guac_display_layer_get_bounds(current, &layer_bounds);
+        /* Read bounds directly from last_frame state (which is protected
+         * by display->last_frame.lock — already held above). Do NOT call
+         * guac_display_layer_get_bounds() here: that helper acquires
+         * display->pending_frame.lock and reads layer->pending_frame
+         * dimensions. Both are wrong here:
+         *
+         *   1. We are syncing the LAST FRAME state to a newly joined
+         *      user, so layer->last_frame.width/height is the correct
+         *      data source (every other field read in this loop already
+         *      uses current->last_frame.*).
+         *
+         *   2. Acquiring pending_frame.lock from this code path creates
+         *      an ABBA lock-order deadlock with
+         *      guac_display_end_multiple_frames(), which acquires
+         *      pending_frame.lock first and then last_frame.lock. With
+         *      this function holding last_frame.lock and waiting for
+         *      pending_frame.lock, while end_multiple_frames holds
+         *      pending_frame.lock and waits for last_frame.lock, the
+         *      pipeline wedges. Symptoms: guacd's VNC client thread,
+         *      pending-user-promotion thread, and render loop all
+         *      blocked on the display rwlocks; viewers see a black
+         *      screen because no draws ever flow.
+         */
+        guac_rect layer_bounds = {
+            .left   = 0,
+            .top    = 0,
+            .right  = current->last_frame.width,
+            .bottom = current->last_frame.height
+        };
 
         int width = guac_rect_width(&layer_bounds);
         int height = guac_rect_height(&layer_bounds);
