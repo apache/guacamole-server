@@ -289,6 +289,13 @@ typedef struct guac_ssh_settings {
     bool recording_write_existing;
 
     /**
+     * Non-zero if the connection should be closed when a recording cannot be
+     * created. Zero by default, meaning the connection will proceed even if
+     * recording fails.
+     */
+    bool require_recording;
+
+    /**
      * The number of seconds between sending server alive messages.
      */
     int server_alive_interval;
