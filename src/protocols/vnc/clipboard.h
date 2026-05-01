@@ -74,5 +74,21 @@ guac_user_end_handler guac_vnc_clipboard_end_handler;
  */
 void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen);
 
+/**
+ * Handler for UTF-8 clipboard data received via the Extended Clipboard
+ * pseudo-encoding, invoked by libVNCServer when the server sends clipboard
+ * text using the extended clipboard protocol.
+ *
+ * @param client
+ *     The VNC client associated with the session.
+ *
+ * @param text
+ *     The UTF-8 clipboard text received from the server.
+ *
+ * @param textlen
+ *     The number of bytes in the clipboard text.
+ */
+void guac_vnc_cut_text_utf8(rfbClient* client, const char* text, int textlen);
+
 #endif
 

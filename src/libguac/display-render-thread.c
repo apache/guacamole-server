@@ -48,8 +48,10 @@
 /**
  * The start routine for the display render thread, consisting of a single
  * render loop. The render loop will proceed until signalled to stop,
- * determining frame boundaries via a combination of heuristics and explicit
- * marking (if available).
+ * determining frame boundaries via explicit marking when available (e.g. VNC's
+ * FinishedFrameBufferUpdate, RDP's frame markers), falling back to heuristics
+ * based on the timing of display modifications when the protocol handler
+ * provides no explicit frame boundaries.
  *
  * @param data
  *     The guac_display_render_thread structure containing the render thread

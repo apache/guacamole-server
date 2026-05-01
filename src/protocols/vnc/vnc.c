@@ -68,6 +68,105 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 char* GUAC_VNC_CLIENT_KEY = "GUAC_VNC";
 
+/**
+ * Returns a human-readable name for the given negotiated VNC security type.
+ *
+ * Security scheme values come from libvncclient/libvncserver:
+ *   - rfbproto.h
+ *   - rfbclient.h
+ *
+ * @param auth_scheme
+ *     The negotiated security type.
+ *
+ * @return
+ *     The human-readable name of the given security type, or "UNKNOWN" if no
+ *     known name exists.
+ */
+static const char* guac_vnc_auth_scheme_name(uint32_t auth_scheme) {
+
+    switch (auth_scheme) {
+        case rfbNoAuth:
+            return "None";
+
+        case rfbVncAuth:
+            return "VNC";
+
+        case rfbTLS:
+            return "TLS";
+
+        case rfbVeNCrypt:
+            return "VeNCrypt";
+
+        case rfbVeNCryptPlain:
+            return "VeNCrypt/Plain";
+
+        case rfbVeNCryptTLSNone:
+            return "VeNCrypt/TLSNone";
+
+        case rfbVeNCryptTLSVNC:
+            return "VeNCrypt/TLSVNC";
+
+        case rfbVeNCryptTLSPlain:
+            return "VeNCrypt/TLSPlain";
+
+        case rfbVeNCryptX509None:
+            return "VeNCrypt/X509None";
+
+        case rfbVeNCryptX509VNC:
+            return "VeNCrypt/X509VNC";
+
+        case rfbVeNCryptX509Plain:
+            return "VeNCrypt/X509Plain";
+
+        case rfbVeNCryptX509SASL:
+            return "VeNCrypt/X509SASL";
+
+        case rfbVeNCryptTLSSASL:
+            return "VeNCrypt/TLSSASL";
+    }
+
+    return "UNKNOWN";
+
+}
+
+/**
+ * Logs the negotiated VNC protocol version and security scheme selected for
+ * the given connection.
+ *
+ * @param client
+ *     The Guacamole client associated with the connection.
+ *
+ * @param rfb_client
+ *     The libvncclient connection state containing the negotiated protocol
+ *     and security information.
+ */
+static void guac_vnc_log_connection_security(guac_client* client,
+        rfbClient* rfb_client) {
+
+    const char* auth_name =
+        guac_vnc_auth_scheme_name(rfb_client->authScheme);
+
+    /* Some security protocols store the selected sub-authentication scheme
+     * separately. */
+    if (rfb_client->subAuthScheme != 0) {
+        const char* subauth_name =
+            guac_vnc_auth_scheme_name(rfb_client->subAuthScheme);
+
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Connected using RFB %d.%d, security: %s (%u), sub-security: %s (%u).",
+                rfb_client->major, rfb_client->minor,
+                auth_name, rfb_client->authScheme,
+                subauth_name, rfb_client->subAuthScheme);
+    }
+    else {
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Connected using RFB %d.%d, security: %s (%u).",
+                rfb_client->major, rfb_client->minor,
+                auth_name, rfb_client->authScheme);
+    }
+
+}
+
 #ifdef ENABLE_VNC_TLS_LOCKING
 /**
  * A callback function that is called by the VNC library prior to writing
@@ -139,6 +238,8 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
 
     /* Framebuffer update handler */
     rfb_client->GotFrameBufferUpdate = guac_vnc_update;
+    /* Framebuffer finished frame handler */
+    rfb_client->FinishedFrameBufferUpdate = guac_vnc_finished_frame;
     vnc_client->rfb_GotCopyRect = rfb_client->GotCopyRect;
     rfb_client->GotCopyRect = guac_vnc_copyrect;
 
@@ -174,6 +275,7 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
 
         /* Clipboard */
         rfb_client->GotXCutText = guac_vnc_cut_text;
+        rfb_client->GotXCutTextUTF8 = guac_vnc_cut_text_utf8;
 
         /* Set remote cursor */
         if (vnc_settings->remote_cursor) {
@@ -432,6 +534,9 @@ void* guac_vnc_client_thread(void* data) {
                 "Unable to connect to VNC server.");
         return NULL;
     }
+
+    /* Log negotiated protocol version and security scheme to aid debugging */
+    guac_vnc_log_connection_security(client, rfb_client);
 
 #ifdef ENABLE_PULSE
     /* If audio is enabled, start streaming via PulseAudio */

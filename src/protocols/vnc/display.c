@@ -307,6 +307,22 @@ void guac_vnc_display_set_size(rfbClient* client, int requested_width, int reque
 }
 #endif // LIBVNC_HAS_RESIZE_SUPPORT
 
+void guac_vnc_finished_frame(rfbClient* client) {
+
+    guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
+    guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
+
+    if (!vnc_client->finished_frame_logged) {
+        guac_client_log(gc, GUAC_LOG_DEBUG,
+                "Received first FinishedFrameBufferUpdate callback from VNC server.");
+        vnc_client->finished_frame_logged = 1;
+    }
+
+    /* All rectangles in this FramebufferUpdate have been processed. */
+    guac_display_render_thread_notify_frame(vnc_client->render_thread);
+
+}
+
 void guac_vnc_set_pixel_format(rfbClient* client, int color_depth) {
     client->format.trueColour = 1;
     switch(color_depth) {

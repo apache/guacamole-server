@@ -237,7 +237,7 @@ void* guac_terminal_thread(void* data) {
 guac_terminal_options* guac_terminal_options_create(
         int width, int height, int dpi) {
 
-    guac_terminal_options* options = guac_mem_alloc(sizeof(guac_terminal_options));
+    guac_terminal_options* options = guac_mem_zalloc(sizeof(guac_terminal_options));
 
     /* Set all required parameters */
     options->width = width;

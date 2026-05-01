@@ -117,6 +117,17 @@ void* guac_vnc_display_set_owner_size(guac_user* owner, void* data);
 void guac_vnc_display_set_size(rfbClient* client, int requested_width, int requested_height);
 
 /**
+ * Callback invoked by libVNCServer when all rectangles within a single
+ * FramebufferUpdate message have been fully processed. Signals the render
+ * thread that an explicit frame boundary has been reached.
+ *
+ * @param client
+ *     The VNC client associated with the VNC session in which the update
+ *     was completed.
+ */
+void guac_vnc_finished_frame(rfbClient* client);
+
+/**
  * Sets the pixel format to request of the VNC server. The request will be made
  * during the connection handshake with the VNC server using the values
  * specified by this function. Note that the VNC server is not required to
