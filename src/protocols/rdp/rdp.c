@@ -231,6 +231,7 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     return TRUE;
 }
 
+#ifdef HAVE_FREERDP_AUTHENTICATE
 /**
  * Callback invoked by FreeRDP when authentication is required but the required
  * parameters have not been provided. In the case of Guacamole clients that
@@ -324,6 +325,139 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     return TRUE;
 
 }
+#endif // HAVE_FREERDP_AUTHENTICATE
+
+#ifdef HAVE_FREERDP_AUTHENTICATEEX
+/**
+ * Callback invoked by FreeRDP when authentication is required but the required
+ * parameters have not been provided. In the case of Guacamole clients that
+ * support the "required" instruction, this function will send any of the three
+ * unpopulated RDP authentication parameters back to the client so that the
+ * connection owner can provide the required information.  If the values have
+ * been provided in the original connection parameters the user will not be
+ * prompted for updated parameters. If the version of Guacamole Client in use
+ * by the connection owner does not support the "required" instruction then the
+ * connection will fail. This function always returns true. This callback is for
+ * the AuthenticateEx version, which also provides the "reason" field, indicating
+ * the type of authentication that the server is requesting from the client.
+ * Guacamole currently supports PIN and traditional username, password, and domain
+ * authentication.
+ *
+ * @param instance
+ *     The FreeRDP instance associated with the RDP session requesting
+ *     credentials.
+ *
+ * @param username
+ *     Pointer to a string which will receive the user's username.
+ *
+ * @param password
+ *     Pointer to a string which will receive the user's password.
+ *
+ * @param domain
+ *     Pointer to a string which will receive the domain associated with the
+ *     user's account.
+ *
+ * @return
+ *     Always TRUE.
+ */
+static BOOL rdp_freerdp_authenticate_ex(freerdp* instance, char** username,
+        char** password, char** domain, rdp_auth_reason reason) {
+
+    rdpContext* context = GUAC_RDP_CONTEXT(instance);
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+    char* params[4] = {NULL};
+    int i = 0;
+    
+    /* If the client does not support the "required" instruction, warn and
+     * quit.
+     */
+    if (!guac_client_owner_supports_required(client)) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Client does not support the "
+                "\"required\" instruction. No authentication parameters will "
+                "be requested.");
+        return TRUE;
+    }
+
+    switch (reason) {
+
+        /* In the case that we just need a PIN, request only the PIN/password. */
+        case AUTH_SMARTCARD_PIN:
+        case AUTH_FIDO_PIN:
+
+            /* If the password/PIN is undefined, add it to the requested parameters. */
+            if (settings->password == NULL) {
+                guac_argv_register(GUAC_RDP_ARGV_PASSWORD, guac_rdp_argv_callback, NULL, 0);
+                params[i] = GUAC_RDP_ARGV_PASSWORD;
+                i++;
+            }
+
+            break;
+
+        /* For all other cases, request anything that isn't  configured. */
+        case AUTH_RDSTLS:
+        case AUTH_TLS:
+        case AUTH_RDP:
+        case AUTH_NLA:
+        case GW_AUTH_HTTP:
+        case GW_AUTH_RDG:
+        case GW_AUTH_RPC:
+
+            /* If the username is undefined, add it to the requested parameters. */
+            if (settings->username == NULL) {
+                guac_argv_register(GUAC_RDP_ARGV_USERNAME, guac_rdp_argv_callback, NULL, 0);
+                params[i] = GUAC_RDP_ARGV_USERNAME;
+                i++;
+
+                /* If username is undefined and domain is also undefined, request domain. */
+                if (settings->domain == NULL) {
+                    guac_argv_register(GUAC_RDP_ARGV_DOMAIN, guac_rdp_argv_callback, NULL, 0);
+                    params[i] = GUAC_RDP_ARGV_DOMAIN;
+                    i++;
+                }
+
+            }
+
+            /* If the password is undefined, add it to the requested parameters. */
+            if (settings->password == NULL) {
+                guac_argv_register(GUAC_RDP_ARGV_PASSWORD, guac_rdp_argv_callback, NULL, 0);
+                params[i] = GUAC_RDP_ARGV_PASSWORD;
+                i++;
+            }
+
+            break;
+
+        /* We should never get here. */
+        default:
+            return TRUE;
+
+    }
+
+    /* NULL-terminate the array. */
+    params[i] = NULL;
+
+    if (i > 0) {
+        
+        /* Send required parameters to the owner and wait for the response. */
+        guac_client_owner_send_required(client, (const char**) params);
+        guac_argv_await((const char**) params);
+        
+        /* Free old values and get new values from settings. */
+        guac_mem_free(*username);
+        guac_mem_free(*password);
+        guac_mem_free(*domain);
+        *username = guac_strdup(settings->username);
+        *password = guac_strdup(settings->password);
+        *domain = guac_strdup(settings->domain);
+        
+    }
+    
+    /* Always return TRUE allowing connection to retry. */
+    return TRUE;
+
+}
+#endif // HAVE_FREERDP_AUTHENTICATEEX
 
 #ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
 /**
@@ -549,11 +683,20 @@ static int guac_rdp_handle_connection(guac_client* client) {
      * If the freerdp instance has a LoadChannels callback for loading plugins
      * we use that instead of the PreConnect callback to load plugins.
      */
-    #ifdef RDP_INST_HAS_LOAD_CHANNELS
+#ifdef RDP_INST_HAS_LOAD_CHANNELS
         rdp_inst->LoadChannels = rdp_freerdp_load_channels;
-    #endif
+#endif
+
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
+
+#ifdef HAVE_FREERDP_AUTHENTICATE
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
+#endif
+
+#ifdef HAVE_FREERDP_AUTHENTICATEEX
+    rdp_inst->AuthenticateEx = rdp_freerdp_authenticate_ex;
+#endif
+
 
 #ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
     rdp_inst->VerifyCertificateEx = rdp_freerdp_verify_certificate;
