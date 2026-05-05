@@ -177,9 +177,9 @@ enum VNC_ARGS_IDX {
 
     /**
      * The encoding to use for clipboard data sent to the VNC server if we are
-     * going to be deviating from the standard (which mandates ISO 8829-1).
-     * Valid values are "ISO8829-1" (the only legal value with respect to the
-     * VNC standard), "UTF-8", "UTF-16", and "CP2252".
+     * going to be deviating from the standard (which mandates ISO 8859-1).
+     * Valid values are "ISO8859-1" (the only legal value with respect to the
+     * VNC standard), "UTF-8", "UTF-16", "CP1252", and "MacRoman".
      */
     IDX_CLIPBOARD_ENCODING,
 
@@ -278,8 +278,8 @@ enum VNC_ARGS_IDX {
     IDX_SFTP_PASSPHRASE,
 
     /**
-     * The base64-encode public key to use when authentication with the SSH
-     * server for SFTP using key-based authentication.
+     * The base64-encoded public key to use when authentication with
+     * the SSH server for SFTP using key-based authentication.
      */
     IDX_SFTP_PUBLIC_KEY,
 

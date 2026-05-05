@@ -26,6 +26,7 @@
 #include "vnc.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 #include <rfb/rfbclient.h>
@@ -62,6 +63,13 @@ int guac_vnc_set_clipboard_encoding(guac_client* client,
     if (strcmp(name, "CP1252") == 0) {
         vnc_client->clipboard_reader = GUAC_READ_CP1252;
         vnc_client->clipboard_writer = GUAC_WRITE_CP1252;
+        return 1;
+    }
+
+    /* MacRoman */
+    if (strcmp(name, "MacRoman") == 0) {
+        vnc_client->clipboard_reader = GUAC_READ_MACROMAN;
+        vnc_client->clipboard_writer = GUAC_WRITE_MACROMAN;
         return 1;
     }
 
@@ -123,6 +131,7 @@ int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     if (clipboard == NULL)
         return 0;
 
+    guac_client* client = user->client;
     rfbClient* rfb_client = vnc_client->rfb_client;
 
     /* Send via VNC only if finished connecting */
@@ -156,6 +165,12 @@ int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     /* Fall back to classic clipboard with encoding conversion */
     int output_buf_size = clipboard->available;
     char* output_data = guac_mem_alloc(output_buf_size);
+    if (output_data == NULL) {
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Clipboard conversion failed: unable to allocate output "
+                "buffer.");
+        return 1;
+    }
 
     const char* input = clipboard->buffer;
     char* output = output_data;
@@ -183,6 +198,12 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
     int output_buf_size = vnc_client->clipboard->available;
     char* received_data = guac_mem_alloc(output_buf_size);
+    if (received_data == NULL) {
+        guac_client_log(gc, GUAC_LOG_WARNING,
+                "Clipboard conversion failed: unable to allocate receive "
+                "buffer.");
+        return;
+    }
 
     const char* input = text;
     char* output = received_data;
@@ -198,6 +219,7 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
     guac_common_clipboard_send(vnc_client->clipboard, gc);
 
     guac_mem_free(received_data);
+
 }
 
 void guac_vnc_cut_text_utf8(rfbClient* client, const char* text, int textlen) {
@@ -209,7 +231,13 @@ void guac_vnc_cut_text_utf8(rfbClient* client, const char* text, int textlen) {
     if (vnc_client->settings->disable_copy)
         return;
 
-    char received_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
+    char* received_data = guac_mem_alloc(GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+    if (received_data == NULL) {
+        guac_client_log(gc, GUAC_LOG_WARNING,
+                "Clipboard conversion failed: unable to allocate UTF-8 "
+                "receive buffer.");
+        return;
+    }
 
     const char* input = text;
     char* output = received_data;
@@ -218,11 +246,13 @@ void guac_vnc_cut_text_utf8(rfbClient* client, const char* text, int textlen) {
      * GUAC_COMMON_CLIPBOARD_MAX_LENGTH and replaces invalid lead bytes
      * with the Unicode replacement character (U+FFFD, ?) */
     guac_iconv(GUAC_READ_UTF8, &input, textlen,
-               GUAC_WRITE_UTF8, &output, sizeof(received_data));
+            GUAC_WRITE_UTF8, &output, GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
 
     /* Send converted data */
     guac_common_clipboard_reset(vnc_client->clipboard, "text/plain");
     guac_common_clipboard_append(vnc_client->clipboard, received_data, output - received_data);
     guac_common_clipboard_send(vnc_client->clipboard, gc);
+
+    guac_mem_free(received_data);
 
 }

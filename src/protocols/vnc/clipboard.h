@@ -34,7 +34,7 @@
  *
  * @param name
  *     The name of the encoding to use for all clipboard data. Valid values
- *     are: "ISO8859-1", "UTF-8", "UTF-16", "CP1252", or NULL.
+ *     are: "ISO8859-1", "UTF-8", "UTF-16", "CP1252", "MacRoman", or NULL.
  *
  * @return
  *     Zero if the chosen encoding is standard for VNC, or non-zero if the VNC
