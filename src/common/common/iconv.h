@@ -20,6 +20,8 @@
 #ifndef __GUAC_COMMON_ICONV_H
 #define __GUAC_COMMON_ICONV_H
 
+#include "common/defaults.h"
+
 /**
  * Function which reads a character from the given string data, returning
  * the Unicode codepoint read, updating the string pointer to point to the
@@ -119,6 +121,16 @@ guac_iconv_write GUAC_WRITE_CP1252;
 guac_iconv_write GUAC_WRITE_ISO8859_1;
 
 /**
+ * Read function for Mac OS Roman.
+ */
+guac_iconv_read GUAC_READ_MACROMAN;
+
+/**
+ * Write function for Mac OS Roman.
+ */
+guac_iconv_write GUAC_WRITE_MACROMAN;
+
+/**
  * Write function for UTF-8 which writes newline characters ('\n') as
  * Windows-style newlines ("\r\n").
  */
@@ -141,6 +153,18 @@ guac_iconv_write GUAC_WRITE_CP1252_CRLF;
  * Windows-style newlines ("\r\n").
  */
 guac_iconv_write GUAC_WRITE_ISO8859_1_CRLF;
+
+/**
+ * Read function for Mac OS Roman which normalizes newline character sequences
+ * like "\r\n" to Unix-style newlines ('\n').
+ */
+guac_iconv_read GUAC_READ_MACROMAN_NORMALIZED;
+
+/**
+ * Write function for Mac OS Roman which writes newline characters ('\n') as
+ * Windows-style newlines ("\r\n").
+ */
+guac_iconv_write GUAC_WRITE_MACROMAN_CRLF;
 
 #endif
 

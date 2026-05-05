@@ -328,7 +328,7 @@ ENV LC_ALL=C.UTF-8
 ENV LD_LIBRARY_PATH=${PREFIX_DIR}/lib
 
 # Checks the operating status every 5 minutes with a timeout of 5 seconds
-HEALTHCHECK --interval=5m --timeout=5s CMD nc -z 127.0.0.1 4822 || exit 1
+HEALTHCHECK --interval=5m --timeout=5s --start-period=15s CMD nc -z 127.0.0.1 4822 || exit 1
 
 # Create a new user guacd
 ARG UID=1000
