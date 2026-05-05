@@ -110,7 +110,7 @@ typedef struct encoding_test_parameters {
 /**
  * The total number of encodings supported by guac_iconv().
  */
-#define NUM_SUPPORTED_ENCODINGS 4
+#define NUM_SUPPORTED_ENCODINGS 5
 
 /**
  * Test parameters for each supported encoding. The test strings included each

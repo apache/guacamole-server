@@ -21,10 +21,16 @@
 #define GUAC_COMMON_DEFAULTS_H
 
 /**
+ * Returns the number of elements in a statically-sized array.
+ */
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+#endif
+
+/**
  * The default number of seconds to wait after sending the Wake-on-LAN packet
  * for the destination host to start responding.
  */
 #define GUAC_WOL_DEFAULT_BOOT_WAIT_TIME 0
 
 #endif /* GUAC_COMMON_DEFAULTS_H */
-

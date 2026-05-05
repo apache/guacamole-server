@@ -20,6 +20,15 @@
 #include "common/iconv.h"
 #include "convert-test-data.h"
 
+/*
+ * Test fixtures for the iconv conversion matrix.
+ *
+ * Each entry provides the same logical text encoded in one supported character
+ * set, with variants covering mixed, Unix, and CRLF line endings. The tests in
+ * convert.c iterate over every source/target encoding pair and verify that
+ * guac_iconv() preserves the text exactly or normalizes line endings as
+ * requested while converting between encodings.
+ */
 encoding_test_parameters test_params[NUM_SUPPORTED_ENCODINGS] = {
 
     /*
@@ -146,6 +155,37 @@ encoding_test_parameters test_params[NUM_SUPPORTED_ENCODINGS] = {
             "pap\xE0 \xE8 bello\r\n"
             "pap\xE0 \xE8 bello\r\n"
             "pap\xE0 \xE8 bello"
+        )
+    },
+
+    /*
+     * MacRoman
+     */
+
+    {
+        "MacRoman",
+        GUAC_READ_MACROMAN,  GUAC_READ_MACROMAN_NORMALIZED,
+        GUAC_WRITE_MACROMAN, GUAC_WRITE_MACROMAN_CRLF,
+        .test_mixed = TEST_STRING(
+            "pap\x88 \x8F bello\n"
+            "pap\x88 \x8F bello\r\n"
+            "pap\x88 \x8F bello\n"
+            "pap\x88 \x8F bello\r\n"
+            "pap\x88 \x8F bello"
+        ),
+        .test_unix = TEST_STRING(
+            "pap\x88 \x8F bello\n"
+            "pap\x88 \x8F bello\n"
+            "pap\x88 \x8F bello\n"
+            "pap\x88 \x8F bello\n"
+            "pap\x88 \x8F bello"
+        ),
+        .test_windows = TEST_STRING(
+            "pap\x88 \x8F bello\r\n"
+            "pap\x88 \x8F bello\r\n"
+            "pap\x88 \x8F bello\r\n"
+            "pap\x88 \x8F bello\r\n"
+            "pap\x88 \x8F bello"
         )
     }
 
