@@ -90,89 +90,109 @@
  * - ASCII control codes (C0/DEL): https://www.rfc-editor.org/rfc/rfc20
  */
 
-/* See X11 keysymdef.h */
-#define GUAC_KEYSYM_UNICODE_MASK    0xFFFF0000 /* Mask to test for 0x0100xxxx Unicode-keysym prefix. */
-#define GUAC_KEYSYM_UNICODE_PREFIX  0x01000000 /* X11 Unicode keysym prefix (0x01000000 | codepoint). */
+/*
+ * Mask used to detect the X11 Unicode keysym encoding.
+ *
+ * See X11 keysymdef.h.
+ */
+#define GUAC_KEYSYM_UNICODE_MASK    0xFFFF0000
 
-#define GUAC_KEYSYM_KP_ASCII_OFFSET 0xFF80 /* Keypad keysyms start at 0xFF80 (XK_KP_Space). */
+/*
+ * Prefix used by X11 to encode a Unicode codepoint as a keysym:
+ * 0x01000000 | codepoint.
+ *
+ * See X11 keysymdef.h.
+ */
+#define GUAC_KEYSYM_UNICODE_PREFIX  0x01000000
 
+/*
+ * X11 keypad keysyms begin at 0xFF80 (XK_KP_Space). Subtracting this offset
+ * allows keypad keysyms to be mapped onto their corresponding ASCII values
+ * where applicable.
+ */
+#define GUAC_KEYSYM_KP_ASCII_OFFSET 0xFF80
+
+/**
+ * Canonical X11 keysyms used by the terminal keyboard emulation logic.
+ */
 typedef enum guac_terminal_keysym {
-    /* Modifier keys. */
-    GUAC_KEYSYM_SHIFT_L = 0xFFE1,
-    GUAC_KEYSYM_SHIFT_R = 0xFFE2,
-    GUAC_KEYSYM_CTRL_L = 0xFFE3,
-    GUAC_KEYSYM_CTRL_R = 0xFFE4,
-    GUAC_KEYSYM_META_L = 0xFFE7,
-    GUAC_KEYSYM_META_R = 0xFFE8,
-    GUAC_KEYSYM_ALT_L = 0xFFE9,
-    GUAC_KEYSYM_ALT_R = 0xFFEA,
-    GUAC_KEYSYM_SUPER_L = 0xFFEB, /* Super/Windows/Command key (left). */
-    GUAC_KEYSYM_SUPER_R = 0xFFEC, /* Super/Windows/Command key (right). */
-    GUAC_KEYSYM_HYPER_L = 0xFFED, /* Hyper key (left). */
-    GUAC_KEYSYM_HYPER_R = 0xFFEE, /* Hyper key (right). */
-    GUAC_KEYSYM_MODE_SWITCH = 0xFF7E, /* Group/layout switch (AltGr-like), on some international keyboards. */
-    GUAC_KEYSYM_ISO_LEVEL3_SHIFT = 0xFE03, /* AltGr / Option-level modifier on some international and Mac keyboards. */
-    GUAC_KEYSYM_ISO_LEVEL5_SHIFT = 0xFE11, /* Fifth-level chooser on some international keyboards. */
 
-    /* Arrow/navigation direction keys. */
-    GUAC_KEYSYM_LEFT = 0xFF51,
-    GUAC_KEYSYM_UP = 0xFF52,
-    GUAC_KEYSYM_RIGHT = 0xFF53,
-    GUAC_KEYSYM_DOWN = 0xFF54,
+    /* Modifier keys */
+    GUAC_KEYSYM_SHIFT_L = 0xFFE1,           /* Left Shift modifier key.                    */
+    GUAC_KEYSYM_SHIFT_R = 0xFFE2,           /* Right Shift modifier key.                   */
+    GUAC_KEYSYM_CTRL_L = 0xFFE3,            /* Left Control modifier key.                  */
+    GUAC_KEYSYM_CTRL_R = 0xFFE4,            /* Right Control modifier key.                 */
+    GUAC_KEYSYM_META_L = 0xFFE7,            /* Left Meta modifier key.                     */
+    GUAC_KEYSYM_META_R = 0xFFE8,            /* Right Meta modifier key.                    */
+    GUAC_KEYSYM_ALT_L = 0xFFE9,             /* Left Alt modifier key.                      */
+    GUAC_KEYSYM_ALT_R = 0xFFEA,             /* Right Alt modifier key.                     */
+    GUAC_KEYSYM_SUPER_L = 0xFFEB,           /* Left Super key, such as Windows/Command.    */
+    GUAC_KEYSYM_SUPER_R = 0xFFEC,           /* Right Super key, such as Windows/Command.   */
+    GUAC_KEYSYM_HYPER_L = 0xFFED,           /* Left Hyper modifier key.                    */
+    GUAC_KEYSYM_HYPER_R = 0xFFEE,           /* Right Hyper modifier key.                   */
+    GUAC_KEYSYM_MODE_SWITCH = 0xFF7E,       /* Keyboard group or layout switch key.        */
+    GUAC_KEYSYM_ISO_LEVEL3_SHIFT = 0xFE03,  /* ISO Level 3 shift key, often AltGr/Option.  */
+    GUAC_KEYSYM_ISO_LEVEL5_SHIFT = 0xFE11,  /* ISO Level 5 shift key.                      */
 
-    /* Keypad arrow/navigation variants. */
-    GUAC_KEYSYM_KP_LEFT = 0xFF96,
-    GUAC_KEYSYM_KP_UP = 0xFF97,
-    GUAC_KEYSYM_KP_RIGHT = 0xFF98,
-    GUAC_KEYSYM_KP_DOWN = 0xFF99,
+    /* Arrow/navigation direction keys */
+    GUAC_KEYSYM_LEFT = 0xFF51,              /* Left arrow key.                             */
+    GUAC_KEYSYM_UP = 0xFF52,                /* Up arrow key.                               */
+    GUAC_KEYSYM_RIGHT = 0xFF53,             /* Right arrow key.                            */
+    GUAC_KEYSYM_DOWN = 0xFF54,              /* Down arrow key.                             */
 
-    /* Function keys. */
-    GUAC_KEYSYM_F1 = 0xFFBE,
-    GUAC_KEYSYM_F2 = 0xFFBF,
-    GUAC_KEYSYM_F3 = 0xFFC0,
-    GUAC_KEYSYM_F4 = 0xFFC1,
-    GUAC_KEYSYM_F5 = 0xFFC2,
-    GUAC_KEYSYM_F6 = 0xFFC3,
-    GUAC_KEYSYM_F7 = 0xFFC4,
-    GUAC_KEYSYM_F8 = 0xFFC5,
-    GUAC_KEYSYM_F9 = 0xFFC6,
-    GUAC_KEYSYM_F10 = 0xFFC7,
-    GUAC_KEYSYM_F11 = 0xFFC8,
-    GUAC_KEYSYM_F12 = 0xFFC9,
+    /* Keypad arrow/navigation variants */
+    GUAC_KEYSYM_KP_LEFT = 0xFF96,           /* Keypad left arrow key.                      */
+    GUAC_KEYSYM_KP_UP = 0xFF97,             /* Keypad up arrow key.                        */
+    GUAC_KEYSYM_KP_RIGHT = 0xFF98,          /* Keypad right arrow key.                     */
+    GUAC_KEYSYM_KP_DOWN = 0xFF99,           /* Keypad down arrow key.                      */
 
-    /* Keypad function-key variants. */
-    GUAC_KEYSYM_KP_F1 = 0xFF91,
-    GUAC_KEYSYM_KP_F2 = 0xFF92,
-    GUAC_KEYSYM_KP_F3 = 0xFF93,
-    GUAC_KEYSYM_KP_F4 = 0xFF94,
+    /* Function keys */
+    GUAC_KEYSYM_F1 = 0xFFBE,                /* F1 function key.                            */
+    GUAC_KEYSYM_F2 = 0xFFBF,                /* F2 function key.                            */
+    GUAC_KEYSYM_F3 = 0xFFC0,                /* F3 function key.                            */
+    GUAC_KEYSYM_F4 = 0xFFC1,                /* F4 function key.                            */
+    GUAC_KEYSYM_F5 = 0xFFC2,                /* F5 function key.                            */
+    GUAC_KEYSYM_F6 = 0xFFC3,                /* F6 function key.                            */
+    GUAC_KEYSYM_F7 = 0xFFC4,                /* F7 function key.                            */
+    GUAC_KEYSYM_F8 = 0xFFC5,                /* F8 function key.                            */
+    GUAC_KEYSYM_F9 = 0xFFC6,                /* F9 function key.                            */
+    GUAC_KEYSYM_F10 = 0xFFC7,               /* F10 function key.                           */
+    GUAC_KEYSYM_F11 = 0xFFC8,               /* F11 function key.                           */
+    GUAC_KEYSYM_F12 = 0xFFC9,               /* F12 function key.                           */
 
-    /* Basic control/edit keys. */
-    GUAC_KEYSYM_BACKSPACE = 0xFF08,
-    GUAC_KEYSYM_TAB = 0xFF09,
-    GUAC_KEYSYM_KP_TAB = 0xFF89,
-    GUAC_KEYSYM_LINE_FEED = 0xFF0A,
-    GUAC_KEYSYM_ENTER = 0xFF0D,
-    GUAC_KEYSYM_KP_ENTER = 0xFF8D,
-    GUAC_KEYSYM_ESCAPE = 0xFF1B,
+    /* Keypad function-key variants */
+    GUAC_KEYSYM_KP_F1 = 0xFF91,             /* Keypad F1 function key.                     */
+    GUAC_KEYSYM_KP_F2 = 0xFF92,             /* Keypad F2 function key.                     */
+    GUAC_KEYSYM_KP_F3 = 0xFF93,             /* Keypad F3 function key.                     */
+    GUAC_KEYSYM_KP_F4 = 0xFF94,             /* Keypad F4 function key.                     */
 
-    /* Navigation/editing keys and keypad variants. */
-    GUAC_KEYSYM_HOME = 0xFF50,
-    GUAC_KEYSYM_KP_HOME = 0xFF95,
-    GUAC_KEYSYM_PAGE_UP = 0xFF55,
-    GUAC_KEYSYM_KP_PAGE_UP = 0xFF9A,
-    GUAC_KEYSYM_PAGE_DOWN = 0xFF56,
-    GUAC_KEYSYM_KP_PAGE_DOWN = 0xFF9B,
-    GUAC_KEYSYM_END = 0xFF57,
-    GUAC_KEYSYM_KP_END = 0xFF9C,
-    GUAC_KEYSYM_INSERT = 0xFF63,
-    GUAC_KEYSYM_KP_INSERT = 0xFF9E,
-    GUAC_KEYSYM_DELETE = 0xFFFF,
-    GUAC_KEYSYM_KP_DELETE = 0xFF9F,
+    /* Basic control/edit keys */
+    GUAC_KEYSYM_BACKSPACE = 0xFF08,         /* Backspace key.                              */
+    GUAC_KEYSYM_TAB = 0xFF09,               /* Tab key.                                    */
+    GUAC_KEYSYM_KP_TAB = 0xFF89,            /* Keypad Tab key.                             */
+    GUAC_KEYSYM_LINE_FEED = 0xFF0A,         /* Line Feed key.                              */
+    GUAC_KEYSYM_ENTER = 0xFF0D,             /* Enter key.                                  */
+    GUAC_KEYSYM_KP_ENTER = 0xFF8D,          /* Keypad Enter key.                           */
+    GUAC_KEYSYM_ESCAPE = 0xFF1B,            /* Escape key.                                 */
 
-    /* Keypad printable range helpers and standalone keypad key. */
-    GUAC_KEYSYM_KP_MULTIPLY = 0xFFAA,
-    GUAC_KEYSYM_KP_EQUAL = 0xFFBD,
-    GUAC_KEYSYM_KP_9 = 0xFFB9
+    /* Navigation/editing keys and keypad variants */
+    GUAC_KEYSYM_HOME = 0xFF50,              /* Home key.                                   */
+    GUAC_KEYSYM_KP_HOME = 0xFF95,           /* Keypad Home key.                            */
+    GUAC_KEYSYM_PAGE_UP = 0xFF55,           /* Page Up key.                                */
+    GUAC_KEYSYM_KP_PAGE_UP = 0xFF9A,        /* Keypad Page Up key.                         */
+    GUAC_KEYSYM_PAGE_DOWN = 0xFF56,         /* Page Down key.                              */
+    GUAC_KEYSYM_KP_PAGE_DOWN = 0xFF9B,      /* Keypad Page Down key.                       */
+    GUAC_KEYSYM_END = 0xFF57,               /* End key.                                    */
+    GUAC_KEYSYM_KP_END = 0xFF9C,            /* Keypad End key.                             */
+    GUAC_KEYSYM_INSERT = 0xFF63,            /* Insert key.                                 */
+    GUAC_KEYSYM_KP_INSERT = 0xFF9E,         /* Keypad Insert key.                          */
+    GUAC_KEYSYM_DELETE = 0xFFFF,            /* Delete key.                                 */
+    GUAC_KEYSYM_KP_DELETE = 0xFF9F,         /* Keypad Delete key.                          */
+
+    /* Keypad printable range helpers */
+    GUAC_KEYSYM_KP_MULTIPLY = 0xFFAA,       /* Keypad multiply key.                        */
+    GUAC_KEYSYM_KP_EQUAL = 0xFFBD,          /* Keypad equals key.                          */
+    GUAC_KEYSYM_KP_9 = 0xFFB9               /* Keypad 9 key.                               */
 } guac_terminal_keysym;
 
 /**
@@ -241,7 +261,7 @@ void guac_terminal_reset(guac_terminal* term) {
     int row;
 
     /* Set current state */
-    term->char_handler = guac_terminal_echo; 
+    term->char_handler = guac_terminal_echo;
     term->active_char_set = 0;
     term->char_mapping[0] =
     term->char_mapping[1] = NULL;
@@ -278,7 +298,7 @@ void guac_terminal_reset(guac_terminal* term) {
     /* Reset display palette */
     guac_terminal_display_reset_palette(term->display);
 
-    /* Clear terminal with a row length of term_width-1 
+    /* Clear terminal with a row length of term_width-1
      * to avoid exceed the size of the display layer */
     for (row=0; row<term->term_height; row++)
         guac_terminal_set_columns(term, row, 0, term->term_width-1, &(term->default_char));
@@ -376,22 +396,22 @@ guac_terminal_options* guac_terminal_options_create(
 }
 
 /**
- * Calculate the available height and width in characters for text display in 
+ * Calculate the available height and width in characters for text display in
  * the terminal and store the results in the pointer arguments.
  *
  * @param terminal
  *     The terminal provides character width and height for calculations.
- * 
+ *
  * @param height
  *     The outer height of the terminal, in pixels.
- * 
+ *
  * @param width
  *     The outer width of the terminal, in pixels.
- * 
+ *
  * @param rows
  *     Pointer to the calculated height of the terminal for text display,
  *     in characters.
- * 
+ *
  * @param columns
  *     Pointer to the calculated width of the terminal for text display,
  *     in characters.
@@ -402,7 +422,7 @@ static void calculate_rows_and_columns(guac_terminal* term,
     int margin = term->display->margin;
     int char_width = term->display->char_width;
     int char_height = term->display->char_height;
-    
+
     /* Calculate available display area */
     int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH - 2 * margin;
     if (available_width < 0)
@@ -426,24 +446,24 @@ static void calculate_rows_and_columns(guac_terminal* term,
 }
 
 /**
- * Calculate the available height and width in pixels of the terminal for text 
+ * Calculate the available height and width in pixels of the terminal for text
  * display in the terminal and store the results in the pointer arguments.
  *
  * @param terminal
  *     The terminal provides character width and height for calculations.
- * 
+ *
  * @param rows
  *     The available height of the terminal for text display, in characters.
- * 
+ *
  * @param columns
  *     The available width of the terminal for text display, in characters.
  *
  * @param height
- *     Pointer to the calculated available height of the terminal for text 
+ *     Pointer to the calculated available height of the terminal for text
  *     display, in pixels.
- * 
+ *
  * @param width
- *     Pointer to the calculated available width of the terminal for text 
+ *     Pointer to the calculated available width of the terminal for text
  *     display, in pixels.
  */
 static void calculate_height_and_width(guac_terminal* term,
@@ -551,7 +571,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     calculate_rows_and_columns(term, height, width, &rows, &columns);
 
     /* Calculate available display area in pixels */
-    int adjusted_height = height; 
+    int adjusted_height = height;
     int adjusted_width = width;
     calculate_height_and_width(term, rows, columns,
         &adjusted_height, &adjusted_width);
@@ -1460,7 +1480,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     calculate_rows_and_columns(terminal, height, width, &rows, &columns);
 
     /* Calculate available display area in pixels */
-    int adjusted_height = height; 
+    int adjusted_height = height;
     int adjusted_width = width;
     calculate_height_and_width(terminal, rows, columns,
         &adjusted_height, &adjusted_width);
@@ -1486,7 +1506,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     }
 
     /* Notify scrollbar of resize */
-    guac_terminal_scrollbar_parent_resized(terminal->scrollbar, 
+    guac_terminal_scrollbar_parent_resized(terminal->scrollbar,
         terminal->outer_width, terminal->outer_height, terminal->term_height);
     guac_terminal_scrollbar_set_bounds(terminal->scrollbar,
             -guac_terminal_get_available_scroll(terminal), 0);
@@ -1783,7 +1803,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     }
 
     /*
-     * Super (Windows/Command) and Hyper are treated as Meta since terminals don’t
+     * Super (Windows/Command) and Hyper are treated as Meta since terminals don't
      * have separate modifier bits for them.
      *
      * MODE_SWITCH and the ISO level selectors are intentionally not treated as
@@ -1801,7 +1821,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         term->mod_alt = pressed;
     else if (keysym == GUAC_KEYSYM_SHIFT_L || keysym == GUAC_KEYSYM_SHIFT_R)
         term->mod_shift = pressed;
-        
+
     /* If key pressed */
     else if (pressed) {
 
@@ -1855,7 +1875,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
                 && !__guac_terminal_is_editing_keysym(keysym))
             guac_terminal_send_string(term, "\x1B");
 
-        /* Translate Ctrl+letter to control code */ 
+        /* Translate Ctrl+letter to control code */
         if (term->mod_ctrl) {
 
             char data;
@@ -1881,7 +1901,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
                 data = (char) (keysym - '3' + 0x1B);
 
             else {
-                /* No C0 mapping — encode as CSI modifier sequence if applicable */
+                /* No C0 mapping: encode as CSI modifier sequence if applicable */
                 if (__guac_terminal_is_arrow_keysym(keysym))
                     return __guac_terminal_send_modified_arrow(term, keysym);
                 if (__guac_terminal_is_function_keysym(keysym))
@@ -2026,8 +2046,8 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
  *     false otherwise.
  */
 static bool guac_terminal_is_part_of_word(int ascii_char) {
-    return ((ascii_char >= '0' && ascii_char <= '9') || 
-            (ascii_char >= 'A' && ascii_char <= 'Z') || 
+    return ((ascii_char >= '0' && ascii_char <= '9') ||
+            (ascii_char >= 'A' && ascii_char <= 'Z') ||
             (ascii_char >= 'a' && ascii_char <= 'z') ||
             (ascii_char == '$') ||
             (ascii_char == '%') ||
@@ -2063,7 +2083,7 @@ static bool guac_terminal_is_blank(int ascii_char) {
  *  - Determining the type of character :
  *      Letter, digit, acceptable symbol within a word,
  *      or space/NULL,
- *      all other chars are treated as single. 
+ *      all other chars are treated as single.
  *  - Calculating the word boundaries.
  *  - Visual selection of the found word.
  *  - Adding it to clipboard.
@@ -2073,7 +2093,7 @@ static bool guac_terminal_is_blank(int ascii_char) {
  *
  * @param row
  *     The row where is the mouse at the double click event.
- * 
+ *
  * @param col
  *     The column where is the mouse at the double click event.
  */
@@ -2088,7 +2108,7 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
     /* (char)10 behind cursor */
     int current_char = characters[col].value;
 
-    /* Position of the word behind cursor. 
+    /* Position of the word behind cursor.
      * Default = col required to select a char if not a word and not blank. */
 
     /* The function used to calculate the word borders */
@@ -2212,7 +2232,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
                     case 0:
                         guac_terminal_select_start(term, row, col, side);
                         break;
-                    
+
                     /* Second click = word selection */
                     case 1:
                         guac_terminal_double_click(term, row, col);
