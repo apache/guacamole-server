@@ -108,6 +108,7 @@ int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     if (rfb_client == NULL)
         return 0;
 
+#ifdef LIBVNC_CLIENT_HAS_EXTENDED_CLIPBOARD
     /*
      * Guacamole stores clipboard text as UTF-8. The clipboard-encoding
      * setting only applies to the classic VNC clipboard path, where text
@@ -131,6 +132,7 @@ int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream) {
                     vnc_client->clipboard->length))
             return 0;
     }
+#endif
 
     /* Fall back to classic clipboard with encoding conversion */
     char output_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
@@ -174,6 +176,7 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
 }
 
+#ifdef LIBVNC_CLIENT_HAS_EXTENDED_CLIPBOARD
 void guac_vnc_cut_text_utf8(rfbClient* client, const char* text, int textlen) {
 
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
@@ -200,3 +203,4 @@ void guac_vnc_cut_text_utf8(rfbClient* client, const char* text, int textlen) {
     guac_common_clipboard_send(vnc_client->clipboard, gc);
 
 }
+#endif
