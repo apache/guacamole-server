@@ -721,6 +721,30 @@ then
 fi
 
 #
+# libVNCServer support for the Extended Clipboard pseudo-encoding, which
+# allows clipboard text to be exchanged as UTF-8 via SendClientCutTextUTF8()
+# and the GotXCutTextUTF8 callback. Both were added in libvncserver 0.9.15.
+# If support is missing, Guacamole falls back to the classic VNC clipboard
+# with iconv-based encoding conversion.
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_extended_clipboard=yes
+    AC_CHECK_MEMBERS([rfbClient.GotXCutTextUTF8],
+                     [], [have_vnc_extended_clipboard=no],
+                     [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_extended_clipboard}" = "xyes"
+    then
+        AC_DEFINE([LIBVNC_CLIENT_HAS_EXTENDED_CLIPBOARD],,
+                  [Whether rfbClient supports the Extended Clipboard pseudo-encoding (UTF-8).])
+    fi
+
+fi
+
+#
 # FreeRDP (libfreerdpX, libfreerdp-clientX, and libwinprX)
 #
 
