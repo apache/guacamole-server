@@ -497,6 +497,28 @@ struct guac_user {
     guac_user_audio_handler* audio_handler;
 
     /**
+     * Handler for video events sent by the Guacamole web-client. This handler
+     * will be called whenever the web-client wishes to send a continuous
+     * stream of video data from some arbitrary source (a camera, for
+     * example).
+     *
+     * The handler takes a guac_stream, which contains the stream index and
+     * will persist through the duration of the transfer, and the mimetype
+     * of the data being transferred.
+     *
+     * Example:
+     * @code
+     *     int video_handler(guac_user* user, guac_stream* stream,
+     *             char* mimetype);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->video_handler = video_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_audio_handler* video_handler;
+
+    /**
      * Handler for argv events (updates to the connection parameters of an
      * in-progress connection) sent by the Guacamole web-client.
      *
