@@ -536,6 +536,54 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_display_layer* default_layer = guac_display_default_layer(rdp_client->display);
     guac_display_layer_resize(default_layer, rdp_client->settings->width, rdp_client->settings->height);
 
+    /*
+     * For RemoteApp connections, the default layer
+     * represents the (invisible) desktop behind the application windows.
+     * Fill it once with opaque black; guac_rdp_gdi_end_paint refuses to
+     * mark it dirty again for the rest of the session, so FreeRDP's
+     * ongoing painting of the server desktop into the shared GDI primary
+     * buffer never reaches the client.
+     *
+     * Without this, GFX-enabled RemoteApp sessions show the server's
+     * desktop behind the application
+     * windows because gdi->primary_buffer shares memory with the default
+     * layer and FreeRDP paints all windowId==0 surfaces into it.
+     */
+    if (rdp_client->settings->remote_app != NULL) {
+
+        guac_display_layer_raw_context* bg_ctx =
+                guac_display_layer_open_raw(default_layer);
+
+        if (bg_ctx != NULL) {
+
+            guac_rect full_bounds = bg_ctx->bounds;
+            int height = guac_rect_height(&full_bounds);
+            int width = guac_rect_width(&full_bounds);
+
+            unsigned char* row =
+                    GUAC_DISPLAY_LAYER_RAW_BUFFER(bg_ctx, full_bounds);
+
+            for (int y = 0; y < height; y++) {
+                unsigned char* pixel = row;
+                for (int x = 0; x < width; x++) {
+                    pixel[0] = 0x00;  /* B */
+                    pixel[1] = 0x00;  /* G */
+                    pixel[2] = 0x00;  /* R */
+                    pixel[3] = 0xFF;  /* A */
+                    pixel += 4;
+                }
+                row += bg_ctx->stride;
+            }
+
+            guac_rect_extend(&bg_ctx->dirty, &full_bounds);
+            guac_display_layer_close_raw(default_layer, bg_ctx);
+
+            rdp_client->gdi_modified = 1;
+
+        }
+
+    }
+
     /* Use lossless compression only if requested (otherwise, use default
      * heuristics) */
     guac_display_layer_set_lossless(default_layer, settings->lossless);
@@ -681,6 +729,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Stop render loop */
     guac_display_render_thread_destroy(rdp_client->render_thread);
     rdp_client->render_thread = NULL;
+
+    /* Free any RAIL windows tracked for RemoteApp rendering */
+    guac_rdp_rail_free_windows(rdp_client);
 
     /* Remove reference to FreeRDP's GDI buffer so that it can be safely freed
      * prior to freeing the guac_display */

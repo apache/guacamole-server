@@ -72,6 +72,11 @@
 #define GUAC_RDP_INPUT_EVENT_QUEUE_SIZE 4096
 
 /**
+ * RDP-specific RAIL window data.
+ */
+typedef struct guac_rdp_rail_window guac_rdp_rail_window;
+
+/**
  * RDP-specific client data.
  */
 typedef struct guac_rdp_client {
@@ -246,6 +251,16 @@ typedef struct guac_rdp_client {
      * in use.
      */
     RailClientContext* rail_interface;
+
+    /**
+     * Lock which synchronizes access to the list of RAIL windows.
+     */
+    pthread_mutex_t rail_windows_lock;
+
+    /**
+     * The list of RAIL windows being tracked for RemoteApp rendering.
+     */
+    guac_rdp_rail_window* rail_windows;
 
 } guac_rdp_client;
 

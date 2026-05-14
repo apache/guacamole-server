@@ -1081,6 +1081,54 @@ then
 fi
 if test "x${have_freerdp}" = "xyes"
 then
+    AC_MSG_CHECKING([whether FreeRDP supports RDPGFX surface area updates])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+        #include <freerdp/client/rdpgfx.h>
+        #include <freerdp/codec/color.h>
+        #include <freerdp/codec/region.h>
+        #include <freerdp/gdi/gdi.h>
+        #include <freerdp/gdi/gfx.h>
+
+        int main() {
+            RdpgfxClientContext* context = 0;
+            rdpGdi* gdi = 0;
+            gdiGfxSurface* surface = 0;
+
+            (void) context->GetSurfaceData(context, 0);
+            (void) gdi_graphics_pipeline_init_ex(gdi, context, 0, 0, 0);
+            (void) surface->windowId;
+            (void) surface->mappedWidth;
+            (void) surface->mappedHeight;
+            (void) surface->outputTargetWidth;
+            (void) surface->outputTargetHeight;
+
+            return 0;
+        }
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([HAVE_RDPGFX_SURFACE_AREA_UPDATE],,
+               [Defined if FreeRDP supports RDPGFX surface area update callbacks])],
+    [AC_MSG_RESULT([no])])
+fi
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([whether FreeRDP supports RDPGFX window surface updates])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+        #include <freerdp/client/rdpgfx.h>
+
+        int main() {
+            RdpgfxClientContext* context = 0;
+            context->UpdateWindowFromSurface = 0;
+            return 0;
+        }
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([HAVE_RDPGFX_WINDOW_SURFACE_UPDATE],,
+               [Defined if FreeRDP supports RDPGFX updates for window-mapped surfaces])],
+    [AC_MSG_RESULT([no])])
+fi
+if test "x${have_freerdp}" = "xyes"
+then
     # Check whether FreeRDP 3.x requires const for GetPluginData
     AC_MSG_CHECKING([whether GetPluginData requires const for the returned args])
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[

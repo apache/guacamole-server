@@ -128,14 +128,24 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
      * checking and bailing out here if an external bug breaks that. */
     GUAC_ASSERT(w <= INT_MAX && h <= INT_MAX);
 
-    /* Mark modified region as dirty, but only within the bounds of the
-     * rendering surface */
-    guac_rect dst_rect;
-    guac_rect_init(&dst_rect, x, y, w, h);
-    guac_rect_constrain(&dst_rect, &current_context->bounds);
-    guac_rect_extend(&current_context->dirty, &dst_rect);
+    /*
+     *For RemoteApp connections the default layer is held
+     * permanently black (filled once in guac_rdp_handle_connection).
+     * Suppress dirty-region propagation so FreeRDP's ongoing painting of
+     * the server desktop into gdi->primary_buffer is never sent to the client.
+     */
+    if (rdp_client->settings->remote_app == NULL) {
 
-    rdp_client->gdi_modified = 1;
+        /* Mark modified region as dirty, but only within the bounds of the
+         * rendering surface */
+        guac_rect dst_rect;
+        guac_rect_init(&dst_rect, x, y, w, h);
+        guac_rect_constrain(&dst_rect, &current_context->bounds);
+        guac_rect_extend(&current_context->dirty, &dst_rect);
+
+        rdp_client->gdi_modified = 1;
+
+    }
 
 paint_complete:
 

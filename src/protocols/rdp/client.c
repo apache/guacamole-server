@@ -232,6 +232,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Init required locks */
     guac_rwlock_init(&(rdp_client->lock));
     pthread_mutex_init(&(rdp_client->message_lock), &(rdp_client->attributes));
+    pthread_mutex_init(&(rdp_client->rail_windows_lock), &(rdp_client->attributes));
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
@@ -320,6 +321,7 @@ int guac_rdp_client_free_handler(guac_client* client) {
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
 
     guac_rwlock_destroy(&(rdp_client->lock));
+    pthread_mutex_destroy(&(rdp_client->rail_windows_lock));
     pthread_mutex_destroy(&(rdp_client->message_lock));
 
     /* Free client data */
