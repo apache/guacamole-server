@@ -40,6 +40,7 @@
 
 #include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/client/rdpgfx.h>
 #include <freerdp/client/rail.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
@@ -246,6 +247,37 @@ typedef struct guac_rdp_client {
      * in use.
      */
     RailClientContext* rail_interface;
+
+    /**
+     * A pointer to the RDPGFX interface provided by the RDP client when the
+     * graphics pipeline is in use.
+     */
+    RdpgfxClientContext* rdpgfx_interface;
+
+    /**
+     * The list of RAIL windows being tracked for RemoteApp rendering.
+     */
+    guac_common_list* rail_windows;
+
+    /**
+     * The RAIL window currently activated by guacd, if any.
+     */
+    UINT64 rail_active_window_id;
+
+    /**
+     * The RAIL window receiving the current mouse drag, if any.
+     */
+    UINT64 rail_mouse_window_id;
+
+    /**
+     * Parent layer containing all RAIL window layers rendered for RemoteApp.
+     */
+    guac_display_layer* rail_window_layer;
+
+    /**
+     * Whether the RemoteApp background has been initialized behind RAIL windows.
+     */
+    int rail_background_painted;
 
 } guac_rdp_client;
 
