@@ -101,6 +101,11 @@ int guac_vnc_clipboard_handler(guac_user* user, guac_stream* stream,
     stream->blob_handler = guac_vnc_clipboard_blob_handler;
     stream->end_handler = guac_vnc_clipboard_end_handler;
 
+    /* Report clipboard within recording */
+    if (vnc_client->recording != NULL)
+        guac_recording_report_clipboard_begin(vnc_client->recording, stream,
+                mimetype);
+
     return 0;
 }
 
@@ -114,6 +119,10 @@ int guac_vnc_clipboard_blob_handler(guac_user* user, guac_stream* stream,
     guac_common_clipboard* clipboard = vnc_client->clipboard;
     if (clipboard == NULL)
         return 0;
+
+    /* Report clipboard blob within recording */
+    if (vnc_client->recording != NULL)
+        guac_recording_report_clipboard_blob(vnc_client->recording, stream, data, length);
 
     /* Append new data */
     guac_common_clipboard_append(clipboard, (char*) data, length);
@@ -130,6 +139,10 @@ int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     guac_common_clipboard* clipboard = vnc_client->clipboard;
     if (clipboard == NULL)
         return 0;
+
+    /* Report clipboard stream end within recording */
+    if (vnc_client->recording != NULL)
+        guac_recording_report_clipboard_end(vnc_client->recording, stream);
 
     guac_client* client = user->client;
     rfbClient* rfb_client = vnc_client->rfb_client;
