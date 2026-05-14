@@ -538,6 +538,66 @@ struct guac_user {
      */
     guac_user_touch_handler* touch_handler;
 
+/**
+     * Handler for USB connect events sent by the Guacamole web-client.
+     *
+     * The handler takes the user that connected the device, the device ID
+     * (required), vendor ID (required), product ID (required), device name
+     * (required), serial number (optional - may be NULL or empty), device class
+     * (required), device subclass (required), device protocol (required), and
+     * interface data (required).
+     *
+     * Example:
+     * @code
+     *     int usbconnect_handler(guac_user* user, const char* device_id,
+     *             int vendor_id, int product_id, const char* device_name,
+     *             const char* serial_number, int device_class, 
+     *             int device_subclass, int device_protocol, 
+     *             const char* interface_data);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->usbconnect_handler = usbconnect_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_usbconnect_handler* usbconnect_handler;
+
+    /**
+     * Handler for USB data events sent by the Guacamole web-client.
+     *
+     * The handler takes the user that sent the data, the device ID,
+     * endpoint number, the base64-encoded data, and the transfer type.
+     *
+     * Example:
+     * @code
+     *     int usbdata_handler(guac_user* user, const char* device_id,
+     *             int endpoint_number, const char* data,
+     *             const char* transfer_type);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->usbdata_handler = usbdata_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_usbdata_handler* usbdata_handler;
+
+    /**
+     * Handler for USB disconnect events sent by the Guacamole web-client.
+     *
+     * The handler takes the user that disconnected the device and the
+     * device ID.
+     *
+     * Example:
+     * @code
+     *     int usbdisconnect_handler(guac_user* user, const char* device_id);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->usbdisconnect_handler = usbdisconnect_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_usbdisconnect_handler* usbdisconnect_handler;
+
 };
 
 /**
@@ -1094,4 +1154,3 @@ int guac_user_parse_args_boolean(guac_user* user, const char** arg_names,
         const char** argv, int index, int default_value);
 
 #endif
-
