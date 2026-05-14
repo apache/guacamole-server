@@ -52,6 +52,8 @@ void guac_common_list_free(
         element = next;
     }
 
+    pthread_mutex_destroy(&list->_lock);
+
     /* Free the list itself */
     guac_mem_free(list);
 

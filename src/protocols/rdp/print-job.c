@@ -664,6 +664,7 @@ void guac_rdp_print_job_free(guac_rdp_print_job* job) {
         pthread_mutex_lock(&(rdp_client->message_lock));
 
     /* Destroy lock */
+    pthread_cond_destroy(&(job->state_modified));
     pthread_mutex_destroy(&(job->state_lock));
 
     /* Free base structure */

@@ -734,8 +734,6 @@ static int rdp_guac_client_wait_for_events(guac_client* client,
     DWORD result = WaitForMultipleObjects(num_handles, handles, FALSE,
             timeout_msecs);
 
-    ResetEvent(rdp_client->input_event_queued);
-
     /* Translate WaitForMultipleObjects() return values */
     switch (result) {
 
@@ -813,6 +811,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Create display */
     rdp_client->display = guac_display_alloc(client);
+    rdp_client->rail_background_painted = 0;
 
     guac_display_layer* default_layer = guac_display_default_layer(rdp_client->display);
     guac_display_layer_resize(default_layer, rdp_client->settings->width, rdp_client->settings->height);
@@ -901,6 +900,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_rwlock_release_lock(&(rdp_client->lock));
 
     rdp_client->render_thread = guac_display_render_thread_create(rdp_client->display);
+    if (rdp_client->gdi_modified)
+        guac_display_render_thread_notify_modified(rdp_client->render_thread);
 
     /* Handle messages from RDP server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING
@@ -917,6 +918,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
         int connection_closing = 0;
         do {
+            /* Keep input responsive even if RDPGFX events keep arriving. */
+            guac_rdp_handle_input_events(rdp_client);
 
             /* Handle any queued FreeRDP events (this may result in RDP messages
              * being sent), aborting later if FreeRDP event handling fails */
@@ -982,6 +985,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_display_render_thread_destroy(rdp_client->render_thread);
     rdp_client->render_thread = NULL;
 
+    /* Free any RAIL windows tracked for RemoteApp rendering */
+    guac_rdp_rail_free_windows(rdp_client);
+
     /* Ensure all background rendering processes are stopped before freeing
      * underlying memory */
     guac_display_stop(rdp_client->display);
@@ -1040,6 +1046,36 @@ static int guac_rdp_handle_connection(guac_client* client) {
     return 0;
 
 fail:
+    /* Connection setup may have downgraded the lock while awaiting input. */
+    guac_rwlock_release_lock(&(rdp_client->lock));
+    guac_rwlock_acquire_write_lock(&(rdp_client->lock));
+
+    guac_rdp_rail_free_windows(rdp_client);
+    guac_display_stop(rdp_client->display);
+
+    /* GDI cleanup must precede freeing the display used by its pointers. */
+    if (rdp_inst->context != NULL && rdp_inst->context->gdi != NULL)
+        gdi_free(rdp_inst);
+
+    guac_display_free(rdp_client->display);
+    rdp_client->display = NULL;
+
+    if (rdp_inst->context != NULL)
+        freerdp_context_free(rdp_inst);
+
+    freerdp_free(rdp_inst);
+    rdp_client->rdp_inst = NULL;
+    rdp_client->rail_interface = NULL;
+    rdp_client->rdpgfx_interface = NULL;
+
+    guac_common_list_free(rdp_client->available_svc, NULL);
+    rdp_client->available_svc = NULL;
+
+    if (rdp_client->keyboard != NULL) {
+        guac_rdp_keyboard_free(rdp_client->keyboard);
+        rdp_client->keyboard = NULL;
+    }
+
     guac_rwlock_release_lock(&(rdp_client->lock));
     return 1;
 

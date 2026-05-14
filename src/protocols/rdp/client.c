@@ -232,6 +232,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Init required locks */
     guac_rwlock_init(&(rdp_client->lock));
     pthread_mutex_init(&(rdp_client->message_lock), &(rdp_client->attributes));
+    rdp_client->rail_windows = guac_common_list_alloc();
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
@@ -318,6 +319,9 @@ int guac_rdp_client_free_handler(guac_client* client) {
     /* Clean up audio input buffer, if allocated */
     if (rdp_client->audio_input != NULL)
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
+
+    /* Free any RAIL windows tracked for RemoteApp rendering. */
+    guac_rdp_rail_free_windows(rdp_client);
 
     guac_rwlock_destroy(&(rdp_client->lock));
     pthread_mutex_destroy(&(rdp_client->message_lock));

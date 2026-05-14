@@ -35,6 +35,40 @@
 
 #include <stddef.h>
 
+/**
+ * Resynchronize default layer buffer details with FreeRDP's GDI.
+ * In RemoteApp sessions, this mapping would expose FreeRDP's hidden desktop
+ * buffer behind application windows, so this should only be used in full desktop mode.
+ *
+ * @param current_context
+ *     The raw context that should reference the primary GDI buffer.
+ *
+ * @param gdi
+ *     The FreeRDP GDI state whose primary buffer should be referenced.
+ */
+static void guac_rdp_gdi_use_primary_buffer(
+        guac_display_layer_raw_context* current_context, rdpGdi* gdi) {
+
+    current_context->buffer = gdi->primary_buffer;
+    current_context->stride = gdi->stride;
+    guac_rect_init(&current_context->bounds, 0, 0, gdi->width, gdi->height);
+}
+
+/**
+ * Returns whether RemoteApp windows are being rendered through RDPGFX layers.
+ *
+ * @param rdp_client
+ *     The RDP client whose rendering mode should be checked.
+ *
+ * @return
+ *     Non-zero if RemoteApp GFX rendering is active, zero otherwise.
+ */
+static int guac_rdp_gdi_remoteapp_gfx_active(guac_rdp_client* rdp_client) {
+    return rdp_client->settings->remote_app != NULL
+        && rdp_client->settings->enable_gfx
+        && rdp_client->rdpgfx_interface != NULL;
+}
+
 void guac_rdp_gdi_mark_frame(rdpContext* context, int starting) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -83,10 +117,15 @@ BOOL guac_rdp_gdi_begin_paint(rdpContext* context) {
     guac_display_layer_raw_context* current_context = guac_display_layer_open_raw(default_layer);
     rdp_client->current_context = current_context;
 
-    /* Resynchronize default layer buffer details with FreeRDP's GDI */
-    current_context->buffer = gdi->primary_buffer;
-    current_context->stride = gdi->stride;
-    guac_rect_init(&current_context->bounds, 0, 0, gdi->width, gdi->height);
+    /*
+     * For full desktop sessions, the default layer shares FreeRDP's primary
+     * GDI buffer. For RemoteApp sessions, keep the default layer on its own
+     * black buffer and allow FreeRDP to paint the hidden server desktop only
+     * into its own primary buffer.
+     */
+    if (!guac_rdp_gdi_remoteapp_gfx_active(rdp_client)
+            || !rdp_client->rail_background_painted)
+        guac_rdp_gdi_use_primary_buffer(current_context, gdi);
 
     return TRUE;
 
@@ -128,14 +167,24 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
      * checking and bailing out here if an external bug breaks that. */
     GUAC_ASSERT(w <= INT_MAX && h <= INT_MAX);
 
-    /* Mark modified region as dirty, but only within the bounds of the
-     * rendering surface */
-    guac_rect dst_rect;
-    guac_rect_init(&dst_rect, x, y, w, h);
-    guac_rect_constrain(&dst_rect, &current_context->bounds);
-    guac_rect_extend(&current_context->dirty, &dst_rect);
+    /*
+    * Only propagate dirty regions for full desktop sessions.
+    * In RemoteApp mode, once RemoteApp rendering has taken over, the default
+    * layer remains permanently black (filled once in
+    * guac_rdp_rail_paint_background()) and desktop updates are suppressed
+    * because application windows are rendered separately.
+    */
+    if (!guac_rdp_gdi_remoteapp_gfx_active(rdp_client)
+            || !rdp_client->rail_background_painted) {
+        /* Mark modified region as dirty, but only within the bounds of the
+         * rendering surface */
+        guac_rect dst_rect;
+        guac_rect_init(&dst_rect, x, y, w, h);
+        guac_rect_constrain(&dst_rect, &current_context->bounds);
+        guac_rect_extend(&current_context->dirty, &dst_rect);
 
-    rdp_client->gdi_modified = 1;
+        rdp_client->gdi_modified = 1;
+    }
 
 paint_complete:
 
@@ -148,7 +197,6 @@ paint_complete:
     guac_display_layer_close_raw(default_layer, current_context);
 
     return TRUE;
-
 }
 
 BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
@@ -169,26 +217,46 @@ BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
     GUAC_ASSERT(rdp_client->current_context == NULL);
 #endif
 
-    /* All potential drawing operations must occur while holding an open context */
     guac_display_layer* default_layer = guac_display_default_layer(rdp_client->display);
-    guac_display_layer_raw_context* current_context = guac_display_layer_open_raw(default_layer);
+    guac_display_layer_raw_context* current_context = NULL;
 
-    /* Resize FreeRDP's GDI buffer */
+    /* Full desktop sessions share the resized GDI buffer with the default
+     * layer, and must hold an open raw context to acquire lock while the
+     * external buffer details change. */
+    if (!guac_rdp_gdi_remoteapp_gfx_active(rdp_client)
+            || !rdp_client->rail_background_painted)
+        current_context = guac_display_layer_open_raw(default_layer);
+
+    /* Resize FreeRDP's GDI buffer while buffer is locked */
     BOOL retval = gdi_resize(context->gdi, width, height);
     GUAC_ASSERT(gdi->primary_buffer != NULL);
 
-    /* Update our reference to the GDI buffer, as well as any structural
-     * details, which may now all be different */
-    current_context->buffer = gdi->primary_buffer;
-    current_context->stride = gdi->stride;
-    guac_rect_init(&current_context->bounds, 0, 0, gdi->width, gdi->height);
+    if (!guac_rdp_gdi_remoteapp_gfx_active(rdp_client)
+            || !rdp_client->rail_background_painted) {
+        /* Full desktop render path: Update our reference to the GDI buffer, 
+         * as well as any structural details, which may now all be different. */
+        guac_rdp_gdi_use_primary_buffer(current_context, gdi);
 
-    /* Resize layer to match new display dimensions and underlying buffer */
-    guac_display_layer_resize(default_layer, gdi->width, gdi->height);
+        /* Resize layer to match new display dimensions and underlying buffer. */
+        guac_display_layer_resize(default_layer, gdi->width, gdi->height);
+        guac_display_layer_close_raw(default_layer, current_context);
+    }
+    else {
+        /* RAIL path: Keep RemoteApp's default layer independent from the hidden desktop
+         * framebuffer, preserving the black background after resizes. */
+        guac_display_layer_resize(default_layer, gdi->width, gdi->height);
+
+        current_context = guac_display_layer_open_raw(default_layer);
+        guac_rect full_bounds = current_context->bounds;
+        guac_display_layer_raw_context_set(current_context, &full_bounds,
+                0xFF000000);
+        guac_display_layer_close_raw(default_layer, current_context);
+
+        rdp_client->gdi_modified = 1;
+    }
+
     guac_client_log(client, GUAC_LOG_DEBUG, "Server resized display to %ix%i",
             gdi->width, gdi->height);
-
-    guac_display_layer_close_raw(default_layer, current_context);
 
     return retval;
 

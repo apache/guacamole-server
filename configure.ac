@@ -865,6 +865,13 @@ then
                        have_freerdp=no])
 fi
 
+# FreeRDP 3.x headers themselves reference deprecated types and functions.
+if test "x${freerdp_version}" = "x(3.x)"
+then
+    RDP_CFLAGS="$RDP_CFLAGS -Wno-deprecated-declarations"
+    CPPFLAGS="$CPPFLAGS -Wno-deprecated-declarations"
+fi
+
 # Available color conversion functions
 if test "x${have_freerdp}" = "xyes"
 then
@@ -1162,6 +1169,56 @@ then
                   [AC_DEFINE([HAVE_DISCONNECT_CONTEXT],,
                              [Defined if 'freerdp_shall_disconnect_context' is available in FreeRDP])],,
                   [#include <freerdp/freerdp.h>])
+fi
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([whether FreeRDP supports RDPGFX surface area updates])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+        #include <freerdp/client/rdpgfx.h>
+        #include <freerdp/codec/color.h>
+        #include <freerdp/codec/region.h>
+        #include <freerdp/gdi/gdi.h>
+        #include <freerdp/gdi/gfx.h>
+
+        int main() {
+            RdpgfxClientContext* context = 0;
+            rdpGdi* gdi = 0;
+            gdiGfxSurface* surface = 0;
+
+            (void) context->GetSurfaceData(context, 0);
+            (void) gdi_graphics_pipeline_init_ex(gdi, context, 0, 0, 0);
+            (void) freerdp_image_copy_no_overlap(0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0);
+            (void) surface->windowId;
+            (void) surface->mappedWidth;
+            (void) surface->mappedHeight;
+            (void) surface->outputTargetWidth;
+            (void) surface->outputTargetHeight;
+
+            return 0;
+        }
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([HAVE_RDPGFX_SURFACE_AREA_UPDATE],,
+               [Defined if FreeRDP supports RDPGFX surface area update callbacks])],
+    [AC_MSG_RESULT([no])])
+fi
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([whether FreeRDP supports RDPGFX window surface updates])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+        #include <freerdp/client/rdpgfx.h>
+
+        int main() {
+            RdpgfxClientContext* context = 0;
+            context->UpdateWindowFromSurface = 0;
+            return 0;
+        }
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([HAVE_RDPGFX_WINDOW_SURFACE_UPDATE],,
+               [Defined if FreeRDP supports RDPGFX updates for window-mapped surfaces])],
+    [AC_MSG_RESULT([no])])
 fi
 if test "x${have_freerdp}" = "xyes"
 then

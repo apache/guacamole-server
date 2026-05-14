@@ -160,15 +160,28 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
             continue;
         }
 
-        /* Check only within layer dirty region, skipping the layer if
-         * unmodified. This pass should reset and refine that region, but
-         * otherwise rely on proper reporting of modified regions by callers of
-         * the open/close layer functions. */
-        guac_rect dirty = current->pending_frame.dirty;
-        if (guac_rect_is_empty(&dirty)) {
+        /* Resizing a client-side layer clears its entire contents. Every pixel
+         * must therefore be sent again, even if portions of the resized frame
+         * are identical to the previous frame. */
+        int frame_resized =
+            current->pending_frame.width != current->last_frame.width
+            || current->pending_frame.height != current->last_frame.height;
+
+        guac_rect dirty;
+        if (frame_resized)
+            guac_rect_init(&dirty, 0, 0,
+                    current->pending_frame.width,
+                    current->pending_frame.height);
+
+        /* If the layer has not been resized, check only within its reported
+         * dirty region and skip the layer if unmodified. */
+        else if (guac_rect_is_empty(&current->pending_frame.dirty)) {
             current = current->pending_frame.next;
             continue;
         }
+
+        else
+            dirty = current->pending_frame.dirty;
 
         /* Flush any outstanding Cairo operations before directly accessing buffer */
         guac_display_layer_cairo_context* cairo_context = &(current->pending_frame_cairo_context);
@@ -242,7 +255,8 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
 
                     /* Any line that is completely outside the bounds of the
                      * previous frame is dirty (nothing to compare against) */
-                    if (y >= current->last_frame.height || corner_x >= current->last_frame.width) {
+                    if (frame_resized || y >= current->last_frame.height
+                            || corner_x >= current->last_frame.width) {
                         guac_display_plan_mark_dirty(current, current_cell, &op_count, corner_x, y, width);
                         guac_rect_extend(&current->pending_frame.dirty, &current_cell->dirty);
                     }

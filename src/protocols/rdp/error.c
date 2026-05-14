@@ -88,6 +88,14 @@ static void guac_rdp_translate_last_error(freerdp* rdp_inst,
             *message = "Security negotiation failed (wrong security type?)";
             break;
 
+#ifdef FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER
+        case FREERDP_ERROR_CONNECT_HYBRID_REQUIRED_BY_SERVER:
+            *status = GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED;
+            *message = "Security negotiation failed: server requires Network "
+                    "Level Authentication (NLA), but NLA is disabled.";
+            break;
+#endif
+
         /*
          * General access denied/revoked (regardless of any credentials
          * provided, the server is denying the requested access by this
