@@ -306,6 +306,7 @@ void* ssh_client_thread(void* data) {
     options->font_size = settings->font_size;
     options->color_scheme = settings->color_scheme;
     options->backspace = settings->backspace;
+    options->linux_console_keys = (strcmp(settings->terminal_type, "linux") == 0);
 
     /* Create terminal */
     ssh_client->term = guac_terminal_create(client, options);

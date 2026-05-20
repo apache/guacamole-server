@@ -55,6 +55,146 @@
 #include <guacamole/timestamp.h>
 #include <guacamole/user.h>
 
+/*
+ * Terminal key input is represented and encoded across several layers:
+ *
+ * 1) Incoming keys use X11 keysyms (e.g. XK_Left, XK_F1, modifier keysyms),
+ *    including Unicode keysyms (0x01000000 | codepoint).
+ *
+ * 2) Some Ctrl+key combinations map directly to ASCII C0 control bytes
+ *    (0x00-0x1F) plus DEL (0x7F), such as Ctrl+C -> ETX and Ctrl+[ -> ESC.
+ *
+ * 3) Non-printable/navigation/function keys are typically emitted as ANSI/xterm
+ *    escape sequences beginning with ESC (0x1B), including CSI sequences
+ *    (ESC [ ...), and xterm-style modifier parameters.
+ *    This includes arrow/navigation keys, function keys, and keypad variants;
+ *    when Shift/Alt/Ctrl/Meta are held, xterm-style modifier parameters are
+ *    appended to encode those combinations in the resulting sequence so
+ *    terminal applications can distinguish and bind keyboard shortcuts.
+ *
+ * Keyboard emulation strategy:
+ *     For all terminal types, keyboard emulation supports xterm-style extended
+ *     behavior for function keys (F1-F12), arrow keys (Up, Down, Left, Right),
+ *     cursor editing keys (Home, End, Insert, Delete, Page Up, Page Down), keypad
+ *     keys, and Ctrl/Shift/Alt/Meta modifier encoding via xterm-style CSI modifier
+ *     parameters (`ESC [ ... ; <mod> ...`), even if the configured terminal type
+ *     does not natively support these extended features.
+ *
+ *     The default terminal type (`linux`) preserves legacy Linux console keycodes
+ *     for F1-F5, keypad F1-F4, and Home/End to match the sequences expected by
+ *     `$TERM=linux` terminfo entries.
+ *
+ * References:
+ * - X.Org keysyms: https://cgit.freedesktop.org/xorg/proto/x11proto/tree/keysymdef.h
+ * - xterm control sequences: https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+ * - ASCII control codes (C0/DEL): https://www.rfc-editor.org/rfc/rfc20
+ */
+
+/*
+ * Mask used to detect the X11 Unicode keysym encoding.
+ *
+ * See X11 keysymdef.h.
+ */
+#define GUAC_KEYSYM_UNICODE_MASK    0xFFFF0000
+
+/*
+ * Prefix used by X11 to encode a Unicode codepoint as a keysym:
+ * 0x01000000 | codepoint.
+ *
+ * See X11 keysymdef.h.
+ */
+#define GUAC_KEYSYM_UNICODE_PREFIX  0x01000000
+
+/*
+ * X11 keypad keysyms begin at 0xFF80 (XK_KP_Space). Subtracting this offset
+ * allows keypad keysyms to be mapped onto their corresponding ASCII values
+ * where applicable.
+ */
+#define GUAC_KEYSYM_KP_ASCII_OFFSET 0xFF80
+
+/**
+ * Canonical X11 keysyms used by the terminal keyboard emulation logic.
+ */
+typedef enum guac_terminal_keysym {
+
+    /* Modifier keys */
+    GUAC_KEYSYM_SHIFT_L = 0xFFE1,           /* Left Shift modifier key.                    */
+    GUAC_KEYSYM_SHIFT_R = 0xFFE2,           /* Right Shift modifier key.                   */
+    GUAC_KEYSYM_CTRL_L = 0xFFE3,            /* Left Control modifier key.                  */
+    GUAC_KEYSYM_CTRL_R = 0xFFE4,            /* Right Control modifier key.                 */
+    GUAC_KEYSYM_META_L = 0xFFE7,            /* Left Meta modifier key.                     */
+    GUAC_KEYSYM_META_R = 0xFFE8,            /* Right Meta modifier key.                    */
+    GUAC_KEYSYM_ALT_L = 0xFFE9,             /* Left Alt modifier key.                      */
+    GUAC_KEYSYM_ALT_R = 0xFFEA,             /* Right Alt modifier key.                     */
+    GUAC_KEYSYM_SUPER_L = 0xFFEB,           /* Left Super key, such as Windows/Command.    */
+    GUAC_KEYSYM_SUPER_R = 0xFFEC,           /* Right Super key, such as Windows/Command.   */
+    GUAC_KEYSYM_HYPER_L = 0xFFED,           /* Left Hyper modifier key.                    */
+    GUAC_KEYSYM_HYPER_R = 0xFFEE,           /* Right Hyper modifier key.                   */
+    GUAC_KEYSYM_MODE_SWITCH = 0xFF7E,       /* Keyboard group or layout switch key.        */
+    GUAC_KEYSYM_ISO_LEVEL3_SHIFT = 0xFE03,  /* ISO Level 3 shift key, often AltGr/Option.  */
+    GUAC_KEYSYM_ISO_LEVEL5_SHIFT = 0xFE11,  /* ISO Level 5 shift key.                      */
+
+    /* Arrow/navigation direction keys */
+    GUAC_KEYSYM_LEFT = 0xFF51,              /* Left arrow key.                             */
+    GUAC_KEYSYM_UP = 0xFF52,                /* Up arrow key.                               */
+    GUAC_KEYSYM_RIGHT = 0xFF53,             /* Right arrow key.                            */
+    GUAC_KEYSYM_DOWN = 0xFF54,              /* Down arrow key.                             */
+
+    /* Keypad arrow/navigation variants */
+    GUAC_KEYSYM_KP_LEFT = 0xFF96,           /* Keypad left arrow key.                      */
+    GUAC_KEYSYM_KP_UP = 0xFF97,             /* Keypad up arrow key.                        */
+    GUAC_KEYSYM_KP_RIGHT = 0xFF98,          /* Keypad right arrow key.                     */
+    GUAC_KEYSYM_KP_DOWN = 0xFF99,           /* Keypad down arrow key.                      */
+
+    /* Function keys */
+    GUAC_KEYSYM_F1 = 0xFFBE,                /* F1 function key.                            */
+    GUAC_KEYSYM_F2 = 0xFFBF,                /* F2 function key.                            */
+    GUAC_KEYSYM_F3 = 0xFFC0,                /* F3 function key.                            */
+    GUAC_KEYSYM_F4 = 0xFFC1,                /* F4 function key.                            */
+    GUAC_KEYSYM_F5 = 0xFFC2,                /* F5 function key.                            */
+    GUAC_KEYSYM_F6 = 0xFFC3,                /* F6 function key.                            */
+    GUAC_KEYSYM_F7 = 0xFFC4,                /* F7 function key.                            */
+    GUAC_KEYSYM_F8 = 0xFFC5,                /* F8 function key.                            */
+    GUAC_KEYSYM_F9 = 0xFFC6,                /* F9 function key.                            */
+    GUAC_KEYSYM_F10 = 0xFFC7,               /* F10 function key.                           */
+    GUAC_KEYSYM_F11 = 0xFFC8,               /* F11 function key.                           */
+    GUAC_KEYSYM_F12 = 0xFFC9,               /* F12 function key.                           */
+
+    /* Keypad function-key variants */
+    GUAC_KEYSYM_KP_F1 = 0xFF91,             /* Keypad F1 function key.                     */
+    GUAC_KEYSYM_KP_F2 = 0xFF92,             /* Keypad F2 function key.                     */
+    GUAC_KEYSYM_KP_F3 = 0xFF93,             /* Keypad F3 function key.                     */
+    GUAC_KEYSYM_KP_F4 = 0xFF94,             /* Keypad F4 function key.                     */
+
+    /* Basic control/edit keys */
+    GUAC_KEYSYM_BACKSPACE = 0xFF08,         /* Backspace key.                              */
+    GUAC_KEYSYM_TAB = 0xFF09,               /* Tab key.                                    */
+    GUAC_KEYSYM_KP_TAB = 0xFF89,            /* Keypad Tab key.                             */
+    GUAC_KEYSYM_LINE_FEED = 0xFF0A,         /* Line Feed key.                              */
+    GUAC_KEYSYM_ENTER = 0xFF0D,             /* Enter key.                                  */
+    GUAC_KEYSYM_KP_ENTER = 0xFF8D,          /* Keypad Enter key.                           */
+    GUAC_KEYSYM_ESCAPE = 0xFF1B,            /* Escape key.                                 */
+
+    /* Navigation/editing keys and keypad variants */
+    GUAC_KEYSYM_HOME = 0xFF50,              /* Home key.                                   */
+    GUAC_KEYSYM_KP_HOME = 0xFF95,           /* Keypad Home key.                            */
+    GUAC_KEYSYM_PAGE_UP = 0xFF55,           /* Page Up key.                                */
+    GUAC_KEYSYM_KP_PAGE_UP = 0xFF9A,        /* Keypad Page Up key.                         */
+    GUAC_KEYSYM_PAGE_DOWN = 0xFF56,         /* Page Down key.                              */
+    GUAC_KEYSYM_KP_PAGE_DOWN = 0xFF9B,      /* Keypad Page Down key.                       */
+    GUAC_KEYSYM_END = 0xFF57,               /* End key.                                    */
+    GUAC_KEYSYM_KP_END = 0xFF9C,            /* Keypad End key.                             */
+    GUAC_KEYSYM_INSERT = 0xFF63,            /* Insert key.                                 */
+    GUAC_KEYSYM_KP_INSERT = 0xFF9E,         /* Keypad Insert key.                          */
+    GUAC_KEYSYM_DELETE = 0xFFFF,            /* Delete key.                                 */
+    GUAC_KEYSYM_KP_DELETE = 0xFF9F,         /* Keypad Delete key.                          */
+
+    /* Keypad printable range helpers */
+    GUAC_KEYSYM_KP_MULTIPLY = 0xFFAA,       /* Keypad multiply key.                        */
+    GUAC_KEYSYM_KP_EQUAL = 0xFFBD,          /* Keypad equals key.                          */
+    GUAC_KEYSYM_KP_9 = 0xFFB9               /* Keypad 9 key.                               */
+} guac_terminal_keysym;
+
 /**
  * Sets the given range of columns to the given character.
  */
@@ -121,7 +261,7 @@ void guac_terminal_reset(guac_terminal* term) {
     int row;
 
     /* Set current state */
-    term->char_handler = guac_terminal_echo; 
+    term->char_handler = guac_terminal_echo;
     term->active_char_set = 0;
     term->char_mapping[0] =
     term->char_mapping[1] = NULL;
@@ -158,7 +298,7 @@ void guac_terminal_reset(guac_terminal* term) {
     /* Reset display palette */
     guac_terminal_display_reset_palette(term->display);
 
-    /* Clear terminal with a row length of term_width-1 
+    /* Clear terminal with a row length of term_width-1
      * to avoid exceed the size of the display layer */
     for (row=0; row<term->term_height; row++)
         guac_terminal_set_columns(term, row, 0, term->term_width-1, &(term->default_char));
@@ -250,27 +390,28 @@ guac_terminal_options* guac_terminal_options_create(
     options->font_size = GUAC_TERMINAL_DEFAULT_FONT_SIZE;
     options->color_scheme = GUAC_TERMINAL_DEFAULT_COLOR_SCHEME;
     options->backspace = GUAC_TERMINAL_DEFAULT_BACKSPACE;
+    options->linux_console_keys = true;
 
     return options;
 }
 
 /**
- * Calculate the available height and width in characters for text display in 
+ * Calculate the available height and width in characters for text display in
  * the terminal and store the results in the pointer arguments.
  *
  * @param terminal
  *     The terminal provides character width and height for calculations.
- * 
+ *
  * @param height
  *     The outer height of the terminal, in pixels.
- * 
+ *
  * @param width
  *     The outer width of the terminal, in pixels.
- * 
+ *
  * @param rows
  *     Pointer to the calculated height of the terminal for text display,
  *     in characters.
- * 
+ *
  * @param columns
  *     Pointer to the calculated width of the terminal for text display,
  *     in characters.
@@ -281,7 +422,7 @@ static void calculate_rows_and_columns(guac_terminal* term,
     int margin = term->display->margin;
     int char_width = term->display->char_width;
     int char_height = term->display->char_height;
-    
+
     /* Calculate available display area */
     int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH - 2 * margin;
     if (available_width < 0)
@@ -305,24 +446,24 @@ static void calculate_rows_and_columns(guac_terminal* term,
 }
 
 /**
- * Calculate the available height and width in pixels of the terminal for text 
+ * Calculate the available height and width in pixels of the terminal for text
  * display in the terminal and store the results in the pointer arguments.
  *
  * @param terminal
  *     The terminal provides character width and height for calculations.
- * 
+ *
  * @param rows
  *     The available height of the terminal for text display, in characters.
- * 
+ *
  * @param columns
  *     The available width of the terminal for text display, in characters.
  *
  * @param height
- *     Pointer to the calculated available height of the terminal for text 
+ *     Pointer to the calculated available height of the terminal for text
  *     display, in pixels.
- * 
+ *
  * @param width
- *     Pointer to the calculated available width of the terminal for text 
+ *     Pointer to the calculated available width of the terminal for text
  *     display, in pixels.
  */
 static void calculate_height_and_width(guac_terminal* term,
@@ -423,13 +564,14 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->default_char = default_char;
     term->clipboard = guac_common_clipboard_alloc();
     term->disable_copy = options->disable_copy;
+    term->linux_console_keys = options->linux_console_keys;
 
     /* Calculate available text display area by character size */
     int rows, columns;
     calculate_rows_and_columns(term, height, width, &rows, &columns);
 
     /* Calculate available display area in pixels */
-    int adjusted_height = height; 
+    int adjusted_height = height;
     int adjusted_width = width;
     calculate_height_and_width(term, rows, columns,
         &adjusted_height, &adjusted_width);
@@ -1338,7 +1480,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     calculate_rows_and_columns(terminal, height, width, &rows, &columns);
 
     /* Calculate available display area in pixels */
-    int adjusted_height = height; 
+    int adjusted_height = height;
     int adjusted_width = width;
     calculate_height_and_width(terminal, rows, columns,
         &adjusted_height, &adjusted_width);
@@ -1364,7 +1506,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     }
 
     /* Notify scrollbar of resize */
-    guac_terminal_scrollbar_parent_resized(terminal->scrollbar, 
+    guac_terminal_scrollbar_parent_resized(terminal->scrollbar,
         terminal->outer_width, terminal->outer_height, terminal->term_height);
     guac_terminal_scrollbar_set_bounds(terminal->scrollbar,
             -guac_terminal_get_available_scroll(terminal), 0);
@@ -1423,6 +1565,227 @@ int guac_terminal_send_string(guac_terminal* term, const char* data) {
 
 }
 
+/**
+ * Returns non-zero if the given keysym is an arrow key, including keypad
+ * arrow variants.
+ *
+ * @param keysym
+ *     The X11 keysym to test.
+ *
+ * @return
+ *     Non-zero if the keysym is an arrow key, zero otherwise.
+ */
+static int __guac_terminal_is_arrow_keysym(int keysym) {
+    return keysym == GUAC_KEYSYM_LEFT || keysym == GUAC_KEYSYM_KP_LEFT
+        || keysym == GUAC_KEYSYM_UP || keysym == GUAC_KEYSYM_KP_UP
+        || keysym == GUAC_KEYSYM_RIGHT || keysym == GUAC_KEYSYM_KP_RIGHT
+        || keysym == GUAC_KEYSYM_DOWN || keysym == GUAC_KEYSYM_KP_DOWN;
+}
+
+/**
+ * Returns non-zero if the given keysym is a function key (F1-F12), including
+ * keypad function-key variants (KP_F1-KP_F4).
+ *
+ * @param keysym
+ *     The X11 keysym to test.
+ *
+ * @return
+ *     Non-zero if the keysym is a function key, zero otherwise.
+ */
+static int __guac_terminal_is_function_keysym(int keysym) {
+    return keysym == GUAC_KEYSYM_F1 || keysym == GUAC_KEYSYM_KP_F1
+        || keysym == GUAC_KEYSYM_F2 || keysym == GUAC_KEYSYM_KP_F2
+        || keysym == GUAC_KEYSYM_F3 || keysym == GUAC_KEYSYM_KP_F3
+        || keysym == GUAC_KEYSYM_F4 || keysym == GUAC_KEYSYM_KP_F4
+        || keysym == GUAC_KEYSYM_F5
+        || keysym == GUAC_KEYSYM_F6
+        || keysym == GUAC_KEYSYM_F7
+        || keysym == GUAC_KEYSYM_F8
+        || keysym == GUAC_KEYSYM_F9
+        || keysym == GUAC_KEYSYM_F10
+        || keysym == GUAC_KEYSYM_F11
+        || keysym == GUAC_KEYSYM_F12;
+}
+
+/**
+ * Returns non-zero if the given keysym is a cursor editing key (Home, End,
+ * Insert, Delete, Page Up, or Page Down), including keypad variants.
+ *
+ * @param keysym
+ *     The X11 keysym to test.
+ *
+ * @return
+ *     Non-zero if the keysym is a cursor editing key, zero otherwise.
+ */
+static int __guac_terminal_is_editing_keysym(int keysym) {
+    return keysym == GUAC_KEYSYM_HOME    || keysym == GUAC_KEYSYM_KP_HOME
+        || keysym == GUAC_KEYSYM_END     || keysym == GUAC_KEYSYM_KP_END
+        || keysym == GUAC_KEYSYM_INSERT  || keysym == GUAC_KEYSYM_KP_INSERT
+        || keysym == GUAC_KEYSYM_DELETE  || keysym == GUAC_KEYSYM_KP_DELETE
+        || keysym == GUAC_KEYSYM_PAGE_UP || keysym == GUAC_KEYSYM_KP_PAGE_UP
+        || keysym == GUAC_KEYSYM_PAGE_DOWN || keysym == GUAC_KEYSYM_KP_PAGE_DOWN;
+}
+
+/**
+ * Returns the xterm-style modifier parameter for CSI key sequences, encoding
+ * the current modifier state of the terminal. The value is 1 plus the bitmask
+ * of active modifiers: Shift=1, Alt=2, Ctrl=4, Meta=8.
+ *
+ * @param term
+ *     The terminal whose current modifier state should be encoded.
+ *
+ * @return
+ *     The encoded modifier parameter. Always at least 1.
+ */
+static int __guac_terminal_key_modifier_param(guac_terminal* term) {
+    return 1 + (term->mod_shift ? 1 : 0)
+             + (term->mod_alt   ? 2 : 0)
+             + (term->mod_ctrl  ? 4 : 0)
+             + (term->mod_meta  ? 8 : 0);
+}
+
+/**
+ * Returns non-zero if any modifier key (Shift, Ctrl, Alt, or Meta) is
+ * currently held in the given terminal.
+ *
+ * @param term
+ *     The terminal whose modifier state should be tested.
+ *
+ * @return
+ *     Non-zero if any modifier is held, zero otherwise.
+ */
+static int __guac_terminal_any_modifier(guac_terminal* term) {
+    return term->mod_shift || term->mod_ctrl || term->mod_alt || term->mod_meta;
+}
+
+/**
+ * Sends the xterm-style CSI sequence for a modified arrow key. The resulting
+ * sequence has the form "ESC [ 1 ; mod suffix", where the suffix is A, B, C,
+ * or D for Up, Down, Right, or Left, respectively.
+ *
+ * @param term
+ *     The terminal from which key input is being sent. Current modifier state
+ *     is read from this terminal.
+ *
+ * @param keysym
+ *     The X11 keysym of the arrow key being sent.
+ *
+ * @return
+ *     Zero if the key was sent successfully, non-zero on error.
+ */
+static int __guac_terminal_send_modified_arrow(guac_terminal* term, int keysym) {
+
+    char suffix;
+
+    if (keysym == GUAC_KEYSYM_LEFT || keysym == GUAC_KEYSYM_KP_LEFT) suffix = 'D';
+    else if (keysym == GUAC_KEYSYM_UP || keysym == GUAC_KEYSYM_KP_UP) suffix = 'A';
+    else if (keysym == GUAC_KEYSYM_RIGHT || keysym == GUAC_KEYSYM_KP_RIGHT) suffix = 'C';
+    else if (keysym == GUAC_KEYSYM_DOWN || keysym == GUAC_KEYSYM_KP_DOWN) suffix = 'B';
+    else return 0;
+
+    return guac_terminal_sendf(term, "\x1B[1;%i%c",
+                               __guac_terminal_key_modifier_param(term), suffix);
+
+}
+
+/**
+ * Sends the CSI sequence for a modified cursor editing key (Home, End,
+ * Insert, Delete, Page Up, or Page Down). Home and End use H/F suffixes in
+ * xterm mode or tilde sequences in linux-console mode. All other supported
+ * keys use the form "ESC [ param ; mod ~".
+ *
+ * @param term
+ *     The terminal from which key input is being sent. Current modifier state
+ *     and linux_console_keys flag are read from this terminal.
+ *
+ * @param keysym
+ *     The X11 keysym of the cursor editing key being sent.
+ *
+ * @return
+ *     Zero if the key was sent successfully, non-zero on error.
+ */
+static int __guac_terminal_send_modified_editing(guac_terminal* term, int keysym) {
+
+    int mod = __guac_terminal_key_modifier_param(term);
+
+    /* Home and End use letter suffixes in xterm, tilde params in linux console */
+    if (keysym == GUAC_KEYSYM_HOME || keysym == GUAC_KEYSYM_KP_HOME)
+        return term->linux_console_keys
+            ? guac_terminal_sendf(term, "\x1B[1;%i~", mod)
+            : guac_terminal_sendf(term, "\x1B[1;%iH", mod);
+
+    if (keysym == GUAC_KEYSYM_END || keysym == GUAC_KEYSYM_KP_END)
+        return term->linux_console_keys
+            ? guac_terminal_sendf(term, "\x1B[4;%i~", mod)
+            : guac_terminal_sendf(term, "\x1B[1;%iF", mod);
+
+    int param;
+
+    if (keysym == GUAC_KEYSYM_INSERT || keysym == GUAC_KEYSYM_KP_INSERT) param = 2;
+    else if (keysym == GUAC_KEYSYM_DELETE || keysym == GUAC_KEYSYM_KP_DELETE) param = 3;
+    else if (keysym == GUAC_KEYSYM_PAGE_UP || keysym == GUAC_KEYSYM_KP_PAGE_UP) param = 5;
+    else if (keysym == GUAC_KEYSYM_PAGE_DOWN || keysym == GUAC_KEYSYM_KP_PAGE_DOWN) param = 6;
+    else return 0;
+
+    return guac_terminal_sendf(term, "\x1B[%i;%i~", param, mod);
+
+}
+
+/**
+ * Sends the xterm-style CSI sequence for a modified function key. Modified
+ * F1-F4 use the form "ESC [ 1 ; mod suffix", with suffix P, Q, R, or S.
+ * Modified F5-F12 use the form "ESC [ param ; mod ~".
+ *
+ * Example:
+ *   Alt+F1 => ESC [ 1 ; 3 P
+ *   Ctrl+F6 => ESC [ 17 ; 5 ~
+ *
+ * Reference:
+ *   https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+ *
+ * @param term
+ *     The terminal from which key input is being sent. Current modifier state
+ *     is read from this terminal.
+ *
+ * @param keysym
+ *     The X11 keysym of the function key being sent.
+ *
+ * @return
+ *     Zero if the key was sent successfully, non-zero on error.
+ */
+static int __guac_terminal_send_modified_function(guac_terminal* term, int keysym) {
+
+    char suffix = 0;
+    int param = 0;
+
+    if (keysym == GUAC_KEYSYM_F1 || keysym == GUAC_KEYSYM_KP_F1) suffix = 'P';
+    else if (keysym == GUAC_KEYSYM_F2 || keysym == GUAC_KEYSYM_KP_F2) suffix = 'Q';
+    else if (keysym == GUAC_KEYSYM_F3 || keysym == GUAC_KEYSYM_KP_F3) suffix = 'R';
+    else if (keysym == GUAC_KEYSYM_F4 || keysym == GUAC_KEYSYM_KP_F4) suffix = 'S';
+    else if (keysym == GUAC_KEYSYM_F5) param = 15;
+    else if (keysym == GUAC_KEYSYM_F6) param = 17;
+    else if (keysym == GUAC_KEYSYM_F7) param = 18;
+    else if (keysym == GUAC_KEYSYM_F8) param = 19;
+    else if (keysym == GUAC_KEYSYM_F9) param = 20;
+    else if (keysym == GUAC_KEYSYM_F10) param = 21;
+    /* Intentional gap */
+    else if (keysym == GUAC_KEYSYM_F11) param = 23;
+    else if (keysym == GUAC_KEYSYM_F12) param = 24;
+    else return 0;
+
+    int mod = __guac_terminal_key_modifier_param(term);
+
+    /* Modified F1-F4 use CSI with letter suffix (P/Q/R/S); modified F5-F12
+     * use CSI tilde with numeric param. The `else return 0` above guarantees
+     * that exactly one of suffix or param is non-zero when this point is
+     * reached. */
+    if (suffix != 0)
+        return guac_terminal_sendf(term, "\x1B[1;%i%c", mod, suffix);
+
+    return guac_terminal_sendf(term, "\x1B[%i;%i~", param, mod);
+
+}
+
 static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
     /* Ignore user input if terminal is not started */
@@ -1439,16 +1802,26 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         guac_terminal_notify(term);
     }
 
-    /* Track modifiers */
-    if (keysym == 0xFFE3 || keysym == 0xFFE4)
+    /*
+     * Super (Windows/Command) and Hyper are treated as Meta since terminals don't
+     * have separate modifier bits for them.
+     *
+     * MODE_SWITCH and the ISO level selectors are intentionally not treated as
+     * Alt. On international layouts these are often used to produce printable
+     * third-/fifth-level characters, and folding them into Alt would inject an
+     * unwanted ESC prefix into normal text input.
+     */
+    if (keysym == GUAC_KEYSYM_CTRL_L || keysym == GUAC_KEYSYM_CTRL_R)
         term->mod_ctrl = pressed;
-    else if (keysym == 0xFFE7 || keysym == 0xFFE8)
+    else if (keysym == GUAC_KEYSYM_META_L || keysym == GUAC_KEYSYM_META_R
+            || keysym == GUAC_KEYSYM_SUPER_L || keysym == GUAC_KEYSYM_SUPER_R
+            || keysym == GUAC_KEYSYM_HYPER_L || keysym == GUAC_KEYSYM_HYPER_R)
         term->mod_meta = pressed;
-    else if (keysym == 0xFFE9 || keysym == 0xFFEA)
+    else if (keysym == GUAC_KEYSYM_ALT_L || keysym == GUAC_KEYSYM_ALT_R)
         term->mod_alt = pressed;
-    else if (keysym == 0xFFE1 || keysym == 0xFFE2)
+    else if (keysym == GUAC_KEYSYM_SHIFT_L || keysym == GUAC_KEYSYM_SHIFT_R)
         term->mod_shift = pressed;
-        
+
     /* If key pressed */
     else if (pressed) {
 
@@ -1474,13 +1847,13 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         if (term->mod_shift) {
 
             /* Page up */
-            if (keysym == 0xFF55) {
+            if (keysym == GUAC_KEYSYM_PAGE_UP) {
                 guac_terminal_scroll_display_up(term, term->term_height);
                 return 0;
             }
 
             /* Page down */
-            if (keysym == 0xFF56) {
+            if (keysym == GUAC_KEYSYM_PAGE_DOWN) {
                 guac_terminal_scroll_display_down(term, term->term_height);
                 return 0;
             }
@@ -1491,11 +1864,18 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         if (term->scroll_offset != 0)
             guac_terminal_scroll_display_down(term, term->scroll_offset);
 
-        /* If alt being held, also send escape character */
-        if (term->mod_alt)
+        /*
+         * Modified arrows, function keys, and cursor editing keys encode Alt
+         * and Meta directly in CSI (below). For all other keys, Alt/Meta are
+         * represented by prefixing ESC.
+         */
+        if ((term->mod_alt || term->mod_meta)
+                && !__guac_terminal_is_arrow_keysym(keysym)
+                && !__guac_terminal_is_function_keysym(keysym)
+                && !__guac_terminal_is_editing_keysym(keysym))
             guac_terminal_send_string(term, "\x1B");
 
-        /* Translate Ctrl+letter to control code */ 
+        /* Translate Ctrl+letter to control code */
         if (term->mod_ctrl) {
 
             char data;
@@ -1520,16 +1900,24 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
             else if (keysym >= '3' && keysym <= '7')
                 data = (char) (keysym - '3' + 0x1B);
 
-            /* Otherwise ignore */
-            else
+            else {
+                /* No C0 mapping: encode as CSI modifier sequence if applicable */
+                if (__guac_terminal_is_arrow_keysym(keysym))
+                    return __guac_terminal_send_modified_arrow(term, keysym);
+                if (__guac_terminal_is_function_keysym(keysym))
+                    return __guac_terminal_send_modified_function(term, keysym);
+                if (__guac_terminal_is_editing_keysym(keysym))
+                    return __guac_terminal_send_modified_editing(term, keysym);
                 return 0;
+            }
 
             return guac_terminal_send_data(term, &data, 1);
 
         }
 
         /* Translate Unicode to UTF-8 */
-        else if ((keysym >= 0x00 && keysym <= 0xFF) || ((keysym & 0xFFFF0000) == 0x01000000)) {
+        else if ((keysym >= 0x00
+                  && keysym <= 0xFF) || ((keysym & GUAC_KEYSYM_UNICODE_MASK) == GUAC_KEYSYM_UNICODE_PREFIX)) {
 
             int length;
             char data[5];
@@ -1540,8 +1928,9 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         }
 
         /* Typeable keys of number pad */
-        else if (keysym >= 0xFFAA && keysym <= 0xFFB9) {
-            char value = keysym - 0xFF80;
+        else if ((keysym >= GUAC_KEYSYM_KP_MULTIPLY && keysym <= GUAC_KEYSYM_KP_9)
+                 || keysym == GUAC_KEYSYM_KP_EQUAL) {
+            char value = keysym - GUAC_KEYSYM_KP_ASCII_OFFSET;
             guac_terminal_send_data(term, &value, sizeof(value));
         }
 
@@ -1549,52 +1938,77 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         else {
 
             /* Backspace can vary based on configuration of terminal by client. */
-            if (keysym == 0xFF08) {
+            if (keysym == GUAC_KEYSYM_BACKSPACE) {
                 char backspace_str[] = { term->backspace, '\0' };
                 return guac_terminal_send_string(term, backspace_str);
             }
-            if (keysym == 0xFF09 || keysym == 0xFF89) return guac_terminal_send_string(term, "\x09"); /* Tab */
-            if (keysym == 0xFF0A) return guac_terminal_send_string(term, "\x0A");                     /* Line Feed */
-            if (keysym == 0xFF0D || keysym == 0xFF8D) return guac_terminal_send_string(term, "\x0D"); /* Enter */
-            if (keysym == 0xFF1B) return guac_terminal_send_string(term, "\x1B");                     /* Esc */
+            if (keysym == GUAC_KEYSYM_TAB || keysym == GUAC_KEYSYM_KP_TAB) return guac_terminal_send_string(term, "\x09");
+            if (keysym == GUAC_KEYSYM_LINE_FEED) return guac_terminal_send_string(term, "\x0A");
+            if (keysym == GUAC_KEYSYM_ENTER || keysym == GUAC_KEYSYM_KP_ENTER) return guac_terminal_send_string(term, "\x0D");
+            if (keysym == GUAC_KEYSYM_ESCAPE) return guac_terminal_send_string(term, "\x1B");
 
-            if (keysym == 0xFF50 || keysym == 0xFF95) return guac_terminal_send_string(term, "\x1B[1~"); /* Home */
+            /* Cursor editing keys (Home, End, Insert, Delete, Page Up, Page Down) w/ modifiers */
+            if (__guac_terminal_any_modifier(term) && __guac_terminal_is_editing_keysym(keysym))
+                return __guac_terminal_send_modified_editing(term, keysym);
 
-            /* Arrow keys w/ application cursor */
+            if (keysym == GUAC_KEYSYM_HOME || keysym == GUAC_KEYSYM_KP_HOME)
+                return guac_terminal_send_string(term, term->linux_console_keys ? "\x1B[1~" : "\x1B[H");
+
+            if (keysym == GUAC_KEYSYM_END || keysym == GUAC_KEYSYM_KP_END)
+                return guac_terminal_send_string(term, term->linux_console_keys ? "\x1B[4~" : "\x1B[F");
+
+            /* Arrow keys w/ modifiers */
+            if (__guac_terminal_any_modifier(term) && __guac_terminal_is_arrow_keysym(keysym))
+                return __guac_terminal_send_modified_arrow(term, keysym);
+
+            /* Application cursor mode (DECCKM) affects only arrow keys.
+             * Home and End use their own sequences above and are unaffected. */
             if (term->application_cursor_keys) {
-                if (keysym == 0xFF51 || keysym == 0xFF96) return guac_terminal_send_string(term, "\x1BOD"); /* Left */
-                if (keysym == 0xFF52 || keysym == 0xFF97) return guac_terminal_send_string(term, "\x1BOA"); /* Up */
-                if (keysym == 0xFF53 || keysym == 0xFF98) return guac_terminal_send_string(term, "\x1BOC"); /* Right */
-                if (keysym == 0xFF54 || keysym == 0xFF99) return guac_terminal_send_string(term, "\x1BOB"); /* Down */
+                if (keysym == GUAC_KEYSYM_LEFT || keysym == GUAC_KEYSYM_KP_LEFT) return guac_terminal_send_string(term, "\x1BOD");
+                if (keysym == GUAC_KEYSYM_UP || keysym == GUAC_KEYSYM_KP_UP) return guac_terminal_send_string(term, "\x1BOA");
+                if (keysym == GUAC_KEYSYM_RIGHT || keysym == GUAC_KEYSYM_KP_RIGHT) return guac_terminal_send_string(term, "\x1BOC");
+                if (keysym == GUAC_KEYSYM_DOWN || keysym == GUAC_KEYSYM_KP_DOWN) return guac_terminal_send_string(term, "\x1BOB");
             }
             else {
-                if (keysym == 0xFF51 || keysym == 0xFF96) return guac_terminal_send_string(term, "\x1B[D"); /* Left */
-                if (keysym == 0xFF52 || keysym == 0xFF97) return guac_terminal_send_string(term, "\x1B[A"); /* Up */
-                if (keysym == 0xFF53 || keysym == 0xFF98) return guac_terminal_send_string(term, "\x1B[C"); /* Right */
-                if (keysym == 0xFF54 || keysym == 0xFF99) return guac_terminal_send_string(term, "\x1B[B"); /* Down */
+                if (keysym == GUAC_KEYSYM_LEFT || keysym == GUAC_KEYSYM_KP_LEFT) return guac_terminal_send_string(term, "\x1B[D");
+                if (keysym == GUAC_KEYSYM_UP || keysym == GUAC_KEYSYM_KP_UP) return guac_terminal_send_string(term, "\x1B[A");
+                if (keysym == GUAC_KEYSYM_RIGHT || keysym == GUAC_KEYSYM_KP_RIGHT) return guac_terminal_send_string(term, "\x1B[C");
+                if (keysym == GUAC_KEYSYM_DOWN || keysym == GUAC_KEYSYM_KP_DOWN) return guac_terminal_send_string(term, "\x1B[B");
             }
 
-            if (keysym == 0xFF55 || keysym == 0xFF9A) return guac_terminal_send_string(term, "\x1B[5~"); /* Page up */
-            if (keysym == 0xFF56 || keysym == 0xFF9B) return guac_terminal_send_string(term, "\x1B[6~"); /* Page down */
-            if (keysym == 0xFF57 || keysym == 0xFF9C) return guac_terminal_send_string(term, "\x1B[4~"); /* End */
+            if (keysym == GUAC_KEYSYM_PAGE_UP || keysym == GUAC_KEYSYM_KP_PAGE_UP) return guac_terminal_send_string(term, "\x1B[5~");
+            if (keysym == GUAC_KEYSYM_PAGE_DOWN || keysym == GUAC_KEYSYM_KP_PAGE_DOWN) return guac_terminal_send_string(term, "\x1B[6~");
 
-            if (keysym == 0xFF63 || keysym == 0xFF9E) return guac_terminal_send_string(term, "\x1B[2~"); /* Insert */
+            if (keysym == GUAC_KEYSYM_INSERT || keysym == GUAC_KEYSYM_KP_INSERT) return guac_terminal_send_string(term, "\x1B[2~");
 
-            if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_send_string(term, "\x1B[[A"); /* F1  */
-            if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_send_string(term, "\x1B[[B"); /* F2  */
-            if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1B[[C"); /* F3  */
-            if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_send_string(term, "\x1B[[D"); /* F4  */
-            if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[[E"); /* F5  */
+            if (__guac_terminal_any_modifier(term) && __guac_terminal_is_function_keysym(keysym))
+                return __guac_terminal_send_modified_function(term, keysym);
 
-            if (keysym == 0xFFC3) return guac_terminal_send_string(term, "\x1B[17~"); /* F6  */
-            if (keysym == 0xFFC4) return guac_terminal_send_string(term, "\x1B[18~"); /* F7  */
-            if (keysym == 0xFFC5) return guac_terminal_send_string(term, "\x1B[19~"); /* F8  */
-            if (keysym == 0xFFC6) return guac_terminal_send_string(term, "\x1B[20~"); /* F9  */
-            if (keysym == 0xFFC7) return guac_terminal_send_string(term, "\x1B[21~"); /* F10 */
-            if (keysym == 0xFFC8) return guac_terminal_send_string(term, "\x1B[22~"); /* F11 */
-            if (keysym == 0xFFC9) return guac_terminal_send_string(term, "\x1B[23~"); /* F12 */
+            /* F1-F5: Linux console uses ESC [ [ A-E; xterm/VT220 uses SS3 and CSI tilde */
+            if (term->linux_console_keys) {
+                if (keysym == GUAC_KEYSYM_F1 || keysym == GUAC_KEYSYM_KP_F1) return guac_terminal_send_string(term, "\x1B[[A");
+                if (keysym == GUAC_KEYSYM_F2 || keysym == GUAC_KEYSYM_KP_F2) return guac_terminal_send_string(term, "\x1B[[B");
+                if (keysym == GUAC_KEYSYM_F3 || keysym == GUAC_KEYSYM_KP_F3) return guac_terminal_send_string(term, "\x1B[[C");
+                if (keysym == GUAC_KEYSYM_F4 || keysym == GUAC_KEYSYM_KP_F4) return guac_terminal_send_string(term, "\x1B[[D");
+                if (keysym == GUAC_KEYSYM_F5) return guac_terminal_send_string(term, "\x1B[[E");
+            }
+            else {
+                if (keysym == GUAC_KEYSYM_F1 || keysym == GUAC_KEYSYM_KP_F1) return guac_terminal_send_string(term, "\x1BOP");
+                if (keysym == GUAC_KEYSYM_F2 || keysym == GUAC_KEYSYM_KP_F2) return guac_terminal_send_string(term, "\x1BOQ");
+                if (keysym == GUAC_KEYSYM_F3 || keysym == GUAC_KEYSYM_KP_F3) return guac_terminal_send_string(term, "\x1BOR");
+                if (keysym == GUAC_KEYSYM_F4 || keysym == GUAC_KEYSYM_KP_F4) return guac_terminal_send_string(term, "\x1BOS");
+                if (keysym == GUAC_KEYSYM_F5) return guac_terminal_send_string(term, "\x1B[15~");
+            }
 
-            if (keysym == 0xFFFF || keysym == 0xFF9F) return guac_terminal_send_string(term, "\x1B[3~"); /* Delete */
+            if (keysym == GUAC_KEYSYM_F6) return guac_terminal_send_string(term, "\x1B[17~");
+            if (keysym == GUAC_KEYSYM_F7) return guac_terminal_send_string(term, "\x1B[18~");
+            if (keysym == GUAC_KEYSYM_F8) return guac_terminal_send_string(term, "\x1B[19~");
+            if (keysym == GUAC_KEYSYM_F9) return guac_terminal_send_string(term, "\x1B[20~");
+            if (keysym == GUAC_KEYSYM_F10) return guac_terminal_send_string(term, "\x1B[21~");
+            if (keysym == GUAC_KEYSYM_F11) return guac_terminal_send_string(term, "\x1B[23~");
+            if (keysym == GUAC_KEYSYM_F12) return guac_terminal_send_string(term, "\x1B[24~");
+
+            if (keysym == GUAC_KEYSYM_DELETE || keysym == GUAC_KEYSYM_KP_DELETE) return guac_terminal_send_string(term, "\x1B[3~");
 
             /* Ignore unknown keys */
             guac_client_log(term->client, GUAC_LOG_DEBUG,
@@ -1632,8 +2046,8 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
  *     false otherwise.
  */
 static bool guac_terminal_is_part_of_word(int ascii_char) {
-    return ((ascii_char >= '0' && ascii_char <= '9') || 
-            (ascii_char >= 'A' && ascii_char <= 'Z') || 
+    return ((ascii_char >= '0' && ascii_char <= '9') ||
+            (ascii_char >= 'A' && ascii_char <= 'Z') ||
             (ascii_char >= 'a' && ascii_char <= 'z') ||
             (ascii_char == '$') ||
             (ascii_char == '%') ||
@@ -1669,7 +2083,7 @@ static bool guac_terminal_is_blank(int ascii_char) {
  *  - Determining the type of character :
  *      Letter, digit, acceptable symbol within a word,
  *      or space/NULL,
- *      all other chars are treated as single. 
+ *      all other chars are treated as single.
  *  - Calculating the word boundaries.
  *  - Visual selection of the found word.
  *  - Adding it to clipboard.
@@ -1679,7 +2093,7 @@ static bool guac_terminal_is_blank(int ascii_char) {
  *
  * @param row
  *     The row where is the mouse at the double click event.
- * 
+ *
  * @param col
  *     The column where is the mouse at the double click event.
  */
@@ -1694,7 +2108,7 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
     /* (char)10 behind cursor */
     int current_char = characters[col].value;
 
-    /* Position of the word behind cursor. 
+    /* Position of the word behind cursor.
      * Default = col required to select a char if not a word and not blank. */
 
     /* The function used to calculate the word borders */
@@ -1818,7 +2232,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
                     case 0:
                         guac_terminal_select_start(term, row, col, side);
                         break;
-                    
+
                     /* Second click = word selection */
                     case 1:
                         guac_terminal_double_click(term, row, col);
@@ -2177,8 +2591,10 @@ void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
     guac_terminal_lock(terminal);
 
     /* Update stored copy of font name, if changed */
-    if (font_name != NULL)
+    if (font_name != NULL) {
+        guac_mem_free_const(terminal->font_name);
         terminal->font_name = guac_strdup(font_name);
+    }
 
     /* Update stored copy of font size, if changed */
     if (font_size != -1)

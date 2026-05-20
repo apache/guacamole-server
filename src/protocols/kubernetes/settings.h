@@ -253,6 +253,12 @@ typedef struct guac_kubernetes_settings {
      */
     int backspace;
 
+    /**
+     * The terminal emulator type that is connected to this server (e.g.
+     * "xterm" or "xterm-256color"). "linux" is used if unspecified.
+     */
+    char* terminal_type;
+
 } guac_kubernetes_settings;
 
 /**
