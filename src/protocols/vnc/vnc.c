@@ -695,7 +695,8 @@ void* guac_vnc_client_thread(void* data) {
                 0, /* Touch events not supported */
                 settings->recording_include_keys,
                 settings->recording_write_existing,
-                settings->recording_include_clipboard);
+                settings->recording_include_clipboard,
+                settings->require_recording);
 
         /* If recording is required but failed, abort the connection */
         if (vnc_client->recording == NULL && settings->require_recording) {

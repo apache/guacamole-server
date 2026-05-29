@@ -939,7 +939,8 @@ void* guac_rdp_client_thread(void* data) {
                 !settings->recording_exclude_touch,
                 settings->recording_include_keys,
                 settings->recording_write_existing,
-                settings->recording_include_clipboard);
+                settings->recording_include_clipboard,
+                settings->require_recording);
 
         /* If recording is required but failed, abort the connection */
         if (rdp_client->recording == NULL && settings->require_recording) {
