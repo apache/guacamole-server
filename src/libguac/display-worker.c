@@ -23,6 +23,7 @@
 #include "guacamole/display.h"
 #include "guacamole/fifo.h"
 #include "guacamole/layer.h"
+#include "guacamole/proctitle.h"
 #include "guacamole/protocol-types.h"
 #include "guacamole/protocol.h"
 #include "guacamole/rect.h"
@@ -292,6 +293,10 @@ static int LFR_guac_display_layer_should_use_webp(guac_display_layer* layer,
 }
 
 void* guac_display_worker_thread(void* data) {
+
+    /* Thread name display-wrk: one worker in the display pool; encodes and
+     * sends graphical updates for dirty layer regions. */
+    guac_thread_name_set("display-wrk");
 
     int framerate;
     int has_outstanding_frames = 0;

@@ -49,6 +49,7 @@
 #include <guacamole/error.h>
 #include <guacamole/flag.h>
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/string.h>
@@ -351,6 +352,10 @@ static void guac_terminal_repaint_default_layer(guac_terminal* terminal,
  *     Always NULL.
  */
 void* guac_terminal_thread(void* data) {
+
+    /* Thread name terminal: renders the terminal emulator display and
+     * processes output from the remote. */
+    guac_thread_name_set("term-render");
 
     guac_terminal* terminal = (guac_terminal*) data;
     guac_client* client = terminal->client;

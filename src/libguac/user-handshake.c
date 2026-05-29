@@ -23,6 +23,7 @@
 #include "guacamole/client.h"
 #include "guacamole/error.h"
 #include "guacamole/parser.h"
+#include "guacamole/proctitle.h"
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"
 #include "guacamole/user.h"
@@ -128,6 +129,10 @@ static void guac_user_log_handshake_failure(guac_user* user) {
  *     Always NULL.
  */
 static void* guac_user_input_thread(void* data) {
+
+    /* Thread name user-input: reads and parses instructions from a single
+     * user's socket. */
+    guac_thread_name_set("user-input");
 
     guac_user_input_thread_params* params =
         (guac_user_input_thread_params*) data;

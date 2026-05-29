@@ -30,6 +30,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+/* Fallback for platforms that do not define EBADFD. */
+#ifndef EBADFD
+#define EBADFD EBADF
+#endif
+
 int guac_tcp_connect(const char* hostname, const char* port, const int timeout) {
 
     int retval;

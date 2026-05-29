@@ -31,6 +31,12 @@
 #define GUAC_KUBERNETES_DEFAULT_PORT 8080
 
 /**
+ * The protocol label included in the process title (the first argument passed
+ * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
+ */
+#define GUAC_KUBERNETES_PROCESS_TITLE_NAME "k8s"
+
+/**
  * The name of the Kubernetes namespace that should be used by default if no
  * specific Kubernetes namespace is provided.
  */

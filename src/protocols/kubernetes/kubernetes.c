@@ -29,6 +29,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <libwebsockets.h>
@@ -176,6 +177,10 @@ struct lws_protocols guac_kubernetes_lws_protocols[] = {
  */
 static void* guac_kubernetes_input_thread(void* data) {
 
+    /* Thread name k8s-input: reads user input and forwards it to the
+     * Kubernetes pod. */
+    guac_thread_name_set("k8s-input");
+
     guac_client* client = (guac_client*) data;
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
@@ -198,6 +203,10 @@ static void* guac_kubernetes_input_thread(void* data) {
 
 void* guac_kubernetes_client_thread(void* data) {
 
+    /* Thread name k8s-worker: main Kubernetes client thread; manages the
+     * websocket connection to the pod. */
+    guac_thread_name_set("k8s-worker");
+
     guac_client* client = (guac_client*) data;
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
@@ -213,6 +222,30 @@ void* guac_kubernetes_client_thread(void* data) {
                 "The name of the Kubernetes pod is a required parameter.");
         goto fail;
     }
+
+    const char* kubernetes_namespace = settings->kubernetes_namespace;
+    char kubernetes_title[GUAC_PROCESS_TITLE_BUFSIZE];
+
+    /* Namespace should already be populated by argument parsing, but
+     * provide fallback. */
+    if (kubernetes_namespace == NULL || *kubernetes_namespace == '\0')
+        kubernetes_namespace = GUAC_KUBERNETES_DEFAULT_NAMESPACE;
+
+    /* Identify the attached Kubernetes target (for example,
+     * "k8s default/mypod" or "k8s default/mypod/container"). Include the
+     * container when specified to distinguish multi-container pods. */
+    if (settings->kubernetes_container != NULL
+            && *settings->kubernetes_container != '\0')
+        snprintf(kubernetes_title, sizeof(kubernetes_title),
+                "%s %s/%s/%s", GUAC_KUBERNETES_PROCESS_TITLE_NAME,
+                kubernetes_namespace, settings->kubernetes_pod,
+                settings->kubernetes_container);
+    else
+        snprintf(kubernetes_title, sizeof(kubernetes_title),
+                "%s %s/%s", GUAC_KUBERNETES_PROCESS_TITLE_NAME,
+                kubernetes_namespace, settings->kubernetes_pod);
+
+    guac_process_title_set(kubernetes_title);
 
     /* Generate endpoint for attachment URL */
     if (guac_kubernetes_endpoint_uri(endpoint_path, sizeof(endpoint_path),

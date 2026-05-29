@@ -23,6 +23,7 @@
 #include "guacamole/display.h"
 #include "guacamole/flag.h"
 #include "guacamole/mem.h"
+#include "guacamole/proctitle.h"
 #include "guacamole/timestamp.h"
 
 /**
@@ -61,6 +62,10 @@
  *     Always NULL.
  */
 static void* guac_display_render_loop(void* data) {
+
+    /* Thread name display-render: drives the display render loop, flushing
+     * completed frames to the client. */
+    guac_thread_name_set("display-render");
 
     guac_display_render_thread* render_thread = (guac_display_render_thread*) data;
     guac_display* display = render_thread->display;
