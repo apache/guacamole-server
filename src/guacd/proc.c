@@ -34,6 +34,7 @@
 #include <guacamole/user.h>
 
 #include <errno.h>
+#include <poll.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -138,7 +139,17 @@ static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
 
     /* Start user thread */
     pthread_t user_thread;
-    pthread_create(&user_thread, NULL, guacd_user_thread, params);
+    int err = pthread_create(&user_thread, NULL, guacd_user_thread, params);
+    if (err) {
+        guacd_log(GUAC_LOG_ERROR,
+                "Unable to create user thread (error %d: %s). "
+                "Closing connection and stopping worker to prevent leak.",
+                err, strerror(err));
+        close(fd);
+        guac_mem_free(params);
+        guacd_proc_stop(proc);
+        return;
+    }
     pthread_detach(user_thread);
 
 }
@@ -365,11 +376,109 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
     sigaction(SIGINT, &signal_stop_action, NULL);
     sigaction(SIGTERM, &signal_stop_action, NULL);
 
+    /* Track whether we have ever had a user, so we can detect the case
+     * where all users have disconnected and no new ones will arrive.
+     * Also track idle time so we can forcibly exit after an absolute max. */
+    int had_user = 0;
+    int idle_cycles = 0;
+    int no_user_cycles = 0;
+
     /* Add each received file descriptor as a new user */
     int received_fd;
-    while ((received_fd = guacd_recv_fd(proc->fd_socket)) != -1) {
+    for (;;) {
+
+        /* Use poll() with a timeout instead of blocking indefinitely in
+         * recvmsg(). This allows the worker to self-terminate if the client
+         * has stopped and no user thread triggered guacd_proc_stop(). */
+        struct pollfd pfd = {
+            .fd = proc->fd_socket,
+            .events = POLLIN
+        };
+
+        int poll_result = poll(&pfd, 1, GUACD_PROC_IDLE_TIMEOUT_MS);
+
+        if (poll_result < 0) {
+            if (errno == EINTR)
+                continue;
+            break;
+        }
+
+        if (poll_result == 0) {
+            idle_cycles++;
+
+            /* If we had a user and client explicitly stopped, exit */
+            if (had_user && client->state != GUAC_CLIENT_RUNNING) {
+                guacd_log(GUAC_LOG_INFO,
+                        "Worker idle timeout: client no longer running "
+                        "(state=%d), exiting.", client->state);
+                break;
+            }
+
+            /* If no users remain, allow a grace period for reconnects
+             * (browser refresh, tab re-open) before giving up */
+            if (had_user && client->connected_users == 0) {
+                no_user_cycles++;
+                if (no_user_cycles * GUACD_PROC_IDLE_TIMEOUT_MS
+                        >= GUACD_PROC_RECONNECT_GRACE_MS) {
+                    guacd_log(GUAC_LOG_INFO,
+                            "Worker idle timeout: no connected users "
+                            "for %ds, exiting.",
+                            GUACD_PROC_RECONNECT_GRACE_MS / 1000);
+                    break;
+                }
+            }
+            else {
+                no_user_cycles = 0;
+
+                /* While users are still connected, the session is healthy
+                 * even though no new user file descriptors arrive on
+                 * fd_socket: ongoing session traffic of an already-connected
+                 * session runs in separate user threads on other sockets.
+                 * Reset the absolute idle counter so it measures true idle
+                 * time since the last disconnect, not time since the last new
+                 * FD. Without this, the safety net below would accumulate
+                 * idle_cycles on a healthy single-user session and force-exit
+                 * the active connection after GUACD_PROC_MAX_IDLE_MS. */
+                if (client->connected_users > 0)
+                    idle_cycles = 0;
+            }
+
+            /* Absolute safety net: if we've been idle for too long after
+             * having a user AND no users remain connected, force exit
+             * regardless of client state. This catches cases where the client
+             * free handler is blocked (e.g. guac_argv_await in FreeRDP
+             * authenticate callback) after a real disconnect.
+             *
+             * The connected_users == 0 guard is required: a healthy active
+             * session receives no new user FDs and would otherwise accumulate
+             * idle_cycles and be force-killed even though it is fully alive.
+             * idle_cycles is now reset above while users are connected, but
+             * the explicit connected_users check is kept as a second line of
+             * defence. */
+            if (had_user
+                    && client->connected_users == 0
+                    && idle_cycles * GUACD_PROC_IDLE_TIMEOUT_MS
+                        >= GUACD_PROC_MAX_IDLE_MS) {
+                guacd_log(GUAC_LOG_WARNING,
+                        "Worker exceeded maximum idle time (%ds) with no "
+                        "connected users. Force exiting.",
+                        GUACD_PROC_MAX_IDLE_MS / 1000);
+                break;
+            }
+
+            continue;
+        }
+
+        if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+            break;
+
+        received_fd = guacd_recv_fd(proc->fd_socket);
+        if (received_fd == -1)
+            break;
 
         guacd_proc_add_user(proc, received_fd, owner);
+        had_user = 1;
+        idle_cycles = 0;
 
         /* Future file descriptors are not owners */
         owner = 0;
