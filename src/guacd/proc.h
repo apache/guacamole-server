@@ -47,6 +47,30 @@
 #define GUACD_CLIENT_FREE_TIMEOUT 5
 
 /**
+ * The number of milliseconds the worker process will wait in poll()
+ * before checking whether the client is still alive. If no new user FDs
+ * arrive within this interval, the worker checks client state and user
+ * count to decide whether to continue waiting or exit.
+ */
+#define GUACD_PROC_IDLE_TIMEOUT_MS 5000
+
+/**
+ * Grace period (in milliseconds) after the last user disconnects before
+ * the worker process exits. This allows a brief window during which a
+ * reconnecting user (browser refresh, tab re-open) can rejoin without
+ * losing the underlying remote desktop session.
+ */
+#define GUACD_PROC_RECONNECT_GRACE_MS 60000
+
+/**
+ * Absolute maximum idle time (in milliseconds) after which a worker
+ * that once had a user will forcibly exit, regardless of client state. This
+ * catches edge cases where the normal exit path is blocked (e.g. FreeRDP's
+ * authenticate callback stuck in guac_argv_await).
+ */
+#define GUACD_PROC_MAX_IDLE_MS 120000
+
+/**
  * Process information of the internal remote desktop client.
  */
 typedef struct guacd_proc {
