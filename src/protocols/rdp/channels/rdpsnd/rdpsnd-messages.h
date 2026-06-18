@@ -124,6 +124,23 @@ void guac_rdpsnd_wave_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
+ * Handler for the SNDC_WAVE2 PDU. Unlike SNDC_WAVE/SNDWAV, SNDC_WAVE2 carries
+ * both wave metadata and audio payload within a single message body.
+ *
+ * @param svc
+ *     The RDPSND channel receiving the SNDC_WAVE2 PDU.
+ *
+ * @param input_stream
+ *     The FreeRDP input stream containing the remaining raw bytes (after the
+ *     common header) of the SNDC_WAVE2 PDU.
+ *
+ * @param header
+ *     The header content of the SNDC_WAVE2 PDU.
+ */
+void guac_rdpsnd_wave2_handler(guac_rdp_common_svc* svc,
+        wStream* input_stream, guac_rdpsnd_pdu_header* header);
+
+/**
  * Handler for the SNDC_CLOSE (Close) PDU. This PDU is sent when audio
  * streaming has stopped. This PDU is currently ignored by Guacamole. See:
  *
@@ -144,4 +161,3 @@ void guac_rdpsnd_close_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 #endif
-
