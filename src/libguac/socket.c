@@ -20,6 +20,7 @@
 #include "config.h"
 #include "guacamole/mem.h"
 #include "guacamole/error.h"
+#include "guacamole/proctitle.h"
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"
 #include "guacamole/timestamp.h"
@@ -44,6 +45,10 @@ char __guac_socket_BASE64_CHARACTERS[64] = {
 };
 
 static void* __guac_socket_keep_alive_thread(void* data) {
+
+    /* Thread name keep-alive: periodically sends keep-alive NOPs on an
+     * otherwise idle socket. */
+    guac_thread_name_set("keep-alive");
 
     int old_cancelstate;
 

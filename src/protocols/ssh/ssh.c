@@ -37,6 +37,7 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
@@ -201,6 +202,10 @@ static char* guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
 void* ssh_input_thread(void* data) {
 
+    /* Thread name ssh-stdin: reads terminal STDIN and forwards it to the
+     * SSH server. */
+    guac_thread_name_set("ssh-stdin");
+
     guac_client* client = (guac_client*) data;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
 
@@ -225,6 +230,10 @@ void* ssh_input_thread(void* data) {
 }
 
 void* ssh_client_thread(void* data) {
+
+    /* Thread name ssh-worker: main SSH client thread; runs the SSH session
+     * and drives the terminal. */
+    guac_thread_name_set("ssh-worker");
 
     guac_client* client = (guac_client*) data;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
@@ -342,6 +351,11 @@ void* ssh_client_thread(void* data) {
 
     /* Ensure connection is kept alive during lengthy connects */
     guac_socket_require_keep_alive(client->socket);
+
+    const char* ssh_port = settings->port != NULL
+            ? settings->port : GUAC_SSH_DEFAULT_PORT;
+    guac_process_title_set_endpoint(GUAC_SSH_PROCESS_TITLE_NAME,
+            settings->username, settings->hostname, ssh_port);
 
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,

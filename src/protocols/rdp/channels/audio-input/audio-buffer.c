@@ -22,6 +22,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
@@ -216,6 +217,10 @@ static void guac_rdp_audio_buffer_wait(guac_rdp_audio_buffer* audio_buffer) {
  *     Always NULL.
  */
 static void* guac_rdp_audio_buffer_flush_thread(void* data) {
+
+    /* Thread name rdp-audio: flushes buffered audio input to the RDP
+     * server at the negotiated rate. */
+    guac_thread_name_set("rdp-audio");
 
     guac_rdp_audio_buffer* audio_buffer = (guac_rdp_audio_buffer*) data;
     while (!audio_buffer->stopping) {
