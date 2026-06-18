@@ -32,6 +32,12 @@
 #define GUAC_TELNET_DEFAULT_PORT "23"
 
 /**
+ * The protocol label included in the process title (the first argument passed
+ * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
+ */
+#define GUAC_TELNET_PROCESS_TITLE_NAME "telnet"
+
+/**
  * The default number of seconds to wait for a successful connection before
  * timing out.
  */

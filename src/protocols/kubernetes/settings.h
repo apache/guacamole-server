@@ -31,6 +31,12 @@
 #define GUAC_KUBERNETES_DEFAULT_PORT 8080
 
 /**
+ * The protocol label included in the process title (the first argument passed
+ * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
+ */
+#define GUAC_KUBERNETES_PROCESS_TITLE_NAME "k8s"
+
+/**
  * The name of the Kubernetes namespace that should be used by default if no
  * specific Kubernetes namespace is provided.
  */
@@ -273,6 +279,12 @@ typedef struct guac_kubernetes_settings {
      * the function and keypad keys.
      */
     char* func_keys_and_keypad;
+
+    /**
+     * The terminal emulator type that is connected to this server (e.g.
+     * "xterm" or "xterm-256color"). "linux" is used if unspecified.
+     */
+    char* terminal_type;
 
 } guac_kubernetes_settings;
 

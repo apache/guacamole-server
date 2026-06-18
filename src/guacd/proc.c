@@ -29,6 +29,7 @@
 #include <guacamole/mem.h>
 #include <guacamole/parser.h>
 #include <guacamole/plugin.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
@@ -79,6 +80,10 @@ typedef struct guacd_user_thread_params {
  *     Always NULL.
  */
 static void* guacd_user_thread(void* data) {
+
+    /* Thread name user-conn: manages a single user's connection lifecycle
+     * from handshake through disconnect. */
+    guac_thread_name_set("user-conn");
 
     guacd_user_thread_params* params = (guacd_user_thread_params*) data;
     guacd_proc* proc = params->proc;
@@ -213,6 +218,10 @@ typedef struct guacd_client_free {
  */
 static void* guacd_client_free_thread(void* data) {
 
+    /* Thread name client-free: frees a guac_client in the background,
+     * bounded by a timeout in case the free handler hangs. */
+    guac_thread_name_set("client-free");
+
     guacd_client_free* free_operation = (guacd_client_free*) data;
 
     /* Attempt to free client (this may never return if the client is
@@ -325,6 +334,11 @@ static void signal_stop_handler(int signal) {
 static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
 
     int result = 1;
+
+    /* Label the new child process. guac_process_title_set() also writes the
+     * main thread's comm, which is the current thread here, so a separate
+     * guac_thread_name_set() call would just duplicate the work. */
+    guac_process_title_set(protocol);
 
     /* Set process group ID to match PID */
     if (setpgid(0, 0)) {

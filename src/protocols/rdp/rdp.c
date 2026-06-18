@@ -57,6 +57,7 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/gdi/gdi.h>
 #include <freerdp/graphics.h>
+#include <guacamole/proctitle.h>
 #include <freerdp/primary.h>
 #include <freerdp/settings.h>
 #include <freerdp/update.h>
@@ -732,9 +733,19 @@ fail:
 
 void* guac_rdp_client_thread(void* data) {
 
+    /* Thread name rdp-worker: main RDP client thread; runs the FreeRDP
+     * connection and event loop. */
+    guac_thread_name_set("rdp-worker");
+
     guac_client* client = (guac_client*) data;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
+
+    char rdp_port[GUAC_USHORT_STRING_BUFSIZE];
+    if (guac_itoa_safe(rdp_port, sizeof(rdp_port), settings->port) < 1)
+        rdp_port[0] = '\0';
+    guac_process_title_set_endpoint(GUAC_RDP_PROCESS_TITLE_NAME,
+            settings->username, settings->hostname, rdp_port);
 
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
