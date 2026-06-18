@@ -31,6 +31,12 @@
 #define GUAC_SSH_DEFAULT_PORT "22"
 
 /**
+ * The protocol label included in the process title (the first argument passed
+ * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
+ */
+#define GUAC_SSH_PROCESS_TITLE_NAME "ssh"
+
+/**
  * The default number of seconds to attempt a connection to the SSH/SFTP
  * server before giving up.
  */

@@ -29,6 +29,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <libwebsockets.h>
@@ -36,6 +37,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * Callback invoked by libwebsockets for events related to a WebSocket being
@@ -175,6 +177,10 @@ struct lws_protocols guac_kubernetes_lws_protocols[] = {
  */
 static void* guac_kubernetes_input_thread(void* data) {
 
+    /* Thread name k8s-input: reads user input and forwards it to the
+     * Kubernetes pod. */
+    guac_thread_name_set("k8s-input");
+
     guac_client* client = (guac_client*) data;
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
@@ -197,6 +203,10 @@ static void* guac_kubernetes_input_thread(void* data) {
 
 void* guac_kubernetes_client_thread(void* data) {
 
+    /* Thread name k8s-worker: main Kubernetes client thread; manages the
+     * websocket connection to the pod. */
+    guac_thread_name_set("k8s-worker");
+
     guac_client* client = (guac_client*) data;
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
@@ -213,12 +223,37 @@ void* guac_kubernetes_client_thread(void* data) {
         goto fail;
     }
 
+    const char* kubernetes_namespace = settings->kubernetes_namespace;
+    char kubernetes_title[GUAC_PROCESS_TITLE_BUFSIZE];
+
+    /* Namespace should already be populated by argument parsing, but
+     * provide fallback. */
+    if (kubernetes_namespace == NULL || *kubernetes_namespace == '\0')
+        kubernetes_namespace = GUAC_KUBERNETES_DEFAULT_NAMESPACE;
+
+    /* Identify the attached Kubernetes target (for example,
+     * "k8s default/mypod" or "k8s default/mypod/container"). Include the
+     * container when specified to distinguish multi-container pods. */
+    if (settings->kubernetes_container != NULL
+            && *settings->kubernetes_container != '\0')
+        snprintf(kubernetes_title, sizeof(kubernetes_title),
+                "%s %s/%s/%s", GUAC_KUBERNETES_PROCESS_TITLE_NAME,
+                kubernetes_namespace, settings->kubernetes_pod,
+                settings->kubernetes_container);
+    else
+        snprintf(kubernetes_title, sizeof(kubernetes_title),
+                "%s %s/%s", GUAC_KUBERNETES_PROCESS_TITLE_NAME,
+                kubernetes_namespace, settings->kubernetes_pod);
+
+    guac_process_title_set(kubernetes_title);
+
     /* Generate endpoint for attachment URL */
     if (guac_kubernetes_endpoint_uri(endpoint_path, sizeof(endpoint_path),
                 settings->kubernetes_namespace,
                 settings->kubernetes_pod,
                 settings->kubernetes_container,
-                settings->exec_command)) {
+                settings->exec_command,
+                settings->terminal_type)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Unable to generate path for Kubernetes API endpoint: "
                 "Resulting path too long");
@@ -255,6 +290,7 @@ void* guac_kubernetes_client_thread(void* data) {
     options->color_scheme = settings->color_scheme;
     options->backspace = settings->backspace;
     options->func_keys_and_keypad = settings->func_keys_and_keypad;
+    options->linux_console_keys = strcmp(settings->terminal_type, "linux") == 0;
 
     /* Create terminal */
     kubernetes_client->term = guac_terminal_create(client, options);

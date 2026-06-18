@@ -43,6 +43,12 @@
 #define RDP_DEFAULT_PORT 3389
 
 /**
+ * The protocol label included in the process title (the first argument passed
+ * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
+ */
+#define GUAC_RDP_PROCESS_TITLE_NAME "rdp"
+
+/**
  * The default SFTP connection timeout, in seconds.
  */
 #define RDP_DEFAULT_SFTP_TIMEOUT 10

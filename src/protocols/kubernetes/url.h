@@ -101,10 +101,19 @@ int guac_kubernetes_append_endpoint_param(char* buffer, int length,
  * @param kubernetes_container
  *     The name of the container to attach to, or NULL to arbitrarily attach
  *     to the first container in the pod.
- *  
+ *
  * @param exec_command
- *     The command used to run a new process and attach to it,
- *     instead of the main container process.
+ *     The command used to run a new process and attach to it, instead of the
+ *     main container process.
+ *
+ *     Split into arguments (no quoting), each argument is sent
+ *     as a separate "command=..." query parameter in the
+ *     request URL. "$TERM" is replaced with terminal_type.
+ *
+ * @param terminal_type
+ *     The configured terminal type, used as the replacement value for any
+ *     $TERM token within exec_command. May be NULL, in which case $TERM is
+ *     replaced with an empty string.
  *
  * @return
  *     Zero if the endpoint path was successfully written to the provided
@@ -112,7 +121,8 @@ int guac_kubernetes_append_endpoint_param(char* buffer, int length,
  */
 int guac_kubernetes_endpoint_uri(char* buffer, int length,
         const char* kubernetes_namespace, const char* kubernetes_pod,
-        const char* kubernetes_container, const char* exec_command);
+        const char* kubernetes_container, const char* exec_command,
+        const char* terminal_type);
 
 #endif
 

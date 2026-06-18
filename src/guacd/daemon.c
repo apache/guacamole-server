@@ -27,6 +27,7 @@
 #include "proc-map.h"
 
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
@@ -296,6 +297,8 @@ static void stop_process_callback(guacd_proc* proc, void* data) {
 }
 
 int main(int argc, char* argv[]) {
+
+    guac_process_title_init(argc, argv);
 
     /* Server */
     int socket_fd;
@@ -623,4 +626,3 @@ int main(int argc, char* argv[]) {
     return 0;
 
 }
-

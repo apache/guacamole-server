@@ -62,6 +62,7 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "clipboard-buffer-size",
     "disable-copy",
     "disable-paste",
+    "terminal-type",
     NULL
 };
 
@@ -280,6 +281,12 @@ enum KUBERNETES_ARGS_IDX {
      */
     IDX_DISABLE_PASTE,
 
+    /**
+     * The terminal emulator type that is connected to this server (e.g.
+     * "xterm" or "xterm-256color"). "linux" is used if unspecified.
+     */
+    IDX_TERMINAL_TYPE,
+
     KUBERNETES_ARGS_COUNT
 };
 
@@ -484,6 +491,11 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_DISABLE_PASTE, false);
 
+    /* Parse terminal type */
+    settings->terminal_type =
+        guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_TERMINAL_TYPE, "linux");
+
     /* Parsing was successful */
     return settings;
 
@@ -510,6 +522,7 @@ void guac_kubernetes_settings_free(guac_kubernetes_settings* settings) {
     /* Free display preferences */
     guac_mem_free(settings->font_name);
     guac_mem_free(settings->color_scheme);
+    guac_mem_free(settings->terminal_type);
 
     /* Free typescript settings */
     guac_mem_free(settings->typescript_name);
