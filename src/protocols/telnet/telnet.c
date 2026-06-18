@@ -26,6 +26,7 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <guacamole/tcp.h>
@@ -358,6 +359,10 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
  */
 static void* __guac_telnet_input_thread(void* data) {
 
+    /* Thread name telnet-stdin: reads terminal STDIN and forwards it to the
+     * telnet server. */
+    guac_thread_name_set("telnet-stdin");
+
     guac_client* client = (guac_client*) data;
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
 
@@ -491,6 +496,10 @@ static int __guac_telnet_wait(int socket_fd) {
 
 void* guac_telnet_client_thread(void* data) {
 
+    /* Thread name telnet-worker: main telnet client thread; runs the
+     * telnet session and event loop. */
+    guac_thread_name_set("telnet-worker");
+
     guac_client* client = (guac_client*) data;
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
@@ -498,6 +507,11 @@ void* guac_telnet_client_thread(void* data) {
     pthread_t input_thread;
     char buffer[8192];
     int wait_result;
+
+    const char* telnet_port = settings->port != NULL
+            ? settings->port : GUAC_TELNET_DEFAULT_PORT;
+    guac_process_title_set_endpoint(GUAC_TELNET_PROCESS_TITLE_NAME,
+            settings->username, settings->hostname, telnet_port);
 
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
@@ -562,6 +576,7 @@ void* guac_telnet_client_thread(void* data) {
     options->font_size = settings->font_size;
     options->color_scheme = settings->color_scheme;
     options->backspace = settings->backspace;
+    options->linux_console_keys = (strcmp(settings->terminal_type, "linux") == 0);
 
     /* Create terminal */
     telnet_client->term = guac_terminal_create(client, options);

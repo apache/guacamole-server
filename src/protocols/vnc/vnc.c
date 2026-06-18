@@ -42,6 +42,7 @@
 #include <guacamole/client.h>
 #include <guacamole/display.h>
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
@@ -452,9 +453,23 @@ static rfbBool guac_vnc_handle_messages(guac_client* client) {
 
 void* guac_vnc_client_thread(void* data) {
 
+    /* Thread name vnc-worker: main VNC client thread; runs the libvncclient
+     * connection and message loop. */
+    guac_thread_name_set("vnc-worker");
+
     guac_client* client = (guac_client*) data;
     guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
     guac_vnc_settings* settings = vnc_client->settings;
+
+    /* VNC has no default port (0 == unspecified), so suppress a misleading
+     * ":0" in the title. */
+    char vnc_port[GUAC_USHORT_STRING_BUFSIZE];
+    if (settings->port == 0
+            || guac_itoa_safe(vnc_port, sizeof(vnc_port),
+                    settings->port) < 1)
+        vnc_port[0] = '\0';
+    guac_process_title_set_endpoint(GUAC_VNC_PROCESS_TITLE_NAME,
+            settings->username, settings->hostname, vnc_port);
 
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
