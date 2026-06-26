@@ -218,6 +218,19 @@ typedef struct guac_rdp_settings {
     int resolution;
 
     /**
+     * The desktop scale factor to request from the RDP server, as a
+     * percentage. When set to a value between 100 and 500, the remote Windows
+     * session is asked to scale its UI accordingly (the equivalent of the
+     * Windows "Scale and layout" / display scaling setting). This value is sent
+     * to the server as the [MS-RDPBCGR] desktopScaleFactor (paired with a
+     * protocol-valid deviceScaleFactor), allowing a high-resolution
+     * (device-pixel) framebuffer to remain razor sharp while keeping UI and
+     * text at a comfortable size. A value of 0 (the default) disables the
+     * feature, and no scale factor is sent to the server.
+     */
+    int desktop_scale_factor;
+
+    /**
      * Whether all graphical updates for this connection should use lossless
      * compression only.
      */
@@ -752,6 +765,25 @@ extern const char* GUAC_RDP_CLIENT_ARGS[];
  */
 void guac_rdp_push_settings(guac_client* client,
         guac_rdp_settings* guac_settings, freerdp* rdp);
+
+/**
+ * Returns the RDP device scale factor that should accompany the given desktop
+ * scale factor. Per [MS-RDPBCGR] (Client Core Data) and [MS-RDPEDISP]
+ * (DISPLAYCONTROL_MONITOR_LAYOUT), the device scale factor MUST be exactly
+ * 100, 140, or 180 percent, otherwise both the device scale factor AND the
+ * accompanying desktop scale factor are ignored by the server. The mapping
+ * used here mirrors the behavior of native clients (mstsc / FreeRDP):
+ * a desktop scale below 120% maps to 100, 120%-160% maps to 140, and anything
+ * higher maps to 180.
+ *
+ * @param desktop_scale_factor
+ *     The desktop scale factor, as a percentage (typically 100-500).
+ *
+ * @return
+ *     The protocol-valid device scale factor (100, 140, or 180) to pair with
+ *     the given desktop scale factor.
+ */
+int guac_rdp_get_device_scale_factor(int desktop_scale_factor);
 
 /**
  * Returns the width of the RDP session display.
