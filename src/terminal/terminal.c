@@ -1805,6 +1805,8 @@ static int __guac_terminal_send_modified_function(guac_terminal* term, int keysy
 
 static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
+    char data;
+
     /* Ignore user input if terminal is not started */
     if (!term->started) {
         guac_client_log(term->client, GUAC_LOG_DEBUG, "Ignoring user input "
@@ -1827,7 +1829,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     else if (keysym == GUAC_TERMINAL_KEY_ALT_L || keysym == GUAC_TERMINAL_KEY_ALT_R)
         term->mod_alt = pressed;
     else if (keysym == GUAC_TERMINAL_KEY_SHIFT_L || keysym == GUAC_TERMINAL_KEY_SHIFT_R)
-
+        term->mod_shift = pressed;
     /*
      * Super (Windows/Command) and Hyper are treated as Meta since terminals don't
      * have separate modifier bits for them.
@@ -1920,8 +1922,6 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
         /* Translate Ctrl+letter to control code */
         if (term->mod_ctrl) {
-
-            char data;
 
             /* Keysyms for '@' through '_' are all conveniently in C0 order */
             if (keysym >= '@' && keysym <= '_')
