@@ -1,0 +1,192 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include "config.h"
+
+#include "input.h"
+#include "keymap.h"
+#include "spice.h"
+
+#include <guacamole/client.h>
+#include <guacamole/client-constants.h>
+#include <guacamole/display.h>
+#include <guacamole/recording.h>
+#include <guacamole/user.h>
+#include <spice-client.h>
+
+/**
+ * Translates a Guacamole mouse button mask into the equivalent SPICE button
+ * state mask (a bitwise OR of SPICE_MOUSE_BUTTON_MASK_* values). Only the
+ * primary three buttons are represented within a SPICE button state mask;
+ * scroll events are delivered separately as momentary button presses.
+ *
+ * @param mask
+ *     The Guacamole mouse button mask to translate.
+ *
+ * @return
+ *     The equivalent SPICE button state mask.
+ */
+static int guac_spice_button_mask(int mask) {
+
+    int spice_mask = 0;
+
+    if (mask & GUAC_CLIENT_MOUSE_LEFT)
+        spice_mask |= SPICE_MOUSE_BUTTON_MASK_LEFT;
+
+    if (mask & GUAC_CLIENT_MOUSE_MIDDLE)
+        spice_mask |= SPICE_MOUSE_BUTTON_MASK_MIDDLE;
+
+    if (mask & GUAC_CLIENT_MOUSE_RIGHT)
+        spice_mask |= SPICE_MOUSE_BUTTON_MASK_RIGHT;
+
+    return spice_mask;
+
+}
+
+/**
+ * Sends a momentary button press and release for the given SPICE button,
+ * relative to the given current button state mask. This is used for scroll
+ * wheel events, which Guacamole delivers as transient button presses.
+ *
+ * @param inputs
+ *     The SPICE inputs channel through which the events should be sent.
+ *
+ * @param button
+ *     The SPICE button to press and release (one of SPICE_MOUSE_BUTTON_*).
+ *
+ * @param button_state
+ *     The current SPICE button state mask.
+ */
+static void guac_spice_scroll(SpiceInputsChannel* inputs, int button,
+        int button_state) {
+    spice_inputs_channel_button_press(inputs, button, button_state);
+    spice_inputs_channel_button_release(inputs, button, button_state);
+}
+
+int guac_spice_user_mouse_handler(guac_user* user, int x, int y, int mask) {
+
+    guac_client* client = user->client;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+    SpiceInputsChannel* inputs = spice_client->inputs_channel;
+
+    /* Track current mouse location/state for all connected users */
+    guac_display_render_thread_notify_user_moved_mouse(
+            spice_client->render_thread, user, x, y, mask);
+
+    /* Report mouse position within recording */
+    if (spice_client->recording != NULL)
+        guac_recording_report_mouse(spice_client->recording, x, y, mask);
+
+    /* Send SPICE events only once the inputs channel is ready */
+    if (inputs == NULL)
+        return 0;
+
+    int spice_mask = guac_spice_button_mask(mask);
+    int prev_mask = guac_spice_button_mask(spice_client->last_mouse_mask);
+
+    /* Update pointer position. SPICE client mouse mode accepts absolute
+     * coordinates directly; server mode requires relative motion deltas. */
+    if (spice_client->mouse_mode == SPICE_MOUSE_MODE_SERVER)
+        spice_inputs_channel_motion(inputs,
+                x - spice_client->last_mouse_x,
+                y - spice_client->last_mouse_y, spice_mask);
+    else
+        spice_inputs_channel_position(inputs, x, y, 0, spice_mask);
+
+    /* Send press/release events for any of the primary buttons that changed
+     * state since the previous mouse event */
+    if (spice_mask != prev_mask) {
+
+        if ((spice_mask & SPICE_MOUSE_BUTTON_MASK_LEFT)
+                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_LEFT)) {
+            if (spice_mask & SPICE_MOUSE_BUTTON_MASK_LEFT)
+                spice_inputs_channel_button_press(inputs, SPICE_MOUSE_BUTTON_LEFT, spice_mask);
+            else
+                spice_inputs_channel_button_release(inputs, SPICE_MOUSE_BUTTON_LEFT, spice_mask);
+        }
+
+        if ((spice_mask & SPICE_MOUSE_BUTTON_MASK_MIDDLE)
+                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_MIDDLE)) {
+            if (spice_mask & SPICE_MOUSE_BUTTON_MASK_MIDDLE)
+                spice_inputs_channel_button_press(inputs, SPICE_MOUSE_BUTTON_MIDDLE, spice_mask);
+            else
+                spice_inputs_channel_button_release(inputs, SPICE_MOUSE_BUTTON_MIDDLE, spice_mask);
+        }
+
+        if ((spice_mask & SPICE_MOUSE_BUTTON_MASK_RIGHT)
+                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_RIGHT)) {
+            if (spice_mask & SPICE_MOUSE_BUTTON_MASK_RIGHT)
+                spice_inputs_channel_button_press(inputs, SPICE_MOUSE_BUTTON_RIGHT, spice_mask);
+            else
+                spice_inputs_channel_button_release(inputs, SPICE_MOUSE_BUTTON_RIGHT, spice_mask);
+        }
+
+    }
+
+    /* Handle scroll wheel as momentary button presses, triggered on the
+     * leading edge of the corresponding Guacamole scroll bit */
+    if ((mask & GUAC_CLIENT_MOUSE_SCROLL_UP)
+            && !(spice_client->last_mouse_mask & GUAC_CLIENT_MOUSE_SCROLL_UP))
+        guac_spice_scroll(inputs, SPICE_MOUSE_BUTTON_UP, spice_mask);
+
+    if ((mask & GUAC_CLIENT_MOUSE_SCROLL_DOWN)
+            && !(spice_client->last_mouse_mask & GUAC_CLIENT_MOUSE_SCROLL_DOWN))
+        guac_spice_scroll(inputs, SPICE_MOUSE_BUTTON_DOWN, spice_mask);
+
+    /* Remember state for the next event */
+    spice_client->last_mouse_mask = mask;
+    spice_client->last_mouse_x = x;
+    spice_client->last_mouse_y = y;
+
+    return 0;
+
+}
+
+int guac_spice_user_key_handler(guac_user* user, int keysym, int pressed) {
+
+    guac_client* client = user->client;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+    SpiceInputsChannel* inputs = spice_client->inputs_channel;
+
+    /* Report key state within recording */
+    if (spice_client->recording != NULL)
+        guac_recording_report_key(spice_client->recording, keysym, pressed);
+
+    /* Send SPICE events only once the inputs channel is ready */
+    if (inputs == NULL)
+        return 0;
+
+    /* Translate keysym to a PC scancode */
+    unsigned int scancode = guac_spice_keysym_to_scancode(keysym);
+    if (scancode == 0) {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Ignoring keysym 0x%04X with no known SPICE scancode mapping.",
+                keysym);
+        return 0;
+    }
+
+    /* Send key press or release */
+    if (pressed)
+        spice_inputs_channel_key_press(inputs, scancode);
+    else
+        spice_inputs_channel_key_release(inputs, scancode);
+
+    return 0;
+
+}
