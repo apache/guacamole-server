@@ -1,0 +1,180 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include "config.h"
+
+#include "audio.h"
+#include "channels.h"
+#include "clipboard.h"
+#include "cursor.h"
+#include "display.h"
+#include "spice.h"
+
+#include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <spice-client.h>
+
+/**
+ * Signal handler for the "channel-event" signal of any SPICE channel. Handles
+ * connection-level errors and closure by aborting or stopping the Guacamole
+ * connection as appropriate.
+ */
+static void guac_spice_channel_event(SpiceChannel* channel,
+        SpiceChannelEvent event, gpointer data) {
+
+    guac_client* client = (guac_client*) data;
+
+    switch (event) {
+
+        case SPICE_CHANNEL_OPENED:
+            guac_client_log(client, GUAC_LOG_DEBUG, "SPICE channel opened.");
+            break;
+
+        case SPICE_CHANNEL_ERROR_AUTH:
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                    "SPICE authentication failed. Verify the configured "
+                    "password (ticket).");
+            break;
+
+        case SPICE_CHANNEL_ERROR_TLS:
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                    "TLS error while connecting to SPICE server.");
+            break;
+
+        case SPICE_CHANNEL_ERROR_CONNECT:
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
+                    "Unable to connect to SPICE server.");
+            break;
+
+        case SPICE_CHANNEL_ERROR_LINK:
+        case SPICE_CHANNEL_ERROR_IO:
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                    "Connection to SPICE server failed or was lost.");
+            break;
+
+        default:
+            /* All other events (including normal closure) are not treated as
+             * errors here; connection teardown is driven by the client state */
+            break;
+
+    }
+
+}
+
+/**
+ * Signal handler for the SPICE main channel "main-mouse-update" signal.
+ * Records the currently negotiated mouse mode so that pointer events can be
+ * sent using the correct (absolute or relative) coordinate scheme.
+ */
+static void guac_spice_main_mouse_update(SpiceMainChannel* channel,
+        gpointer data) {
+
+    guac_client* client = (guac_client*) data;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    gint mouse_mode = SPICE_MOUSE_MODE_CLIENT;
+    g_object_get(channel, "mouse-mode", &mouse_mode, NULL);
+    spice_client->mouse_mode = mouse_mode;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "SPICE mouse mode is now %s.",
+            mouse_mode == SPICE_MOUSE_MODE_SERVER ? "server" : "client");
+
+}
+
+void guac_spice_channel_new(SpiceSession* session, SpiceChannel* channel,
+        gpointer data) {
+
+    guac_client* client = (guac_client*) data;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    /* All channels report connection-level errors the same way */
+    g_signal_connect(channel, "channel-event",
+            G_CALLBACK(guac_spice_channel_event), client);
+
+    /* Main channel: session-wide state, mouse mode, and clipboard */
+    if (SPICE_IS_MAIN_CHANNEL(channel)) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Connecting SPICE main channel.");
+        spice_client->main_channel = SPICE_MAIN_CHANNEL(channel);
+        g_signal_connect(channel, "main-mouse-update",
+                G_CALLBACK(guac_spice_main_mouse_update), client);
+        guac_spice_clipboard_connect(client, SPICE_MAIN_CHANNEL(channel));
+    }
+
+    /* Display channel: remote framebuffer */
+    else if (SPICE_IS_DISPLAY_CHANNEL(channel)) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Connecting SPICE display channel.");
+        guac_spice_display_channel_connect(client, channel);
+    }
+
+    /* Inputs channel: keyboard and mouse */
+    else if (SPICE_IS_INPUTS_CHANNEL(channel)) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Connecting SPICE inputs channel.");
+        spice_client->inputs_channel = SPICE_INPUTS_CHANNEL(channel);
+    }
+
+    /* Cursor channel: remote cursor shape */
+    else if (SPICE_IS_CURSOR_CHANNEL(channel)) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Connecting SPICE cursor channel.");
+        guac_spice_cursor_channel_connect(client, channel);
+    }
+
+    /* Playback channel: audio output */
+    else if (SPICE_IS_PLAYBACK_CHANNEL(channel)) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Connecting SPICE playback channel.");
+        guac_spice_playback_channel_connect(client, channel);
+    }
+
+#ifdef ENABLE_SPICE_WEBDAV
+    /* WebDAV channel: folder sharing (driven internally by spice-gtk) */
+    else if (SPICE_IS_WEBDAV_CHANNEL(channel)) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Connecting SPICE WebDAV channel.");
+    }
+#endif
+
+    /* USB redirection, smartcard, and microphone (record) channels are not
+     * supported by the headless guacd proxy and are intentionally left
+     * unconnected. */
+    else {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Ignoring unsupported SPICE channel type.");
+        return;
+    }
+
+    /* Open the channel now that handlers are registered */
+    spice_channel_connect(channel);
+
+}
+
+void guac_spice_channel_destroy(SpiceSession* session, SpiceChannel* channel,
+        gpointer data) {
+
+    guac_client* client = (guac_client*) data;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    /* Release references to channels being destroyed */
+    if (SPICE_IS_MAIN_CHANNEL(channel))
+        spice_client->main_channel = NULL;
+    else if (SPICE_IS_DISPLAY_CHANNEL(channel))
+        spice_client->display_channel = NULL;
+    else if (SPICE_IS_INPUTS_CHANNEL(channel))
+        spice_client->inputs_channel = NULL;
+    else if (SPICE_IS_CURSOR_CHANNEL(channel))
+        spice_client->cursor_channel = NULL;
+
+}
