@@ -111,10 +111,29 @@ typedef struct guac_spice_settings {
     bool ignore_cert;
 
     /**
+     * The base64-encoded (DER) public key the SPICE server's TLS certificate is
+     * expected to present, for public-key pinning, or NULL if pinning should
+     * not be used.
+     */
+    char* pubkey;
+
+    /**
+     * The proxy server, if any, through which the SPICE connection should be
+     * established, or NULL if no proxy should be used.
+     */
+    char* proxy;
+
+    /**
      * The color depth to request, in bits. SPICE negotiates its own surface
      * format; this value is retained for informational/compatibility purposes.
      */
     int color_depth;
+
+    /**
+     * Whether the red and blue color channels of the remote framebuffer should
+     * be swapped when copied into the Guacamole display.
+     */
+    bool swap_red_blue;
 
     /**
      * The name of the keyboard layout used to translate keysyms into SPICE

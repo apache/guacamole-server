@@ -43,7 +43,10 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "ca-cert",
     "ignore-cert",
     "cert-subject",
+    "pubkey",
+    "proxy",
     "color-depth",
+    "swap-red-blue",
     "server-layout",
     "read-only",
     "disable-display-resize",
@@ -141,9 +144,28 @@ enum SPICE_ARGS_IDX {
     IDX_CERT_SUBJECT,
 
     /**
+     * The base64-encoded (DER) public key which the SPICE server's TLS
+     * certificate is expected to present, for public-key pinning.
+     */
+    IDX_PUBKEY,
+
+    /**
+     * The proxy server, if any, to connect through when reaching the SPICE
+     * server (e.g. "http://proxy.example.com:3128").
+     */
+    IDX_PROXY,
+
+    /**
      * The color depth to request, in bits.
      */
     IDX_COLOR_DEPTH,
+
+    /**
+     * "true" if the red and blue color channels of the remote framebuffer
+     * should be swapped, "false" or blank otherwise. Needed for the rare SPICE
+     * server which reports its surface in BGR rather than RGB order.
+     */
+    IDX_SWAP_RED_BLUE,
 
     /**
      * The name of the keyboard layout to use when translating keysyms into
@@ -404,9 +426,21 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_CERT_SUBJECT, NULL);
 
+    settings->pubkey =
+        guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_PUBKEY, NULL);
+
+    settings->proxy =
+        guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_PROXY, NULL);
+
     settings->color_depth =
         guac_user_parse_args_int(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_COLOR_DEPTH, 0);
+
+    settings->swap_red_blue =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_SWAP_RED_BLUE, false);
 
     settings->server_layout =
         guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
@@ -590,6 +624,8 @@ void guac_spice_settings_free(guac_spice_settings* settings) {
     guac_mem_free(settings->password);
     guac_mem_free(settings->ca_file);
     guac_mem_free(settings->cert_subject);
+    guac_mem_free(settings->pubkey);
+    guac_mem_free(settings->proxy);
     guac_mem_free(settings->server_layout);
     guac_mem_free(settings->drive_path);
     guac_mem_free(settings->recording_name);

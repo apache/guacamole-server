@@ -144,10 +144,29 @@ static void guac_spice_display_invalidate(SpiceChannel* channel,
 
         size_t row_length = (size_t) width * GUAC_DISPLAY_LAYER_RAW_BPP;
 
-        for (int row = 0; row < height; row++) {
-            memcpy(dst_row, src_row, row_length);
-            dst_row += context->stride;
-            src_row += surface_stride;
+        /* Swap the red and blue channels per-pixel if requested (for the rare
+         * server which reports BGR instead of RGB); otherwise copy each row
+         * directly, as the formats are byte-compatible. */
+        if (spice_client->settings->swap_red_blue) {
+            for (int row = 0; row < height; row++) {
+                for (int col = 0; col < width; col++) {
+                    const unsigned char* sp = src_row + (size_t) col * GUAC_DISPLAY_LAYER_RAW_BPP;
+                    unsigned char* dp = dst_row + (size_t) col * GUAC_DISPLAY_LAYER_RAW_BPP;
+                    dp[0] = sp[2];
+                    dp[1] = sp[1];
+                    dp[2] = sp[0];
+                    dp[3] = sp[3];
+                }
+                dst_row += context->stride;
+                src_row += surface_stride;
+            }
+        }
+        else {
+            for (int row = 0; row < height; row++) {
+                memcpy(dst_row, src_row, row_length);
+                dst_row += context->stride;
+                src_row += surface_stride;
+            }
         }
 
         /* Mark the modified region as dirty */

@@ -37,6 +37,10 @@ void guac_spice_session_configure(guac_client* client, SpiceSession* session) {
     if (settings->port != NULL)
         g_object_set(session, "port", settings->port, NULL);
 
+    /* Connect through a proxy, if one was specified */
+    if (settings->proxy != NULL)
+        g_object_set(session, "proxy", settings->proxy, NULL);
+
     /* Configure TLS port and verification policy, if TLS is in use */
     if (settings->tls && settings->tls_port != NULL) {
 
@@ -50,6 +54,15 @@ void guac_spice_session_configure(guac_client* client, SpiceSession* session) {
         if (settings->cert_subject != NULL)
             g_object_set(session, "cert-subject", settings->cert_subject, NULL);
 
+        /* Pin the server's expected public key, if given */
+        if (!settings->ignore_cert && settings->pubkey != NULL) {
+            gsize pubkey_len = 0;
+            guchar* pubkey_der = g_base64_decode(settings->pubkey, &pubkey_len);
+            GByteArray* pubkey = g_byte_array_new_take(pubkey_der, pubkey_len);
+            g_object_set(session, "pubkey", pubkey, NULL);
+            g_byte_array_unref(pubkey);
+        }
+
         /* Determine certificate verification policy. Self-signed certificates
          * (as used by default by QEMU/libvirt) require verification to be
          * disabled entirely. */
@@ -58,6 +71,8 @@ void guac_spice_session_configure(guac_client* client, SpiceSession* session) {
             verify = 0;
         else if (settings->cert_subject != NULL)
             verify = SPICE_SESSION_VERIFY_SUBJECT;
+        else if (settings->pubkey != NULL)
+            verify = SPICE_SESSION_VERIFY_PUBKEY;
         else
             verify = SPICE_SESSION_VERIFY_HOSTNAME | SPICE_SESSION_VERIFY_PUBKEY;
 
