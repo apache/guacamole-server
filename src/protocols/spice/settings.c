@@ -59,6 +59,12 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "enable-drive",
     "drive-path",
     "drive-read-only",
+    "file-transfer",
+    "file-directory",
+    "file-transfer-create-folder",
+    "file-transfer-ro",
+    "disable-download",
+    "disable-upload",
 
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
@@ -235,6 +241,41 @@ enum SPICE_ARGS_IDX {
      * otherwise.
      */
     IDX_DRIVE_READ_ONLY,
+
+    /**
+     * "true" if the web-UI file browser over the shared folder should be
+     * enabled, "false" or blank otherwise.
+     */
+    IDX_FILE_TRANSFER,
+
+    /**
+     * The host-side path of the shared folder exposed to the file browser.
+     */
+    IDX_FILE_DIRECTORY,
+
+    /**
+     * "true" if the shared folder should be created if it does not yet exist,
+     * "false" or blank otherwise.
+     */
+    IDX_FILE_TRANSFER_CREATE_FOLDER,
+
+    /**
+     * "true" if the shared folder should be exposed read-only to the SPICE
+     * server, "false" or blank otherwise.
+     */
+    IDX_FILE_TRANSFER_RO,
+
+    /**
+     * "true" if file downloads from the shared folder should be disabled,
+     * "false" or blank otherwise.
+     */
+    IDX_DISABLE_DOWNLOAD,
+
+    /**
+     * "true" if file uploads to the shared folder should be disabled, "false"
+     * or blank otherwise.
+     */
+    IDX_DISABLE_UPLOAD,
 
 #ifdef ENABLE_COMMON_SSH
     /**
@@ -498,6 +539,30 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_DRIVE_READ_ONLY, false);
 
+    settings->file_transfer =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_FILE_TRANSFER, false);
+
+    settings->file_directory =
+        guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_FILE_DIRECTORY, NULL);
+
+    settings->file_transfer_create_folder =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_FILE_TRANSFER_CREATE_FOLDER, false);
+
+    settings->file_transfer_ro =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_FILE_TRANSFER_RO, false);
+
+    settings->disable_download =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_DISABLE_DOWNLOAD, false);
+
+    settings->disable_upload =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_DISABLE_UPLOAD, false);
+
     /* If neither a plaintext nor a TLS port was provided, fall back to the
      * default SPICE port for the appropriate transport */
     if (strcmp(settings->port, "") == 0 && strcmp(settings->tls_port, "") == 0) {
@@ -639,6 +704,7 @@ void guac_spice_settings_free(guac_spice_settings* settings) {
     guac_mem_free(settings->proxy);
     guac_mem_free(settings->server_layout);
     guac_mem_free(settings->drive_path);
+    guac_mem_free(settings->file_directory);
     guac_mem_free(settings->recording_name);
     guac_mem_free(settings->recording_path);
 

@@ -20,6 +20,7 @@
 #ifndef GUAC_SPICE_SPICE_H
 #define GUAC_SPICE_SPICE_H
 
+#include "channels/file.h"
 #include "common/clipboard.h"
 #include "keyboard.h"
 #include "settings.h"
@@ -227,6 +228,13 @@ typedef struct guac_spice_client {
      * stream is active.
      */
     guac_stream* audio_input;
+
+    /**
+     * The shared folder exposed to the connected user as a Guacamole filesystem
+     * object (file browser) and to the SPICE server via the WebDAV channel, or
+     * NULL if file transfer has not been enabled.
+     */
+    guac_spice_folder* shared_folder;
 
 #ifdef ENABLE_COMMON_SSH
     /**

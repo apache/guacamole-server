@@ -205,6 +205,42 @@ typedef struct guac_spice_settings {
      */
     bool drive_read_only;
 
+    /**
+     * Whether the Guacamole web-UI file browser (upload/download/ls) over the
+     * shared folder should be enabled.
+     */
+    bool file_transfer;
+
+    /**
+     * The host-side path of the shared folder exposed to the file browser, or
+     * NULL if file transfer is disabled.
+     */
+    char* file_directory;
+
+    /**
+     * Whether the shared folder should be automatically created if it does not
+     * already exist.
+     */
+    bool file_transfer_create_folder;
+
+    /**
+     * Whether the shared folder should be exposed read-only to the SPICE
+     * server.
+     */
+    bool file_transfer_ro;
+
+    /**
+     * Whether file downloads from the shared folder to the client should be
+     * disabled.
+     */
+    bool disable_download;
+
+    /**
+     * Whether file uploads from the client to the shared folder should be
+     * disabled.
+     */
+    bool disable_upload;
+
 #ifdef ENABLE_COMMON_SSH
     /**
      * Whether SFTP should be enabled for the SPICE connection.

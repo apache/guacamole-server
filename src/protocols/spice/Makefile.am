@@ -36,6 +36,10 @@ libguac_client_spice_la_SOURCES = \
     auth.c                        \
     audio.c                       \
     channels.c                    \
+    channels/file.c               \
+    channels/file-download.c      \
+    channels/file-ls.c            \
+    channels/file-upload.c        \
     client.c                      \
     clipboard.c                   \
     cursor.c                      \
@@ -54,6 +58,10 @@ noinst_HEADERS =      \
     auth.h            \
     audio.h           \
     channels.h        \
+    channels/file.h            \
+    channels/file-download.h   \
+    channels/file-ls.h         \
+    channels/file-upload.h     \
     client.h          \
     clipboard.h       \
     cursor.h          \
@@ -73,6 +81,7 @@ noinst_HEADERS =      \
 # -pedantic would reject within those system headers.
 libguac_client_spice_la_CFLAGS = \
     -Werror -Wall                \
+    -I$(srcdir)                  \
     @COMMON_INCLUDE@             \
     @COMMON_SSH_INCLUDE@         \
     @LIBGUAC_INCLUDE@            \
