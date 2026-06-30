@@ -183,6 +183,12 @@ typedef struct guac_spice_settings {
     bool audio_enabled;
 
     /**
+     * Whether audio input (e.g. microphone) from the connected user should be
+     * forwarded to the SPICE server via the record channel.
+     */
+    bool audio_input_enabled;
+
+    /**
      * Whether folder sharing (shared directory via the SPICE WebDAV channel)
      * should be enabled.
      */

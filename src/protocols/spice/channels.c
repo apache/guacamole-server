@@ -145,6 +145,12 @@ void guac_spice_channel_new(SpiceSession* session, SpiceChannel* channel,
         guac_spice_playback_channel_connect(client, channel);
     }
 
+    /* Record channel: audio input (e.g. microphone) */
+    else if (SPICE_IS_RECORD_CHANNEL(channel)) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Connecting SPICE record channel.");
+        guac_spice_record_channel_connect(client, channel);
+    }
+
 #ifdef ENABLE_SPICE_WEBDAV
     /* WebDAV channel: folder sharing (driven internally by spice-gtk) */
     else if (SPICE_IS_WEBDAV_CHANNEL(channel)) {
@@ -181,5 +187,7 @@ void guac_spice_channel_destroy(SpiceSession* session, SpiceChannel* channel,
         spice_client->inputs_channel = NULL;
     else if (SPICE_IS_CURSOR_CHANNEL(channel))
         spice_client->cursor_channel = NULL;
+    else if (SPICE_IS_RECORD_CHANNEL(channel))
+        spice_client->record_channel = NULL;
 
 }

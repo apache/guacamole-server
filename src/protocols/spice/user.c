@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "argv.h"
+#include "audio.h"
 #include "clipboard.h"
 #include "common/clipboard.h"
 #include "input.h"
@@ -86,6 +87,10 @@ int guac_spice_user_join_handler(guac_user* user, int argc, char** argv) {
         /* Inbound (client-to-server) clipboard transfer */
         if (!settings->disable_paste && !settings->disable_clipboard)
             user->clipboard_handler = guac_spice_clipboard_handler;
+
+        /* Inbound (client-to-server) audio, if enabled */
+        if (settings->audio_input_enabled)
+            user->audio_handler = guac_spice_client_audio_record_handler;
 
 #ifdef ENABLE_COMMON_SSH
         /* Set generic (non-filesystem) file upload handler */
