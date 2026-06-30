@@ -21,19 +21,182 @@
 #define GUAC_SPICE_KEYMAP_H
 
 /**
- * Translates the given X11 keysym into the corresponding PC (AT set 1 / "XT")
- * scancode expected by the SPICE inputs channel. Extended scancodes (those
- * which are transmitted on the wire with a leading 0xE0 byte) are returned
- * with bit 8 (0x100) set, matching the encoding expected by
- * spice_inputs_channel_key_press() / spice_inputs_channel_key_release().
+ * The X11 keysym for Num Lock.
+ */
+#define GUAC_SPICE_KEYSYM_NUM_LOCK 0xFF7F
+
+/**
+ * The X11 keysym for Scroll Lock.
+ */
+#define GUAC_SPICE_KEYSYM_SCROLL_LOCK 0xFF14
+
+/**
+ * The X11 keysym for Caps Lock.
+ */
+#define GUAC_SPICE_KEYSYM_CAPS_LOCK 0xFFE5
+
+/**
+ * The X11 keysym for Kana Lock.
+ */
+#define GUAC_SPICE_KEYSYM_KANA_LOCK 0xFF2D
+
+/**
+ * The X11 keysym for Left Shift.
+ */
+#define GUAC_SPICE_KEYSYM_LSHIFT 0xFFE1
+
+/**
+ * The X11 keysym for Right Shift.
+ */
+#define GUAC_SPICE_KEYSYM_RSHIFT 0xFFE2
+
+/**
+ * The X11 keysym for Left Ctrl.
+ */
+#define GUAC_SPICE_KEYSYM_LCTRL 0xFFE3
+
+/**
+ * The X11 keysym for Right Ctrl.
+ */
+#define GUAC_SPICE_KEYSYM_RCTRL 0xFFE4
+
+/**
+ * The X11 keysym for Left Alt.
+ */
+#define GUAC_SPICE_KEYSYM_LALT 0xFFE9
+
+/**
+ * The X11 keysym for Right Alt.
+ */
+#define GUAC_SPICE_KEYSYM_RALT 0xFFEA
+
+/**
+ * The X11 keysym for AltGr.
+ */
+#define GUAC_SPICE_KEYSYM_ALTGR 0xFE03
+
+/**
+ * Bitwise flag value representing the Shift modifier.
+ */
+#define GUAC_SPICE_KEYMAP_MODIFIER_SHIFT 1
+
+/**
+ * Bitwise flag value representing the AltGr modifier.
+ */
+#define GUAC_SPICE_KEYMAP_MODIFIER_ALTGR 2
+
+/**
+ * Represents a keysym-to-scancode mapping for Spice, with extra information
+ * about the state of prerequisite keysyms.
+ */
+typedef struct guac_spice_keysym_desc {
+
+    /**
+     * The keysym being mapped.
+     */
+    int keysym;
+
+    /**
+     * The scancode this keysym maps to.
+     */
+    int scancode;
+
+    /**
+     * Required Spice-specific flags that must be sent along with the scancode.
+     */
+    int flags;
+
+    /**
+     * Bitwise-OR of the flags of any modifiers that must be active for the
+     * associated scancode to be interpreted as this keysym.
+     *
+     * If the associated keysym is pressed, and any of these modifiers are not
+     * currently active, Guacamole's Spice support must send additional events
+     * to activate these modifiers prior to sending the scancode for this
+     * keysym.
+     *
+     * @see GUAC_SPICE_KEYMAP_MODIFIER_SHIFT
+     * @see GUAC_SPICE_KEYMAP_MODIFIER_ALTGR
+     */
+    const unsigned int set_modifiers;
+
+    /**
+     * Bitwise-OR of the flags of any modifiers that must NOT be active for the
+     * associated scancode to be interpreted as this keysym.
+     *
+     * If the associated keysym is pressed, and any of these modifiers are
+     * currently active, Guacamole's Spice support must send additional events
+     * to deactivate these modifiers prior to sending the scancode for this
+     * keysym.
+     *
+     * @see GUAC_SPICE_KEYMAP_MODIFIER_SHIFT
+     * @see GUAC_SPICE_KEYMAP_MODIFIER_ALTGR
+     */
+    const unsigned int clear_modifiers;
+
+    /**
+     * Bitwise OR of the flags of all lock keys (ie: Caps lock, Num lock, etc.)
+     * which must be active for this keysym to be properly typed. Legal flags
+     * are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
+     * KBD_SYNC_KANA_LOCK.
+      */
+    const unsigned int set_locks;
+
+    /**
+     * Bitwise OR of the flags of all lock keys (ie: Caps lock, Num lock, etc.)
+     * which must be inactive for this keysym to be properly typed. Legal flags
+     * are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
+     * KBD_SYNC_KANA_LOCK.
+     */
+    const unsigned int clear_locks;
+
+} guac_spice_keysym_desc;
+
+/**
+ * Hierarchical keysym mapping
+ */
+typedef struct guac_spice_keymap guac_spice_keymap;
+struct guac_spice_keymap {
+
+    /**
+     * The parent mapping this map will inherit its initial mapping from.
+     * Any other mapping information will add to or override the mapping
+     * inherited from the parent.
+     */
+    const guac_spice_keymap* parent;
+
+    /**
+     * Descriptive name of this keymap
+     */
+    const char* name;
+
+    /**
+     * Null-terminated array of scancode mappings.
+     */
+    const guac_spice_keysym_desc* mapping;
+
+};
+
+/**
+ * The name of the default keymap, which MUST exist.
+ */
+#define GUAC_SPICE_DEFAULT_KEYMAP "en-us-qwerty"
+
+/**
+ * NULL-terminated array of all keymaps.
+ */
+extern const guac_spice_keymap* GUAC_SPICE_KEYMAPS[];
+
+/**
+ * Return the keymap having the given name, if any, or NULL otherwise.
  *
- * @param keysym
- *     The X11 keysym to translate.
+ * @param name
+ *     The name of the keymap to find.
  *
  * @return
- *     The corresponding PC scancode (with bit 0x100 set for extended keys), or
- *     0 if the keysym has no known scancode mapping.
+ *     The keymap having the given name, or NULL if no such keymap exists.
  */
-unsigned int guac_spice_keysym_to_scancode(int keysym);
+const guac_spice_keymap* guac_spice_keymap_find(const char* name);
 
 #endif
+

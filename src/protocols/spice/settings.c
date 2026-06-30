@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "argv.h"
+#include "keymap.h"
 #include "settings.h"
 
 #include <guacamole/mem.h>
@@ -43,6 +44,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "ignore-cert",
     "cert-subject",
     "color-depth",
+    "server-layout",
     "read-only",
     "disable-display-resize",
     "disable-copy",
@@ -142,6 +144,12 @@ enum SPICE_ARGS_IDX {
      * The color depth to request, in bits.
      */
     IDX_COLOR_DEPTH,
+
+    /**
+     * The name of the keyboard layout to use when translating keysyms into
+     * SPICE scancodes (e.g. "en-us-qwerty", "es-es-qwerty", "es-latam-qwerty").
+     */
+    IDX_SERVER_LAYOUT,
 
     /**
      * "true" if this connection should be read-only, "false" or blank
@@ -400,6 +408,10 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_COLOR_DEPTH, 0);
 
+    settings->server_layout =
+        guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_SERVER_LAYOUT, GUAC_SPICE_DEFAULT_KEYMAP);
+
     settings->read_only =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_READ_ONLY, false);
@@ -578,6 +590,7 @@ void guac_spice_settings_free(guac_spice_settings* settings) {
     guac_mem_free(settings->password);
     guac_mem_free(settings->ca_file);
     guac_mem_free(settings->cert_subject);
+    guac_mem_free(settings->server_layout);
     guac_mem_free(settings->drive_path);
     guac_mem_free(settings->recording_name);
     guac_mem_free(settings->recording_path);

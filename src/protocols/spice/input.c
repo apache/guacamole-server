@@ -20,7 +20,7 @@
 #include "config.h"
 
 #include "input.h"
-#include "keymap.h"
+#include "keyboard.h"
 #include "spice.h"
 
 #include <guacamole/client.h>
@@ -162,31 +162,24 @@ int guac_spice_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     guac_client* client = user->client;
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
-    SpiceInputsChannel* inputs = spice_client->inputs_channel;
+    int retval = 0;
 
     /* Report key state within recording */
     if (spice_client->recording != NULL)
         guac_recording_report_key(spice_client->recording, keysym, pressed);
 
-    /* Send SPICE events only once the inputs channel is ready */
-    if (inputs == NULL)
-        return 0;
+    pthread_rwlock_rdlock(&(spice_client->lock));
 
-    /* Translate keysym to a PC scancode */
-    unsigned int scancode = guac_spice_keysym_to_scancode(keysym);
-    if (scancode == 0) {
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Ignoring keysym 0x%04X with no known SPICE scancode mapping.",
-                keysym);
-        return 0;
-    }
+    /* Translate and send the key event only once the inputs channel and
+     * keyboard are ready. The keyboard handles mapping the keysym to the
+     * appropriate scancode(s) for the negotiated keyboard layout, including
+     * any required modifier and lock key synchronization. */
+    if (spice_client->inputs_channel != NULL && spice_client->keyboard != NULL)
+        retval = guac_spice_keyboard_update_keysym(spice_client->keyboard,
+                keysym, pressed, GUAC_SPICE_KEY_SOURCE_CLIENT);
 
-    /* Send key press or release */
-    if (pressed)
-        spice_inputs_channel_key_press(inputs, scancode);
-    else
-        spice_inputs_channel_key_release(inputs, scancode);
+    pthread_rwlock_unlock(&(spice_client->lock));
 
-    return 0;
+    return retval;
 
 }

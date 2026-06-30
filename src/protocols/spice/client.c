@@ -101,6 +101,10 @@ int guac_client_init(guac_client* client) {
     /* Init surface metadata lock */
     pthread_mutex_init(&spice_client->surface_lock, NULL);
 
+    /* Init outbound message lock and keyboard state lock */
+    pthread_mutex_init(&spice_client->message_lock, NULL);
+    pthread_rwlock_init(&spice_client->lock, NULL);
+
     /* Default to client (absolute) mouse mode until told otherwise */
     spice_client->mouse_mode = SPICE_MOUSE_MODE_CLIENT;
 
@@ -176,12 +180,19 @@ int guac_spice_client_free_handler(guac_client* client) {
     if (spice_client->audio != NULL)
         guac_audio_stream_free(spice_client->audio);
 
+    /* Free keyboard (client thread has already been joined, so no concurrent
+     * access remains) */
+    if (spice_client->keyboard != NULL)
+        guac_spice_keyboard_free(spice_client->keyboard);
+
     /* Free parsed settings */
     if (settings != NULL)
         guac_spice_settings_free(settings);
 
-    /* Clean up surface lock */
+    /* Clean up locks */
     pthread_mutex_destroy(&spice_client->surface_lock);
+    pthread_mutex_destroy(&spice_client->message_lock);
+    pthread_rwlock_destroy(&spice_client->lock);
 
     /* Free generic data struct */
     guac_mem_free(client->data);

@@ -21,6 +21,7 @@
 #define GUAC_SPICE_SPICE_H
 
 #include "common/clipboard.h"
+#include "keyboard.h"
 #include "settings.h"
 
 #include <guacamole/audio.h>
@@ -78,6 +79,27 @@ typedef struct guac_spice_client {
      * NULL until the channel has been opened.
      */
     SpiceInputsChannel* inputs_channel;
+
+    /**
+     * The current keyboard state, including the mapping of keysyms to SPICE
+     * scancodes for the negotiated keyboard layout. NULL until allocated within
+     * the SPICE client thread.
+     */
+    guac_spice_keyboard* keyboard;
+
+    /**
+     * Lock which serializes messages sent to the SPICE server (such as keyboard
+     * scancode and lock-synchronization events), as these may be generated from
+     * multiple user input threads concurrently.
+     */
+    pthread_mutex_t message_lock;
+
+    /**
+     * Lock which guards access to the keyboard state. Input handlers acquire a
+     * read lock while translating and sending key events, while allocation and
+     * teardown of the keyboard acquire a write lock.
+     */
+    pthread_rwlock_t lock;
 
     /**
      * The SPICE cursor channel, providing the remote cursor shape. NULL until

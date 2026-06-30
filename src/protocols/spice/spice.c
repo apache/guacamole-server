@@ -206,16 +206,33 @@ void* guac_spice_client_thread(void* data) {
         }
     }
 
-    /* Create a private GLib main context for this connection and make it the
-     * thread-default so that all SPICE channels created on this thread
-     * dispatch their signals within our event loop */
-    spice_client->main_context = g_main_context_new();
-    g_main_context_push_thread_default(spice_client->main_context);
-    spice_client->main_loop = g_main_loop_new(spice_client->main_context, FALSE);
+    /* Drive all SPICE channel I/O from this thread's default GLib main context.
+     * spice-gtk schedules each channel's connection coroutine on the default
+     * main context, so the event loop we run below must be that same context.
+     * guacd forks a dedicated process per connection, so the default context is
+     * private to this connection and safe to use. */
+    spice_client->main_context = NULL;
+    spice_client->main_loop = g_main_loop_new(NULL, FALSE);
 
     /* Allocate and configure the SPICE session */
     spice_client->spice_session = spice_session_new();
     guac_spice_session_configure(client, spice_client->spice_session);
+
+    /* Allocate keyboard, translating keysyms to scancodes according to the
+     * keyboard layout requested by the connection (falling back to the default
+     * layout if the requested layout is unknown) */
+    const guac_spice_keymap* keymap =
+            guac_spice_keymap_find(settings->server_layout);
+    if (keymap == NULL) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Unknown keyboard layout "
+                "\"%s\". Falling back to \"%s\".",
+                settings->server_layout, GUAC_SPICE_DEFAULT_KEYMAP);
+        keymap = guac_spice_keymap_find(GUAC_SPICE_DEFAULT_KEYMAP);
+    }
+
+    pthread_rwlock_wrlock(&spice_client->lock);
+    spice_client->keyboard = guac_spice_keyboard_alloc(client, keymap);
+    pthread_rwlock_unlock(&spice_client->lock);
 
     /* Dispatch newly-created and destroyed channels */
     g_signal_connect(spice_client->spice_session, "channel-new",
@@ -271,7 +288,7 @@ void* guac_spice_client_thread(void* data) {
         GSource* state_source =
                 g_timeout_source_new(GUAC_SPICE_STATE_CHECK_INTERVAL);
         g_source_set_callback(state_source, guac_spice_state_check, client, NULL);
-        g_source_attach(state_source, spice_client->main_context);
+        g_source_attach(state_source, NULL);
 
         /* Run the SPICE event loop until the connection ends */
         g_main_loop_run(spice_client->main_loop);
@@ -289,9 +306,6 @@ void* guac_spice_client_thread(void* data) {
         guac_display_render_thread_destroy(spice_client->render_thread);
         spice_client->render_thread = NULL;
     }
-
-    /* Relinquish the thread-default main context */
-    g_main_context_pop_thread_default(spice_client->main_context);
 
     /* Kill client and finish connection */
     guac_client_stop(client);
