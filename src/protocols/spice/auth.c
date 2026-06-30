@@ -91,8 +91,10 @@ void guac_spice_session_configure(guac_client* client, SpiceSession* session) {
     /* Reflect read-only state to the session */
     g_object_set(session, "read-only", settings->read_only, NULL);
 
-    /* Enable or disable audio playback negotiation */
-    g_object_set(session, "enable-audio", settings->audio_enabled, NULL);
+    /* Enable audio negotiation if either playback or input (record) is
+     * requested; spice-gtk's "enable-audio" governs both audio channels. */
+    g_object_set(session, "enable-audio",
+            settings->audio_enabled || settings->audio_input_enabled, NULL);
 
     /* USB redirection and smartcard passthrough are not meaningful for a
      * headless proxy such as guacd, which has no local physical devices to

@@ -214,6 +214,20 @@ typedef struct guac_spice_client {
      */
     int audio_rate;
 
+    /**
+     * The SPICE record channel, used to forward audio (e.g. microphone) input
+     * from the connected Guacamole user to the SPICE server. NULL until the
+     * channel has been opened.
+     */
+    SpiceRecordChannel* record_channel;
+
+    /**
+     * The Guacamole audio input stream over which a user is currently sending
+     * audio to be forwarded to the SPICE record channel, or NULL if no such
+     * stream is active.
+     */
+    guac_stream* audio_input;
+
 #ifdef ENABLE_COMMON_SSH
     /**
      * The user and credentials used to authenticate for SFTP.

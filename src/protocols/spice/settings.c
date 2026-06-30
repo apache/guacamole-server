@@ -55,6 +55,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "disable-clipboard",
     "clipboard-buffer-size",
     "enable-audio",
+    "enable-audio-input",
     "enable-drive",
     "drive-path",
     "drive-read-only",
@@ -212,6 +213,12 @@ enum SPICE_ARGS_IDX {
      * "true" if audio playback should be enabled, "false" or blank otherwise.
      */
     IDX_ENABLE_AUDIO,
+
+    /**
+     * "true" if audio input (e.g. microphone) should be enabled, "false" or
+     * blank otherwise.
+     */
+    IDX_ENABLE_AUDIO_INPUT,
 
     /**
      * "true" if folder sharing should be enabled, "false" or blank otherwise.
@@ -474,6 +481,10 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
     settings->audio_enabled =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_ENABLE_AUDIO, false);
+
+    settings->audio_input_enabled =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_ENABLE_AUDIO_INPUT, false);
 
     settings->enable_drive =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
