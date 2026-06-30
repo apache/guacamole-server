@@ -164,6 +164,10 @@ int guac_spice_client_free_handler(guac_client* client) {
     guac_common_ssh_uninit();
 #endif
 
+    /* Free shared folder, if allocated */
+    if (spice_client->shared_folder != NULL)
+        guac_spice_folder_free(spice_client->shared_folder);
+
     /* Clean up recording, if in progress */
     if (spice_client->recording != NULL)
         guac_recording_free(spice_client->recording);

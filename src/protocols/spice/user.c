@@ -21,6 +21,7 @@
 
 #include "argv.h"
 #include "audio.h"
+#include "channels/file-upload.h"
 #include "clipboard.h"
 #include "common/clipboard.h"
 #include "input.h"
@@ -97,6 +98,12 @@ int guac_spice_user_join_handler(guac_user* user, int argc, char** argv) {
         if (settings->enable_sftp && !settings->sftp_disable_upload)
             user->file_handler = guac_spice_sftp_file_handler;
 #endif
+
+        /* Generic (non-filesystem) uploads to the shared folder take precedence
+         * over SFTP when the file browser is enabled. The exposed filesystem
+         * object handles its own get/put (download/ls/upload) requests. */
+        if (settings->file_transfer && !settings->disable_upload)
+            user->file_handler = guac_spice_file_upload_file_handler;
 
     }
 

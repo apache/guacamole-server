@@ -218,6 +218,34 @@ void* guac_spice_client_thread(void* data) {
     spice_client->spice_session = spice_session_new();
     guac_spice_session_configure(client, spice_client->spice_session);
 
+    /* Set up the shared folder file browser, if file transfer is enabled. The
+     * shared-dir property here takes precedence over the basic enable-drive
+     * sharing configured within guac_spice_session_configure(). */
+    if (settings->file_transfer && settings->file_directory != NULL) {
+
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Enabling shared folder file transfer for \"%s\"%s.",
+                settings->file_directory,
+                settings->file_transfer_ro ? " (read-only)" : "");
+
+        g_object_set(spice_client->spice_session,
+                "shared-dir", settings->file_directory, NULL);
+        g_object_set(spice_client->spice_session,
+                "share-dir-ro", settings->file_transfer_ro, NULL);
+
+        /* Allocate the shared folder, exposing it to the connection owner as a
+         * Guacamole filesystem object */
+        spice_client->shared_folder = guac_spice_folder_alloc(client,
+                settings->file_directory,
+                settings->file_transfer_create_folder,
+                settings->disable_download,
+                settings->disable_upload);
+
+        guac_client_for_owner(client, guac_spice_folder_expose,
+                spice_client->shared_folder);
+
+    }
+
     /* Allocate keyboard, translating keysyms to scancodes according to the
      * keyboard layout requested by the connection (falling back to the default
      * layout if the requested layout is unknown) */
