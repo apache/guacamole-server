@@ -126,6 +126,11 @@ void guac_spice_channel_new(SpiceSession* session, SpiceChannel* channel,
     else if (SPICE_IS_INPUTS_CHANNEL(channel)) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Connecting SPICE inputs channel.");
         spice_client->inputs_channel = SPICE_INPUTS_CHANNEL(channel);
+
+        /* Track remote keyboard lock state (Caps Lock, Num Lock, etc.) so that
+         * keysym translation can keep local and remote lock states in sync */
+        g_signal_connect(channel, "inputs-modifiers",
+                G_CALLBACK(guac_spice_keyboard_set_indicators), client);
     }
 
     /* Cursor channel: remote cursor shape */

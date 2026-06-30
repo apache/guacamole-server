@@ -117,6 +117,12 @@ typedef struct guac_spice_settings {
     int color_depth;
 
     /**
+     * The name of the keyboard layout used to translate keysyms into SPICE
+     * scancodes (e.g. "en-us-qwerty", "es-es-qwerty", "es-latam-qwerty").
+     */
+    char* server_layout;
+
+    /**
      * Whether this connection is read-only, and user input should be dropped.
      */
     bool read_only;
