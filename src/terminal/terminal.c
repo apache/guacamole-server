@@ -1819,6 +1819,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         guac_terminal_notify(term);
     }
 
+    /* Track modifiers */
     /*
      * Super (Windows/Command) and Hyper are treated as Meta since terminals don't
      * have separate modifier bits for them.
@@ -1959,7 +1960,6 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
                 if (__guac_terminal_is_editing_keysym(keysym))
                     return __guac_terminal_send_modified_editing(term, keysym);
                 return 0;
-            }
 
             return guac_terminal_send_data(term, &data, 1);
 
@@ -2062,6 +2062,14 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
             /* Arrow keys w/ modifiers */
             if (__guac_terminal_any_modifier(term) && __guac_terminal_is_arrow_keysym(keysym))
                 return __guac_terminal_send_modified_arrow(term, keysym);
+
+            /* Cursor editing keys w/ modifiers */
+            if (__guac_terminal_any_modifier(term) && __guac_terminal_is_editing_keysym(keysym))
+                return __guac_terminal_send_modified_editing(term, keysym);
+
+            /* Function keys w/ modifiers */
+            if (__guac_terminal_any_modifier(term) && __guac_terminal_is_function_keysym(keysym))
+                return __guac_terminal_send_modified_function(term, keysym);
 
             /* Application cursor mode (DECCKM) affects only arrow keys.
              * Home and End use their own sequences above and are unaffected. */
