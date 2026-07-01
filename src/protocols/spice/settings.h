@@ -136,6 +136,13 @@ typedef struct guac_spice_settings {
     bool swap_red_blue;
 
     /**
+     * The preferred image compression for the SPICE session (one of "off",
+     * "auto-glz", "auto-lz", "quic", "glz", "lz", "lz4"), or NULL to let the
+     * server decide.
+     */
+    char* preferred_compression;
+
+    /**
      * The name of the keyboard layout used to translate keysyms into SPICE
      * scancodes (e.g. "en-us-qwerty", "es-es-qwerty", "es-latam-qwerty").
      */
