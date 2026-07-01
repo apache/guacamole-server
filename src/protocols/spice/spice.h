@@ -216,6 +216,13 @@ typedef struct guac_spice_client {
     int audio_rate;
 
     /**
+     * Whether audio playback is currently muted, as reported by the SPICE
+     * playback channel. While set, received PCM data is not forwarded to the
+     * Guacamole audio stream.
+     */
+    int audio_muted;
+
+    /**
      * The SPICE record channel, used to forward audio (e.g. microphone) input
      * from the connected Guacamole user to the SPICE server. NULL until the
      * channel has been opened.

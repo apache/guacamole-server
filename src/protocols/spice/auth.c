@@ -25,6 +25,8 @@
 #include <guacamole/client.h>
 #include <spice-client.h>
 
+#include <string.h>
+
 void guac_spice_session_configure(guac_client* client, SpiceSession* session) {
 
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
@@ -87,6 +89,41 @@ void guac_spice_session_configure(guac_client* client, SpiceSession* session) {
     /* Configure username, if provided */
     if (settings->username != NULL)
         g_object_set(session, "username", settings->username, NULL);
+
+    /* Configure preferred image compression, if requested */
+    if (settings->preferred_compression != NULL) {
+
+        static const struct {
+            const char* name;
+            SpiceImageCompression value;
+        } compression_types[] = {
+            { "off",      SPICE_IMAGE_COMPRESSION_OFF      },
+            { "auto-glz", SPICE_IMAGE_COMPRESSION_AUTO_GLZ },
+            { "auto-lz",  SPICE_IMAGE_COMPRESSION_AUTO_LZ  },
+            { "quic",     SPICE_IMAGE_COMPRESSION_QUIC     },
+            { "glz",      SPICE_IMAGE_COMPRESSION_GLZ      },
+            { "lz",       SPICE_IMAGE_COMPRESSION_LZ       },
+            { "lz4",      SPICE_IMAGE_COMPRESSION_LZ4      },
+            { NULL,       SPICE_IMAGE_COMPRESSION_INVALID  }
+        };
+
+        SpiceImageCompression compression = SPICE_IMAGE_COMPRESSION_INVALID;
+        for (int i = 0; compression_types[i].name != NULL; i++) {
+            if (strcmp(settings->preferred_compression,
+                        compression_types[i].name) == 0) {
+                compression = compression_types[i].value;
+                break;
+            }
+        }
+
+        if (compression == SPICE_IMAGE_COMPRESSION_INVALID)
+            guac_client_log(client, GUAC_LOG_WARNING, "Ignoring unknown "
+                    "preferred image compression \"%s\".",
+                    settings->preferred_compression);
+        else
+            g_object_set(session, "preferred-compression", compression, NULL);
+
+    }
 
     /* Reflect read-only state to the session */
     g_object_set(session, "read-only", settings->read_only, NULL);

@@ -89,7 +89,8 @@ static void guac_spice_playback_data(SpicePlaybackChannel* channel,
     guac_client* client = (guac_client*) user_data;
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
-    if (spice_client->audio == NULL)
+    /* Drop audio entirely while playback is muted */
+    if (spice_client->audio == NULL || spice_client->audio_muted)
         return;
 
     guac_audio_stream_write_pcm(spice_client->audio,
@@ -113,6 +114,29 @@ static void guac_spice_playback_stop(SpicePlaybackChannel* channel,
 
 }
 
+/**
+ * Handler for changes to the SPICE playback channel's "mute" property. Records
+ * the current mute state so that playback data can be dropped while muted.
+ *
+ * Note that the channel's "volume" property is intentionally not tracked: the
+ * guest's PCM stream is already scaled to the reported volume, so re-applying
+ * it here would double-attenuate the audio.
+ */
+static void guac_spice_playback_mute_changed(SpicePlaybackChannel* channel,
+        GParamSpec* pspec, gpointer data) {
+
+    guac_client* client = (guac_client*) data;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    gboolean muted = FALSE;
+    g_object_get(channel, "mute", &muted, NULL);
+    spice_client->audio_muted = muted;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "SPICE audio playback is now %s.",
+            muted ? "muted" : "unmuted");
+
+}
+
 void guac_spice_playback_channel_connect(guac_client* client,
         SpiceChannel* channel) {
 
@@ -128,6 +152,10 @@ void guac_spice_playback_channel_connect(guac_client* client,
             G_CALLBACK(guac_spice_playback_data), client);
     g_signal_connect(channel, "playback-stop",
             G_CALLBACK(guac_spice_playback_stop), client);
+
+    /* Track mute state reported by the SPICE server */
+    g_signal_connect(channel, "notify::mute",
+            G_CALLBACK(guac_spice_playback_mute_changed), client);
 
 }
 

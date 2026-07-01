@@ -47,6 +47,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "proxy",
     "color-depth",
     "swap-red-blue",
+    "preferred-compression",
     "server-layout",
     "read-only",
     "disable-display-resize",
@@ -173,6 +174,13 @@ enum SPICE_ARGS_IDX {
      * server which reports its surface in BGR rather than RGB order.
      */
     IDX_SWAP_RED_BLUE,
+
+    /**
+     * The preferred image compression for the SPICE session (one of "off",
+     * "auto-glz", "auto-lz", "quic", "glz", "lz", "lz4"), or blank to let the
+     * server decide.
+     */
+    IDX_PREFERRED_COMPRESSION,
 
     /**
      * The name of the keyboard layout to use when translating keysyms into
@@ -490,6 +498,10 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_SWAP_RED_BLUE, false);
 
+    settings->preferred_compression =
+        guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_PREFERRED_COMPRESSION, NULL);
+
     settings->server_layout =
         guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_SERVER_LAYOUT, GUAC_SPICE_DEFAULT_KEYMAP);
@@ -702,6 +714,7 @@ void guac_spice_settings_free(guac_spice_settings* settings) {
     guac_mem_free(settings->cert_subject);
     guac_mem_free(settings->pubkey);
     guac_mem_free(settings->proxy);
+    guac_mem_free(settings->preferred_compression);
     guac_mem_free(settings->server_layout);
     guac_mem_free(settings->drive_path);
     guac_mem_free(settings->file_directory);
