@@ -21,6 +21,7 @@
 #define GUAC_SPICE_INPUT_H
 
 #include <guacamole/user.h>
+#include <spice-client.h>
 
 /**
  * Handler for Guacamole mouse events, translating them into SPICE pointer
@@ -40,5 +41,24 @@ guac_user_key_handler guac_spice_user_key_handler;
  * resize has been disabled).
  */
 guac_user_size_handler guac_spice_user_size_handler;
+
+/**
+ * Attempts to send any queued guest display-resize request, provided the guest
+ * is ready (agent connected with monitors-config support and the display's
+ * primary surface created). Must be called from the SPICE event-loop thread.
+ * Invoked both when a resize is queued and when a readiness condition changes.
+ *
+ * @param client
+ *     The guac_client associated with the SPICE connection.
+ */
+void guac_spice_resize_try(guac_client* client);
+
+/**
+ * Signal handler for the SPICE main channel "notify::agent-connected" event.
+ * Updates display-resize readiness based on the agent's connection state and
+ * monitors-config capability, then flushes any queued resize.
+ */
+void guac_spice_resize_agent_update(SpiceMainChannel* channel,
+        GParamSpec* pspec, guac_client* client);
 
 #endif
