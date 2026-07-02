@@ -215,8 +215,10 @@ void* guac_spice_client_thread(void* data) {
     spice_client->main_context = NULL;
     spice_client->main_loop = g_main_loop_new(NULL, FALSE);
 
-    /* Disable the Opus audio codec for this connection if requested, forcing
-     * spice-gtk to negotiate the legacy CELT codec instead. guacd runs a
+    /* Disable the Opus audio codec for this connection if requested. spice-gtk
+     * then stops advertising Opus and the SPICE server falls back to its next
+     * available audio mode: raw/lossless on modern servers (which no longer
+     * support the legacy CELT codec), or CELT on older servers. guacd runs a
      * dedicated process per connection, so this environment variable affects
      * only the current connection. */
     if (settings->disable_audio_opus)
