@@ -24,6 +24,7 @@
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
@@ -31,6 +32,7 @@
 #include <spice-client.h>
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -224,17 +226,110 @@ static int guac_spice_audio_parse_mimetype(const char* mimetype, int* rate,
 }
 
 /**
+ * Converts signed 16-bit interleaved PCM from one sample rate and channel count
+ * to another using linear interpolation (for rate) and simple up/down mixing
+ * (mono<->stereo, or passthrough for matching counts). Returns a newly
+ * allocated buffer, which the caller must free with guac_mem_free(), storing
+ * its length in bytes in *out_length, or NULL on failure.
+ */
+static int16_t* guac_spice_resample_s16(const int16_t* in, int in_bytes,
+        int in_rate, int in_channels, int out_rate, int out_channels,
+        int* out_length) {
+
+    *out_length = 0;
+
+    if (in_rate <= 0 || out_rate <= 0 || in_channels <= 0 || out_channels <= 0)
+        return NULL;
+
+    int in_frames = in_bytes / (2 * in_channels);
+    if (in_frames <= 0)
+        return NULL;
+
+    long out_frames = (long) in_frames * out_rate / in_rate;
+    if (out_frames <= 0)
+        return NULL;
+
+    int16_t* out = guac_mem_alloc(out_frames * out_channels * sizeof(int16_t));
+    if (out == NULL)
+        return NULL;
+
+    for (long o = 0; o < out_frames; o++) {
+
+        /* Fractional source frame position for linear interpolation */
+        double src = (double) o * in_rate / out_rate;
+        long i0 = (long) src;
+        long i1 = (i0 + 1 < in_frames) ? i0 + 1 : i0;
+        double frac = src - i0;
+
+        /* Interpolate the source channels into a working left/right pair */
+        int16_t l0 = in[i0 * in_channels];
+        int16_t l1 = in[i1 * in_channels];
+        double left = l0 + (l1 - l0) * frac;
+
+        double right;
+        if (in_channels >= 2) {
+            int16_t r0 = in[i0 * in_channels + 1];
+            int16_t r1 = in[i1 * in_channels + 1];
+            right = r0 + (r1 - r0) * frac;
+        }
+        else
+            right = left;
+
+        /* Emit the requested number of output channels */
+        int16_t* frame = &out[o * out_channels];
+        if (out_channels == 1)
+            frame[0] = (int16_t) ((left + right) / 2.0);
+        else {
+            frame[0] = (int16_t) left;
+            frame[1] = (int16_t) right;
+            for (int c = 2; c < out_channels; c++)
+                frame[c] = (int16_t) left;
+        }
+
+    }
+
+    *out_length = (int) (out_frames * out_channels * sizeof(int16_t));
+    return out;
+
+}
+
+/**
  * Handler for "blob" instructions received on the audio input stream. Forwards
- * the received PCM audio data to the SPICE record channel.
+ * the received PCM audio data to the SPICE record channel, converting it to the
+ * rate/channels the server expects if the connected user is capturing in a
+ * different format.
  */
 static int guac_spice_audio_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
     guac_spice_client* spice_client = (guac_spice_client*) user->client->data;
 
-    if (spice_client->record_channel != NULL)
+    if (spice_client->record_channel == NULL)
+        return 0;
+
+    int rr = spice_client->record_rate;
+    int rc = spice_client->record_channels;
+    int ir = spice_client->input_rate;
+    int ic = spice_client->input_channels;
+
+    /* Forward directly if the server's format is not yet known or already
+     * matches the inbound stream */
+    if (rr <= 0 || rc <= 0 || (rr == ir && rc == ic)) {
         spice_record_channel_send_data(spice_client->record_channel,
                 data, length, (unsigned long) time(NULL));
+        return 0;
+    }
+
+    /* Otherwise convert to the format the SPICE record channel expects */
+    int out_length = 0;
+    int16_t* resampled = guac_spice_resample_s16((const int16_t*) data, length,
+            ir, ic, rr, rc, &out_length);
+
+    if (resampled != NULL) {
+        spice_record_channel_send_data(spice_client->record_channel,
+                resampled, out_length, (unsigned long) time(NULL));
+        guac_mem_free(resampled);
+    }
 
     return 0;
 
@@ -265,6 +360,11 @@ int guac_spice_client_audio_record_handler(guac_user* user, guac_stream* stream,
                 GUAC_PROTOCOL_STATUS_CLIENT_BAD_TYPE);
         return 0;
     }
+
+    /* Remember the format the user is sending so it can be converted to the
+     * rate/channels the SPICE record channel expects, if they differ */
+    spice_client->input_rate = rate;
+    spice_client->input_channels = channels;
 
     /* Set up handlers for the audio input stream */
     stream->blob_handler = guac_spice_audio_blob_handler;
@@ -313,8 +413,16 @@ static void* spice_client_record_stop_callback(guac_user* owner, void* data) {
 
 void guac_spice_client_audio_record_start_handler(SpiceRecordChannel* channel,
         gint format, gint channels, gint rate, guac_client* client) {
-    guac_client_log(client, GUAC_LOG_DEBUG, "SPICE audio recording started.");
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    /* Record the format the SPICE server expects so inbound audio can be
+     * converted to match if the connected user is capturing at a different
+     * rate or channel count */
+    spice_client->record_rate = rate;
+    spice_client->record_channels = channels;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "SPICE audio recording started "
+            "(%d Hz, %d channel(s)).", rate, channels);
     guac_client_for_owner(client, spice_client_record_start_callback, spice_client);
 }
 
