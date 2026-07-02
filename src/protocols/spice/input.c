@@ -274,15 +274,15 @@ void guac_spice_resize_try(guac_client* client) {
     int width = spice_client->resize_pending_width;
     int height = spice_client->resize_pending_height;
 
-    /* Enable and size monitor 0 without the debounced implicit send, then push
-     * the monitors config to the guest agent immediately. The implicit
-     * (update=TRUE) send arms a one-second coalescing timer within spice-gtk
-     * and does not reliably re-fire for successive resizes, so send
-     * explicitly instead. */
+    /* Enable and size monitor 0, requesting the update be delivered to the
+     * guest agent. update=TRUE schedules the monitors config on spice-gtk's
+     * short coalescing timer; because we only reach this point once the guest
+     * is ready and real resizes are spaced further apart than the timer
+     * interval, each resize is delivered. (send_monitor_config() was tried but
+     * does not reliably deliver the config to the agent.) */
     spice_main_channel_update_display_enabled(spice_client->main_channel, 0, TRUE, FALSE);
     spice_main_channel_update_display(spice_client->main_channel, 0, 0, 0,
-            width, height, FALSE);
-    spice_main_channel_send_monitor_config(spice_client->main_channel);
+            width, height, TRUE);
 
     spice_client->resize_pending = 0;
     guac_client_log(client, GUAC_LOG_DEBUG,
