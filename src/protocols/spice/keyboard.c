@@ -90,16 +90,36 @@ static int guac_spice_keyboard_lock_flag(int keysym) {
  * @param pressed
  *     Non-zero if the key is being pressed, zero if the key is being released.
  */
+/**
+ * Handler which performs a deferred SPICE key press on the event-loop thread.
+ */
+static void guac_spice_do_key_press(guac_spice_deferred_call* call) {
+    spice_inputs_channel_key_press((SpiceInputsChannel*) call->channel,
+            call->args[0]);
+}
+
+/**
+ * Handler which performs a deferred SPICE key release on the event-loop thread.
+ */
+static void guac_spice_do_key_release(guac_spice_deferred_call* call) {
+    spice_inputs_channel_key_release((SpiceInputsChannel*) call->channel,
+            call->args[0]);
+}
+
 static void guac_spice_send_key_event(guac_spice_client* spice_client,
         int scancode, int flags, int pressed) {
 
-    /* Send actual key press or release */
-    pthread_mutex_lock(&(spice_client->message_lock));
-    if (pressed)
-        spice_inputs_channel_key_press(spice_client->inputs_channel, scancode);
-    else
-        spice_inputs_channel_key_release(spice_client->inputs_channel, scancode);
-    pthread_mutex_unlock(&(spice_client->message_lock));
+    /* Nothing to send if the inputs channel is not yet connected */
+    if (spice_client->inputs_channel == NULL)
+        return;
+
+    /* Marshal the key event onto the SPICE event-loop thread; spice-gtk channel
+     * functions must not be called directly from user threads */
+    guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
+    call->handler = pressed ? guac_spice_do_key_press : guac_spice_do_key_release;
+    call->channel = spice_client->inputs_channel;
+    call->args[0] = (unsigned int) scancode;
+    guac_spice_defer_call(call);
 
 }
 
@@ -117,6 +137,15 @@ static void guac_spice_send_key_event(guac_spice_client* spice_client,
  *     if any, as dictated by the Spice protocol. If no flags are set, then no
  *     lock keys will be active.
  */
+/**
+ * Handler which performs a deferred SPICE key-lock synchronization on the
+ * event-loop thread.
+ */
+static void guac_spice_do_set_key_locks(guac_spice_deferred_call* call) {
+    spice_inputs_channel_set_key_locks((SpiceInputsChannel*) call->channel,
+            call->args[0]);
+}
+
 static void guac_spice_send_synchronize_event(guac_spice_client* spice_client,
         unsigned int modifiers) {
 
@@ -124,10 +153,12 @@ static void guac_spice_send_synchronize_event(guac_spice_client* spice_client,
     if (spice_client->inputs_channel == NULL)
         return;
 
-    /* Synchronize lock key states */
-    pthread_mutex_lock(&(spice_client->message_lock));
-    spice_inputs_channel_set_key_locks(spice_client->inputs_channel, modifiers);
-    pthread_mutex_unlock(&(spice_client->message_lock));
+    /* Marshal the lock-key synchronization onto the SPICE event-loop thread */
+    guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
+    call->handler = guac_spice_do_set_key_locks;
+    call->channel = spice_client->inputs_channel;
+    call->args[0] = modifiers;
+    guac_spice_defer_call(call);
 
 }
 
@@ -226,8 +257,11 @@ static int guac_spice_keyboard_get_cost(guac_spice_keyboard* keyboard,
     /* Each change to any key requires one event, by definition */
     int cost = 1;
 
-    /* Each change to a lock requires roughly two key events */
-    unsigned int update_locks = (def->set_modifiers & ~keyboard->modifiers) | (def->clear_modifiers & keyboard->modifiers);
+    /* Each change to a lock requires roughly two key events. Locks (Caps Lock,
+     * Num Lock) are tracked separately from modifiers: the key's lock
+     * requirements are described by set_locks/clear_locks (in SPICE_INPUTS_*
+     * form), and the current lock state is held in keyboard->modifiers. */
+    unsigned int update_locks = (def->set_locks & ~keyboard->modifiers) | (def->clear_locks & keyboard->modifiers);
     cost += guac_spice_count_bits(update_locks) * 2;
 
     /* Each change to a modifier requires one key event */
