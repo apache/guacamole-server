@@ -57,6 +57,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "clipboard-buffer-size",
     "enable-audio",
     "enable-audio-input",
+    "disable-audio-opus",
     "enable-drive",
     "drive-path",
     "drive-read-only",
@@ -233,6 +234,13 @@ enum SPICE_ARGS_IDX {
      * blank otherwise.
      */
     IDX_ENABLE_AUDIO_INPUT,
+
+    /**
+     * "true" if the Opus audio codec should be disabled, causing the SPICE
+     * connection to fall back to the legacy CELT codec, "false" or blank
+     * otherwise.
+     */
+    IDX_DISABLE_AUDIO_OPUS,
 
     /**
      * "true" if folder sharing should be enabled, "false" or blank otherwise.
@@ -538,6 +546,10 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
     settings->audio_input_enabled =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_ENABLE_AUDIO_INPUT, false);
+
+    settings->disable_audio_opus =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_DISABLE_AUDIO_OPUS, false);
 
     settings->enable_drive =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,

@@ -196,6 +196,14 @@ typedef struct guac_spice_settings {
     bool audio_input_enabled;
 
     /**
+     * Whether the Opus audio codec should be disabled, forcing the SPICE
+     * connection to negotiate the legacy CELT codec instead. This is only
+     * useful for compatibility with SPICE servers whose Opus support is
+     * missing or unreliable; it does not improve audio quality.
+     */
+    bool disable_audio_opus;
+
+    /**
      * Whether folder sharing (shared directory via the SPICE WebDAV channel)
      * should be enabled.
      */
