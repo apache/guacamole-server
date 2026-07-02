@@ -254,8 +254,14 @@ int guac_spice_user_key_handler(guac_user* user, int keysym, int pressed) {
  * deferred call's args.
  */
 static void guac_spice_do_update_display(guac_spice_deferred_call* call) {
-    spice_main_channel_update_display((SpiceMainChannel*) call->channel,
-            0, 0, 0, (int) call->args[0], (int) call->args[1], TRUE);
+    SpiceMainChannel* main_channel = (SpiceMainChannel*) call->channel;
+
+    /* Ensure the primary monitor is enabled so the guest connects the output,
+     * then set its geometry and push the resulting monitors config to the
+     * guest agent */
+    spice_main_channel_update_display_enabled(main_channel, 0, TRUE, FALSE);
+    spice_main_channel_update_display(main_channel, 0, 0, 0,
+            (int) call->args[0], (int) call->args[1], TRUE);
 }
 
 int guac_spice_user_size_handler(guac_user* user, int width, int height) {
