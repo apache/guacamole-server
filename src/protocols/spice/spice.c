@@ -44,6 +44,7 @@
 #include <guacamole/wol.h>
 #include <spice-client.h>
 
+#include <stdlib.h>
 #include <string.h>
 
 /**
@@ -213,6 +214,13 @@ void* guac_spice_client_thread(void* data) {
      * private to this connection and safe to use. */
     spice_client->main_context = NULL;
     spice_client->main_loop = g_main_loop_new(NULL, FALSE);
+
+    /* Disable the Opus audio codec for this connection if requested, forcing
+     * spice-gtk to negotiate the legacy CELT codec instead. guacd runs a
+     * dedicated process per connection, so this environment variable affects
+     * only the current connection. */
+    if (settings->disable_audio_opus)
+        setenv("SPICE_DISABLE_OPUS", "1", 1);
 
     /* Allocate and configure the SPICE session */
     spice_client->spice_session = spice_session_new();
