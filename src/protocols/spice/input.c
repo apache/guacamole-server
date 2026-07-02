@@ -247,3 +247,43 @@ int guac_spice_user_key_handler(guac_user* user, int keysym, int pressed) {
     return retval;
 
 }
+
+/**
+ * Handler which performs a deferred SPICE primary-display resize on the
+ * event-loop thread. The requested width and height are carried in the
+ * deferred call's args.
+ */
+static void guac_spice_do_update_display(guac_spice_deferred_call* call) {
+    spice_main_channel_update_display((SpiceMainChannel*) call->channel,
+            0, 0, 0, (int) call->args[0], (int) call->args[1], TRUE);
+}
+
+int guac_spice_user_size_handler(guac_user* user, int width, int height) {
+
+    guac_client* client = user->client;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    /* Ignore if the main channel is not yet ready or the requested size is
+     * degenerate */
+    if (spice_client->main_channel == NULL || width <= 0 || height <= 0)
+        return 0;
+
+    /* SPICE guests generally require the display width to be a multiple of 8 */
+    width &= ~0x7;
+
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Requesting guest display resize to %dx%d", width, height);
+
+    /* Marshal the display-configuration update onto the SPICE event-loop
+     * thread; spice-gtk channel functions must not be called from user
+     * threads (see guac_spice_defer_call) */
+    guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
+    call->handler = guac_spice_do_update_display;
+    call->channel = spice_client->main_channel;
+    call->args[0] = (unsigned int) width;
+    call->args[1] = (unsigned int) height;
+    guac_spice_defer_call(call);
+
+    return 0;
+
+}

@@ -34,4 +34,11 @@ guac_user_mouse_handler guac_spice_user_mouse_handler;
  */
 guac_user_key_handler guac_spice_user_key_handler;
 
+/**
+ * Handler for Guacamole size events, requesting that the SPICE guest resize its
+ * primary display to match the connected client's resolution (unless display
+ * resize has been disabled).
+ */
+guac_user_size_handler guac_spice_user_size_handler;
+
 #endif

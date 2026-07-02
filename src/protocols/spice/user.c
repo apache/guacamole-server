@@ -85,6 +85,10 @@ int guac_spice_user_join_handler(guac_user* user, int argc, char** argv) {
         user->mouse_handler = guac_spice_user_mouse_handler;
         user->key_handler = guac_spice_user_key_handler;
 
+        /* Dynamic display resize (client resolution -> guest), unless disabled */
+        if (!settings->disable_display_resize)
+            user->size_handler = guac_spice_user_size_handler;
+
         /* Inbound (client-to-server) clipboard transfer */
         if (!settings->disable_paste && !settings->disable_clipboard)
             user->clipboard_handler = guac_spice_clipboard_handler;
