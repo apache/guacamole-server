@@ -237,7 +237,8 @@ enum SPICE_ARGS_IDX {
 
     /**
      * "true" if the Opus audio codec should be disabled, causing the SPICE
-     * connection to fall back to the legacy CELT codec, "false" or blank
+     * server to fall back to its next available audio mode (raw on modern
+     * servers, or the legacy CELT codec on older ones), "false" or blank
      * otherwise.
      */
     IDX_DISABLE_AUDIO_OPUS,

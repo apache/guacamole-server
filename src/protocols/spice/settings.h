@@ -196,10 +196,11 @@ typedef struct guac_spice_settings {
     bool audio_input_enabled;
 
     /**
-     * Whether the Opus audio codec should be disabled, forcing the SPICE
-     * connection to negotiate the legacy CELT codec instead. This is only
-     * useful for compatibility with SPICE servers whose Opus support is
-     * missing or unreliable; it does not improve audio quality.
+     * Whether the Opus audio codec should be disabled. When set, spice-gtk
+     * stops advertising Opus, so the SPICE server falls back to its next
+     * available audio mode: raw/lossless on modern servers (which no longer
+     * support the legacy CELT codec), or CELT on older servers. On a LAN this
+     * is a simple way to obtain lossless raw audio, at the cost of bandwidth.
      */
     bool disable_audio_opus;
 
