@@ -257,16 +257,11 @@ static void guac_spice_do_update_display(guac_spice_deferred_call* call) {
     SpiceMainChannel* main_channel = (SpiceMainChannel*) call->channel;
 
     /* Ensure the primary monitor is enabled so the guest connects the output,
-     * and set its geometry. The implicit (update=TRUE) send is debounced by a
-     * timer within spice-gtk and does not reliably re-fire for successive
-     * resizes, so request no automatic send here... */
+     * then set its geometry and push the resulting monitors config to the
+     * guest agent */
     spice_main_channel_update_display_enabled(main_channel, 0, TRUE, FALSE);
     spice_main_channel_update_display(main_channel, 0, 0, 0,
-            (int) call->args[0], (int) call->args[1], FALSE);
-
-    /* ...and explicitly push the resulting monitors config to the guest agent,
-     * ensuring every resize request reaches spice-vdagent */
-    spice_main_channel_send_monitor_config(main_channel);
+            (int) call->args[0], (int) call->args[1], TRUE);
 }
 
 int guac_spice_user_size_handler(guac_user* user, int width, int height) {
