@@ -73,10 +73,83 @@ static int guac_spice_button_mask(int mask) {
  * @param button_state
  *     The current SPICE button state mask.
  */
+/* Deferred handlers, run on the SPICE event-loop thread. spice-gtk is not
+ * thread-safe, so mouse events generated on Guacamole user threads must be
+ * marshalled onto the loop thread via guac_spice_defer_call(). */
+
+static void guac_spice_do_button_press(guac_spice_deferred_call* call) {
+    spice_inputs_channel_button_press((SpiceInputsChannel*) call->channel,
+            (int) call->args[0], (int) call->args[1]);
+}
+
+static void guac_spice_do_button_release(guac_spice_deferred_call* call) {
+    spice_inputs_channel_button_release((SpiceInputsChannel*) call->channel,
+            (int) call->args[0], (int) call->args[1]);
+}
+
+static void guac_spice_do_motion(guac_spice_deferred_call* call) {
+    spice_inputs_channel_motion((SpiceInputsChannel*) call->channel,
+            (int) call->args[0], (int) call->args[1], (int) call->args[2]);
+}
+
+static void guac_spice_do_position(guac_spice_deferred_call* call) {
+    spice_inputs_channel_position((SpiceInputsChannel*) call->channel,
+            (int) call->args[0], (int) call->args[1], (int) call->args[2],
+            (int) call->args[3]);
+}
+
+/**
+ * Marshals a SPICE mouse button press or release onto the event-loop thread.
+ */
+static void guac_spice_defer_button(SpiceInputsChannel* inputs, int button,
+        int mask, int pressed) {
+    if (inputs == NULL)
+        return;
+    guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
+    call->handler = pressed ? guac_spice_do_button_press : guac_spice_do_button_release;
+    call->channel = inputs;
+    call->args[0] = (unsigned int) button;
+    call->args[1] = (unsigned int) mask;
+    guac_spice_defer_call(call);
+}
+
+/**
+ * Marshals relative SPICE pointer motion onto the event-loop thread.
+ */
+static void guac_spice_defer_motion(SpiceInputsChannel* inputs, int dx, int dy,
+        int mask) {
+    if (inputs == NULL)
+        return;
+    guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
+    call->handler = guac_spice_do_motion;
+    call->channel = inputs;
+    call->args[0] = (unsigned int) dx;
+    call->args[1] = (unsigned int) dy;
+    call->args[2] = (unsigned int) mask;
+    guac_spice_defer_call(call);
+}
+
+/**
+ * Marshals an absolute SPICE pointer position onto the event-loop thread.
+ */
+static void guac_spice_defer_position(SpiceInputsChannel* inputs, int x, int y,
+        int display, int mask) {
+    if (inputs == NULL)
+        return;
+    guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
+    call->handler = guac_spice_do_position;
+    call->channel = inputs;
+    call->args[0] = (unsigned int) x;
+    call->args[1] = (unsigned int) y;
+    call->args[2] = (unsigned int) display;
+    call->args[3] = (unsigned int) mask;
+    guac_spice_defer_call(call);
+}
+
 static void guac_spice_scroll(SpiceInputsChannel* inputs, int button,
         int button_state) {
-    spice_inputs_channel_button_press(inputs, button, button_state);
-    spice_inputs_channel_button_release(inputs, button, button_state);
+    guac_spice_defer_button(inputs, button, button_state, 1);
+    guac_spice_defer_button(inputs, button, button_state, 0);
 }
 
 int guac_spice_user_mouse_handler(guac_user* user, int x, int y, int mask) {
@@ -103,39 +176,30 @@ int guac_spice_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     /* Update pointer position. SPICE client mouse mode accepts absolute
      * coordinates directly; server mode requires relative motion deltas. */
     if (spice_client->mouse_mode == SPICE_MOUSE_MODE_SERVER)
-        spice_inputs_channel_motion(inputs,
+        guac_spice_defer_motion(inputs,
                 x - spice_client->last_mouse_x,
                 y - spice_client->last_mouse_y, spice_mask);
     else
-        spice_inputs_channel_position(inputs, x, y, 0, spice_mask);
+        guac_spice_defer_position(inputs, x, y, 0, spice_mask);
 
     /* Send press/release events for any of the primary buttons that changed
      * state since the previous mouse event */
     if (spice_mask != prev_mask) {
 
         if ((spice_mask & SPICE_MOUSE_BUTTON_MASK_LEFT)
-                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_LEFT)) {
-            if (spice_mask & SPICE_MOUSE_BUTTON_MASK_LEFT)
-                spice_inputs_channel_button_press(inputs, SPICE_MOUSE_BUTTON_LEFT, spice_mask);
-            else
-                spice_inputs_channel_button_release(inputs, SPICE_MOUSE_BUTTON_LEFT, spice_mask);
-        }
+                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_LEFT))
+            guac_spice_defer_button(inputs, SPICE_MOUSE_BUTTON_LEFT, spice_mask,
+                    spice_mask & SPICE_MOUSE_BUTTON_MASK_LEFT);
 
         if ((spice_mask & SPICE_MOUSE_BUTTON_MASK_MIDDLE)
-                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_MIDDLE)) {
-            if (spice_mask & SPICE_MOUSE_BUTTON_MASK_MIDDLE)
-                spice_inputs_channel_button_press(inputs, SPICE_MOUSE_BUTTON_MIDDLE, spice_mask);
-            else
-                spice_inputs_channel_button_release(inputs, SPICE_MOUSE_BUTTON_MIDDLE, spice_mask);
-        }
+                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_MIDDLE))
+            guac_spice_defer_button(inputs, SPICE_MOUSE_BUTTON_MIDDLE, spice_mask,
+                    spice_mask & SPICE_MOUSE_BUTTON_MASK_MIDDLE);
 
         if ((spice_mask & SPICE_MOUSE_BUTTON_MASK_RIGHT)
-                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_RIGHT)) {
-            if (spice_mask & SPICE_MOUSE_BUTTON_MASK_RIGHT)
-                spice_inputs_channel_button_press(inputs, SPICE_MOUSE_BUTTON_RIGHT, spice_mask);
-            else
-                spice_inputs_channel_button_release(inputs, SPICE_MOUSE_BUTTON_RIGHT, spice_mask);
-        }
+                != (prev_mask & SPICE_MOUSE_BUTTON_MASK_RIGHT))
+            guac_spice_defer_button(inputs, SPICE_MOUSE_BUTTON_RIGHT, spice_mask,
+                    spice_mask & SPICE_MOUSE_BUTTON_MASK_RIGHT);
 
     }
 

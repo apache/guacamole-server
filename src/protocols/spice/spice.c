@@ -167,6 +167,55 @@ static int guac_spice_start_sftp(guac_client* client) {
 }
 #endif
 
+/**
+ * GSourceFunc which runs a deferred spice-gtk call on the SPICE event-loop
+ * thread. Always returns G_SOURCE_REMOVE so the call is dispatched exactly once.
+ *
+ * @param user_data
+ *     The guac_spice_deferred_call to dispatch.
+ *
+ * @return
+ *     G_SOURCE_REMOVE, always.
+ */
+static gboolean guac_spice_deferred_run(gpointer user_data) {
+
+    guac_spice_deferred_call* call = (guac_spice_deferred_call*) user_data;
+
+    if (call->handler != NULL)
+        call->handler(call);
+
+    return G_SOURCE_REMOVE;
+
+}
+
+/**
+ * GDestroyNotify which frees a deferred spice-gtk call and any payload it holds.
+ * Invoked after the call has been dispatched, or when the loop terminates before
+ * dispatch, ensuring no leak in either case.
+ *
+ * @param user_data
+ *     The guac_spice_deferred_call to free.
+ */
+static void guac_spice_deferred_free(gpointer user_data) {
+
+    guac_spice_deferred_call* call = (guac_spice_deferred_call*) user_data;
+
+    g_free(call->data);
+    g_free(call);
+
+}
+
+void guac_spice_defer_call(guac_spice_deferred_call* call) {
+
+    /* Schedule the call on the default GMainContext, which is driven by the
+     * SPICE client thread. If invoked from that thread (e.g. a spice-gtk signal
+     * handler), it runs immediately; otherwise it is queued and executed by the
+     * loop, guaranteeing all channel I/O occurs on a single thread. */
+    g_main_context_invoke_full(NULL, G_PRIORITY_DEFAULT,
+            guac_spice_deferred_run, call, guac_spice_deferred_free);
+
+}
+
 void* guac_spice_client_thread(void* data) {
 
     /* Thread name spice-worker: main SPICE client thread; runs the spice-gtk

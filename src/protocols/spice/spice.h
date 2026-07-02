@@ -285,6 +285,60 @@ typedef struct guac_spice_client {
 } guac_spice_client;
 
 /**
+ * A spice-gtk channel operation deferred to run on the SPICE event-loop thread.
+ *
+ * spice-gtk is not thread-safe: each channel's outbound messages are dispatched
+ * by a coroutine scheduled on the GMainContext driven by guac_spice_client_thread.
+ * Invoking channel functions (keyboard, mouse, clipboard) directly from
+ * Guacamole user/handler threads races with that loop (via spice_channel_wakeup)
+ * and can freeze the session. Such calls must therefore be marshalled onto the
+ * loop thread using guac_spice_defer_call().
+ */
+typedef struct guac_spice_deferred_call {
+
+    /**
+     * Handler which performs the actual spice-gtk call. Invoked on the SPICE
+     * event-loop thread.
+     */
+    void (*handler)(struct guac_spice_deferred_call* call);
+
+    /**
+     * The spice-gtk channel (SpiceInputsChannel*, SpiceMainChannel*, etc.) the
+     * call operates on.
+     */
+    gpointer channel;
+
+    /**
+     * Generic integer arguments for the deferred call. Signed values may be
+     * stored here and recovered by casting back to int.
+     */
+    unsigned int args[5];
+
+    /**
+     * Optional heap-allocated payload (e.g. a copy of clipboard data or a types
+     * array), or NULL. Freed automatically after the call has been dispatched.
+     */
+    gpointer data;
+
+    /**
+     * The length of data, in bytes.
+     */
+    gsize data_len;
+
+} guac_spice_deferred_call;
+
+/**
+ * Schedules the given deferred spice-gtk call to run on the SPICE event-loop
+ * thread. The call structure must be allocated with g_new0(); ownership is
+ * transferred to this function, which frees both the structure and call->data
+ * once the call has been dispatched (or the loop has terminated).
+ *
+ * @param call
+ *     The heap-allocated deferred call to schedule.
+ */
+void guac_spice_defer_call(guac_spice_deferred_call* call);
+
+/**
  * SPICE client thread. This thread establishes the SPICE session and runs the
  * GLib main loop which drives all SPICE event processing for the duration of
  * the connection. It exists as a single instance, shared by all users.
