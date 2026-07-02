@@ -290,7 +290,13 @@ void guac_spice_resize_try(guac_client* client) {
 
 }
 
-void guac_spice_resize_agent_update(SpiceMainChannel* channel, GParamSpec* pspec,
+/**
+ * Re-evaluates whether the SPICE agent can drive a display resize (connected and
+ * advertising monitors-config support) and flushes any queued resize. The
+ * monitors-config capability is announced shortly after the agent connects, so
+ * this is invoked both on agent connection and on subsequent agent updates.
+ */
+static void guac_spice_resize_set_agent_ready(SpiceMainChannel* channel,
         guac_client* client) {
 
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
@@ -298,20 +304,31 @@ void guac_spice_resize_agent_update(SpiceMainChannel* channel, GParamSpec* pspec
     gboolean connected = FALSE;
     g_object_get(channel, "agent-connected", &connected, NULL);
 
-    /* The agent can drive a resize only if it is connected and advertises
-     * monitors-config support */
-    spice_client->resize_agent_ready = (connected
+    int ready = (connected
             && spice_main_channel_agent_test_capability(channel,
                     VD_AGENT_CAP_MONITORS_CONFIG));
 
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "SPICE agent %s (monitors-config resize %s)",
-            connected ? "connected" : "disconnected",
-            spice_client->resize_agent_ready ? "available" : "unavailable");
+    /* Log only on a change to avoid noise from repeated agent updates */
+    if (ready != spice_client->resize_agent_ready)
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SPICE agent monitors-config resize %s",
+                ready ? "available" : "unavailable");
+
+    spice_client->resize_agent_ready = ready;
 
     /* A resize may have been queued before the agent became ready */
     guac_spice_resize_try(client);
 
+}
+
+void guac_spice_resize_agent_update(SpiceMainChannel* channel, GParamSpec* pspec,
+        guac_client* client) {
+    guac_spice_resize_set_agent_ready(channel, client);
+}
+
+void guac_spice_resize_agent_updated(SpiceMainChannel* channel,
+        guac_client* client) {
+    guac_spice_resize_set_agent_ready(channel, client);
 }
 
 /**

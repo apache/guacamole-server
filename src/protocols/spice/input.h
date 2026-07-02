@@ -61,4 +61,13 @@ void guac_spice_resize_try(guac_client* client);
 void guac_spice_resize_agent_update(SpiceMainChannel* channel,
         GParamSpec* pspec, guac_client* client);
 
+/**
+ * Signal handler for the SPICE main channel "main-agent-update" event, invoked
+ * when the guest agent's state or capabilities change (the monitors-config
+ * capability is announced shortly after the agent connects). Re-evaluates
+ * display-resize readiness and flushes any queued resize.
+ */
+void guac_spice_resize_agent_updated(SpiceMainChannel* channel,
+        guac_client* client);
+
 #endif
