@@ -41,6 +41,15 @@
 #define GUAC_SPICE_CLIPBOARD_SELECTION VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD
 
 /**
+ * Handler which performs a deferred SPICE clipboard-selection grab on the
+ * event-loop thread. The offered types array is carried in call->data.
+ */
+static void guac_spice_do_clipboard_grab(guac_spice_deferred_call* call) {
+    spice_main_channel_clipboard_selection_grab((SpiceMainChannel*) call->channel,
+            call->args[0], (guint32*) call->data, (int) call->args[1]);
+}
+
+/**
  * Signal handler for the SPICE main channel "main-clipboard-selection-grab"
  * signal, invoked when the remote guest takes ownership of the clipboard. If
  * the guest is offering UTF-8 text, the data is requested from the guest.
@@ -209,9 +218,22 @@ int guac_spice_clipboard_end_handler(guac_user* user, guac_stream* stream) {
      * request the data via "main-clipboard-selection-request". */
     if (spice_client->main_channel != NULL
             && !spice_client->settings->disable_paste) {
-        guint32 types[] = { VD_AGENT_CLIPBOARD_UTF8_TEXT };
-        spice_main_channel_clipboard_selection_grab(spice_client->main_channel,
-                GUAC_SPICE_CLIPBOARD_SELECTION, types, 1);
+
+        /* Marshal the grab onto the SPICE event-loop thread; this handler runs
+         * on a Guacamole user thread, and spice-gtk channel functions must not
+         * be called off the loop thread (see guac_spice_defer_call) */
+        guint32* types = g_new(guint32, 1);
+        types[0] = VD_AGENT_CLIPBOARD_UTF8_TEXT;
+
+        guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
+        call->handler = guac_spice_do_clipboard_grab;
+        call->channel = spice_client->main_channel;
+        call->args[0] = GUAC_SPICE_CLIPBOARD_SELECTION;
+        call->args[1] = 1; /* number of offered types */
+        call->data = types;
+        call->data_len = sizeof(guint32);
+        guac_spice_defer_call(call);
+
     }
 
     return 0;
