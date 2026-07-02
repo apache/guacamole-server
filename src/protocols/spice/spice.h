@@ -237,6 +237,22 @@ typedef struct guac_spice_client {
     guac_stream* audio_input;
 
     /**
+     * The sample rate (in Hz) and channel count the SPICE record channel
+     * expects, as reported by the record-start signal. Zero until recording
+     * has started.
+     */
+    int record_rate;
+    int record_channels;
+
+    /**
+     * The sample rate (in Hz) and channel count of the inbound audio stream, as
+     * advertised by the connected user in the audio input mimetype. Zero until
+     * an audio input stream has been established.
+     */
+    int input_rate;
+    int input_channels;
+
+    /**
      * The shared folder exposed to the connected user as a Guacamole filesystem
      * object (file browser) and to the SPICE server via the WebDAV channel, or
      * NULL if file transfer has not been enabled.
