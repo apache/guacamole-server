@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "display.h"
+#include "input.h"
 #include "spice.h"
 
 #include <guacamole/client.h>
@@ -62,6 +63,11 @@ static void guac_spice_display_primary_create(SpiceChannel* channel,
         guac_display_layer_resize(
                 guac_display_default_layer(spice_client->display),
                 width, height);
+
+    /* The display is now ready to receive a guest resize; flush any queued
+     * client-requested resize that was waiting on the primary surface */
+    spice_client->resize_display_ready = 1;
+    guac_spice_resize_try(client);
 
 }
 

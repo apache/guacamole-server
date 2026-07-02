@@ -29,6 +29,7 @@
 #include <guacamole/recording.h>
 #include <guacamole/user.h>
 #include <spice-client.h>
+#include <spice/vd_agent.h>
 
 /**
  * Translates a Guacamole mouse button mask into the equivalent SPICE button
@@ -253,15 +254,81 @@ int guac_spice_user_key_handler(guac_user* user, int keysym, int pressed) {
  * event-loop thread. The requested width and height are carried in the
  * deferred call's args.
  */
-static void guac_spice_do_update_display(guac_spice_deferred_call* call) {
-    SpiceMainChannel* main_channel = (SpiceMainChannel*) call->channel;
+void guac_spice_resize_try(guac_client* client) {
 
-    /* Ensure the primary monitor is enabled so the guest connects the output,
-     * then set its geometry and push the resulting monitors config to the
-     * guest agent */
-    spice_main_channel_update_display_enabled(main_channel, 0, TRUE, FALSE);
-    spice_main_channel_update_display(main_channel, 0, 0, 0,
-            (int) call->args[0], (int) call->args[1], TRUE);
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    /* Nothing to do unless a resize is queued */
+    if (!spice_client->resize_pending)
+        return;
+
+    /* Wait until the guest is ready to receive a monitors config: the main
+     * channel must be up, the agent connected and advertising monitors-config
+     * support, and the display's primary surface created. spice-gtk silently
+     * drops a monitors config sent before these conditions hold. */
+    if (spice_client->main_channel == NULL
+            || !spice_client->resize_agent_ready
+            || !spice_client->resize_display_ready)
+        return;
+
+    int width = spice_client->resize_pending_width;
+    int height = spice_client->resize_pending_height;
+
+    /* Enable and size monitor 0 without the debounced implicit send, then push
+     * the monitors config to the guest agent immediately. The implicit
+     * (update=TRUE) send arms a one-second coalescing timer within spice-gtk
+     * and does not reliably re-fire for successive resizes, so send
+     * explicitly instead. */
+    spice_main_channel_update_display_enabled(spice_client->main_channel, 0, TRUE, FALSE);
+    spice_main_channel_update_display(spice_client->main_channel, 0, 0, 0,
+            width, height, FALSE);
+    spice_main_channel_send_monitor_config(spice_client->main_channel);
+
+    spice_client->resize_pending = 0;
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Sent guest display resize to %dx%d", width, height);
+
+}
+
+void guac_spice_resize_agent_update(SpiceMainChannel* channel, GParamSpec* pspec,
+        guac_client* client) {
+
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    gboolean connected = FALSE;
+    g_object_get(channel, "agent-connected", &connected, NULL);
+
+    /* The agent can drive a resize only if it is connected and advertises
+     * monitors-config support */
+    spice_client->resize_agent_ready = (connected
+            && spice_main_channel_agent_test_capability(channel,
+                    VD_AGENT_CAP_MONITORS_CONFIG));
+
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "SPICE agent %s (monitors-config resize %s)",
+            connected ? "connected" : "disconnected",
+            spice_client->resize_agent_ready ? "available" : "unavailable");
+
+    /* A resize may have been queued before the agent became ready */
+    guac_spice_resize_try(client);
+
+}
+
+/**
+ * Handler which, on the SPICE event-loop thread, records a queued resize
+ * request and attempts to send it (subject to guest readiness).
+ */
+static void guac_spice_do_queue_resize(guac_spice_deferred_call* call) {
+
+    guac_client* client = (guac_client*) call->channel;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    spice_client->resize_pending_width = (int) call->args[0];
+    spice_client->resize_pending_height = (int) call->args[1];
+    spice_client->resize_pending = 1;
+
+    guac_spice_resize_try(client);
+
 }
 
 int guac_spice_user_size_handler(guac_user* user, int width, int height) {
@@ -277,15 +344,12 @@ int guac_spice_user_size_handler(guac_user* user, int width, int height) {
     /* SPICE guests generally require the display width to be a multiple of 8 */
     width &= ~0x7;
 
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "Requesting guest display resize to %dx%d", width, height);
-
-    /* Marshal the display-configuration update onto the SPICE event-loop
-     * thread; spice-gtk channel functions must not be called from user
-     * threads (see guac_spice_defer_call) */
+    /* Queue the resize on the SPICE event-loop thread; spice-gtk channel
+     * functions must not be called from user threads (see guac_spice_defer_call).
+     * The actual send is gated on guest readiness within guac_spice_resize_try. */
     guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
-    call->handler = guac_spice_do_update_display;
-    call->channel = spice_client->main_channel;
+    call->handler = guac_spice_do_queue_resize;
+    call->channel = client;
     call->args[0] = (unsigned int) width;
     call->args[1] = (unsigned int) height;
     guac_spice_defer_call(call);

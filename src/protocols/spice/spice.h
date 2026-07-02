@@ -195,6 +195,20 @@ typedef struct guac_spice_client {
     int last_mouse_y;
 
     /**
+     * Dynamic display-resize state. All fields are accessed only from the SPICE
+     * event-loop thread. A client-requested resize is queued in
+     * resize_pending_width/height and sent to the guest only once the SPICE
+     * agent (advertising monitors-config support) and the display's primary
+     * surface are both ready — the readiness spice-gtk itself requires before a
+     * monitors config will actually be sent.
+     */
+    int resize_agent_ready;
+    int resize_display_ready;
+    int resize_pending;
+    int resize_pending_width;
+    int resize_pending_height;
+
+    /**
      * Internal clipboard.
      */
     guac_common_clipboard* clipboard;

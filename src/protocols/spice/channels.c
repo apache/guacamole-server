@@ -24,6 +24,7 @@
 #include "clipboard.h"
 #include "cursor.h"
 #include "display.h"
+#include "input.h"
 #include "spice.h"
 
 #include <guacamole/client.h>
@@ -113,6 +114,12 @@ void guac_spice_channel_new(SpiceSession* session, SpiceChannel* channel,
         spice_client->main_channel = SPICE_MAIN_CHANNEL(channel);
         g_signal_connect(channel, "main-mouse-update",
                 G_CALLBACK(guac_spice_main_mouse_update), client);
+
+        /* Track agent readiness (connection + monitors-config support) so a
+         * queued dynamic display resize can be sent once the guest is ready */
+        g_signal_connect(channel, "notify::agent-connected",
+                G_CALLBACK(guac_spice_resize_agent_update), client);
+
         guac_spice_clipboard_connect(client, SPICE_MAIN_CHANNEL(channel));
     }
 
