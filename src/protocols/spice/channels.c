@@ -116,9 +116,13 @@ void guac_spice_channel_new(SpiceSession* session, SpiceChannel* channel,
                 G_CALLBACK(guac_spice_main_mouse_update), client);
 
         /* Track agent readiness (connection + monitors-config support) so a
-         * queued dynamic display resize can be sent once the guest is ready */
+         * queued dynamic display resize can be sent once the guest is ready.
+         * The capability is announced after connection, so watch both the
+         * connection state and subsequent agent updates. */
         g_signal_connect(channel, "notify::agent-connected",
                 G_CALLBACK(guac_spice_resize_agent_update), client);
+        g_signal_connect(channel, "main-agent-update",
+                G_CALLBACK(guac_spice_resize_agent_updated), client);
 
         guac_spice_clipboard_connect(client, SPICE_MAIN_CHANNEL(channel));
     }
