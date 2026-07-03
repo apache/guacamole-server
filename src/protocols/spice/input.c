@@ -274,18 +274,17 @@ void guac_spice_resize_try(guac_client* client) {
     int width = spice_client->resize_pending_width;
     int height = spice_client->resize_pending_height;
 
-    /* Enable and size monitor 0, then explicitly push the monitors config */
+    /* Enable and size monitor 0, then explicitly push the monitors config to
+     * the guest agent. Sending explicitly (rather than via update_display's
+     * debounced timer) ensures every resize is delivered deterministically. */
     spice_main_channel_update_display_enabled(spice_client->main_channel, 0, TRUE, FALSE);
     spice_main_channel_update_display(spice_client->main_channel, 0, 0, 0,
             width, height, FALSE);
-    gboolean sent = spice_main_channel_send_monitor_config(spice_client->main_channel);
+    spice_main_channel_send_monitor_config(spice_client->main_channel);
 
     spice_client->resize_pending = 0;
-    guac_client_log(client, GUAC_LOG_INFO,
-            "DIAG: resize %dx%d send_monitor_config=%d agent_cap=%d",
-            width, height, sent,
-            spice_main_channel_agent_test_capability(spice_client->main_channel,
-                    VD_AGENT_CAP_MONITORS_CONFIG));
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Sent guest display resize to %dx%d", width, height);
 
 }
 
