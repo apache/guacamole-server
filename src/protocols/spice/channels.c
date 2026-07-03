@@ -45,6 +45,40 @@ static void guac_spice_channel_event(SpiceChannel* channel,
 
         case SPICE_CHANNEL_OPENED:
             guac_client_log(client, GUAC_LOG_DEBUG, "SPICE channel opened.");
+
+            /* Once the display channel is open (capabilities negotiated),
+             * request that the server prefer efficient GStreamer video codecs
+             * for streamed video regions. The spice-server's default codec
+             * order lists MJPEG first, so without an explicit client preference
+             * the streamed codec is always MJPEG even when H.264/VP9/VP8
+             * encoding is available. This sends the preference (falling back to
+             * MJPEG) and is a no-op if the server lacks the capability. Runs on
+             * the SPICE event-loop thread, so no marshalling is required. */
+            if (SPICE_IS_DISPLAY_CHANNEL(channel)) {
+
+                const gint preferred_codecs[] = {
+                    SPICE_VIDEO_CODEC_TYPE_H264,
+                    SPICE_VIDEO_CODEC_TYPE_VP9,
+                    SPICE_VIDEO_CODEC_TYPE_VP8,
+                    SPICE_VIDEO_CODEC_TYPE_MJPEG
+                };
+
+                GError* codec_error = NULL;
+                if (spice_display_channel_change_preferred_video_codec_types(
+                        channel, preferred_codecs,
+                        G_N_ELEMENTS(preferred_codecs), &codec_error))
+                    guac_client_log(client, GUAC_LOG_DEBUG,
+                            "Requested preferred SPICE video codecs "
+                            "(H264, VP9, VP8, MJPEG).");
+                else {
+                    guac_client_log(client, GUAC_LOG_DEBUG,
+                            "Preferred video codec selection unavailable: %s",
+                            codec_error != NULL ? codec_error->message
+                                                : "unsupported by server");
+                    g_clear_error(&codec_error);
+                }
+
+            }
             break;
 
         case SPICE_CHANNEL_ERROR_AUTH:
