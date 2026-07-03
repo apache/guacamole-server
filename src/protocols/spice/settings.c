@@ -98,6 +98,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "wol-broadcast-addr",
     "wol-udp-port",
     "wol-wait-time",
+    "preferred-video-codec",
 
     NULL
 };
@@ -439,6 +440,15 @@ enum SPICE_ARGS_IDX {
      */
     IDX_WOL_WAIT_TIME,
 
+    /**
+     * The video codec the SPICE server should prefer for streamed video
+     * regions ("h264", "vp9", "vp8", or "mjpeg"), or blank to leave the
+     * server's default preference (which starts with MJPEG) untouched.
+     * Requesting a non-MJPEG codec depends on the server being built with, and
+     * having, a working GStreamer encoder for it.
+     */
+    IDX_PREFERRED_VIDEO_CODEC,
+
     SPICE_ARGS_COUNT
 };
 
@@ -551,6 +561,10 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
     settings->disable_audio_opus =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_DISABLE_AUDIO_OPUS, false);
+
+    settings->preferred_video_codec =
+        guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_PREFERRED_VIDEO_CODEC, NULL);
 
     settings->enable_drive =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
@@ -719,6 +733,7 @@ void guac_spice_settings_free(guac_spice_settings* settings) {
 
     /* Free settings strings */
     guac_mem_free(settings->hostname);
+    guac_mem_free(settings->preferred_video_codec);
     guac_mem_free(settings->port);
     guac_mem_free(settings->tls_port);
     guac_mem_free(settings->username);

@@ -31,6 +31,8 @@
 #include <guacamole/protocol.h>
 #include <spice-client.h>
 
+#include <string.h>
+
 /**
  * Signal handler for the "channel-event" signal of any SPICE channel. Handles
  * connection-level errors and closure by aborting or stopping the Guacamole
@@ -40,42 +42,72 @@ static void guac_spice_channel_event(SpiceChannel* channel,
         SpiceChannelEvent event, gpointer data) {
 
     guac_client* client = (guac_client*) data;
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
     switch (event) {
 
         case SPICE_CHANNEL_OPENED:
             guac_client_log(client, GUAC_LOG_DEBUG, "SPICE channel opened.");
 
-            /* Once the display channel is open (capabilities negotiated),
-             * request that the server prefer efficient GStreamer video codecs
-             * for streamed video regions. The spice-server's default codec
-             * order lists MJPEG first, so without an explicit client preference
-             * the streamed codec is always MJPEG even when H.264/VP9/VP8
-             * encoding is available. This sends the preference (falling back to
-             * MJPEG) and is a no-op if the server lacks the capability. Runs on
-             * the SPICE event-loop thread, so no marshalling is required. */
-            if (SPICE_IS_DISPLAY_CHANNEL(channel)) {
+            /* Once the display channel is open (capabilities negotiated), and
+             * only if the user configured a preferred video codec, ask the
+             * server to prefer it for streamed video regions. The server's
+             * default codec order lists MJPEG first, so without an explicit
+             * preference the streamed codec is always MJPEG even when
+             * H.264/VP9/VP8 encoding is available. This is opt-in (NULL by
+             * default) because some spice-server builds crash when actually
+             * encoding a GStreamer codec. Runs on the SPICE event-loop thread,
+             * so no marshalling is required. */
+            if (SPICE_IS_DISPLAY_CHANNEL(channel)
+                    && spice_client->settings->preferred_video_codec != NULL) {
 
-                const gint preferred_codecs[] = {
-                    SPICE_VIDEO_CODEC_TYPE_H264,
-                    SPICE_VIDEO_CODEC_TYPE_VP9,
-                    SPICE_VIDEO_CODEC_TYPE_VP8,
-                    SPICE_VIDEO_CODEC_TYPE_MJPEG
-                };
+                const char* pref = spice_client->settings->preferred_video_codec;
 
-                GError* codec_error = NULL;
-                if (spice_display_channel_change_preferred_video_codec_types(
-                        channel, preferred_codecs,
-                        G_N_ELEMENTS(preferred_codecs), &codec_error))
-                    guac_client_log(client, GUAC_LOG_DEBUG,
-                            "Requested preferred SPICE video codecs "
-                            "(H264, VP9, VP8, MJPEG).");
-                else {
-                    guac_client_log(client, GUAC_LOG_DEBUG,
-                            "Preferred video codec selection unavailable: %s",
-                            codec_error != NULL ? codec_error->message
-                                                : "unsupported by server");
-                    g_clear_error(&codec_error);
+                /* Build an ordered preference list: the requested codec first,
+                 * with MJPEG appended as a universally-supported fallback. */
+                gint codecs[4];
+                int n = 0;
+
+                if (strcmp(pref, "h264") == 0) {
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_H264;
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_VP9;
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_VP8;
+                }
+                else if (strcmp(pref, "vp9") == 0) {
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_VP9;
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_VP8;
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_H264;
+                }
+                else if (strcmp(pref, "vp8") == 0) {
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_VP8;
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_VP9;
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_H264;
+                }
+                else if (strcmp(pref, "mjpeg") != 0) {
+                    guac_client_log(client, GUAC_LOG_WARNING,
+                            "Ignoring unknown preferred-video-codec \"%s\" "
+                            "(expected h264, vp9, vp8, or mjpeg).", pref);
+                    n = -1;
+                }
+
+                if (n >= 0) {
+
+                    codecs[n++] = SPICE_VIDEO_CODEC_TYPE_MJPEG;
+
+                    GError* codec_error = NULL;
+                    if (spice_display_channel_change_preferred_video_codec_types(
+                            channel, codecs, n, &codec_error))
+                        guac_client_log(client, GUAC_LOG_INFO,
+                                "Requested SPICE server prefer \"%s\" video "
+                                "encoding for streamed regions.", pref);
+                    else {
+                        guac_client_log(client, GUAC_LOG_DEBUG,
+                                "Preferred video codec selection unavailable: "
+                                "%s", codec_error != NULL ? codec_error->message
+                                                    : "unsupported by server");
+                        g_clear_error(&codec_error);
+                    }
+
                 }
 
             }

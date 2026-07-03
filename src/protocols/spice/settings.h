@@ -205,6 +205,17 @@ typedef struct guac_spice_settings {
     bool disable_audio_opus;
 
     /**
+     * The video codec the SPICE server should be asked to prefer for streamed
+     * video regions ("h264", "vp9", "vp8", or "mjpeg"), or NULL to leave the
+     * server's default preference untouched. The server's default lists MJPEG
+     * first, so an explicit preference is required for it to use a GStreamer
+     * codec. NULL by default because requesting a non-MJPEG codec relies on the
+     * server having a working GStreamer encoder for it (some spice-server
+     * builds crash when encoding H.264/VP8/VP9).
+     */
+    char* preferred_video_codec;
+
+    /**
      * Whether folder sharing (shared directory via the SPICE WebDAV channel)
      * should be enabled.
      */
