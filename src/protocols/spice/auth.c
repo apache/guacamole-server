@@ -145,6 +145,7 @@ void guac_spice_session_configure(guac_client* client, SpiceSession* session) {
      * WebDAV server automatically once "shared-dir" is set. */
     if (settings->enable_drive && settings->drive_path != NULL) {
         g_object_set(session, "shared-dir", settings->drive_path, NULL);
+        g_object_set(session, "share-dir-ro", settings->drive_read_only, NULL);
         guac_client_log(client, GUAC_LOG_INFO,
                 "Sharing directory \"%s\" with the SPICE server%s.",
                 settings->drive_path,
