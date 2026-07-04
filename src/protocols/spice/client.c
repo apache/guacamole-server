@@ -37,6 +37,7 @@
 #include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 
 #include <pthread.h>
 
@@ -78,6 +79,17 @@ static int guac_spice_join_pending_handler(guac_client* client) {
     if (spice_client->audio)
         guac_client_foreach_pending_user(client,
                 guac_spice_sync_pending_user_audio, spice_client->audio);
+
+    /* Advertise the maximum number of secondary monitors permitted for this
+     * connection so a multi-monitor client can offer the right number of
+     * monitor windows */
+    if (spice_client->settings != NULL) {
+        char max_monitors[12];
+        guac_itoa(max_monitors,
+                spice_client->settings->max_secondary_monitors);
+        guac_client_stream_argv(client, broadcast_socket, "text/plain",
+                "secondary-monitors", max_monitors);
+    }
 
     /* Synchronize with current display */
     if (spice_client->display != NULL) {

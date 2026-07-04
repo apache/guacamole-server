@@ -160,6 +160,12 @@ typedef struct guac_spice_settings {
     bool disable_display_resize;
 
     /**
+     * The maximum number of secondary monitors (in addition to the primary
+     * monitor) that the client may request. 0 disables multi-monitor support.
+     */
+    int max_secondary_monitors;
+
+    /**
      * The maximum number of bytes to allow within the clipboard.
      */
     int clipboard_buffer_size;

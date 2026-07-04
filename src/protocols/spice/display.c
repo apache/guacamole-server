@@ -25,11 +25,82 @@
 
 #include <guacamole/client.h>
 #include <guacamole/display.h>
+#include <guacamole/protocol.h>
+#include <guacamole/protocol-constants.h>
 #include <guacamole/rect.h>
+#include <guacamole/socket.h>
 #include <spice-client.h>
 
 #include <pthread.h>
+#include <stdio.h>
 #include <string.h>
+
+/**
+ * Sends the current monitor layout to the connected client as a JSON
+ * "multimon-layout" parameter on the default layer, allowing a multi-monitor
+ * client to split the combined framebuffer into per-monitor windows. Does
+ * nothing unless multi-monitor support is enabled for this connection. Must be
+ * called on the SPICE event-loop thread.
+ *
+ * @param client
+ *     The guac_client whose monitor layout should be sent.
+ */
+static void guac_spice_display_send_monitor_layout(guac_client* client) {
+
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    /* Only relevant when multi-monitor support is enabled and at least one
+     * monitor has been established by a client resize request */
+    if (spice_client->settings->max_secondary_monitors <= 0
+            || spice_client->monitors_count <= 0)
+        return;
+
+    /* Build a JSON object mapping each monitor index to its position and size,
+     * e.g. {"0":{"left":0,"top":0,"width":1024,"height":768},"1":{...}}. Every
+     * value is an integer, so no escaping is required and the fixed buffer
+     * cannot be overrun for the supported number of monitors; the length is
+     * bounded-checked regardless. */
+    char json[GUAC_SPICE_MULTIMON_LAYOUT_SIZE];
+    int pos = 0;
+    int written = 0;
+
+    json[pos++] = '{';
+
+    for (int i = 0; i < spice_client->monitors_count; i++) {
+
+        guac_spice_monitor* monitor = &spice_client->monitors[i];
+        if (monitor->width <= 0 || monitor->height <= 0)
+            continue;
+
+        int remaining = (int) sizeof(json) - pos;
+        int length = snprintf(json + pos, remaining,
+                "%s\"%d\":{\"left\":%d,\"top\":%d,\"width\":%d,\"height\":%d}",
+                (written ? "," : ""), i,
+                monitor->left_offset, monitor->top_offset,
+                monitor->width, monitor->height);
+
+        /* Stop if the entry would not fit (guard only; cannot happen for the
+         * supported number of integer-only monitors) */
+        if (length < 0 || length >= remaining)
+            break;
+
+        pos += length;
+        written++;
+
+    }
+
+    /* Terminate the JSON object, leaving room for '}' and the null terminator */
+    if (pos > (int) sizeof(json) - 2)
+        pos = (int) sizeof(json) - 2;
+    json[pos++] = '}';
+    json[pos] = '\0';
+
+    /* Set the layout parameter on the default layer (layer 0) */
+    guac_protocol_send_set(client->socket, GUAC_DEFAULT_LAYER,
+            GUAC_PROTOCOL_LAYER_PARAMETER_MULTIMON_LAYOUT, json);
+    guac_socket_flush(client->socket);
+
+}
 
 /**
  * Signal handler for the SPICE display channel "display-primary-create"
@@ -68,6 +139,10 @@ static void guac_spice_display_primary_create(SpiceChannel* channel,
      * client-requested resize that was waiting on the primary surface */
     spice_client->resize_display_ready = 1;
     guac_spice_resize_try(client);
+
+    /* Inform any multi-monitor client of the layout of the (now resized)
+     * combined framebuffer so it can split it into per-monitor windows */
+    guac_spice_display_send_monitor_layout(client);
 
 }
 
