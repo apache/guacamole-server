@@ -214,6 +214,10 @@ AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_INCLUDE], '-I$(top_srcdir)/src/protocols/kub
 AC_SUBST([LIBGUAC_CLIENT_RDP_LTLIB],   '$(top_builddir)/src/protocols/rdp/libguac-client-rdp.la')
 AC_SUBST([LIBGUAC_CLIENT_RDP_INCLUDE], '-I$(top_srcdir)/src/protocols/rdp')
 
+# SPICE support
+AC_SUBST([LIBGUAC_CLIENT_SPICE_LTLIB],   '$(top_builddir)/src/protocols/spice/libguac-client-spice.la')
+AC_SUBST([LIBGUAC_CLIENT_SPICE_INCLUDE], '-I$(top_srcdir)/src/protocols/spice')
+
 # Terminal emulator
 AC_SUBST([TERMINAL_LTLIB],   '$(top_builddir)/src/terminal/libguac-terminal.la')
 AC_SUBST([TERMINAL_INCLUDE], '-I$(top_srcdir)/src/terminal $(PANGO_CFLAGS) $(PANGOCAIRO_CFLAGS) $(COMMON_INCLUDE)')
@@ -1529,7 +1533,8 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
                  src/protocols/vnc/Makefile
-                 src/protocols/spice/Makefile])
+                 src/protocols/spice/Makefile
+                 src/protocols/spice/tests/Makefile])
 AC_OUTPUT
 
 #
