@@ -99,6 +99,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "wol-udp-port",
     "wol-wait-time",
     "preferred-video-codec",
+    "secondary-monitors",
 
     NULL
 };
@@ -449,6 +450,13 @@ enum SPICE_ARGS_IDX {
      */
     IDX_PREFERRED_VIDEO_CODEC,
 
+    /**
+     * The maximum number of secondary monitors the client may request, in
+     * addition to the primary monitor. 0 (the default) disables multi-monitor
+     * support.
+     */
+    IDX_SECONDARY_MONITORS,
+
     SPICE_ARGS_COUNT
 };
 
@@ -565,6 +573,11 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
     settings->preferred_video_codec =
         guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_PREFERRED_VIDEO_CODEC, NULL);
+
+    /* Maximum secondary monitors (default 0 = multi-monitor disabled) */
+    settings->max_secondary_monitors =
+        guac_user_parse_args_int(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_SECONDARY_MONITORS, 0);
 
     settings->enable_drive =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
