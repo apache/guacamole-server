@@ -197,24 +197,21 @@ guacd_config* guacd_conf_load() {
 
     /* Read configuration from file */
     int fd = open(GUACD_CONF_FILE, O_RDONLY);
-    if (fd > 0) {
-
-        int retval = guacd_conf_parse_file(conf, fd);
-        close(fd);
-
-        if (retval != 0) {
-            fprintf(stderr, "Unable to parse \"" GUACD_CONF_FILE "\".\n");
-            guac_mem_free(conf->bind_host);
-            guac_mem_free(conf->bind_port);
-            guac_mem_free(conf);
-            return NULL;
-        }
-
-    }
 
     /* Notify of errors preventing reading */
-    else if (errno != ENOENT) {
+    if (fd < 0 && errno != ENOENT) {
         fprintf(stderr, "Unable to open \"" GUACD_CONF_FILE "\": %s\n", strerror(errno));
+        guac_mem_free(conf->bind_host);
+        guac_mem_free(conf->bind_port);
+        guac_mem_free(conf);
+        return NULL;
+    }
+
+    int retval = guacd_conf_parse_file(conf, fd);
+    close(fd);
+
+    if (retval != 0) {
+        fprintf(stderr, "Unable to parse \"" GUACD_CONF_FILE "\".\n");
         guac_mem_free(conf->bind_host);
         guac_mem_free(conf->bind_port);
         guac_mem_free(conf);
