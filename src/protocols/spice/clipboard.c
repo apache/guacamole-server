@@ -30,6 +30,8 @@
 #include <spice-client.h>
 #include <spice/vd_agent.h>
 
+#include <limits.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -39,6 +41,97 @@
  * matching the behavior expected by typical desktop environments.
  */
 #define GUAC_SPICE_CLIPBOARD_SELECTION VD_AGENT_CLIPBOARD_SELECTION_CLIPBOARD
+
+/**
+ * The order in which VD_AGENT clipboard data types are preferred when the guest
+ * offers several at once. UTF-8 text is preferred over images (it is the most
+ * common paste target and cheapest to transfer), and among image formats PNG is
+ * preferred, as it is the format every image-capable SPICE peer is required to
+ * support. Only types Guacamole can represent as a clipboard mimetype are
+ * listed; any other offered type is ignored.
+ */
+static const guint32 guac_spice_clipboard_preference[] = {
+    VD_AGENT_CLIPBOARD_UTF8_TEXT,
+    VD_AGENT_CLIPBOARD_IMAGE_PNG,
+    VD_AGENT_CLIPBOARD_IMAGE_BMP,
+    VD_AGENT_CLIPBOARD_IMAGE_JPG,
+    VD_AGENT_CLIPBOARD_IMAGE_TIFF,
+};
+
+/**
+ * Returns the VD_AGENT clipboard data type corresponding to the given
+ * Guacamole clipboard mimetype, or VD_AGENT_CLIPBOARD_NONE if the mimetype has
+ * no SPICE equivalent. Any textual ("text/...") mimetype maps to UTF-8 text.
+ *
+ * @param mimetype
+ *     The Guacamole clipboard mimetype to translate.
+ *
+ * @return
+ *     The corresponding VD_AGENT_CLIPBOARD_* type, or VD_AGENT_CLIPBOARD_NONE
+ *     if unsupported.
+ */
+static guint32 guac_spice_clipboard_type_for_mimetype(const char* mimetype) {
+
+    if (mimetype == NULL)
+        return VD_AGENT_CLIPBOARD_NONE;
+
+    if (strncmp(mimetype, "text/", 5) == 0)
+        return VD_AGENT_CLIPBOARD_UTF8_TEXT;
+
+    if (strcmp(mimetype, "image/png") == 0)
+        return VD_AGENT_CLIPBOARD_IMAGE_PNG;
+
+    if (strcmp(mimetype, "image/bmp") == 0
+            || strcmp(mimetype, "image/x-bmp") == 0
+            || strcmp(mimetype, "image/x-ms-bmp") == 0)
+        return VD_AGENT_CLIPBOARD_IMAGE_BMP;
+
+    if (strcmp(mimetype, "image/jpeg") == 0
+            || strcmp(mimetype, "image/jpg") == 0)
+        return VD_AGENT_CLIPBOARD_IMAGE_JPG;
+
+    if (strcmp(mimetype, "image/tiff") == 0)
+        return VD_AGENT_CLIPBOARD_IMAGE_TIFF;
+
+    return VD_AGENT_CLIPBOARD_NONE;
+
+}
+
+/**
+ * Returns the Guacamole clipboard mimetype corresponding to the given VD_AGENT
+ * clipboard data type, or NULL if the type has no Guacamole equivalent.
+ *
+ * @param type
+ *     The VD_AGENT_CLIPBOARD_* type to translate.
+ *
+ * @return
+ *     A statically-allocated Guacamole mimetype string, or NULL if unsupported.
+ */
+static const char* guac_spice_clipboard_mimetype_for_type(guint32 type) {
+
+    switch (type) {
+
+        case VD_AGENT_CLIPBOARD_UTF8_TEXT:
+            return "text/plain";
+
+        case VD_AGENT_CLIPBOARD_IMAGE_PNG:
+            return "image/png";
+
+        case VD_AGENT_CLIPBOARD_IMAGE_BMP:
+            return "image/bmp";
+
+        case VD_AGENT_CLIPBOARD_IMAGE_JPG:
+            return "image/jpeg";
+
+        case VD_AGENT_CLIPBOARD_IMAGE_TIFF:
+            return "image/tiff";
+
+        default:
+            return NULL;
+
+    }
+
+}
 
 /**
  * Handler which performs a deferred SPICE clipboard-selection grab on the
@@ -51,8 +144,9 @@ static void guac_spice_do_clipboard_grab(guac_spice_deferred_call* call) {
 
 /**
  * Signal handler for the SPICE main channel "main-clipboard-selection-grab"
- * signal, invoked when the remote guest takes ownership of the clipboard. If
- * the guest is offering UTF-8 text, the data is requested from the guest.
+ * signal, invoked when the remote guest takes ownership of the clipboard. The
+ * best Guacamole-representable type offered by the guest (see
+ * guac_spice_clipboard_preference) is requested from the guest.
  */
 static void guac_spice_clipboard_grab(SpiceMainChannel* channel,
         guint selection, gpointer types, guint ntypes, gpointer data) {
@@ -65,13 +159,17 @@ static void guac_spice_clipboard_grab(SpiceMainChannel* channel,
     if (spice_client->settings->disable_copy)
         return;
 
-    /* Request UTF-8 text from the guest, if offered */
+    /* Request the most-preferred type the guest is offering that Guacamole can
+     * represent (text over image, PNG over other image formats) */
     guint32* offered = (guint32*) types;
-    for (guint i = 0; i < ntypes; i++) {
-        if (offered[i] == VD_AGENT_CLIPBOARD_UTF8_TEXT) {
-            spice_main_channel_clipboard_selection_request(channel, selection,
-                    VD_AGENT_CLIPBOARD_UTF8_TEXT);
-            return;
+    for (unsigned int p = 0;
+            p < sizeof(guac_spice_clipboard_preference) / sizeof(guint32); p++) {
+        for (guint i = 0; i < ntypes; i++) {
+            if (offered[i] == guac_spice_clipboard_preference[p]) {
+                spice_main_channel_clipboard_selection_request(channel,
+                        selection, guac_spice_clipboard_preference[p]);
+                return;
+            }
         }
     }
 
@@ -80,7 +178,8 @@ static void guac_spice_clipboard_grab(SpiceMainChannel* channel,
 /**
  * Signal handler for the SPICE main channel "main-clipboard-selection" signal,
  * invoked when the remote guest sends clipboard data (in response to an earlier
- * request). The received data is pushed to all connected Guacamole users.
+ * request). The received data is pushed to all connected Guacamole users. Both
+ * UTF-8 text and image data (PNG, BMP, JPEG, TIFF) are supported.
  */
 static void guac_spice_clipboard_selection(SpiceMainChannel* channel,
         guint selection, guint type, gpointer data, guint size,
@@ -89,16 +188,28 @@ static void guac_spice_clipboard_selection(SpiceMainChannel* channel,
     guac_client* client = (guac_client*) user_data;
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
-    /* Ignore inbound clipboard if outbound transfer is disabled or unsupported
-     * data type is received */
+    /* Ignore inbound clipboard if outbound transfer is disabled or no clipboard
+     * structure is available */
     if (spice_client->settings->disable_copy
-            || type != VD_AGENT_CLIPBOARD_UTF8_TEXT
             || spice_client->clipboard == NULL)
         return;
 
-    /* Replace clipboard contents with received text and broadcast to users */
-    guac_common_clipboard_reset(spice_client->clipboard, "text/plain");
-    guac_common_clipboard_append(spice_client->clipboard, (char*) data, size);
+    /* Ignore data of a type Guacamole cannot represent */
+    const char* mimetype = guac_spice_clipboard_mimetype_for_type(type);
+    if (mimetype == NULL)
+        return;
+
+    /* Reject an implausibly large payload rather than passing a size that would
+     * wrap negative when narrowed to the int length taken by the clipboard
+     * (the clipboard itself caps the retained data at clipboard-buffer-size) */
+    if (size > (guint) INT_MAX)
+        return;
+
+    /* Replace clipboard contents with received data and broadcast to users. The
+     * data may be binary (for images); guac_common_clipboard stores and streams
+     * it by length, so this is safe for non-text mimetypes. */
+    guac_common_clipboard_reset(spice_client->clipboard, mimetype);
+    guac_common_clipboard_append(spice_client->clipboard, (char*) data, (int) size);
     guac_common_clipboard_send(spice_client->clipboard, client);
 
 }
@@ -107,7 +218,7 @@ static void guac_spice_clipboard_selection(SpiceMainChannel* channel,
  * Signal handler for the SPICE main channel "main-clipboard-selection-request"
  * signal, invoked when the remote guest requests the current clipboard
  * contents. The most recently received Guacamole clipboard data is sent to the
- * guest.
+ * guest, provided the requested type matches the type Guacamole currently holds.
  *
  * @return
  *     TRUE if the request was handled, FALSE otherwise.
@@ -118,20 +229,31 @@ static gboolean guac_spice_clipboard_request(SpiceMainChannel* channel,
     guac_client* client = (guac_client*) data;
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
-    /* Ignore requests if inbound (client-to-remote) transfer is disabled, the
-     * requested type is unsupported, or no clipboard data is available */
-    if (spice_client->settings->disable_paste
-            || type != VD_AGENT_CLIPBOARD_UTF8_TEXT
-            || spice_client->clipboard == NULL)
+    /* Ignore requests if inbound (client-to-remote) transfer is disabled or no
+     * clipboard data is available */
+    guac_common_clipboard* clipboard = spice_client->clipboard;
+    if (spice_client->settings->disable_paste || clipboard == NULL)
         return FALSE;
 
-    /* Provide the current clipboard contents to the guest */
-    spice_main_channel_clipboard_selection_notify(channel, selection,
-            VD_AGENT_CLIPBOARD_UTF8_TEXT,
-            (const guchar*) spice_client->clipboard->buffer,
-            spice_client->clipboard->length);
+    /* Hold the clipboard lock across the type check and notify so a concurrent
+     * paste from a Guacamole user thread (which resets/appends the clipboard)
+     * cannot swap the contents out from under us mid-request, which would send
+     * the guest a mimetype/buffer/length mismatch (especially for images). */
+    pthread_mutex_lock(&clipboard->lock);
 
-    return TRUE;
+    gboolean handled = FALSE;
+
+    /* Only respond if the guest is requesting the type we actually hold; we do
+     * not transcode between clipboard formats */
+    if (guac_spice_clipboard_type_for_mimetype(clipboard->mimetype) == type) {
+        spice_main_channel_clipboard_selection_notify(channel, selection, type,
+                (const guchar*) clipboard->buffer, clipboard->length);
+        handled = TRUE;
+    }
+
+    pthread_mutex_unlock(&clipboard->lock);
+
+    return handled;
 
 }
 
@@ -214,16 +336,20 @@ int guac_spice_clipboard_end_handler(guac_user* user, guac_stream* stream) {
         guac_recording_report_clipboard_end(spice_client->recording, stream);
 
     /* Take ownership of the SPICE clipboard on behalf of the client, offering
-     * the newly-received text to the remote guest. The guest will subsequently
-     * request the data via "main-clipboard-selection-request". */
+     * the newly-received data to the remote guest. The guest will subsequently
+     * request the data via "main-clipboard-selection-request". The offered type
+     * matches the mimetype the client sent (text or image); an unsupported
+     * mimetype is not offered. */
+    guint32 type = guac_spice_clipboard_type_for_mimetype(clipboard->mimetype);
     if (spice_client->main_channel != NULL
-            && !spice_client->settings->disable_paste) {
+            && !spice_client->settings->disable_paste
+            && type != VD_AGENT_CLIPBOARD_NONE) {
 
         /* Marshal the grab onto the SPICE event-loop thread; this handler runs
          * on a Guacamole user thread, and spice-gtk channel functions must not
          * be called off the loop thread (see guac_spice_defer_call) */
         guint32* types = g_new(guint32, 1);
-        types[0] = VD_AGENT_CLIPBOARD_UTF8_TEXT;
+        types[0] = type;
 
         guac_spice_deferred_call* call = g_new0(guac_spice_deferred_call, 1);
         call->handler = guac_spice_do_clipboard_grab;
