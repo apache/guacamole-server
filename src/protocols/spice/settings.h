@@ -394,6 +394,12 @@ typedef struct guac_spice_settings {
     bool recording_include_keys;
 
     /**
+     * Whether clipboard state changes should be included in the session
+     * recording.
+     */
+    bool recording_include_clipboard;
+
+    /**
      * Whether existing files should be appended to when creating a new
      * recording.
      */
