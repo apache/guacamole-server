@@ -277,6 +277,17 @@ typedef struct guac_spice_client {
     int resize_monitors_pushed;
 
     /**
+     * The GLib source ID of the pending debounced monitors-config flush, or 0
+     * if none is currently scheduled. Rapid client resize requests are
+     * coalesced into a single guest monitors config, sent when this timer
+     * fires, so that the guest's SPICE agent has time to apply the layout
+     * without being forced to reconfigure repeatedly (which otherwise causes
+     * the guest to thrash between clone/extend/disabled states). Accessed only
+     * from the SPICE event-loop thread.
+     */
+    guint resize_timer_source;
+
+    /**
      * Internal clipboard.
      */
     guac_common_clipboard* clipboard;

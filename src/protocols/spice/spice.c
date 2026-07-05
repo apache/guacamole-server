@@ -385,6 +385,13 @@ void* guac_spice_client_thread(void* data) {
 
     }
 
+    /* Cancel any pending debounced monitors-config flush so its timer cannot
+     * fire after the client state is torn down */
+    if (spice_client->resize_timer_source != 0) {
+        g_source_remove(spice_client->resize_timer_source);
+        spice_client->resize_timer_source = 0;
+    }
+
     /* Disconnect the SPICE session */
     spice_session_disconnect(spice_client->spice_session);
 

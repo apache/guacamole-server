@@ -270,25 +270,43 @@ static void guac_spice_monitors_recalc_offsets(guac_spice_client* spice_client) 
 }
 
 /**
- * Performs a deferred SPICE multi-monitor resize on the event-loop thread,
- * pushing the current monitor layout to the guest as a single monitors config.
+ * The debounce interval, in milliseconds, over which rapid client resize
+ * requests are coalesced into a single guest monitors config. A burst of
+ * resize requests (e.g. from a primary and secondary monitor window both
+ * resizing) results in exactly one config push per interval, giving the guest
+ * SPICE agent time to apply the layout rather than being forced to reconfigure
+ * on every request (which causes the guest to thrash between clone, extend, and
+ * disabled states).
  */
-void guac_spice_resize_try(guac_client* client) {
+#define GUAC_SPICE_RESIZE_DEBOUNCE_MS 500
 
+/**
+ * Applies the currently requested monitor layout to the guest as a single
+ * monitors config. Invoked from the debounced timer scheduled by
+ * guac_spice_resize_try(); runs on the SPICE event-loop thread.
+ *
+ * @param data
+ *     The guac_client associated with the SPICE connection.
+ *
+ * @return
+ *     Always G_SOURCE_REMOVE, so the one-shot timer is not rescheduled
+ *     automatically.
+ */
+static gboolean guac_spice_resize_flush(gpointer data) {
+
+    guac_client* client = (guac_client*) data;
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
 
-    /* Nothing to do unless a resize is queued */
-    if (!spice_client->resize_pending)
-        return;
+    /* The scheduled timer has now fired and is no longer pending */
+    spice_client->resize_timer_source = 0;
 
-    /* Wait until the guest is ready to receive a monitors config: the main
-     * channel must be up, the agent connected and advertising monitors-config
-     * support, and the display's primary surface created. spice-gtk silently
-     * drops a monitors config sent before these conditions hold. */
-    if (spice_client->main_channel == NULL
+    /* Skip if the resize was already handled or the guest is no longer ready;
+     * a subsequent resize request will reschedule once readiness returns. */
+    if (!spice_client->resize_pending
+            || spice_client->main_channel == NULL
             || !spice_client->resize_agent_ready
             || !spice_client->resize_display_ready)
-        return;
+        return G_SOURCE_REMOVE;
 
     /* Enable and position every active monitor */
     for (int i = 0; i < spice_client->monitors_count; i++) {
@@ -298,6 +316,10 @@ void guac_spice_resize_try(guac_client* client) {
         spice_main_channel_update_display(spice_client->main_channel, i,
                 monitor->left_offset, monitor->top_offset,
                 monitor->width, monitor->height, FALSE);
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "resize_try: sending monitor %d -> +%d+%d %dx%d",
+                i, monitor->left_offset, monitor->top_offset,
+                monitor->width, monitor->height);
     }
 
     /* Disable any monitors that were previously enabled but have since been
@@ -317,6 +339,48 @@ void guac_spice_resize_try(guac_client* client) {
     guac_client_log(client, GUAC_LOG_DEBUG,
             "Sent guest display config: %d monitor(s)",
             spice_client->monitors_count);
+
+    return G_SOURCE_REMOVE;
+
+}
+
+/**
+ * Requests that the current monitor layout be pushed to the guest, coalescing
+ * rapid successive requests. The actual send is debounced: the first request
+ * schedules a flush GUAC_SPICE_RESIZE_DEBOUNCE_MS milliseconds later, and
+ * further requests within that window update the monitor layout but reuse the
+ * already-pending timer, so the guest receives a single stable config per
+ * window. Must be called on the SPICE event-loop thread.
+ */
+void guac_spice_resize_try(guac_client* client) {
+
+    guac_spice_client* spice_client = (guac_spice_client*) client->data;
+
+    /* Nothing to do unless a resize is queued */
+    if (!spice_client->resize_pending)
+        return;
+
+    /* Wait until the guest is ready to receive a monitors config: the main
+     * channel must be up, the agent connected and advertising monitors-config
+     * support, and the display's primary surface created. spice-gtk silently
+     * drops a monitors config sent before these conditions hold. */
+    if (spice_client->main_channel == NULL
+            || !spice_client->resize_agent_ready
+            || !spice_client->resize_display_ready)
+        return;
+
+    /* Coalesce: if a flush is already scheduled, the latest monitor layout will
+     * be picked up when it fires — no need to schedule another. */
+    if (spice_client->resize_timer_source != 0)
+        return;
+
+    /* Schedule the debounced flush on the SPICE event-loop's private main
+     * context (the same context that drives all channel I/O) */
+    GSource* source = g_timeout_source_new(GUAC_SPICE_RESIZE_DEBOUNCE_MS);
+    g_source_set_callback(source, guac_spice_resize_flush, client, NULL);
+    spice_client->resize_timer_source =
+            g_source_attach(source, spice_client->main_context);
+    g_source_unref(source);
 
 }
 
