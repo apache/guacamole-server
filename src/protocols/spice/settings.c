@@ -91,6 +91,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "recording-exclude-output",
     "recording-exclude-mouse",
     "recording-include-keys",
+    "recording-include-clipboard",
     "create-recording-path",
     "recording-write-existing",
     "wol-send-packet",
@@ -404,6 +405,12 @@ enum SPICE_ARGS_IDX {
     IDX_RECORDING_INCLUDE_KEYS,
 
     /**
+     * Whether clipboard state changes should be included in the screen
+     * recording.
+     */
+    IDX_RECORDING_INCLUDE_CLIPBOARD,
+
+    /**
      * Whether the specified screen recording path should automatically be
      * created if it does not yet exist.
      */
@@ -709,6 +716,10 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
     settings->recording_include_keys =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_RECORDING_INCLUDE_KEYS, false);
+
+    settings->recording_include_clipboard =
+        guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_RECORDING_INCLUDE_CLIPBOARD, false);
 
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,

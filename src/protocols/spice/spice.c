@@ -351,7 +351,7 @@ void* guac_spice_client_thread(void* data) {
                 0, /* Touch events not supported */
                 settings->recording_include_keys,
                 settings->recording_write_existing,
-                0); /* Clipboard recording not yet supported for SPICE */
+                settings->recording_include_clipboard);
     }
 
 #ifdef ENABLE_COMMON_SSH
