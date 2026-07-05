@@ -103,11 +103,29 @@ int guac_spice_user_join_handler(guac_user* user, int argc, char** argv) {
             user->file_handler = guac_spice_sftp_file_handler;
 #endif
 
-        /* Generic (non-filesystem) uploads to the shared folder take precedence
-         * over SFTP when the file browser is enabled. The exposed filesystem
-         * object handles its own get/put (download/ls/upload) requests. */
-        if (settings->file_transfer && !settings->disable_upload)
-            user->file_handler = guac_spice_file_upload_file_handler;
+        /* Route the generic (non-filesystem) upload gesture according to the
+         * file-transfer mode, taking precedence over SFTP. In "agent"/"both"
+         * dropped files are pushed into the guest via the SPICE agent; in
+         * "drive" they are written to the shared folder. The exposed filesystem
+         * object still handles its own get/put (download/ls/upload) requests
+         * for the drive browser regardless of this routing. */
+        if (!settings->disable_upload) {
+            switch (settings->file_transfer_mode) {
+
+                case GUAC_SPICE_FILE_TRANSFER_AGENT:
+                case GUAC_SPICE_FILE_TRANSFER_BOTH:
+                    user->file_handler = guac_spice_file_upload_agent_handler;
+                    break;
+
+                case GUAC_SPICE_FILE_TRANSFER_DRIVE:
+                    user->file_handler = guac_spice_file_upload_file_handler;
+                    break;
+
+                case GUAC_SPICE_FILE_TRANSFER_NONE:
+                    break;
+
+            }
+        }
 
     }
 
