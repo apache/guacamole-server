@@ -24,7 +24,9 @@
 #include "spice.h"
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 #include <guacamole/recording.h>
+#include <guacamole/socket.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 #include <spice-client.h>
@@ -134,6 +136,56 @@ static const char* guac_spice_clipboard_mimetype_for_type(guint32 type) {
 }
 
 /**
+ * Records a clipboard transfer within the session recording, annotated with its
+ * direction. The annotation is emitted as a log instruction directly to the
+ * recording socket (not to any live client), so playback tooling ignores it
+ * while an audit of the recording can distinguish data copied *out* of the
+ * guest ("guest-to-client" — a potential data-exfiltration path) from data
+ * pasted *into* the guest ("client-to-guest"). Does nothing unless clipboard
+ * recording is active.
+ *
+ * @param recording
+ *     The session recording, or NULL if no recording is in progress.
+ *
+ * @param outbound
+ *     Non-zero if the transfer is guest-to-client (leaving the guest), zero if
+ *     it is client-to-guest (entering the guest).
+ *
+ * @param stream_index
+ *     The index of the recording stream carrying the clipboard data, allowing
+ *     the annotation to be correlated with the following clipboard/blob/end
+ *     instructions.
+ *
+ * @param mimetype
+ *     The mimetype of the clipboard data.
+ *
+ * @param length
+ *     The length of the clipboard data in bytes, or a negative value if not yet
+ *     known (as when a client-to-guest transfer is only beginning).
+ */
+static void guac_spice_clipboard_record_direction(guac_recording* recording,
+        int outbound, int stream_index, const char* mimetype, int length) {
+
+    /* Match the gating of guac_recording_report_clipboard() so the annotation
+     * is present exactly when the clipboard data it describes is */
+    if (recording == NULL || !recording->include_clipboard
+            || recording->socket == NULL)
+        return;
+
+    const char* direction = outbound ? "guest-to-client" : "client-to-guest";
+
+    if (length >= 0)
+        guac_protocol_send_log(recording->socket,
+                "clipboard stream=%d direction=%s mimetype=%s bytes=%d",
+                stream_index, direction, mimetype, length);
+    else
+        guac_protocol_send_log(recording->socket,
+                "clipboard stream=%d direction=%s mimetype=%s",
+                stream_index, direction, mimetype);
+
+}
+
+/**
  * Handler which performs a deferred SPICE clipboard-selection grab on the
  * event-loop thread. The offered types array is carried in call->data.
  */
@@ -211,6 +263,18 @@ static void guac_spice_clipboard_selection(SpiceMainChannel* channel,
     guac_common_clipboard_reset(spice_client->clipboard, mimetype);
     guac_common_clipboard_append(spice_client->clipboard, (char*) data, (int) size);
     guac_common_clipboard_send(spice_client->clipboard, client);
+
+    /* Record this guest-to-client transfer. Unlike client-to-guest pastes (which
+     * are recorded from their inbound stream), the outbound clipboard is
+     * broadcast per-user and so is not otherwise captured by the recording. This
+     * is the data-exfiltration direction, so it is important to audit. */
+    guac_recording* recording = spice_client->recording;
+    if (recording != NULL && recording->clipboard_stream != NULL) {
+        guac_spice_clipboard_record_direction(recording, 1,
+                recording->clipboard_stream->index, mimetype, (int) size);
+        guac_recording_report_clipboard(recording, mimetype,
+                (const char*) data, (int) size);
+    }
 
 }
 
@@ -292,10 +356,14 @@ int guac_spice_clipboard_handler(guac_user* user, guac_stream* stream,
     stream->blob_handler = guac_spice_clipboard_blob_handler;
     stream->end_handler = guac_spice_clipboard_end_handler;
 
-    /* Report clipboard within recording */
-    if (spice_client->recording != NULL)
+    /* Report clipboard within recording, annotated as a client-to-guest paste
+     * (the length is not yet known as the data is still streaming) */
+    if (spice_client->recording != NULL) {
+        guac_spice_clipboard_record_direction(spice_client->recording, 0,
+                stream->index, mimetype, -1);
         guac_recording_report_clipboard_begin(spice_client->recording, stream,
                 mimetype);
+    }
 
     return 0;
 
