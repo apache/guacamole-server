@@ -51,6 +51,43 @@
 #define GUAC_SPICE_CLIPBOARD_DEFAULT_BUFFER_SIZE 262144
 
 /**
+ * The mechanism used to transfer files that are dragged or uploaded onto the
+ * session. There is only one Guacamole file-upload handler, so exactly one
+ * mechanism claims the upload gesture; the WebDAV browser (when present) still
+ * provides download/browse independently.
+ */
+typedef enum guac_spice_file_transfer_mode {
+
+    /**
+     * No file transfer. Dragged/uploaded files are not accepted.
+     */
+    GUAC_SPICE_FILE_TRANSFER_NONE = 0,
+
+    /**
+     * Client-to-guest only. Uploaded files are pushed straight into the guest
+     * via the SPICE agent (spice-vdagent), which saves them to the user's
+     * download/desktop location per the guest's XDG configuration. No mount
+     * required; downloads are not supported.
+     */
+    GUAC_SPICE_FILE_TRANSFER_AGENT,
+
+    /**
+     * Bidirectional WebDAV shared folder. Uploaded files land in the shared
+     * folder, which the user also browses and downloads from.
+     */
+    GUAC_SPICE_FILE_TRANSFER_DRIVE,
+
+    /**
+     * Both mechanisms: the WebDAV shared folder provides browse/download, while
+     * the drag-drop upload gesture is routed to the SPICE agent (guest
+     * Downloads). This is the only configuration in which enabling the agent
+     * adds a capability the drive does not already provide.
+     */
+    GUAC_SPICE_FILE_TRANSFER_BOTH
+
+} guac_spice_file_transfer_mode;
+
+/**
  * SPICE-specific connection settings, parsed from the arguments provided when
  * a user joins the connection.
  */
@@ -220,6 +257,12 @@ typedef struct guac_spice_settings {
      * builds crash when encoding H.264/VP8/VP9).
      */
     char* preferred_video_codec;
+
+    /**
+     * The destination for files dragged/uploaded onto the session. See
+     * guac_spice_file_transfer_mode.
+     */
+    guac_spice_file_transfer_mode file_transfer_mode;
 
     /**
      * Whether folder sharing (shared directory via the SPICE WebDAV channel)

@@ -409,9 +409,19 @@ typedef struct guac_spice_deferred_call {
 
     /**
      * Optional heap-allocated payload (e.g. a copy of clipboard data or a types
-     * array), or NULL. Freed automatically after the call has been dispatched.
+     * array), or NULL. Freed automatically after the call has been dispatched
+     * (or if the loop terminates before dispatch), using data_destroy if set
+     * and g_free() otherwise. A handler that takes ownership of data must set
+     * this field to NULL to suppress the automatic free.
      */
     gpointer data;
+
+    /**
+     * Optional destructor for data. When NULL, data is released with g_free().
+     * Set this when data requires more than a flat free (e.g. owns nested
+     * allocations, file descriptors, or temporary files).
+     */
+    GDestroyNotify data_destroy;
 
     /**
      * The length of data, in bytes.

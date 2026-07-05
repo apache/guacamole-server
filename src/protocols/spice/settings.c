@@ -101,6 +101,7 @@ const char* GUAC_SPICE_CLIENT_ARGS[] = {
     "wol-wait-time",
     "preferred-video-codec",
     "secondary-monitors",
+    "file-transfer-mode",
 
     NULL
 };
@@ -464,6 +465,16 @@ enum SPICE_ARGS_IDX {
      */
     IDX_SECONDARY_MONITORS,
 
+    /**
+     * How files dragged/uploaded onto the session are transferred to the
+     * guest: "none", "agent" (SPICE agent push to the guest Downloads folder,
+     * client-to-guest only), "drive" (the bidirectional WebDAV shared folder),
+     * or "both" (drive browser for download, agent for the drag-drop upload).
+     * When blank, the mode is derived from the legacy "file-transfer" param for
+     * backwards compatibility.
+     */
+    IDX_FILE_TRANSFER_MODE,
+
     SPICE_ARGS_COUNT
 };
 
@@ -621,6 +632,34 @@ guac_spice_settings* guac_spice_parse_args(guac_user* user,
     settings->disable_upload =
         guac_user_parse_args_boolean(user, GUAC_SPICE_CLIENT_ARGS, argv,
                 IDX_DISABLE_UPLOAD, false);
+
+    /* Resolve the file-transfer mode, which decides where dragged/uploaded
+     * files go. When left blank, fall back to the legacy behaviour: the shared
+     * folder browser (if file-transfer was enabled) claimed the upload
+     * gesture. */
+    char* transfer_mode =
+        guac_user_parse_args_string(user, GUAC_SPICE_CLIENT_ARGS, argv,
+                IDX_FILE_TRANSFER_MODE, NULL);
+
+    if (transfer_mode == NULL || strcmp(transfer_mode, "") == 0)
+        settings->file_transfer_mode = settings->file_transfer
+                ? GUAC_SPICE_FILE_TRANSFER_DRIVE
+                : GUAC_SPICE_FILE_TRANSFER_NONE;
+    else if (strcmp(transfer_mode, "agent") == 0)
+        settings->file_transfer_mode = GUAC_SPICE_FILE_TRANSFER_AGENT;
+    else if (strcmp(transfer_mode, "drive") == 0)
+        settings->file_transfer_mode = GUAC_SPICE_FILE_TRANSFER_DRIVE;
+    else if (strcmp(transfer_mode, "both") == 0)
+        settings->file_transfer_mode = GUAC_SPICE_FILE_TRANSFER_BOTH;
+    else if (strcmp(transfer_mode, "none") == 0)
+        settings->file_transfer_mode = GUAC_SPICE_FILE_TRANSFER_NONE;
+    else {
+        guac_user_log(user, GUAC_LOG_WARNING, "Unknown file-transfer-mode "
+                "\"%s\"; file transfer disabled.", transfer_mode);
+        settings->file_transfer_mode = GUAC_SPICE_FILE_TRANSFER_NONE;
+    }
+
+    guac_mem_free(transfer_mode);
 
     /* If neither a plaintext nor a TLS port was provided, fall back to the
      * default SPICE port for the appropriate transport */

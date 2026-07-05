@@ -68,5 +68,25 @@ guac_user_end_handler guac_spice_file_upload_end_handler;
  */
 guac_user_put_handler guac_spice_file_upload_put_handler;
 
+/**
+ * Handler for inbound files uploaded directly to the guest via the SPICE agent
+ * (file-transfer-mode "agent"/"both"). The uploaded file is staged on the
+ * guacd host and then pushed into the guest's Downloads folder using
+ * spice_main_channel_file_copy_async(). This mechanism is client-to-guest only;
+ * it cannot retrieve files from the guest.
+ */
+guac_user_file_handler guac_spice_file_upload_agent_handler;
+
+/**
+ * Handler for stream data related to SPICE-agent file uploads.
+ */
+guac_user_blob_handler guac_spice_file_upload_agent_blob_handler;
+
+/**
+ * Handler for end-of-stream related to SPICE-agent file uploads. Triggers the
+ * actual push of the staged file into the guest.
+ */
+guac_user_end_handler guac_spice_file_upload_agent_end_handler;
+
 #endif
 

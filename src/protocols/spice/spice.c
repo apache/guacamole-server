@@ -200,7 +200,15 @@ static void guac_spice_deferred_free(gpointer user_data) {
 
     guac_spice_deferred_call* call = (guac_spice_deferred_call*) user_data;
 
-    g_free(call->data);
+    /* Release the payload, honoring a custom destructor when one was set (a
+     * handler that took ownership will have cleared call->data first) */
+    if (call->data != NULL) {
+        if (call->data_destroy != NULL)
+            call->data_destroy(call->data);
+        else
+            g_free(call->data);
+    }
+
     g_free(call);
 
 }
@@ -277,10 +285,13 @@ void* guac_spice_client_thread(void* data) {
     spice_client->spice_session = spice_session_new();
     guac_spice_session_configure(client, spice_client->spice_session);
 
-    /* Set up the shared folder file browser, if file transfer is enabled. The
-     * shared-dir property here takes precedence over the basic enable-drive
-     * sharing configured within guac_spice_session_configure(). */
-    if (settings->file_transfer && settings->file_directory != NULL) {
+    /* Set up the shared folder file browser when the file-transfer mode
+     * includes a WebDAV drive ("drive" or "both"). The shared-dir property here
+     * takes precedence over the basic enable-drive sharing configured within
+     * guac_spice_session_configure(). */
+    if ((settings->file_transfer_mode == GUAC_SPICE_FILE_TRANSFER_DRIVE
+                || settings->file_transfer_mode == GUAC_SPICE_FILE_TRANSFER_BOTH)
+            && settings->file_directory != NULL) {
 
         guac_client_log(client, GUAC_LOG_INFO,
                 "Enabling shared folder file transfer for \"%s\"%s.",
