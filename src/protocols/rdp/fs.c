@@ -414,6 +414,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
 int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, uint64_t offset,
         void* buffer, int length) {
 
+    off_t lseek_offset;
     int bytes_read;
 
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
@@ -424,7 +425,9 @@ int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, uint64_t offset,
     }
 
     /* Attempt read */
-    lseek(file->fd, offset, SEEK_SET);
+    lseek_offset = lseek(file->fd, offset, SEEK_SET);
+    if (lseek_offset < 0)
+        return guac_rdp_fs_get_errorcode(errno);
     GUAC_RETRY_EINTR(bytes_read, read(file->fd, buffer, length));
 
     /* Translate errno on error */
@@ -438,6 +441,7 @@ int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, uint64_t offset,
 int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, uint64_t offset,
         void* buffer, int length) {
 
+    off_t lseek_offset;
     int bytes_written;
 
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
@@ -448,7 +452,9 @@ int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, uint64_t offset,
     }
 
     /* Attempt write */
-    lseek(file->fd, offset, SEEK_SET);
+    lseek_offset = lseek(file->fd, offset, SEEK_SET);
+    if (lseek_offset < 0)
+        return guac_rdp_fs_get_errorcode(errno);
     GUAC_RETRY_EINTR(bytes_written, write(file->fd, buffer, length));
 
     /* Translate errno on error */
