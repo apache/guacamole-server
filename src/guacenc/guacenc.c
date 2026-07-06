@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 int main(int argc, char* argv[]) {
 
@@ -35,13 +36,14 @@ int main(int argc, char* argv[]) {
 
     /* Load defaults */
     bool force = false;
+    const char* out_file = NULL;
     int width = GUACENC_DEFAULT_WIDTH;
     int height = GUACENC_DEFAULT_HEIGHT;
     int bitrate = GUACENC_DEFAULT_BITRATE;
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "s:r:f")) != -1) {
+    while ((opt = getopt(argc, argv, "s:r:fo:")) != -1) {
 
         /* -s: Dimensions (WIDTHxHEIGHT) */
         if (opt == 's') {
@@ -62,6 +64,10 @@ int main(int argc, char* argv[]) {
         /* -f: Force */
         else if (opt == 'f')
             force = true;
+
+        /* -o: Output file ("-" for STDOUT) */
+        else if (opt == 'o')
+            out_file = optarg;
 
         /* Invalid option */
         else {
@@ -93,6 +99,14 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    /* A single explicit output cannot receive the encodings of multiple
+     * input files */
+    if (out_file != NULL && total_files != 1) {
+        guacenc_log(GUAC_LOG_ERROR, "Only one input file may be given if "
+                "the output is specified with the -o option.");
+        goto invalid_options;
+    }
+
     guacenc_log(GUAC_LOG_INFO, "%i input file(s) provided.", total_files);
 
     guacenc_log(GUAC_LOG_INFO, "Video will be encoded at %ix%i "
@@ -104,15 +118,27 @@ int main(int argc, char* argv[]) {
         /* Get current filename */
         const char* path = argv[i];
 
-        /* Generate output filename */
-        char out_path[4096];
-        int len = snprintf(out_path, sizeof(out_path), "%s.m4v", path);
+        /* Use the explicitly-provided output path, if any, streaming to
+         * STDOUT if "-" was given as the output */
+        const char* out_path;
+        char out_buffer[4096];
+        if (out_file != NULL)
+            out_path = strcmp(out_file, "-") ? out_file : GUACENC_STDOUT_PATH;
 
-        /* Do not write if filename exceeds maximum length */
-        if (len >= sizeof(out_path)) {
-            guacenc_log(GUAC_LOG_ERROR, "Cannot write output file for \"%s\": "
-                    "Name too long", path);
-            continue;
+        /* Otherwise, generate output filename from input filename */
+        else {
+
+            int len = snprintf(out_buffer, sizeof(out_buffer), "%s.m4v", path);
+
+            /* Do not write if filename exceeds maximum length */
+            if (len >= sizeof(out_buffer)) {
+                guacenc_log(GUAC_LOG_ERROR, "Cannot write output file for "
+                        "\"%s\": Name too long", path);
+                continue;
+            }
+
+            out_path = out_buffer;
+
         }
 
         /* Attempt encoding, log granular success/failure at debug level */
@@ -146,6 +172,7 @@ invalid_options:
             " [-s WIDTHxHEIGHT]"
             " [-r BITRATE]"
             " [-f]"
+            " [-o OUTPUT]"
             " [FILE]...\n", argv[0]);
 
     return 1;
