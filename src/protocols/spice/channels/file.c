@@ -149,10 +149,15 @@ guac_spice_folder* guac_spice_folder_alloc(guac_client* client, const char* fold
 
         }
 
-        if(pthread_create(&(folder->download_thread), NULL, guac_spice_file_download_monitor, (void*) folder)) {
-            guac_client_log(client, GUAC_LOG_ERROR,
-                    "%s: Unable to create Download folder thread monitor.", __func__);
-        }
+        /* The automatic download-on-create monitor is intentionally NOT
+         * started. Its transfer action is unimplemented (dead code), and the
+         * inotify thread held a raw pointer to this folder which
+         * guac_spice_folder_free() releases at disconnect without stopping or
+         * joining the thread — a use-after-free. If/when the feature is
+         * completed, re-introduce the thread together with a proper shutdown
+         * path (wake the blocking read via eventfd/self-pipe, pthread_join, and
+         * close the inotify fd inside guac_spice_folder_free() before the
+         * folder is freed). */
 
     }
 

@@ -44,6 +44,23 @@
 #define GUAC_SPICE_AUDIO_BPS 16
 
 /**
+ * Bounds on the client-advertised audio capture format and on the resampler's
+ * output size. These values are attacker-controlled (parsed from the audio
+ * stream mimetype) and feed allocation-size arithmetic, so they are bounded to
+ * prevent integer overflow and oversized allocations (CWE-190/CWE-400).
+ */
+#define GUAC_SPICE_AUDIO_MIN_RATE     8000
+#define GUAC_SPICE_AUDIO_MAX_RATE     192000
+#define GUAC_SPICE_AUDIO_MAX_CHANNELS 8
+
+/**
+ * The maximum number of output frames a single resample operation may produce.
+ * A normal input blob is a small PCM chunk, so this bound is far above any
+ * legitimate value while capping worst-case allocation to a few tens of MB.
+ */
+#define GUAC_SPICE_AUDIO_MAX_FRAMES   (GUAC_SPICE_AUDIO_MAX_RATE * 30)
+
+/**
  * Signal handler for the SPICE playback channel "playback-start" signal.
  * Allocates (or reconfigures) the Guacamole audio stream to match the format
  * reported by the SPICE server.
@@ -218,6 +235,16 @@ static int guac_spice_audio_parse_mimetype(const char* mimetype, int* rate,
     if (parsed_rate == -1)
         return 1;
 
+    /* Reject implausible sample rates / channel counts. These values are
+     * attacker-controlled (from the client's audio stream mimetype) and feed
+     * directly into resampler allocation size arithmetic; bounding them here
+     * prevents integer overflow / oversized allocations downstream (CWE-190). */
+    if (parsed_rate < GUAC_SPICE_AUDIO_MIN_RATE
+            || parsed_rate > GUAC_SPICE_AUDIO_MAX_RATE)
+        return 1;
+    if (parsed_channels < 1 || parsed_channels > GUAC_SPICE_AUDIO_MAX_CHANNELS)
+        return 1;
+
     *rate = parsed_rate;
     *channels = parsed_channels;
     *bps = parsed_bps;
@@ -246,10 +273,12 @@ static int16_t* guac_spice_resample_s16(const int16_t* in, int in_bytes,
         return NULL;
 
     long out_frames = (long) in_frames * out_rate / in_rate;
-    if (out_frames <= 0)
+    if (out_frames <= 0 || out_frames > GUAC_SPICE_AUDIO_MAX_FRAMES)
         return NULL;
 
-    int16_t* out = guac_mem_alloc(out_frames * out_channels * sizeof(int16_t));
+    /* Use the checked-multiply allocation form so the output size cannot
+     * overflow (out_frames and out_channels are both bounded above) */
+    int16_t* out = guac_mem_alloc(out_frames, out_channels, sizeof(int16_t));
     if (out == NULL)
         return NULL;
 

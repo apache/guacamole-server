@@ -39,6 +39,15 @@
 #include <unistd.h>
 
 /**
+ * The maximum number of bytes a single SPICE-agent upload may stage to the
+ * guacd host's temporary directory before it is pushed into the guest. This
+ * bounds host disk/tmpfs consumption from an over-large or endless upload
+ * stream (CWE-400 / CWE-770). Uploads exceeding this are rejected and the
+ * partial staged file is removed.
+ */
+#define GUAC_SPICE_MAX_AGENT_UPLOAD ((uint64_t) 2 * 1024 * 1024 * 1024)
+
+/**
  * Writes the given filename to the given upload path, sanitizing the filename
  * and translating the filename to the root directory.
  *
@@ -547,6 +556,23 @@ int guac_spice_file_upload_agent_blob_handler(guac_user* user,
         guac_protocol_send_ack(user->socket, stream, "FAIL (NO UPLOAD)",
                 GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(user->socket);
+        return 0;
+    }
+
+    /* Enforce a maximum staged size so an over-large or endless upload cannot
+     * exhaust the guacd host's temporary storage. Abort the transfer and let
+     * the end/free path remove the partial file. */
+    if (length < 0 || upload->bytes + (uint64_t) length
+            > GUAC_SPICE_MAX_AGENT_UPLOAD) {
+        guac_client_log(user->client, GUAC_LOG_WARNING, "Direct upload to "
+                "guest aborted: exceeds the maximum staged size of %" PRIu64
+                " bytes.", (uint64_t) GUAC_SPICE_MAX_AGENT_UPLOAD);
+        guac_protocol_send_ack(user->socket, stream, "FAIL (TOO LARGE)",
+                GUAC_PROTOCOL_STATUS_CLIENT_OVERRUN);
+        guac_socket_flush(user->socket);
+        close(upload->fd);
+        upload->fd = -1;
+        upload->aborted = 1;
         return 0;
     }
 

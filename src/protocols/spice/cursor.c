@@ -47,6 +47,19 @@ static void guac_spice_cursor_set(SpiceCursorChannel* channel,
     if (spice_client->display == NULL || rgba == NULL)
         return;
 
+    /* Ignore implausible cursor geometry supplied by the (untrusted) SPICE
+     * server. The cursor is a buffer layer, whose resize path does not clamp to
+     * GUAC_DISPLAY_MAX_*, so an oversized width/height would drive a huge
+     * allocation (CWE-400/CWE-789). */
+    if (width <= 0 || height <= 0
+            || width > GUAC_DISPLAY_MAX_WIDTH
+            || height > GUAC_DISPLAY_MAX_HEIGHT) {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Ignoring cursor with implausible dimensions %dx%d.",
+                width, height);
+        return;
+    }
+
     /* Begin drawing operation directly to the cursor layer */
     guac_display_layer* cursor_layer = guac_display_cursor(spice_client->display);
     guac_display_layer_resize(cursor_layer, width, height);
