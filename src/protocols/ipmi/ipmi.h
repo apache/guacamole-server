@@ -1,0 +1,99 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#ifndef GUAC_IPMI_H
+#define GUAC_IPMI_H
+
+#include "settings.h"
+#include "terminal/terminal.h"
+
+#include <guacamole/recording.h>
+#include <ipmiconsole.h>
+
+#include <pthread.h>
+#include <stdbool.h>
+
+/**
+ * IPMI-specific client data.
+ */
+typedef struct guac_ipmi_client {
+
+    /**
+     * IPMI connection settings.
+     */
+    guac_ipmi_settings* settings;
+
+    /**
+     * The IPMI client thread.
+     */
+    pthread_t client_thread;
+
+    /**
+     * The libipmiconsole context managing the Serial-over-LAN session, or NULL
+     * if no session has been established.
+     */
+    ipmiconsole_ctx_t console_ctx;
+
+    /**
+     * The file descriptor of the established SOL session, as returned by
+     * ipmiconsole_ctx_fd(), or -1 if no session has been established. All
+     * serial console input/output is read from and written to this descriptor.
+     */
+    int console_fd;
+
+    /**
+     * The terminal which will render all output from the SOL session.
+     */
+    guac_terminal* term;
+
+    /**
+     * Whether the in-terminal control (power management) menu is currently
+     * open. While the menu is open, keystrokes are interpreted as menu
+     * commands rather than forwarded to the serial console.
+     */
+    bool menu_open;
+
+    /**
+     * When the control menu is awaiting confirmation of a destructive power
+     * action, the action pending confirmation. GUAC_IPMI_POWER_NONE when no
+     * confirmation is in progress.
+     */
+    guac_ipmi_power_action menu_pending_action;
+
+    /**
+     * The in-progress session recording, or NULL if no recording is in
+     * progress.
+     */
+    guac_recording* recording;
+
+} guac_ipmi_client;
+
+/**
+ * Main IPMI client thread, establishing the Serial-over-LAN session and
+ * transferring SOL output to the terminal.
+ *
+ * @param data
+ *     The guac_client associated with the IPMI connection.
+ *
+ * @return
+ *     Always NULL.
+ */
+void* guac_ipmi_client_thread(void* data);
+
+#endif
