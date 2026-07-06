@@ -262,8 +262,13 @@ static void guac_spice_display_primary_create(SpiceChannel* channel,
             "SPICE primary surface created: %dx%d (stride %d, format %d).",
             width, height, stride, format);
 
-    /* Resize the Guacamole display to match the new primary surface */
-    if (spice_client->display != NULL)
+    /* Resize the Guacamole display to match the new primary surface, guarding
+     * against implausible server-supplied dimensions (defense-in-depth against
+     * an oversized allocation; CWE-400/CWE-789). */
+    if (spice_client->display != NULL
+            && width > 0 && height > 0
+            && width <= GUAC_DISPLAY_MAX_WIDTH
+            && height <= GUAC_DISPLAY_MAX_HEIGHT)
         guac_display_layer_resize(
                 guac_display_default_layer(spice_client->display),
                 width, height);
