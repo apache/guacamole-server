@@ -75,6 +75,28 @@ typedef enum guacclip_include_mode {
 } guacclip_include_mode;
 
 /**
+ * How duplicate clipboard items (items whose reassembled bytes are identical to
+ * those of an earlier item, as determined by SHA-256) should be handled.
+ */
+typedef enum guacclip_dedup_mode {
+
+    /**
+     * Keep every clipboard item, writing each to disk regardless of whether an
+     * identical item was seen earlier. Duplicates are still annotated in the
+     * manifest via the "duplicate_of" field. This is the default, as repeated
+     * copies are legitimate audit events.
+     */
+    GUACCLIP_DEDUP_NONE,
+
+    /**
+     * List duplicate items in the manifest (with "duplicate_of" set and a
+     * "duplicate" warning) but do not write their content to disk.
+     */
+    GUACCLIP_DEDUP_SKIP
+
+} guacclip_dedup_mode;
+
+/**
  * The options controlling how a recording is processed. These are populated
  * from the command line and remain constant for the lifetime of interpreting
  * a single recording.
@@ -110,6 +132,12 @@ typedef struct guacclip_options {
      * input.
      */
     size_t max_item_bytes;
+
+    /**
+     * How duplicate clipboard items (identical reassembled bytes) should be
+     * handled.
+     */
+    guacclip_dedup_mode dedup;
 
 } guacclip_options;
 
@@ -283,6 +311,15 @@ typedef struct guacclip_item {
      * no digest was computed.
      */
     char sha256[65];
+
+    /**
+     * The sequence number of the first earlier item having an identical
+     * SHA-256 digest, or -1 if this item is the first occurrence of its
+     * content (or no digest was computed). This is populated regardless of the
+     * configured dedup mode, and is serialized as "duplicate_of" in the
+     * manifest (null when -1).
+     */
+    int duplicate_of;
 
     /**
      * Whether the item was completely and consistently reassembled.

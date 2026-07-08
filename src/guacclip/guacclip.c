@@ -37,7 +37,8 @@
 enum {
     GUACCLIP_OPT_DIRECTION = 256,
     GUACCLIP_OPT_INCLUDE,
-    GUACCLIP_OPT_MAX_ITEM_BYTES
+    GUACCLIP_OPT_MAX_ITEM_BYTES,
+    GUACCLIP_OPT_DEDUP
 };
 
 int main(int argc, char* argv[]) {
@@ -53,7 +54,8 @@ int main(int argc, char* argv[]) {
         .outdir           = NULL,
         .direction_filter = NULL,
         .include          = GUACCLIP_INCLUDE_ALL,
-        .max_item_bytes   = GUACCLIP_DEFAULT_MAX_ITEM_BYTES
+        .max_item_bytes   = GUACCLIP_DEFAULT_MAX_ITEM_BYTES,
+        .dedup            = GUACCLIP_DEDUP_NONE
     };
 
     /* Define long options */
@@ -61,6 +63,7 @@ int main(int argc, char* argv[]) {
         {"direction",      required_argument, NULL, GUACCLIP_OPT_DIRECTION},
         {"include",        required_argument, NULL, GUACCLIP_OPT_INCLUDE},
         {"max-item-bytes", required_argument, NULL, GUACCLIP_OPT_MAX_ITEM_BYTES},
+        {"dedup",          required_argument, NULL, GUACCLIP_OPT_DEDUP},
         {NULL,             0,                 NULL, 0}
     };
 
@@ -121,6 +124,19 @@ int main(int argc, char* argv[]) {
                 max_item_bytes_set = true;
                 break;
             }
+
+            /* --dedup: Control handling of duplicate clipboard items */
+            case GUACCLIP_OPT_DEDUP:
+                if (strcmp(optarg, "none") == 0)
+                    options.dedup = GUACCLIP_DEDUP_NONE;
+                else if (strcmp(optarg, "skip") == 0)
+                    options.dedup = GUACCLIP_DEDUP_SKIP;
+                else {
+                    guacclip_log(GUAC_LOG_ERROR, "Invalid --dedup value "
+                            "\"%s\" (expected none or skip).", optarg);
+                    goto invalid_options;
+                }
+                break;
 
             /* Invalid option */
             default:
@@ -207,13 +223,21 @@ invalid_options:
             " [--direction guest-to-client|client-to-guest]"
             " [--include image|text|all]"
             " [--max-item-bytes N]"
+            " [--dedup none|skip]"
             " [FILE]...\n"
             "\n"
             "    --max-item-bytes N   Caps each extracted clipboard item to "
             "N bytes\n"
             "                         (default: %d, i.e. 64 MiB). Specify\n"
             "                         --max-item-bytes 0 to disable the "
-            "cap.\n",
+            "cap.\n"
+            "    --dedup none|skip    Handling of duplicate clipboard items "
+            "(identical\n"
+            "                         content). \"none\" (default) writes "
+            "every item;\n"
+            "                         \"skip\" omits duplicate content from "
+            "disk but\n"
+            "                         still lists it in the manifest.\n",
             argv[0], GUACCLIP_DEFAULT_MAX_ITEM_BYTES);
 
     return 1;
