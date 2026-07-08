@@ -1,0 +1,123 @@
+.\"
+.\" Licensed to the Apache Software Foundation (ASF) under one
+.\" or more contributor license agreements.  See the NOTICE file
+.\" distributed with this work for additional information
+.\" regarding copyright ownership.  The ASF licenses this file
+.\" to you under the Apache License, Version 2.0 (the
+.\" "License"); you may not use this file except in compliance
+.\" with the License.  You may obtain a copy of the License at
+.\"
+.\"   http://www.apache.org/licenses/LICENSE-2.0
+.\"
+.\" Unless required by applicable law or agreed to in writing,
+.\" software distributed under the License is distributed on an
+.\" "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+.\" KIND, either express or implied.  See the License for the
+.\" specific language governing permissions and limitations
+.\" under the License.
+.\"
+.TH guacclip 1 "07 Jul 2026" "version @PACKAGE_VERSION@" "Apache Guacamole"
+.
+.SH NAME
+guacclip \- Guacamole clipboard artifact extractor
+.
+.SH SYNOPSIS
+.B guacclip
+[\fB-f\fR]
+[\fB-o \fIOUTDIR\fR]
+[\fB--direction \fIguest-to-client\fR|\fIclient-to-guest\fR]
+[\fB--include \fIimage\fR|\fItext\fR|\fIall\fR]
+[\fB--max-item-bytes \fIN\fR]
+[\fIFILE\fR]...
+.
+.SH DESCRIPTION
+.B guacclip
+is a tool which accepts Guacamole protocol dumps, such as those saved as
+Guacamole session recordings, and extracts all clipboard artifacts (both text
+and images) transferred during the session. For each recording, the extracted
+items are written as individual files alongside a
+.B manifest.json
+describing each item, including its transfer direction, mimetype, size, and
+SHA-256 digest.
+.P
+.B guacclip
+is essentially an implementation of a Guacamole client which accepts its input
+from files instead of a network connection; however, unlike
+.B guacenc
+or
+.BR guaclog ,
+it handles only the instructions related to clipboard transfers.
+.P
+Clipboard content is reassembled exclusively from streams opened by the
+.B clipboard
+instruction. Blobs belonging to other stream types (such as graphical image
+updates, file transfers, or pipes) are ignored, ensuring that only genuine
+clipboard artifacts are extracted.
+.P
+Guacamole acquires a write lock on recordings as they are being written. By
+default,
+.B guacclip
+will check whether each input file is locked and will refuse to read and
+interpret an input file if it appears to be an in-progress recording. This
+behavior can be overridden by specifying the \fB-f\fR option.
+.
+.SH OPTIONS
+.TP
+\fB-f\fR
+Overrides the default behavior of
+.B guacclip
+such that input files will be interpreted even if they appear to be recordings
+of in-progress Guacamole sessions.
+.TP
+\fB-o \fIOUTDIR\fR
+Writes all extracted items and the manifest into
+.IR OUTDIR .
+If not specified, each recording is extracted into a directory named
+\fIFILE\fR.clipboard alongside the recording. The output directory and its
+\fBitems\fR subdirectory are created if they do not already exist.
+.TP
+\fB--direction \fIguest-to-client\fR|\fIclient-to-guest\fR
+Extracts only clipboard transfers in the given direction. By default,
+transfers in all directions are extracted.
+.TP
+\fB--include \fIimage\fR|\fItext\fR|\fIall\fR
+Restricts extraction to image content, textual content, or all content
+respectively. The default is
+.IR all .
+.TP
+\fB--max-item-bytes \fIN\fR
+Caps the size of any single extracted item to
+.I N
+bytes. Items exceeding this cap are recorded in the manifest as incomplete and
+oversized, and are not written to disk. If not specified, a default cap of
+67108864 bytes (64 MiB) is applied to bound memory usage when processing
+untrusted or malformed recordings. Specify \fB--max-item-bytes 0\fR to
+explicitly disable the cap and allow items of any size.
+.
+.SH OUTPUT FORMAT
+For each recording,
+.B guacclip
+creates an output directory containing an
+.B items
+subdirectory and a
+.B manifest.json
+file. Each extracted item is written into the
+.B items
+subdirectory using a filename which encodes its sequence number, offset,
+direction, stream index, mimetype, and a short prefix of its SHA-256 digest.
+.P
+The
+.B manifest.json
+file is a JSON object listing every extracted item, along with its transfer
+direction, mimetype, byte count, SHA-256 digest, and any warnings encountered
+during extraction (for example, incomplete transfers or byte-count
+mismatches).
+.P
+As a safeguard against unbounded memory growth when processing untrusted or
+malformed recordings, at most 100000 items will be recorded in the manifest
+for any single recording. If this limit is reached, a warning is logged and
+any further clipboard items are silently dropped from the manifest.
+.
+.SH SEE ALSO
+.BR guacenc (1),
+.BR guaclog (1)
