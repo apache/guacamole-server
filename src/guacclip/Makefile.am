@@ -25,6 +25,8 @@
 
 AUTOMAKE_OPTIONS = foreign
 
+SUBDIRS = . tests
+
 bin_PROGRAMS = guacclip
 
 man_MANS =        \

@@ -28,6 +28,7 @@ guacclip \- Guacamole clipboard artifact extractor
 [\fB--direction \fIguest-to-client\fR|\fIclient-to-guest\fR]
 [\fB--include \fIimage\fR|\fItext\fR|\fIall\fR]
 [\fB--max-item-bytes \fIN\fR]
+[\fB--dedup \fInone\fR|\fIskip\fR]
 [\fIFILE\fR]...
 .
 .SH DESCRIPTION
@@ -93,6 +94,22 @@ oversized, and are not written to disk. If not specified, a default cap of
 67108864 bytes (64 MiB) is applied to bound memory usage when processing
 untrusted or malformed recordings. Specify \fB--max-item-bytes 0\fR to
 explicitly disable the cap and allow items of any size.
+.TP
+\fB--dedup \fInone\fR|\fIskip\fR
+Controls how duplicate clipboard items (items whose reassembled content is
+byte-for-byte identical to that of an earlier item, as determined by SHA-256)
+are handled. With
+.IR none ,
+the default, every item is written to disk, since repeated copies are
+legitimate audit events. With
+.IR skip ,
+the content of a duplicate item is not written to disk, though the item is
+still listed in the manifest and annotated with a
+.B duplicate
+warning. In both modes, each duplicate item's
+.B duplicate_of
+field in the manifest records the sequence number of the first item having
+identical content.
 .
 .SH OUTPUT FORMAT
 For each recording,

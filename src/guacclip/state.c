@@ -402,6 +402,38 @@ static void guacclip_stream_release(guacclip_stream* stream) {
 }
 
 /**
+ * Locates the earliest previously-finalized manifest item whose SHA-256 digest
+ * matches the given digest, returning its sequence number. Used to populate the
+ * "duplicate_of" field and to drive --dedup handling. Only items which had a
+ * digest computed (i.e. non-oversized items) are considered.
+ *
+ * @param state
+ *     The interpreter state whose already-finalized items should be searched.
+ *
+ * @param sha256
+ *     The lowercase hexadecimal SHA-256 digest to search for.
+ *
+ * @return
+ *     The sequence number of the first (lowest-sequence) earlier item having
+ *     an identical digest, or -1 if no earlier item shares the digest.
+ */
+static int guacclip_find_duplicate(guacclip_state* state, const char* sha256) {
+
+    int i;
+    int first = -1;
+
+    for (i = 0; i < state->num_items; i++) {
+        guacclip_item* other = &state->items[i];
+        if (other->sha256[0] != '\0' && strcmp(other->sha256, sha256) == 0
+                && (first < 0 || other->sequence < first))
+            first = other->sequence;
+    }
+
+    return first;
+
+}
+
+/**
  * Finalizes the given clipboard stream, computing its digest, writing its file
  * (when appropriate), and appending a manifest entry. The stream is released
  * before this function returns.
@@ -448,6 +480,7 @@ static void guacclip_finalize_stream(guacclip_state* state,
     item->complete = true;
     item->filename = NULL;
     item->sha256[0] = '\0';
+    item->duplicate_of = -1;
 
     /* An oversized item is never written to disk */
     if (stream->oversized) {
@@ -474,6 +507,19 @@ static void guacclip_finalize_stream(guacclip_state* state,
     if (!stream->oversized) {
 
         guacclip_sha256_hex(stream->buffer, stream->length, item->sha256);
+
+        /* Correlate against any earlier item having identical content */
+        item->duplicate_of = guacclip_find_duplicate(state, item->sha256);
+        bool is_duplicate = item->duplicate_of >= 0;
+
+        /* In "skip" dedup mode, a duplicate's content is not written to disk;
+         * the item is still recorded in the manifest (with duplicate_of set)
+         * and annotated with a "duplicate" warning */
+        if (is_duplicate
+                && state->options->dedup == GUACCLIP_DEDUP_SKIP) {
+            guacclip_item_warn(item, "duplicate");
+        }
+        else {
 
         /* Build slug and 8-char digest prefix for the filename */
         char slug[128];
@@ -524,6 +570,8 @@ static void guacclip_finalize_stream(guacclip_state* state,
                 snprintf(rel_path, sizeof(rel_path), "items/%s", rel_name);
                 item->filename = strdup(rel_path);
             }
+
+        }
 
         }
 
@@ -905,6 +953,13 @@ static int guacclip_write_manifest(guacclip_state* state) {
 
         fprintf(file, "      \"sha256\": ");
         guacclip_json_string(file, item->sha256[0] != '\0' ? item->sha256 : NULL);
+        fprintf(file, ",\n");
+
+        fprintf(file, "      \"duplicate_of\": ");
+        if (item->duplicate_of >= 0)
+            fprintf(file, "%d", item->duplicate_of);
+        else
+            fprintf(file, "null");
         fprintf(file, ",\n");
 
         fprintf(file, "      \"complete\": %s,\n",
