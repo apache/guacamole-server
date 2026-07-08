@@ -1504,6 +1504,18 @@ AC_ARG_ENABLE([guaclog],
 AM_CONDITIONAL([ENABLE_GUACLOG], [test "x${enable_guaclog}"  = "xyes"])
 
 #
+# guacclip
+#
+
+AC_ARG_ENABLE([guacclip],
+              [AS_HELP_STRING([--disable-guacclip],
+                              [do not build the Guacamole clipboard artifact extraction tool])],
+              [],
+              [enable_guacclip=yes])
+
+AM_CONDITIONAL([ENABLE_GUACCLIP], [test "x${enable_guacclip}"  = "xyes"])
+
+#
 # Output Makefiles
 #
 
@@ -1525,6 +1537,8 @@ AC_CONFIG_FILES([Makefile
                  src/guacenc/man/guacenc.1
                  src/guaclog/Makefile
                  src/guaclog/man/guaclog.1
+                 src/guacclip/Makefile
+                 src/guacclip/man/guacclip.1
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
@@ -1555,6 +1569,7 @@ AM_COND_IF([ENABLE_SPICE],      [build_spice=yes],      [build_spice=no])
 AM_COND_IF([ENABLE_GUACD],   [build_guacd=yes],   [build_guacd=no])
 AM_COND_IF([ENABLE_GUACENC], [build_guacenc=yes], [build_guacenc=no])
 AM_COND_IF([ENABLE_GUACLOG], [build_guaclog=yes], [build_guaclog=no])
+AM_COND_IF([ENABLE_GUACCLIP], [build_guacclip=yes], [build_guacclip=no])
 
 #
 # Init scripts
@@ -1618,6 +1633,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       guacd ...... ${build_guacd}
       guacenc .... ${build_guacenc}
       guaclog .... ${build_guaclog}
+      guacclip ... ${build_guacclip}
 
    FreeRDP plugins: ${build_rdp_plugins}
    Init scripts: ${build_init}
