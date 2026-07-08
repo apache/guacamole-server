@@ -1538,6 +1538,7 @@ AC_CONFIG_FILES([Makefile
                  src/guaclog/Makefile
                  src/guaclog/man/guaclog.1
                  src/guacclip/Makefile
+                 src/guacclip/tests/Makefile
                  src/guacclip/man/guacclip.1
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile

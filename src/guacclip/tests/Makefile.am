@@ -24,36 +24,54 @@
 #
 
 AUTOMAKE_OPTIONS = foreign
+ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = . tests
+#
+# Unit tests for guacclip
+#
 
-bin_PROGRAMS = guacclip
+check_PROGRAMS = test_guacclip
+TESTS = $(check_PROGRAMS)
 
-man_MANS =        \
-    man/guacclip.1
+#
+# The test runner is generated from the test source files. The guacclip logic
+# sources (everything except guacclip.c, which provides main()) are compiled
+# directly into the test program so that the interpreter can be exercised
+# end-to-end.
+#
 
-noinst_HEADERS =   \
-    guacclip.h     \
-    instructions.h \
-    interpret.h    \
-    log.h          \
-    sha256.h       \
-    state.h
+test_guacclip_SOURCES =    \
+    test_sha256.c          \
+    test_interpret.c       \
+    ../instructions.c      \
+    ../interpret.c         \
+    ../log.c               \
+    ../sha256.c            \
+    ../state.c
 
-guacclip_SOURCES =    \
-    guacclip.c        \
-    instructions.c    \
-    interpret.c       \
-    log.c             \
-    sha256.c          \
-    state.c
+test_guacclip_CFLAGS =    \
+    -Werror -Wall         \
+    @LIBGUAC_INCLUDE@     \
+    -I$(srcdir)/..
 
-guacclip_CFLAGS =     \
-    -Werror -Wall     \
-    @LIBGUAC_INCLUDE@
-
-guacclip_LDADD =    \
+test_guacclip_LDADD =    \
+    @CUNIT_LIBS@         \
     @LIBGUAC_LTLIB@
 
-EXTRA_DIST =         \
-    man/guacclip.1.in
+#
+# Autogenerate test runner
+#
+
+GEN_RUNNER = $(top_srcdir)/util/generate-test-runner.pl
+CLEANFILES = _generated_runner.c
+
+_generated_runner.c: $(test_guacclip_SOURCES)
+	$(AM_V_GEN) $(GEN_RUNNER) $(test_guacclip_SOURCES) > $@
+
+nodist_test_guacclip_SOURCES = \
+    _generated_runner.c
+
+# Use automake's TAP test driver for running any tests
+LOG_DRIVER =                \
+    env AM_TAP_AWK='$(AWK)' \
+    $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh
