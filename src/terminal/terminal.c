@@ -1819,15 +1819,6 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         guac_terminal_notify(term);
     }
 
-    /* Track modifiers */
-    if (keysym == GUAC_TERMINAL_KEY_CTRL_L || keysym == GUAC_TERMINAL_KEY_CTRL_R)
-        term->mod_ctrl = pressed;
-    else if (keysym == GUAC_TERMINAL_KEY_META_L || keysym == GUAC_TERMINAL_KEY_META_R)
-        term->mod_meta = pressed;
-    else if (keysym == GUAC_TERMINAL_KEY_ALT_L || keysym == GUAC_TERMINAL_KEY_ALT_R)
-        term->mod_alt = pressed;
-    else if (keysym == GUAC_TERMINAL_KEY_SHIFT_L || keysym == GUAC_TERMINAL_KEY_SHIFT_R)
-
     /*
      * Super (Windows/Command) and Hyper are treated as Meta since terminals don't
      * have separate modifier bits for them.
@@ -1959,8 +1950,14 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
             else if (keysym == GUAC_TERMINAL_KEY_DELETE || keysym == GUAC_TERMINAL_KEY_KP_DELETE)
                 return guac_terminal_send_string(term, GUAC_TERMINAL_ESC_SEQ_DELETE_WORD);
 
-            /* Otherwise ignore */
-            else
+            else {
+                /* No C0 mapping — encode as CSI modifier sequence if applicable */
+                if (__guac_terminal_is_arrow_keysym(keysym))
+                    return __guac_terminal_send_modified_arrow(term, keysym);
+                if (__guac_terminal_is_function_keysym(keysym))
+                    return __guac_terminal_send_modified_function(term, keysym);
+                if (__guac_terminal_is_editing_keysym(keysym))
+                    return __guac_terminal_send_modified_editing(term, keysym);
                 return 0;
             }
 
