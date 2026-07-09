@@ -42,6 +42,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef GUAC_RDP_DISABLE_GFX_DEFAULT
+#define GUAC_RDP_DISABLE_GFX_DEFAULT 0
+#endif
+
 /**
  * A warning to log when NLA mode is selected while FIPS mode is active on the
  * guacd server.
@@ -1235,10 +1239,22 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->resize_method = GUAC_RESIZE_NONE;
     }
 
-    /* RDP Graphics Pipeline enable/disable */
+    /*
+     * RDP Graphics Pipeline enable/disable. Guacamole 1.6 enables GFX by
+     * default when disable-gfx is omitted.
+     */
     settings->enable_gfx =
         !guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_DISABLE_GFX, 0);
+                IDX_DISABLE_GFX, GUAC_RDP_DISABLE_GFX_DEFAULT);
+
+#if !defined(HAVE_RDPGFX_WINDOW_SURFACE_UPDATE) \
+        && !defined(HAVE_RDPGFX_SURFACE_AREA_UPDATE)
+    if (settings->remote_app != NULL && settings->enable_gfx) {
+        guac_user_log(user, GUAC_LOG_WARNING, "RDPGFX is not supported for "
+                "RemoteApp by this FreeRDP build. RDPGFX will be disabled.");
+        settings->enable_gfx = 0;
+    }
+#endif
 
     /* Session color depth */
     settings->color_depth =
@@ -1544,6 +1560,19 @@ void guac_rdp_push_settings(guac_client* client,
 
         freerdp_settings_set_bool(rdp_settings, FreeRDP_SupportGraphicsPipeline, TRUE);
         freerdp_settings_set_bool(rdp_settings, FreeRDP_RemoteFxCodec, TRUE);
+        if (guac_settings->remote_app != NULL) {
+            /*
+             * MS-RDPEGFX +gfx-progressive
+             * Enable progressive RDPGFX only for RemoteApp. Full-desktop
+             * progressive updates can leave drag/resize artifacts (fix it), while RAIL
+             * windows are rendered as separate layers and repaint independently.
+             * TODO: Evaluate FreeRDP_GfxProgressiveV2 for high-resolution or
+             * high-throughput deployments. Keep it off by default until its
+             * behavior on low-bandwidth/high-latency connections is known.
+             */
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_GfxProgressive, TRUE);
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_GfxThinClient, FALSE);
+        }
 
         if (freerdp_settings_get_uint32(rdp_settings, FreeRDP_ColorDepth) != RDP_GFX_REQUIRED_DEPTH) {
             guac_client_log(client, GUAC_LOG_WARNING, "Ignoring requested "
@@ -1679,7 +1708,6 @@ void guac_rdp_push_settings(guac_client* client,
         freerdp_settings_set_string(rdp_settings, FreeRDP_CertificateAcceptedFingerprints, 
                 guac_strdup(guac_settings->certificate_fingerprints));
 
-
     /* RemoteApp */
     if (guac_settings->remote_app != NULL) {
         freerdp_settings_set_bool(rdp_settings, FreeRDP_Workarea, TRUE);
@@ -1779,6 +1807,10 @@ void guac_rdp_push_settings(guac_client* client,
 
         rdp_settings->SupportGraphicsPipeline = TRUE;
         rdp_settings->RemoteFxCodec = TRUE;
+        if (guac_settings->remote_app != NULL) {
+            rdp_settings->GfxProgressive = TRUE;
+            rdp_settings->GfxThinClient = FALSE;
+        }
 
         if (rdp_settings->ColorDepth != RDP_GFX_REQUIRED_DEPTH) {
             guac_client_log(client, GUAC_LOG_WARNING, "Ignoring requested "

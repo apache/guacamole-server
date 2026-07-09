@@ -17,7 +17,10 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/rdpgfx.h"
+#include "channels/rail.h"
 #include "plugins/channels.h"
 #include "rdp.h"
 #include "settings.h"
@@ -58,16 +61,72 @@ static void guac_rdp_rdpgfx_channel_connected(rdpContext* context,
     if (strcmp(args->name, RDPGFX_DVC_CHANNEL_NAME) != 0)
         return;
 
-    /* Init GDI-backed support for the Graphics Pipeline */
     RdpgfxClientContext* rdpgfx = (RdpgfxClientContext*) args->pInterface;
     rdpGdi* gdi = context->gdi;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+    BOOL gfx_initialized;
 
-    if (!gdi_graphics_pipeline_init(gdi, rdpgfx))
+    if (!settings->enable_gfx) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Ignoring RDPGFX channel "
+                "connection because RDPGFX is disabled.");
+        rdp_client->rdpgfx_interface = NULL;
+        return;
+    }
+
+    /*
+    * Choose the RAIL+GFX hookup based on FreeRDP capabilities:
+    *
+    *   If UpdateWindowFromSurface is available, use the normal graphics
+    *   pipeline and render RemoteApp windows through that callback.
+    *
+    *   If only UpdateSurfaceArea is available, use the _ex initializer and
+    *   route RemoteApp window updates through our custom surface-area handler.
+    *
+    *   On older FreeRDP versions, fall back to the default pipeline. In that
+    *   case, RemoteApp with GFX will not render correctly and GFX must be
+    *   disabled.
+    */
+#if defined(HAVE_RDPGFX_WINDOW_SURFACE_UPDATE)
+    gfx_initialized = (settings->remote_app != NULL)
+        ? gdi_graphics_pipeline_init_ex(gdi, rdpgfx,
+                guac_rdp_rail_map_window_for_surface,
+                guac_rdp_rail_unmap_window_for_surface, NULL)
+        : gdi_graphics_pipeline_init(gdi, rdpgfx);
+#elif defined(HAVE_RDPGFX_SURFACE_AREA_UPDATE)
+    gfx_initialized = (settings->remote_app != NULL)
+        ? gdi_graphics_pipeline_init_ex(gdi, rdpgfx,
+                guac_rdp_rail_map_window_for_surface,
+                guac_rdp_rail_unmap_window_for_surface,
+                guac_rdp_rail_update_surface_area)
+        : gdi_graphics_pipeline_init(gdi, rdpgfx);
+#else
+    if (settings->remote_app != NULL) {
+        guac_client_log(client, GUAC_LOG_WARNING, "RDPGFX is connected, but "
+                "this FreeRDP build does not expose RemoteApp surface update "
+                "callbacks. Falling back to GDI rendering.");
+        rdp_client->rdpgfx_interface = NULL;
+        return;
+    }
+
+    gfx_initialized = gdi_graphics_pipeline_init(gdi, rdpgfx);
+#endif
+
+    if (!gfx_initialized) {
+        rdp_client->rdpgfx_interface = NULL;
         guac_client_log(client, GUAC_LOG_WARNING, "Rendering backend for RDPGFX "
                 "channel could not be loaded. Graphics may not render at all!");
-    else
+    } 
+    else {
+        rdp_client->rdpgfx_interface = rdpgfx;
+#ifdef HAVE_RDPGFX_WINDOW_SURFACE_UPDATE
+        if (settings->remote_app != NULL)
+            rdpgfx->UpdateWindowFromSurface =
+                guac_rdp_rail_update_window_from_surface;
+#endif
         guac_client_log(client, GUAC_LOG_DEBUG, "RDPGFX channel will be used for "
                 "the RDP Graphics Pipeline Extension.");
+    }
 
 }
 
@@ -98,7 +157,9 @@ static void guac_rdp_rdpgfx_channel_disconnected(rdpContext* context,
 
     /* Un-init GDI-backed support for the Graphics Pipeline */
     RdpgfxClientContext* rdpgfx = (RdpgfxClientContext*) args->pInterface;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     rdpGdi* gdi = context->gdi;
+    rdp_client->rdpgfx_interface = NULL;
     gdi_graphics_pipeline_uninit(gdi, rdpgfx);
 
     guac_client_log(client, GUAC_LOG_DEBUG, "RDPGFX channel support unloaded.");
@@ -119,4 +180,3 @@ void guac_rdp_rdpgfx_load_plugin(rdpContext* context) {
     guac_freerdp_dynamic_channel_collection_add(context->settings, "rdpgfx", NULL);
 
 }
-

@@ -108,6 +108,13 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height) {
     guac_rdp_settings* settings = rdp_client->settings;
     freerdp* rdp_inst = rdp_client->rdp_inst;
 
+    if (settings->remote_app != NULL) {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Ignoring display resize for RemoteApp session: %ix%i.",
+                width, height);
+        return 0;
+    }
+
     /* Convert client pixels to remote pixels */
     width  = width  * settings->resolution / user->info.optimal_resolution;
     height = height * settings->resolution / user->info.optimal_resolution;

@@ -33,7 +33,6 @@
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
 #include "color.h"
-#include "config.h"
 #include "error.h"
 #include "fs.h"
 #include "gdi.h"
@@ -454,8 +453,6 @@ static int rdp_guac_client_wait_for_events(guac_client* client,
     DWORD result = WaitForMultipleObjects(num_handles, handles, FALSE,
             timeout_msecs);
 
-    ResetEvent(rdp_client->input_event_queued);
-
     /* Translate WaitForMultipleObjects() return values */
     switch (result) {
 
@@ -533,6 +530,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Create display */
     rdp_client->display = guac_display_alloc(client);
+    rdp_client->rail_background_painted = 0;
 
     guac_display_layer* default_layer = guac_display_default_layer(rdp_client->display);
     guac_display_layer_resize(default_layer, rdp_client->settings->width, rdp_client->settings->height);
@@ -611,6 +609,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_rwlock_release_lock(&(rdp_client->lock));
 
     rdp_client->render_thread = guac_display_render_thread_create(rdp_client->display);
+    if (rdp_client->gdi_modified)
+        guac_display_render_thread_notify_modified(rdp_client->render_thread);
 
     /* Handle messages from RDP server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING
@@ -627,6 +627,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
         int connection_closing = 0;
         do {
+            /* Keep input responsive even if RDPGFX events keep arriving. */
+            guac_rdp_handle_input_events(rdp_client);
 
             /* Handle any queued FreeRDP events (this may result in RDP messages
              * being sent), aborting later if FreeRDP event handling fails */
@@ -682,6 +684,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Stop render loop */
     guac_display_render_thread_destroy(rdp_client->render_thread);
     rdp_client->render_thread = NULL;
+
+    /* Free any RAIL windows tracked for RemoteApp rendering */
+    guac_rdp_rail_free_windows(rdp_client);
 
     /* Remove reference to FreeRDP's GDI buffer so that it can be safely freed
      * prior to freeing the guac_display */
