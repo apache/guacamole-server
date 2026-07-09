@@ -556,8 +556,9 @@ int main(int argc, char* argv[]) {
         /* Set TCP_NODELAY to avoid any latency that would otherwise be added by the OS'
          * networking stack and Nagle's algorithm */
         const int SO_TRUE = 1;
-        setsockopt(connected_socket_fd, IPPROTO_TCP, TCP_NODELAY,
-                (const void*) &SO_TRUE, sizeof(SO_TRUE));
+        if (setsockopt(connected_socket_fd, IPPROTO_TCP, TCP_NODELAY,
+                (const void*) &SO_TRUE, sizeof(SO_TRUE)))
+            guacd_log(GUAC_LOG_WARNING, "Unable to set TCP_NODELAY on socket: %s", strerror(errno));
 
         /* Create parameters for connection thread */
         guacd_connection_thread_params* params = guac_mem_alloc(sizeof(guacd_connection_thread_params));
