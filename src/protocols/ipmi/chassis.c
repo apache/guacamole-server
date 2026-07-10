@@ -368,3 +368,126 @@ int guac_ipmi_chassis_identify(guac_client* client, int interval, bool force) {
     return result;
 
 }
+
+/**
+ * The maximum number of System Event Log entries retained by the viewer (the
+ * most recent entries).
+ */
+#define GUAC_IPMI_SEL_MAX_ENTRIES 20
+
+/**
+ * The maximum length, in bytes, of a single formatted SEL entry line.
+ */
+#define GUAC_IPMI_SEL_LINE_LENGTH 160
+
+/**
+ * State accumulated while parsing the System Event Log. Formatted entries are
+ * stored in a ring buffer such that, after parsing, the buffer holds the most
+ * recent GUAC_IPMI_SEL_MAX_ENTRIES entries.
+ */
+typedef struct guac_ipmi_sel_state {
+
+    /**
+     * Ring buffer of formatted SEL entry lines.
+     */
+    char lines[GUAC_IPMI_SEL_MAX_ENTRIES][GUAC_IPMI_SEL_LINE_LENGTH];
+
+    /**
+     * The total number of SEL records parsed so far.
+     */
+    int total;
+
+} guac_ipmi_sel_state;
+
+/**
+ * libfreeipmi SEL parse callback. Formats the current SEL record into the ring
+ * buffer maintained by the given guac_ipmi_sel_state.
+ *
+ * @param sel_ctx
+ *     The SEL parse context, positioned at the record to format.
+ *
+ * @param data
+ *     A pointer to the guac_ipmi_sel_state accumulating formatted entries.
+ *
+ * @return
+ *     Zero to continue parsing.
+ */
+static int guac_ipmi_sel_callback(ipmi_sel_ctx_t sel_ctx, void* data) {
+
+    guac_ipmi_sel_state* state = (guac_ipmi_sel_state*) data;
+    char* slot = state->lines[state->total % GUAC_IPMI_SEL_MAX_ENTRIES];
+
+    /* Format "<id>  <date> <time>  <sensor>  <event>" using the current record.
+     * A NULL record with zero length refers to the record the callback is
+     * positioned on. */
+    if (ipmi_sel_parse_read_record_string(sel_ctx, "%i  %d %t  %s  %e",
+                NULL, 0, slot, GUAC_IPMI_SEL_LINE_LENGTH,
+                IPMI_SEL_STRING_FLAGS_DEFAULT) < 0)
+        slot[0] = '\0';
+
+    state->total++;
+    return 0;
+
+}
+
+int guac_ipmi_chassis_sel(guac_client* client, char* buffer, int size) {
+
+    ipmi_ctx_t ctx = guac_ipmi_chassis_connect(client);
+    if (ctx == NULL)
+        return 1;
+
+    int result = 1;
+
+    /* A NULL SDR context yields slightly less descriptive sensor names but
+     * avoids the cost and complexity of caching the SDR repository. */
+    ipmi_sel_ctx_t sel_ctx = ipmi_sel_ctx_create(ctx, NULL);
+    if (sel_ctx != NULL) {
+
+        guac_ipmi_sel_state state;
+        state.total = 0;
+
+        if (ipmi_sel_parse(sel_ctx, IPMI_SEL_RECORD_ID_FIRST,
+                    IPMI_SEL_RECORD_ID_LAST, guac_ipmi_sel_callback,
+                    &state) >= 0) {
+
+            int offset = 0;
+
+            if (state.total == 0)
+                snprintf(buffer, size, "System Event Log is empty.\r\n");
+
+            else {
+
+                /* Emit only the most recent entries retained in the ring */
+                int shown = state.total < GUAC_IPMI_SEL_MAX_ENTRIES
+                        ? state.total : GUAC_IPMI_SEL_MAX_ENTRIES;
+                int start = state.total - shown;
+
+                offset += snprintf(buffer + offset, size - offset,
+                        "Last %i of %i System Event Log entries:\r\n",
+                        shown, state.total);
+
+                for (int i = start; i < state.total && offset < size - 1; i++)
+                    offset += snprintf(buffer + offset, size - offset, "%s\r\n",
+                            state.lines[i % GUAC_IPMI_SEL_MAX_ENTRIES]);
+
+            }
+
+            result = 0;
+        }
+
+        else
+            guac_client_log(client, GUAC_LOG_ERROR,
+                    "Unable to read System Event Log: %s",
+                    ipmi_sel_ctx_errormsg(sel_ctx));
+
+        ipmi_sel_ctx_destroy(sel_ctx);
+    }
+
+    else
+        guac_client_log(client, GUAC_LOG_ERROR,
+                "Unable to create System Event Log context.");
+
+    guac_ipmi_chassis_disconnect(ctx);
+    return result;
+
+}
