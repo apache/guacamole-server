@@ -225,7 +225,9 @@ static ipmiconsole_ctx_t __guac_ipmi_create_session(guac_client* client) {
             settings->timeout > 0 ? settings->timeout * 1000 : -1,
         .retransmission_timeout_len           = -1,
         .retransmission_backoff_count         = -1,
-        .keepalive_timeout_len                = -1,
+        .keepalive_timeout_len                =
+            settings->keepalive_interval > 0
+                ? settings->keepalive_interval * 1000 : -1,
         .retransmission_keepalive_timeout_len = -1,
         .acceptable_packet_errors_count       = -1,
         .maximum_retransmission_count         = -1
@@ -286,7 +288,7 @@ static void __guac_ipmi_apply_connect_actions(guac_client* client) {
     /* Apply any boot device override prior to powering the system on */
     if (settings->boot_device != GUAC_IPMI_BOOT_NONE) {
         if (guac_ipmi_chassis_set_boot_device(client, settings->boot_device,
-                    false) == 0)
+                    settings->boot_persistent) == 0)
             guac_client_log(client, GUAC_LOG_INFO,
                     "Applied boot device override.");
     }
