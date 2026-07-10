@@ -207,6 +207,13 @@ typedef struct guac_ipmi_settings {
     int timeout;
 
     /**
+     * The interval, in seconds, at which SOL keepalive packets are sent to
+     * prevent idle BMCs from silently dropping the session. Zero requests the
+     * libipmiconsole default.
+     */
+    int keepalive_interval;
+
+    /**
      * The username to authenticate with, if any. NULL if unspecified (the BMC
      * default / null username is used).
      */
@@ -279,6 +286,12 @@ typedef struct guac_ipmi_settings {
      * boot order should be left unchanged.
      */
     guac_ipmi_boot_device boot_device;
+
+    /**
+     * Whether a configured boot device override should persist across all
+     * subsequent boots rather than applying only to the next boot.
+     */
+    bool boot_persistent;
 
     /**
      * Whether this connection is read-only, and user input should be dropped.

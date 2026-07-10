@@ -72,6 +72,8 @@ const char* GUAC_IPMI_CLIENT_ARGS[] = {
     "scrollback",
     "disable-copy",
     "disable-paste",
+    "boot-device-persistent",
+    "keepalive-interval",
     NULL
 };
 
@@ -270,6 +272,19 @@ enum IPMI_ARGS_IDX {
      * Whether inbound clipboard access should be blocked.
      */
     IDX_DISABLE_PASTE,
+
+    /**
+     * Whether a configured boot device override should persist across
+     * subsequent boots rather than applying only to the next boot. Optional;
+     * defaults to false (next boot only).
+     */
+    IDX_BOOT_DEVICE_PERSISTENT,
+
+    /**
+     * The interval, in seconds, at which SOL keepalive packets are sent. Zero
+     * uses the libipmiconsole default. Optional.
+     */
+    IDX_KEEPALIVE_INTERVAL,
 
     IPMI_ARGS_COUNT
 };
@@ -672,6 +687,11 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_IPMI_CLIENT_ARGS, argv,
                 IDX_TIMEOUT, GUAC_IPMI_DEFAULT_TIMEOUT);
 
+    /* Read SOL keepalive interval (0 = libipmiconsole default) */
+    settings->keepalive_interval =
+        guac_user_parse_args_int(user, GUAC_IPMI_CLIENT_ARGS, argv,
+                IDX_KEEPALIVE_INTERVAL, 0);
+
     /* Read credentials */
     settings->username =
         guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
@@ -733,6 +753,10 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
     settings->boot_device = guac_ipmi_parse_boot_device(user,
             guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
                     IDX_BOOT_DEVICE, "none"));
+
+    settings->boot_persistent =
+        guac_user_parse_args_boolean(user, GUAC_IPMI_CLIENT_ARGS, argv,
+                IDX_BOOT_DEVICE_PERSISTENT, false);
 
     /* Read-only mode */
     settings->read_only =
