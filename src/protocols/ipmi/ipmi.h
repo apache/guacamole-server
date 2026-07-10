@@ -77,6 +77,13 @@ typedef struct guac_ipmi_client {
     guac_ipmi_power_action menu_pending_action;
 
     /**
+     * Whether the control menu is displaying the result of a completed action
+     * and is waiting for any keypress to dismiss it and return to the serial
+     * console.
+     */
+    bool menu_awaiting_dismiss;
+
+    /**
      * The in-progress session recording, or NULL if no recording is in
      * progress.
      */

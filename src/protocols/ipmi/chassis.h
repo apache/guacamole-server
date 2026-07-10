@@ -104,4 +104,22 @@ int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size);
  */
 int guac_ipmi_chassis_identify(guac_client* client, int interval, bool force);
 
+/**
+ * Reads the most recent entries from the BMC's System Event Log (SEL) and
+ * writes them, one per line, into the given buffer as human-readable text.
+ *
+ * @param client
+ *     The guac_client whose settings describe the BMC to connect to.
+ *
+ * @param buffer
+ *     The buffer into which the formatted SEL entries should be written.
+ *
+ * @param size
+ *     The size of the given buffer, in bytes. Output is truncated to fit.
+ *
+ * @return
+ *     Zero if the System Event Log was read successfully, non-zero otherwise.
+ */
+int guac_ipmi_chassis_sel(guac_client* client, char* buffer, int size);
+
 #endif
