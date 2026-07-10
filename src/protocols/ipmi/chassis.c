@@ -155,10 +155,10 @@ static ipmi_ctx_t guac_ipmi_chassis_connect(guac_client* client) {
         return NULL;
     }
 
-    /* The BMC key (K_g) is optional; its length is required separately as it
-     * may legitimately contain null bytes. */
+    /* The BMC key (K_g) is optional; its length is stored separately as it may
+     * legitimately contain null bytes. */
     const unsigned char* k_g = (const unsigned char*) settings->k_g;
-    unsigned int k_g_len = settings->k_g != NULL ? strlen(settings->k_g) : 0;
+    unsigned int k_g_len = settings->k_g_length;
 
     /* Open an IPMI 2.0 (RMCP+) out-of-band session. Session and retransmission
      * timeouts of 0 request the library defaults. */
@@ -171,7 +171,7 @@ static ipmi_ctx_t guac_ipmi_chassis_connect(guac_client* client) {
                 (uint8_t) settings->cipher_suite,
                 GUAC_IPMI_CHASSIS_SESSION_TIMEOUT,
                 GUAC_IPMI_CHASSIS_RETRANSMISSION_TIMEOUT,
-                0 /* workaround flags */,
+                settings->chassis_workaround_flags,
                 0 /* flags */) < 0) {
         guac_client_log(client, GUAC_LOG_ERROR,
                 "Unable to open IPMI session for chassis command: %s",

@@ -126,7 +126,7 @@ int guac_ipmi_client_free_handler(guac_client* client) {
     if (ipmi_client->console_ctx != NULL) {
         pthread_join(ipmi_client->client_thread, NULL);
         ipmiconsole_ctx_destroy(ipmi_client->console_ctx);
-        ipmiconsole_engine_teardown(0);
+        guac_ipmi_engine_unref();
     }
 
     /* Free settings */

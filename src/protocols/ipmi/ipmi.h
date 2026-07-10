@@ -96,4 +96,22 @@ typedef struct guac_ipmi_client {
  */
 void* guac_ipmi_client_thread(void* data);
 
+/**
+ * Acquires a reference to the process-global libipmiconsole engine,
+ * initializing it if this is the first reference. Each successful call must be
+ * balanced by a later call to guac_ipmi_engine_unref(). This is thread-safe.
+ *
+ * @return
+ *     Zero on success, or negative if the engine could not be initialized (in
+ *     which case no reference is held).
+ */
+int guac_ipmi_engine_ref();
+
+/**
+ * Releases a reference to the process-global libipmiconsole engine, tearing it
+ * down once the final reference is released. Must only be called to balance a
+ * prior successful guac_ipmi_engine_ref(). This is thread-safe.
+ */
+void guac_ipmi_engine_unref();
+
 #endif

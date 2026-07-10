@@ -42,6 +42,53 @@
 #include <unistd.h>
 
 /**
+ * Lock guarding the process-global libipmiconsole engine reference count. The
+ * libipmiconsole engine is a single process-wide resource; initializing or
+ * tearing it down per connection would race with, and disrupt, any other IPMI
+ * connections active within the same guacd process.
+ */
+static pthread_mutex_t guac_ipmi_engine_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * The number of IPMI connections currently holding the libipmiconsole engine.
+ * The engine is initialized when this count rises from zero and torn down when
+ * it returns to zero.
+ */
+static int guac_ipmi_engine_refcount = 0;
+
+int guac_ipmi_engine_ref() {
+
+    int result = 0;
+
+    pthread_mutex_lock(&guac_ipmi_engine_lock);
+
+    /* Initialize the shared engine only on the first reference */
+    if (guac_ipmi_engine_refcount == 0)
+        result = ipmiconsole_engine_init(0, 0);
+
+    /* Take the reference only if the engine is available */
+    if (result == 0)
+        guac_ipmi_engine_refcount++;
+
+    pthread_mutex_unlock(&guac_ipmi_engine_lock);
+
+    return result;
+
+}
+
+void guac_ipmi_engine_unref() {
+
+    pthread_mutex_lock(&guac_ipmi_engine_lock);
+
+    /* Tear down the shared engine only once the last reference is released */
+    if (guac_ipmi_engine_refcount > 0 && --guac_ipmi_engine_refcount == 0)
+        ipmiconsole_engine_teardown(0);
+
+    pthread_mutex_unlock(&guac_ipmi_engine_lock);
+
+}
+
+/**
  * Write the entire buffer given to the specified file descriptor, retrying the
  * write automatically if necessary.
  *
@@ -167,10 +214,10 @@ static ipmiconsole_ctx_t __guac_ipmi_create_session(guac_client* client) {
         .username         = settings->username,
         .password         = settings->password,
         .k_g              = (unsigned char*) settings->k_g,
-        .k_g_len          = settings->k_g != NULL ? strlen(settings->k_g) : 0,
+        .k_g_len          = settings->k_g_length,
         .privilege_level  = settings->privilege_level,
         .cipher_suite_id  = settings->cipher_suite,
-        .workaround_flags = 0
+        .workaround_flags = settings->sol_workaround_flags
     };
 
     struct ipmiconsole_protocol_config protocol_config = {
@@ -322,8 +369,30 @@ void* guac_ipmi_client_thread(void* data) {
                 settings->typescript_write_existing);
     }
 
-    /* Initialize the libipmiconsole engine */
-    if (ipmiconsole_engine_init(0, 0) < 0) {
+    /* Enforce the configured encryption policy before establishing any session
+     * with the BMC */
+    if (!guac_ipmi_cipher_provides_confidentiality(settings->cipher_suite)) {
+
+        if (settings->encryption_policy == GUAC_IPMI_ENCRYPTION_REQUIRED) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                    "Cipher suite %i does not provide confidentiality "
+                    "(payload encryption), but the encryption policy requires "
+                    "it. Refusing to connect. Select an encrypting cipher "
+                    "suite (e.g. 3 or 17) or relax the encryption policy.",
+                    settings->cipher_suite);
+            return NULL;
+        }
+
+        if (settings->encryption_policy == GUAC_IPMI_ENCRYPTION_PREFERRED)
+            guac_client_log(client, GUAC_LOG_WARNING, "Cipher suite %i does "
+                    "not provide confidentiality; the SOL session and "
+                    "credentials will NOT be encrypted on the wire.",
+                    settings->cipher_suite);
+
+    }
+
+    /* Initialize (or reference) the shared libipmiconsole engine */
+    if (guac_ipmi_engine_ref() < 0) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Unable to initialize IPMI console engine.");
         return NULL;
@@ -333,7 +402,7 @@ void* guac_ipmi_client_thread(void* data) {
     ipmi_client->console_ctx = __guac_ipmi_create_session(client);
     if (ipmi_client->console_ctx == NULL) {
         /* Already aborted within __guac_ipmi_create_session() */
-        ipmiconsole_engine_teardown(0);
+        guac_ipmi_engine_unref();
         return NULL;
     }
 

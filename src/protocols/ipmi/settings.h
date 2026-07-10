@@ -157,6 +157,33 @@ typedef enum guac_ipmi_boot_device {
 } guac_ipmi_boot_device;
 
 /**
+ * A policy governing whether the negotiated RMCP+ cipher suite must provide
+ * confidentiality (payload encryption). The connection console and credentials
+ * are only protected on the wire when an encrypting cipher suite is used.
+ */
+typedef enum guac_ipmi_encryption_policy {
+
+    /**
+     * Require an encrypting cipher suite. The connection is refused if the
+     * configured cipher suite does not provide confidentiality. This is the
+     * default.
+     */
+    GUAC_IPMI_ENCRYPTION_REQUIRED = 0,
+
+    /**
+     * Prefer an encrypting cipher suite, but allow a non-encrypting one with a
+     * logged warning.
+     */
+    GUAC_IPMI_ENCRYPTION_PREFERRED,
+
+    /**
+     * Allow any cipher suite, including those providing no confidentiality.
+     */
+    GUAC_IPMI_ENCRYPTION_NONE
+
+} guac_ipmi_encryption_policy;
+
+/**
  * Settings for the IPMI Serial-over-LAN connection. The values for this
  * structure are parsed from the arguments given during the Guacamole protocol
  * handshake using the guac_ipmi_parse_args() function.
@@ -192,9 +219,17 @@ typedef struct guac_ipmi_settings {
 
     /**
      * The BMC key (K_g) for two-key authentication, if any. NULL if
-     * unspecified, in which case the password is used as the BMC key.
+     * unspecified, in which case the password is used as the BMC key. This is
+     * a raw byte buffer that may contain NUL bytes; its length is given by
+     * k_g_length rather than being NUL-terminated for length purposes.
      */
     char* k_g;
+
+    /**
+     * The length of the K_g key, in bytes. Zero if k_g is NULL. Stored
+     * separately because a binary K_g key may legitimately contain NUL bytes.
+     */
+    int k_g_length;
 
     /**
      * The privilege level to authenticate with.
@@ -206,6 +241,25 @@ typedef struct guac_ipmi_settings {
      * confidentiality algorithms used.
      */
     int cipher_suite;
+
+    /**
+     * The policy governing whether a non-confidential cipher suite is
+     * permitted.
+     */
+    guac_ipmi_encryption_policy encryption_policy;
+
+    /**
+     * Workaround flags applied to the libipmiconsole SOL session, as a bitwise
+     * OR of IPMICONSOLE_WORKAROUND_* values. Zero if no workarounds apply.
+     */
+    unsigned int sol_workaround_flags;
+
+    /**
+     * Workaround flags applied to the libfreeipmi chassis session, as a bitwise
+     * OR of IPMI_WORKAROUND_FLAGS_OUTOFBAND_2_0_* values. Zero if no workarounds
+     * apply.
+     */
+    unsigned int chassis_workaround_flags;
 
     /**
      * The SOL payload instance to use (1-15).
@@ -387,6 +441,19 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
  *     The settings object to free.
  */
 void guac_ipmi_settings_free(guac_ipmi_settings* settings);
+
+/**
+ * Returns whether the given RMCP+ cipher suite ID provides confidentiality
+ * (payload encryption). Suites 0, 1, 2, 6, 7, 11, 15, and 16 (and any
+ * unrecognized suite) provide no confidentiality.
+ *
+ * @param cipher_suite
+ *     The cipher suite ID to test.
+ *
+ * @return
+ *     Non-zero if the cipher suite encrypts the payload, zero otherwise.
+ */
+int guac_ipmi_cipher_provides_confidentiality(int cipher_suite);
 
 /**
  * NULL-terminated array of accepted client args.
