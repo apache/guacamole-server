@@ -80,6 +80,7 @@ int guac_client_init(guac_client* client) {
     ipmi_client->console_fd = -1;
     ipmi_client->menu_open = false;
     ipmi_client->menu_pending_action = GUAC_IPMI_POWER_NONE;
+    pthread_mutex_init(&ipmi_client->menu_lock, NULL);
 
     /* Set handlers */
     client->join_handler = guac_ipmi_user_join_handler;
@@ -109,6 +110,14 @@ int guac_ipmi_client_free_handler(guac_client* client) {
 
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
 
+    /* Wait for any in-progress asynchronous chassis operation to finish before
+     * tearing anything down, as its worker thread accesses the terminal and
+     * settings. */
+    if (ipmi_client->chassis_thread_valid) {
+        pthread_join(ipmi_client->chassis_thread, NULL);
+        ipmi_client->chassis_thread_valid = false;
+    }
+
     /* Close the SOL file descriptor, unblocking the client thread's read loop.
      * As the IPMICONSOLE_ENGINE_CLOSE_FD flag is not used, the descriptor is
      * owned by us and must be closed here. */
@@ -132,6 +141,8 @@ int guac_ipmi_client_free_handler(guac_client* client) {
     /* Free settings */
     if (ipmi_client->settings != NULL)
         guac_ipmi_settings_free(ipmi_client->settings);
+
+    pthread_mutex_destroy(&ipmi_client->menu_lock);
 
     guac_mem_free(ipmi_client);
     return 0;

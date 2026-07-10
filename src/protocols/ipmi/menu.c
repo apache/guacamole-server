@@ -29,6 +29,7 @@
 
 #include <ipmiconsole.h>
 
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -57,6 +58,15 @@
  * display to exactly the serial console output present before the menu opened.
  */
 #define GUAC_IPMI_MENU_ALT_EXIT "\x1B[?1049l"
+
+/**
+ * Displays a "press any key to return" prompt and marks the current control
+ * menu operation complete. Forward-declared for use by the chassis worker.
+ *
+ * @param client
+ *     The guac_client associated with the IPMI connection.
+ */
+static void guac_ipmi_menu_await_dismiss(guac_client* client);
 
 /**
  * Writes the given null-terminated string to the client's terminal as console
@@ -113,28 +123,123 @@ static void guac_ipmi_menu_render(guac_client* client) {
 }
 
 /**
- * Executes the given power action against the BMC, reporting the result to the
- * terminal.
+ * Background worker thread which performs the pending chassis operation (as
+ * described by the client's chassis_op / chassis_action fields) without
+ * blocking the user input thread, reports the result to the terminal, and then
+ * marks the menu ready for dismissal.
+ *
+ * @param data
+ *     The guac_client associated with the IPMI connection.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_ipmi_menu_chassis_worker(void* data) {
+
+    guac_client* client = (guac_client*) data;
+    guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
+
+    switch (ipmi_client->chassis_op) {
+
+        case GUAC_IPMI_CHASSIS_OP_POWER:
+            if (guac_ipmi_chassis_power(client, ipmi_client->chassis_action) == 0)
+                guac_ipmi_menu_print(client, "Command sent successfully.\r\n");
+            else
+                guac_ipmi_menu_print(client,
+                        "Command FAILED (see server log).\r\n");
+            break;
+
+        case GUAC_IPMI_CHASSIS_OP_STATUS: {
+            char status[128];
+            if (guac_ipmi_chassis_status(client, status, sizeof(status)) == 0) {
+                guac_ipmi_menu_print(client, status);
+                guac_ipmi_menu_print(client, "\r\n");
+            }
+            else
+                guac_ipmi_menu_print(client,
+                        "Unable to query status (see server log).\r\n");
+            break;
+        }
+
+        case GUAC_IPMI_CHASSIS_OP_IDENTIFY:
+            if (guac_ipmi_chassis_identify(client,
+                        GUAC_IPMI_MENU_IDENTIFY_INTERVAL, false) == 0)
+                guac_ipmi_menu_print(client, "Identify LED activated.\r\n");
+            else
+                guac_ipmi_menu_print(client,
+                        "Unable to activate identify LED (see server log).\r\n");
+            break;
+
+        case GUAC_IPMI_CHASSIS_OP_SEL: {
+            char output[GUAC_IPMI_MENU_OUTPUT_LENGTH];
+            if (guac_ipmi_chassis_sel(client, output, sizeof(output)) == 0)
+                guac_ipmi_menu_print(client, output);
+            else
+                guac_ipmi_menu_print(client,
+                        "Unable to read event log (see server log).\r\n");
+            break;
+        }
+
+    }
+
+    guac_ipmi_menu_await_dismiss(client);
+    return NULL;
+
+}
+
+/**
+ * Starts the given chassis operation on the background worker thread, printing
+ * the given "working" message to the terminal immediately. If an operation is
+ * already in progress, the request is silently ignored.
  *
  * @param client
  *     The guac_client associated with the IPMI connection.
  *
+ * @param op
+ *     The chassis operation to perform.
+ *
  * @param action
- *     The power action to perform.
+ *     The power action to perform, if op is GUAC_IPMI_CHASSIS_OP_POWER;
+ *     otherwise ignored.
+ *
+ * @param working_message
+ *     A null-terminated status message printed to the terminal before the
+ *     operation begins.
  */
-static void guac_ipmi_menu_do_power(guac_client* client,
-        guac_ipmi_power_action action) {
+static void guac_ipmi_menu_start_op(guac_client* client,
+        guac_ipmi_chassis_op op, guac_ipmi_power_action action,
+        const char* working_message) {
 
-    char message[128];
+    guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
 
-    snprintf(message, sizeof(message), "\r\n%s: working...\r\n",
-            guac_ipmi_menu_action_name(action));
-    guac_ipmi_menu_print(client, message);
+    /* Refuse to start a second operation while one is in progress */
+    pthread_mutex_lock(&ipmi_client->menu_lock);
+    if (ipmi_client->chassis_busy) {
+        pthread_mutex_unlock(&ipmi_client->menu_lock);
+        return;
+    }
+    ipmi_client->chassis_busy = true;
+    pthread_mutex_unlock(&ipmi_client->menu_lock);
 
-    if (guac_ipmi_chassis_power(client, action) == 0)
-        guac_ipmi_menu_print(client, "Command sent successfully.\r\n");
-    else
-        guac_ipmi_menu_print(client, "Command FAILED (see server log).\r\n");
+    /* Reap the previous worker, if any, before reusing the thread handle */
+    if (ipmi_client->chassis_thread_valid) {
+        pthread_join(ipmi_client->chassis_thread, NULL);
+        ipmi_client->chassis_thread_valid = false;
+    }
+
+    ipmi_client->chassis_op = op;
+    ipmi_client->chassis_action = action;
+
+    guac_ipmi_menu_print(client, working_message);
+
+    if (pthread_create(&ipmi_client->chassis_thread, NULL,
+                guac_ipmi_menu_chassis_worker, client) == 0)
+        ipmi_client->chassis_thread_valid = true;
+    else {
+        /* The worker could not be started; report and allow dismissal */
+        guac_ipmi_menu_print(client, "Unable to start operation.\r\n");
+        guac_ipmi_menu_await_dismiss(client);
+    }
 
 }
 
@@ -165,9 +270,16 @@ static void guac_ipmi_menu_close(guac_client* client) {
  */
 static void guac_ipmi_menu_await_dismiss(guac_client* client) {
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
-    ipmi_client->menu_awaiting_dismiss = true;
+
     guac_ipmi_menu_print(client,
             "\r\n\x1B[2m[ Press any key to return ]\x1B[0m");
+
+    /* Publish the completed state: the operation (if any) is finished and the
+     * next keypress should return to the console. */
+    pthread_mutex_lock(&ipmi_client->menu_lock);
+    ipmi_client->menu_awaiting_dismiss = true;
+    ipmi_client->chassis_busy = false;
+    pthread_mutex_unlock(&ipmi_client->menu_lock);
 }
 
 /**
@@ -210,6 +322,14 @@ void guac_ipmi_menu_handle_key(guac_client* client, int keysym) {
 
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
 
+    /* Ignore all keystrokes while an asynchronous chassis operation is running,
+     * so it cannot be interrupted or run twice concurrently. */
+    pthread_mutex_lock(&ipmi_client->menu_lock);
+    int busy = ipmi_client->chassis_busy;
+    pthread_mutex_unlock(&ipmi_client->menu_lock);
+    if (busy)
+        return;
+
     /* While displaying the output of a completed action, any key dismisses it
      * and returns to the serial console. */
     if (ipmi_client->menu_awaiting_dismiss) {
@@ -224,22 +344,32 @@ void guac_ipmi_menu_handle_key(guac_client* client, int keysym) {
         guac_ipmi_power_action action = ipmi_client->menu_pending_action;
         ipmi_client->menu_pending_action = GUAC_IPMI_POWER_NONE;
 
-        if (keysym == 'y' || keysym == 'Y')
-            guac_ipmi_menu_do_power(client, action);
-        else
+        if (keysym == 'y' || keysym == 'Y') {
+            char message[128];
+            snprintf(message, sizeof(message), "\r\n%s: working...\r\n",
+                    guac_ipmi_menu_action_name(action));
+            guac_ipmi_menu_start_op(client, GUAC_IPMI_CHASSIS_OP_POWER, action,
+                    message);
+        }
+        else {
             guac_ipmi_menu_print(client, "\r\nCancelled.\r\n");
+            guac_ipmi_menu_await_dismiss(client);
+        }
 
-        guac_ipmi_menu_await_dismiss(client);
         return;
     }
 
     switch (keysym) {
 
         /* Power On is non-destructive and executed directly */
-        case '1':
-            guac_ipmi_menu_do_power(client, GUAC_IPMI_POWER_ON);
-            guac_ipmi_menu_await_dismiss(client);
+        case '1': {
+            char message[128];
+            snprintf(message, sizeof(message), "\r\n%s: working...\r\n",
+                    guac_ipmi_menu_action_name(GUAC_IPMI_POWER_ON));
+            guac_ipmi_menu_start_op(client, GUAC_IPMI_CHASSIS_OP_POWER,
+                    GUAC_IPMI_POWER_ON, message);
             break;
+        }
 
         /* Destructive actions require confirmation */
         case '2':
@@ -260,45 +390,23 @@ void guac_ipmi_menu_handle_key(guac_client* client, int keysym) {
 
         /* Power status */
         case 's':
-        case 'S': {
-            char status[128];
-            guac_ipmi_menu_print(client, "\r\nQuerying power status...\r\n");
-            if (guac_ipmi_chassis_status(client, status, sizeof(status)) == 0) {
-                guac_ipmi_menu_print(client, status);
-                guac_ipmi_menu_print(client, "\r\n");
-            }
-            else
-                guac_ipmi_menu_print(client,
-                        "Unable to query status (see server log).\r\n");
-            guac_ipmi_menu_await_dismiss(client);
+        case 'S':
+            guac_ipmi_menu_start_op(client, GUAC_IPMI_CHASSIS_OP_STATUS,
+                    GUAC_IPMI_POWER_NONE, "\r\nQuerying power status...\r\n");
             break;
-        }
 
         /* System Event Log viewer */
         case 'e':
-        case 'E': {
-            char output[GUAC_IPMI_MENU_OUTPUT_LENGTH];
-            guac_ipmi_menu_print(client, "\r\nReading System Event Log...\r\n");
-            if (guac_ipmi_chassis_sel(client, output, sizeof(output)) == 0)
-                guac_ipmi_menu_print(client, output);
-            else
-                guac_ipmi_menu_print(client,
-                        "Unable to read event log (see server log).\r\n");
-            guac_ipmi_menu_await_dismiss(client);
+        case 'E':
+            guac_ipmi_menu_start_op(client, GUAC_IPMI_CHASSIS_OP_SEL,
+                    GUAC_IPMI_POWER_NONE, "\r\nReading System Event Log...\r\n");
             break;
-        }
 
         /* Chassis identify LED */
         case 'i':
         case 'I':
-            guac_ipmi_menu_print(client, "\r\nActivating identify LED...\r\n");
-            if (guac_ipmi_chassis_identify(client,
-                        GUAC_IPMI_MENU_IDENTIFY_INTERVAL, false) == 0)
-                guac_ipmi_menu_print(client, "Identify LED activated.\r\n");
-            else
-                guac_ipmi_menu_print(client,
-                        "Unable to activate identify LED (see server log).\r\n");
-            guac_ipmi_menu_await_dismiss(client);
+            guac_ipmi_menu_start_op(client, GUAC_IPMI_CHASSIS_OP_IDENTIFY,
+                    GUAC_IPMI_POWER_NONE, "\r\nActivating identify LED...\r\n");
             break;
 
         /* Send a serial break over the active SOL session */
