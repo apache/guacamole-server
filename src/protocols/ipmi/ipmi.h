@@ -30,6 +30,34 @@
 #include <stdbool.h>
 
 /**
+ * An out-of-band chassis operation that may be performed asynchronously by the
+ * control menu's background worker thread.
+ */
+typedef enum guac_ipmi_chassis_op {
+
+    /**
+     * A chassis power action (using the accompanying power action value).
+     */
+    GUAC_IPMI_CHASSIS_OP_POWER,
+
+    /**
+     * A query of the current chassis power status.
+     */
+    GUAC_IPMI_CHASSIS_OP_STATUS,
+
+    /**
+     * Activation of the chassis identify LED.
+     */
+    GUAC_IPMI_CHASSIS_OP_IDENTIFY,
+
+    /**
+     * Retrieval of the most recent System Event Log entries.
+     */
+    GUAC_IPMI_CHASSIS_OP_SEL
+
+} guac_ipmi_chassis_op;
+
+/**
  * IPMI-specific client data.
  */
 typedef struct guac_ipmi_client {
@@ -82,6 +110,41 @@ typedef struct guac_ipmi_client {
      * console.
      */
     bool menu_awaiting_dismiss;
+
+    /**
+     * Mutex guarding the control menu's asynchronous chassis state
+     * (menu_awaiting_dismiss, chassis_busy). Held only briefly around state
+     * transitions shared between the user input thread and the chassis worker.
+     */
+    pthread_mutex_t menu_lock;
+
+    /**
+     * Whether an asynchronous chassis operation is currently being performed by
+     * the worker thread. While true, control menu keystrokes are ignored.
+     */
+    bool chassis_busy;
+
+    /**
+     * The background thread performing the current (or most recent) chassis
+     * operation. Valid for joining only when chassis_thread_valid is true.
+     */
+    pthread_t chassis_thread;
+
+    /**
+     * Whether chassis_thread holds a started thread that has not yet been
+     * joined.
+     */
+    bool chassis_thread_valid;
+
+    /**
+     * The chassis operation the worker thread should perform.
+     */
+    guac_ipmi_chassis_op chassis_op;
+
+    /**
+     * The power action to perform when chassis_op is GUAC_IPMI_CHASSIS_OP_POWER.
+     */
+    guac_ipmi_power_action chassis_action;
 
     /**
      * The in-progress session recording, or NULL if no recording is in
