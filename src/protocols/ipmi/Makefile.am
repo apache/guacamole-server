@@ -61,9 +61,9 @@ libguac_client_ipmi_la_CFLAGS = \
 libguac_client_ipmi_la_LIBADD = \
     @COMMON_LTLIB@              \
     @LIBGUAC_LTLIB@            \
-    @TERMINAL_LTLIB@
+    @TERMINAL_LTLIB@           \
+    @IPMI_LIBS@
 
 libguac_client_ipmi_la_LDFLAGS = \
     -version-info 0:0:0          \
-    @PTHREAD_LIBS@               \
-    @IPMI_LIBS@
+    @PTHREAD_LIBS@
