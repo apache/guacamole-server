@@ -33,6 +33,7 @@ libguac_client_ipmi_la_SOURCES = \
     chassis.c                    \
     client.c                     \
     clipboard.c                  \
+    control.c                    \
     input.c                      \
     ipmi.c                       \
     menu.c                       \
@@ -45,6 +46,7 @@ noinst_HEADERS = \
     chassis.h    \
     client.h     \
     clipboard.h  \
+    control.h    \
     input.h      \
     ipmi.h       \
     menu.h       \
