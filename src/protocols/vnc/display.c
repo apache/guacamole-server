@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "client.h"
 #include "display.h"
 #include "common/iconv.h"

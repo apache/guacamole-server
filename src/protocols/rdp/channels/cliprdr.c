@@ -21,7 +21,6 @@
 #include "client.h"
 #include "common/clipboard.h"
 #include "common/iconv.h"
-#include "config.h"
 #include "plugins/channels.h"
 #include "rdp.h"
 

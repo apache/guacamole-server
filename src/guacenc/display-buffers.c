@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "display.h"
 #include "buffer.h"
 #include "layer.h"

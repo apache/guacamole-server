@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "common/json.h"
 
 #include <assert.h>

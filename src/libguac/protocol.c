@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "guacamole/error.h"
 #include "guacamole/layer.h"
 #include "guacamole/object.h"

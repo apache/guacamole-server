@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "common/iconv.h"
 
 #include <guacamole/unicode.h>

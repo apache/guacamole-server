@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
 #include <guacamole/layer.h>

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "common/rect.h"
 #include "common/surface.h"
 

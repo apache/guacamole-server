@@ -20,7 +20,6 @@
 #include "channels/audio-input/audio-input.h"
 #include "channels/cliprdr.h"
 #include "channels/pipe-svc.h"
-#include "config.h"
 #include "input.h"
 #include "rdp.h"
 #include "settings.h"
