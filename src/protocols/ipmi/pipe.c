@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "control.h"
 #include "ipmi.h"
 #include "pipe.h"
 #include "terminal/terminal.h"
@@ -37,6 +38,12 @@ int guac_ipmi_pipe_handler(guac_user* user, guac_stream* stream,
     /* Redirect STDIN if pipe has required name */
     if (strcmp(name, GUAC_IPMI_STDIN_PIPE_NAME) == 0) {
         guac_terminal_send_stream(ipmi_client->term, user, stream);
+        return 0;
+    }
+
+    /* Out-of-band control/status channel */
+    if (strcmp(name, GUAC_IPMI_CONTROL_PIPE_NAME) == 0) {
+        guac_ipmi_control_open(user, stream);
         return 0;
     }
 
