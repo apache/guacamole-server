@@ -115,15 +115,20 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
     int retval = 0;
 
     display->last_frame.layers = display->pending_frame.layers;
-    guac_display_layer* current = display->pending_frame.layers;
-    while (current != NULL) {
+    for (guac_display_layer* current = display->pending_frame.layers;
+            current != NULL; current = current->pending_frame.next) {
 
-        /* Skip processing any layers whose buffers have been replaced with
-         * NULL (this is intentionally allowed to ensure references to external
-         * buffers can be safely removed if necessary, even before guac_display
-         * is freed) */
+        /* Duplicate layers from pending frame to last frame */
+        current->last_frame.prev = current->pending_frame.prev;
+        current->last_frame.next = current->pending_frame.next;
+
+        /* Skip non-existential updates for any layer whose buffer has been
+         * replaced with NULL (this is intentionally allowed to ensure references
+         * to external buffers can be safely removed if necessary, even before
+         * guac_display is freed) */
         if (current->pending_frame.buffer == NULL) {
             GUAC_ASSERT(current->pending_frame.buffer_is_external);
+            current->last_frame.dirty = (guac_rect) { 0 };
             continue;
         }
 
@@ -250,11 +255,6 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
         /* Commit any change in lossless setting (no need to synchronize this
          * to the client - it affects only how last_frame is interpreted) */
         current->last_frame.lossless = current->pending_frame.lossless;
-
-        /* Duplicate layers from pending frame to last frame */
-        current->last_frame.prev = current->pending_frame.prev;
-        current->last_frame.next = current->pending_frame.next;
-        current = current->pending_frame.next;
 
     }
 
