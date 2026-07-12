@@ -130,8 +130,11 @@ int guac_ipmi_client_free_handler(guac_client* client) {
     if (ipmi_client->recording != NULL)
         guac_recording_free(ipmi_client->recording);
 
-    /* Kill terminal, unblocking the input thread */
-    guac_terminal_free(ipmi_client->term);
+    /* Kill terminal, unblocking the input thread. The terminal is created by
+     * the client thread, so it may still be NULL if the connection was torn
+     * down before that thread reached terminal creation. */
+    if (ipmi_client->term != NULL)
+        guac_terminal_free(ipmi_client->term);
 
     /* Wait for and clean up the SOL session, if established */
     if (ipmi_client->console_ctx != NULL) {
