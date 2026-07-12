@@ -126,22 +126,35 @@ int guac_ipmi_client_free_handler(guac_client* client) {
     if (ipmi_client->console_fd != -1)
         close(ipmi_client->console_fd);
 
+    /* Stop the terminal — closing its input pipe to unblock the input thread —
+     * WITHOUT freeing it yet. The client thread may still be writing SOL output
+     * to the terminal until it has fully exited, so the terminal must outlive
+     * the join below to avoid a use-after-free. */
+    if (ipmi_client->term != NULL)
+        guac_terminal_stop(ipmi_client->term);
+
+    /* Wait for the client thread to fully exit before touching anything it
+     * uses. Joined unconditionally (not only when a SOL context was
+     * established) so early-failure setup paths do not leak the joinable
+     * thread. */
+    if (ipmi_client->client_thread_valid) {
+        pthread_join(ipmi_client->client_thread, NULL);
+        ipmi_client->client_thread_valid = false;
+    }
+
+    /* Clean up the SOL session, if one was established */
+    if (ipmi_client->console_ctx != NULL) {
+        ipmiconsole_ctx_destroy(ipmi_client->console_ctx);
+        guac_ipmi_engine_unref();
+    }
+
     /* Clean up recording, if in progress */
     if (ipmi_client->recording != NULL)
         guac_recording_free(ipmi_client->recording);
 
-    /* Kill terminal, unblocking the input thread. The terminal is created by
-     * the client thread, so it may still be NULL if the connection was torn
-     * down before that thread reached terminal creation. */
+    /* With no thread left to touch it, the terminal can now be freed safely */
     if (ipmi_client->term != NULL)
         guac_terminal_free(ipmi_client->term);
-
-    /* Wait for and clean up the SOL session, if established */
-    if (ipmi_client->console_ctx != NULL) {
-        pthread_join(ipmi_client->client_thread, NULL);
-        ipmiconsole_ctx_destroy(ipmi_client->console_ctx);
-        guac_ipmi_engine_unref();
-    }
 
     /* Free settings */
     if (ipmi_client->settings != NULL)

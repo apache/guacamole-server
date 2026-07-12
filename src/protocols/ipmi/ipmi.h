@@ -73,6 +73,12 @@ typedef struct guac_ipmi_client {
     pthread_t client_thread;
 
     /**
+     * Whether client_thread was successfully started and is therefore
+     * joinable. Set once the thread has been created.
+     */
+    bool client_thread_valid;
+
+    /**
      * The libipmiconsole context managing the Serial-over-LAN session, or NULL
      * if no session has been established.
      */
