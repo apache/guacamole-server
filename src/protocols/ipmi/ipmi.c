@@ -469,7 +469,13 @@ void* guac_ipmi_client_thread(void* data) {
         if (bytes_read <= 0)
             break;
 
-        guac_terminal_write(ipmi_client->term, buffer, bytes_read);
+        /* Suppress console output while the control menu owns the (alternate)
+         * screen, so live SOL data does not scramble the rendered menu. */
+        pthread_mutex_lock(&ipmi_client->menu_lock);
+        int menu_open = ipmi_client->menu_open;
+        pthread_mutex_unlock(&ipmi_client->menu_lock);
+        if (!menu_open)
+            guac_terminal_write(ipmi_client->term, buffer, bytes_read);
 
     }
 

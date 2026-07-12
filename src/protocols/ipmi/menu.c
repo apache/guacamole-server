@@ -151,7 +151,8 @@ static void* guac_ipmi_menu_chassis_worker(void* data) {
 
         case GUAC_IPMI_CHASSIS_OP_STATUS: {
             char status[128];
-            if (guac_ipmi_chassis_status(client, status, sizeof(status)) == 0) {
+            if (guac_ipmi_chassis_status(client, status, sizeof(status),
+                        NULL) == 0) {
                 guac_ipmi_menu_print(client, status);
                 guac_ipmi_menu_print(client, "\r\n");
             }
@@ -163,7 +164,7 @@ static void* guac_ipmi_menu_chassis_worker(void* data) {
 
         case GUAC_IPMI_CHASSIS_OP_IDENTIFY:
             if (guac_ipmi_chassis_identify(client,
-                        GUAC_IPMI_MENU_IDENTIFY_INTERVAL, false) == 0)
+                        GUAC_IPMI_MENU_IDENTIFY_INTERVAL) == 0)
                 guac_ipmi_menu_print(client, "Identify LED activated.\r\n");
             else
                 guac_ipmi_menu_print(client,
@@ -251,9 +252,11 @@ static void guac_ipmi_menu_start_op(guac_client* client,
  */
 static void guac_ipmi_menu_close(guac_client* client) {
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
+    pthread_mutex_lock(&ipmi_client->menu_lock);
     ipmi_client->menu_open = false;
     ipmi_client->menu_pending_action = GUAC_IPMI_POWER_NONE;
     ipmi_client->menu_awaiting_dismiss = false;
+    pthread_mutex_unlock(&ipmi_client->menu_lock);
 
     /* Restore the primary screen buffer, returning the display to the serial
      * console exactly as it was before the menu opened. */
@@ -296,7 +299,9 @@ static void guac_ipmi_menu_confirm(guac_client* client,
         guac_ipmi_power_action action) {
 
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
+    pthread_mutex_lock(&ipmi_client->menu_lock);
     ipmi_client->menu_pending_action = action;
+    pthread_mutex_unlock(&ipmi_client->menu_lock);
 
     char message[128];
     snprintf(message, sizeof(message), "\r\nConfirm %s? (y/N): ",
@@ -307,9 +312,11 @@ static void guac_ipmi_menu_confirm(guac_client* client,
 
 void guac_ipmi_menu_open(guac_client* client) {
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
+    pthread_mutex_lock(&ipmi_client->menu_lock);
     ipmi_client->menu_open = true;
     ipmi_client->menu_pending_action = GUAC_IPMI_POWER_NONE;
     ipmi_client->menu_awaiting_dismiss = false;
+    pthread_mutex_unlock(&ipmi_client->menu_lock);
 
     /* Render the menu on the alternate screen so it neither pollutes the serial
      * console's scrollback and session recording nor corrupts any full-screen
@@ -322,33 +329,42 @@ void guac_ipmi_menu_handle_key(guac_client* client, int keysym) {
 
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
 
-    /* Ignore all keystrokes while an asynchronous chassis operation is running,
-     * so it cannot be interrupted or run twice concurrently. */
+    /* Snapshot the shared menu state under menu_lock. The state is client-level
+     * and touched by every user's key thread and the chassis worker, so all
+     * accesses are serialized; the snapshot is taken in one short critical
+     * section and acted on below without holding the lock across the
+     * (thread-spawning, terminal-writing) side effects. */
     pthread_mutex_lock(&ipmi_client->menu_lock);
     int busy = ipmi_client->chassis_busy;
+    int awaiting = ipmi_client->menu_awaiting_dismiss;
+    guac_ipmi_power_action pending = ipmi_client->menu_pending_action;
     pthread_mutex_unlock(&ipmi_client->menu_lock);
+
+    /* Ignore all keystrokes while an asynchronous chassis operation is running,
+     * so it cannot be interrupted or run twice concurrently. */
     if (busy)
         return;
 
     /* While displaying the output of a completed action, any key dismisses it
      * and returns to the serial console. */
-    if (ipmi_client->menu_awaiting_dismiss) {
+    if (awaiting) {
         guac_ipmi_menu_close(client);
         return;
     }
 
     /* If a destructive action is awaiting confirmation, interpret this key as
      * the confirmation response. */
-    if (ipmi_client->menu_pending_action != GUAC_IPMI_POWER_NONE) {
+    if (pending != GUAC_IPMI_POWER_NONE) {
 
-        guac_ipmi_power_action action = ipmi_client->menu_pending_action;
+        pthread_mutex_lock(&ipmi_client->menu_lock);
         ipmi_client->menu_pending_action = GUAC_IPMI_POWER_NONE;
+        pthread_mutex_unlock(&ipmi_client->menu_lock);
 
         if (keysym == 'y' || keysym == 'Y') {
             char message[128];
             snprintf(message, sizeof(message), "\r\n%s: working...\r\n",
-                    guac_ipmi_menu_action_name(action));
-            guac_ipmi_menu_start_op(client, GUAC_IPMI_CHASSIS_OP_POWER, action,
+                    guac_ipmi_menu_action_name(pending));
+            guac_ipmi_menu_start_op(client, GUAC_IPMI_CHASSIS_OP_POWER, pending,
                     message);
         }
         else {

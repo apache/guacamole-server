@@ -27,6 +27,23 @@
 #include <stdbool.h>
 
 /**
+ * The chassis power state as reported by the BMC, decoded from the chassis
+ * status response rather than inferred from a human-readable string.
+ */
+typedef enum guac_ipmi_power_state {
+
+    /** The power state could not be determined. */
+    GUAC_IPMI_POWER_STATE_UNKNOWN,
+
+    /** The chassis is powered off. */
+    GUAC_IPMI_POWER_STATE_OFF,
+
+    /** The chassis is powered on. */
+    GUAC_IPMI_POWER_STATE_ON
+
+} guac_ipmi_power_state;
+
+/**
  * Performs the given chassis power action against the BMC associated with the
  * given client. A short-lived IPMI 2.0 out-of-band session, separate from the
  * Serial-over-LAN session, is opened to issue the command and closed
@@ -79,30 +96,32 @@ int guac_ipmi_chassis_set_boot_device(guac_client* client,
  * @param size
  *     The size of the given buffer, in bytes.
  *
+ * @param power
+ *     Optional output for the decoded power state. If non-NULL, it receives
+ *     the structured power state parsed from the response (GUAC_IPMI_POWER_
+ *     STATE_ON/OFF), leaving callers that only need the state independent of
+ *     the human-readable buffer's wording.
+ *
  * @return
  *     Zero if the status was retrieved successfully, non-zero otherwise.
  */
-int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size);
+int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size,
+        guac_ipmi_power_state* power);
 
 /**
- * Activates the chassis identify LED for the given duration, or indefinitely.
+ * Activates the chassis identify LED for the given duration.
  *
  * @param client
  *     The guac_client whose settings describe the BMC to connect to.
  *
  * @param interval
- *     The number of seconds the identify LED should remain on. Ignored if
- *     force is true.
- *
- * @param force
- *     Whether the identify LED should remain on indefinitely, ignoring the
- *     given interval.
+ *     The number of seconds the identify LED should remain on.
  *
  * @return
  *     Zero if the identify command was issued successfully, non-zero
  *     otherwise.
  */
-int guac_ipmi_chassis_identify(guac_client* client, int interval, bool force);
+int guac_ipmi_chassis_identify(guac_client* client, int interval);
 
 /**
  * Reads the most recent entries from the BMC's System Event Log (SEL) and
