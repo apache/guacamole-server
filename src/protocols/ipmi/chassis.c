@@ -281,7 +281,11 @@ int guac_ipmi_chassis_set_boot_device(guac_client* client,
 
 }
 
-int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size) {
+int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size,
+        guac_ipmi_power_state* power) {
+
+    if (power != NULL)
+        *power = GUAC_IPMI_POWER_STATE_UNKNOWN;
 
     ipmi_ctx_t ctx = guac_ipmi_chassis_connect(client);
     if (ctx == NULL)
@@ -323,6 +327,11 @@ int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size) {
                         power_fault ? " (fault)" : "",
                         power_overload ? " (overload)" : "");
 
+                if (power != NULL)
+                    *power = power_is_on
+                            ? GUAC_IPMI_POWER_STATE_ON
+                            : GUAC_IPMI_POWER_STATE_OFF;
+
                 result = 0;
             }
         }
@@ -335,7 +344,7 @@ int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size) {
 
 }
 
-int guac_ipmi_chassis_identify(guac_client* client, int interval, bool force) {
+int guac_ipmi_chassis_identify(guac_client* client, int interval) {
 
     ipmi_ctx_t ctx = guac_ipmi_chassis_connect(client);
     if (ctx == NULL)
@@ -346,14 +355,9 @@ int guac_ipmi_chassis_identify(guac_client* client, int interval, bool force) {
     if (obj_cmd_rs != NULL) {
 
         uint8_t interval_value = (uint8_t) interval;
-        uint8_t force_value = force
-            ? IPMI_CHASSIS_FORCE_IDENTIFY_ON
-            : IPMI_CHASSIS_FORCE_IDENTIFY_OFF;
+        uint8_t force_value = IPMI_CHASSIS_FORCE_IDENTIFY_OFF;
 
-        /* When forcing the LED on indefinitely, the interval is not meaningful
-         * and is passed as NULL. */
-        if (ipmi_cmd_chassis_identify(ctx,
-                    force ? NULL : &interval_value,
+        if (ipmi_cmd_chassis_identify(ctx, &interval_value,
                     &force_value, obj_cmd_rs) < 0)
             guac_client_log(client, GUAC_LOG_ERROR,
                     "Chassis identify command failed: %s",

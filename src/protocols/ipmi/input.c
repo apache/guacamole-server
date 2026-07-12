@@ -27,6 +27,7 @@
 #include <guacamole/recording.h>
 #include <guacamole/user.h>
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
@@ -67,8 +68,11 @@ int guac_ipmi_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     /* While the control menu is open, interpret key presses as menu commands
      * rather than forwarding them to the serial console. Key releases are
-     * ignored. */
-    if (ipmi_client->menu_open) {
+     * ignored. The shared menu_open flag is read under menu_lock. */
+    pthread_mutex_lock(&ipmi_client->menu_lock);
+    int menu_open = ipmi_client->menu_open;
+    pthread_mutex_unlock(&ipmi_client->menu_lock);
+    if (menu_open) {
         if (pressed)
             guac_ipmi_menu_handle_key(client, keysym);
         return 0;

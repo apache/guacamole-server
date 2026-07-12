@@ -185,11 +185,13 @@ static void guac_ipmi_control_send_state(guac_user* user, guac_client* client,
 
         const char* power = "unknown";
         char status[128];
-        if (guac_ipmi_chassis_status(client, status, sizeof(status)) == 0) {
-            if (strstr(status, "OFF") != NULL)
-                power = "off";
-            else if (strstr(status, "ON") != NULL)
+        guac_ipmi_power_state power_state;
+        if (guac_ipmi_chassis_status(client, status, sizeof(status),
+                    &power_state) == 0) {
+            if (power_state == GUAC_IPMI_POWER_STATE_ON)
                 power = "on";
+            else if (power_state == GUAC_IPMI_POWER_STATE_OFF)
+                power = "off";
         }
 
         snprintf(json, sizeof(json),
@@ -316,20 +318,9 @@ static void guac_ipmi_control_dispatch(guac_user* user, const char* line) {
     if (strcmp(type, "command") != 0)
         return;
 
-    /* Non-mutating reads need no chassis lock */
-    if (strcmp(command, "refresh-status") == 0 || strcmp(command, "status") == 0) {
-        guac_ipmi_control_send_state(user, client, true);
-        return;
-    }
-
-    if (strcmp(command, "read-sel") == 0) {
-        guac_ipmi_control_send_sel(user, client);
-        return;
-    }
-
-    /* Break operates on the existing SOL session, not a chassis session. Hold
-     * state_lock and test sol_connected so the context cannot be torn down
-     * between the liveness check and its use. */
+    /* Break operates on the existing SOL session, not a new chassis session.
+     * Hold state_lock and test sol_connected so the context cannot be torn
+     * down between the liveness check and its use. */
     if (strcmp(command, "send-break") == 0) {
         pthread_mutex_lock(&ipmi_client->state_lock);
         int ok = ipmi_client->sol_connected
@@ -340,19 +331,29 @@ static void guac_ipmi_control_dispatch(guac_user* user, const char* line) {
         return;
     }
 
-    /* Remaining commands open a chassis session; serialize with the menu */
+    /* Every remaining command opens a short-lived chassis session to the BMC.
+     * Serialize them all — status/SEL reads included — with each other and the
+     * in-terminal menu, so a single connection cannot open many concurrent
+     * RMCP+ sessions and exhaust the BMC's session slots. */
     if (!guac_ipmi_control_try_acquire(ipmi_client)) {
         guac_ipmi_control_send_result(user, id, false,
                 "Another operation is already in progress.");
         return;
     }
 
-    if (strcmp(command, "identify") == 0) {
+    if (strcmp(command, "refresh-status") == 0 || strcmp(command, "status") == 0)
+        guac_ipmi_control_send_state(user, client, true);
+
+    else if (strcmp(command, "read-sel") == 0)
+        guac_ipmi_control_send_sel(user, client);
+
+    else if (strcmp(command, "identify") == 0) {
         int ok = guac_ipmi_chassis_identify(client,
-                GUAC_IPMI_CONTROL_IDENTIFY_INTERVAL, false) == 0;
+                GUAC_IPMI_CONTROL_IDENTIFY_INTERVAL) == 0;
         guac_ipmi_control_send_result(user, id, ok,
                 ok ? "Identify LED activated." : "Unable to activate identify LED.");
     }
+
     else {
         guac_ipmi_power_action action = guac_ipmi_control_power_action(command);
         if (action == GUAC_IPMI_POWER_NONE)
