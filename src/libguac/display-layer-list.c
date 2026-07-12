@@ -315,6 +315,10 @@ void guac_display_remove_layer(guac_display_layer* display_layer) {
     display_layer->pending_frame.prev = NULL;
     display_layer->pending_frame.next = NULL;
 
+    /* Automatically detach any external buffer */
+    if (display_layer->pending_frame.buffer_is_external)
+        display_layer->pending_frame.buffer = NULL;
+
     /* The layer is deliberately NOT unlinked from the last_frame list here, as
      * full removal and release of memory is deferred until after frame flush */
     display_layer->next_removed = display->pending_frame_removed_layers;
