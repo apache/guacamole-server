@@ -78,6 +78,8 @@ int guac_client_init(guac_client* client) {
 
     /* Init IPMI client */
     ipmi_client->console_fd = -1;
+    ipmi_client->sol_connected = false;
+    pthread_mutex_init(&ipmi_client->state_lock, NULL);
     ipmi_client->menu_open = false;
     ipmi_client->menu_pending_action = GUAC_IPMI_POWER_NONE;
     pthread_mutex_init(&ipmi_client->menu_lock, NULL);
@@ -143,6 +145,7 @@ int guac_ipmi_client_free_handler(guac_client* client) {
         guac_ipmi_settings_free(ipmi_client->settings);
 
     pthread_mutex_destroy(&ipmi_client->menu_lock);
+    pthread_mutex_destroy(&ipmi_client->state_lock);
 
     guac_mem_free(ipmi_client);
     return 0;

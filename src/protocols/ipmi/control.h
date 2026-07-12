@@ -43,6 +43,15 @@
 #define GUAC_IPMI_CONTROL_PIPE_NAME "ipmi-control"
 
 /**
+ * Pushes the current control-channel state to all currently-connected users of
+ * the given client. The chassis power state is not actively queried.
+ *
+ * @param client
+ *     The client whose users should receive the state update.
+ */
+void guac_ipmi_control_broadcast_state(guac_client* client);
+
+/**
  * Sets up an inbound "ipmi-control" pipe stream just opened by the given user,
  * installing the blob/end handlers that parse and dispatch control commands,
  * and pushing an initial state message to the user.
