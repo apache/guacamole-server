@@ -79,6 +79,19 @@ typedef struct guac_ipmi_client {
     ipmiconsole_ctx_t console_ctx;
 
     /**
+     * Whether the SOL session is currently considered established. This is
+     * intentionally separate from console_ctx, which remains non-NULL until
+     * teardown so the libipmiconsole context can be destroyed.
+     */
+    bool sol_connected;
+
+    /**
+     * Mutex guarding SOL connection state exposed through the out-of-band
+     * control channel.
+     */
+    pthread_mutex_t state_lock;
+
+    /**
      * The file descriptor of the established SOL session, as returned by
      * ipmiconsole_ctx_fd(), or -1 if no session has been established. All
      * serial console input/output is read from and written to this descriptor.

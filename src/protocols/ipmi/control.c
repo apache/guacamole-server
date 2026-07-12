@@ -23,6 +23,7 @@
 #include "control.h"
 #include "ipmi.h"
 
+#include <guacamole/client.h>
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -161,16 +162,28 @@ static void guac_ipmi_control_send(guac_user* user, const char* json) {
 
 /**
  * Pushes a state message to the given user. If query is true, the current
- * power state is actively read from the BMC (which may take several seconds);
- * otherwise "unknown" is reported.
+ * power state is actively read from the BMC (which may take several seconds)
+ * and included in the message; otherwise only the SOL health is sent, leaving
+ * the client's last-known power value untouched. This lets health-only updates
+ * (initial state, and the broadcast when SOL connects/disconnects) refresh the
+ * connection badge without regressing the displayed power state to "unknown".
  */
 static void guac_ipmi_control_send_state(guac_user* user, guac_client* client,
         bool query) {
 
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
 
-    const char* power = "unknown";
+    pthread_mutex_lock(&ipmi_client->state_lock);
+    bool sol_connected = ipmi_client->sol_connected;
+    pthread_mutex_unlock(&ipmi_client->state_lock);
+
+    const char* health = sol_connected ? "sol-connected" : "sol-disconnected";
+
+    char json[256];
+
     if (query) {
+
+        const char* power = "unknown";
         char status[128];
         if (guac_ipmi_chassis_status(client, status, sizeof(status)) == 0) {
             if (strstr(status, "OFF") != NULL)
@@ -178,16 +191,32 @@ static void guac_ipmi_control_send_state(guac_user* user, guac_client* client,
             else if (strstr(status, "ON") != NULL)
                 power = "on";
         }
+
+        snprintf(json, sizeof(json),
+                "{\"type\":\"state\",\"power\":\"%s\",\"health\":\"%s\"}",
+                power, health);
+
     }
+    else
+        snprintf(json, sizeof(json),
+                "{\"type\":\"state\",\"health\":\"%s\"}", health);
 
-    const char* health = ipmi_client->console_ctx != NULL
-            ? "sol-connected" : "sol-disconnected";
-
-    char json[256];
-    snprintf(json, sizeof(json),
-            "{\"type\":\"state\",\"power\":\"%s\",\"health\":\"%s\"}",
-            power, health);
     guac_ipmi_control_send(user, json);
+
+}
+
+static void* guac_ipmi_control_broadcast_state_callback(guac_user* user,
+        void* data) {
+
+    guac_ipmi_control_send_state(user, (guac_client*) data, false);
+    return NULL;
+
+}
+
+void guac_ipmi_control_broadcast_state(guac_client* client) {
+
+    guac_client_foreach_user(client,
+            guac_ipmi_control_broadcast_state_callback, client);
 
 }
 

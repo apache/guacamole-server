@@ -21,6 +21,7 @@
 
 #include "argv.h"
 #include "chassis.h"
+#include "control.h"
 #include "ipmi.h"
 #include "terminal/terminal.h"
 
@@ -418,6 +419,11 @@ void* guac_ipmi_client_thread(void* data) {
 
     guac_client_log(client, GUAC_LOG_INFO, "IPMI SOL session established.");
 
+    pthread_mutex_lock(&ipmi_client->state_lock);
+    ipmi_client->sol_connected = true;
+    pthread_mutex_unlock(&ipmi_client->state_lock);
+    guac_ipmi_control_broadcast_state(client);
+
     /* Allow the terminal to begin rendering immediately, before any
      * (potentially slow) pre-connect chassis actions are applied. SOL output
      * produced during those actions is buffered by the libipmiconsole engine
@@ -453,6 +459,11 @@ void* guac_ipmi_client_thread(void* data) {
     }
 
     /* Kill client and wait for input thread to die */
+    pthread_mutex_lock(&ipmi_client->state_lock);
+    ipmi_client->sol_connected = false;
+    pthread_mutex_unlock(&ipmi_client->state_lock);
+    guac_ipmi_control_broadcast_state(client);
+
     guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
