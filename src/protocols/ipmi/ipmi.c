@@ -114,12 +114,27 @@ static int __guac_ipmi_write_all(int fd, const char* buffer, int size) {
         /* Attempt to write data */
         int ret_val;
         GUAC_RETRY_EINTR(ret_val, write(fd, buffer, remaining));
-        if (ret_val <= 0)
-            return -1;
 
-        /* If successful, continue with what data remains (if any) */
-        remaining -= ret_val;
-        buffer += ret_val;
+        /* Continue with whatever data remains after a partial write */
+        if (ret_val > 0) {
+            remaining -= ret_val;
+            buffer += ret_val;
+            continue;
+        }
+
+        /* If the write would block (should the libipmiconsole descriptor ever
+         * be non-blocking), wait for it to become writable and retry rather
+         * than dropping input; any other error, or EOF, is fatal. */
+        if (ret_val < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            struct pollfd pfd = { .fd = fd, .events = POLLOUT, .revents = 0 };
+            int wait_result;
+            GUAC_RETRY_EINTR(wait_result, poll(&pfd, 1, -1));
+            if (wait_result < 0)
+                return -1;
+            continue;
+        }
+
+        return -1;
 
     }
 
