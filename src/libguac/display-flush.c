@@ -304,6 +304,7 @@ void guac_display_end_mouse_frame(guac_display* display) {
 void guac_display_end_multiple_frames(guac_display* display, int frames) {
 
     guac_display_plan* plan = NULL;
+    guac_display_layer* removed_layers = NULL;
 
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
     display->pending_frame.frames += frames;
@@ -380,6 +381,16 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
 
     guac_rwlock_release_lock(&display->last_frame.lock);
 
+    /* The last frame layer list has now been rebuilt from the pending frame
+     * layer list, so any layers removed since the previous flush are no longer
+     * part of either frame. Detach them for destruction below.
+     *
+     * IMPORTANT: These layers MUST NOT be freed until after the frame is fully
+     * flushed. The display plan may reference a removed layer's buffer as the
+     * source of a copy operation, and that plan has not yet been applied. */
+    removed_layers = display->pending_frame_removed_layers;
+    display->pending_frame_removed_layers = NULL;
+
     /* Awaken worker threads to perform the rest of the tasks required for the
      * frame (if any such tasks remain) */
     if (plan != NULL) {
@@ -402,5 +413,9 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
 
 finished_with_pending_frame_lock:
     guac_rwlock_release_lock(&display->pending_frame.lock);
+
+    /* Free any layers detached above. NOTE: This is intentionally done outside
+     * the pending frame lock to avoid contending with drawing operations. */
+    guac_display_free_removed_layers(display, removed_layers);
 
 }
