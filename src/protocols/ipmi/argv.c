@@ -88,7 +88,8 @@ void guac_ipmi_send_current_argv_batch(
 
     /* Send current font size */
     char font_size[64];
-    sprintf(font_size, "%i", guac_terminal_get_font_size(terminal));
+    snprintf(font_size, sizeof(font_size), "%i",
+            guac_terminal_get_font_size(terminal));
     guac_client_stream_argv(client, socket, "text/plain",
             GUAC_IPMI_ARGV_FONT_SIZE, font_size);
 
