@@ -69,6 +69,8 @@ int guac_ipmi_user_join_handler(guac_user* user, int argc, char** argv) {
             return 1;
         }
 
+        ipmi_client->client_thread_valid = true;
+
     }
 
     /* Only handle events if not read-only */
