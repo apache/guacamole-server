@@ -411,15 +411,19 @@ void guac_ipmi_menu_handle_key(guac_client* client, int keysym) {
 
         /* Send a serial break over the active SOL session */
         case 'b':
-        case 'B':
-            if (ipmi_client->console_ctx != NULL
+        case 'B': {
+            pthread_mutex_lock(&ipmi_client->state_lock);
+            int broke = ipmi_client->sol_connected
                     && ipmiconsole_ctx_generate_break(
-                        ipmi_client->console_ctx) == 0)
+                        ipmi_client->console_ctx) == 0;
+            pthread_mutex_unlock(&ipmi_client->state_lock);
+            if (broke)
                 guac_ipmi_menu_print(client, "\r\nBreak sent.\r\n");
             else
                 guac_ipmi_menu_print(client, "\r\nUnable to send break.\r\n");
             guac_ipmi_menu_await_dismiss(client);
             break;
+        }
 
         /* Close the menu without action */
         case 'q':

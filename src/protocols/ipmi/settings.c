@@ -879,9 +879,14 @@ void guac_ipmi_settings_free(guac_ipmi_settings* settings) {
     guac_mem_free(settings->hostname);
     guac_mem_free(settings->port);
 
-    /* Free credentials */
+    /* Free credentials, scrubbing the sensitive BMC secrets from memory before
+     * releasing them so plaintext does not linger in freed heap. */
     guac_mem_free(settings->username);
+    if (settings->password != NULL)
+        explicit_bzero(settings->password, strlen(settings->password));
     guac_mem_free(settings->password);
+    if (settings->k_g != NULL)
+        explicit_bzero(settings->k_g, settings->k_g_length);
     guac_mem_free(settings->k_g);
 
     /* Free display preferences */

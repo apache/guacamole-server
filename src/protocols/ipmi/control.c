@@ -327,10 +327,14 @@ static void guac_ipmi_control_dispatch(guac_user* user, const char* line) {
         return;
     }
 
-    /* Break operates on the existing SOL session, not a chassis session */
+    /* Break operates on the existing SOL session, not a chassis session. Hold
+     * state_lock and test sol_connected so the context cannot be torn down
+     * between the liveness check and its use. */
     if (strcmp(command, "send-break") == 0) {
-        int ok = ipmi_client->console_ctx != NULL
+        pthread_mutex_lock(&ipmi_client->state_lock);
+        int ok = ipmi_client->sol_connected
                 && ipmiconsole_ctx_generate_break(ipmi_client->console_ctx) == 0;
+        pthread_mutex_unlock(&ipmi_client->state_lock);
         guac_ipmi_control_send_result(user, id, ok,
                 ok ? "Break sent." : "Unable to send break.");
         return;
