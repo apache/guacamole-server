@@ -64,4 +64,48 @@ void guac_ipmi_control_broadcast_state(guac_client* client);
  */
 void guac_ipmi_control_open(guac_user* user, guac_stream* stream);
 
+/**
+ * Escapes the given string into the body of a JSON string (without the
+ * surrounding quotes), writing at most dstlen-1 bytes plus a NUL terminator.
+ * Control characters other than the standard JSON escapes are dropped.
+ *
+ * Exposed (rather than file-static) so the parser can be unit-tested.
+ *
+ * @param dst
+ *     The buffer to which the escaped string should be written.
+ *
+ * @param dstlen
+ *     The size of dst, in bytes.
+ *
+ * @param src
+ *     The null-terminated string to escape.
+ */
+void guac_ipmi_control_json_escape(char* dst, int dstlen, const char* src);
+
+/**
+ * Extracts the string value of the given key from a flat JSON object into out.
+ * The key is matched only when used as an object key (followed by a colon), so
+ * an identical token appearing as a value is not matched.
+ *
+ * Exposed (rather than file-static) so the parser can be unit-tested.
+ *
+ * @param json
+ *     The null-terminated flat JSON object to search.
+ *
+ * @param key
+ *     The key whose string value should be extracted.
+ *
+ * @param out
+ *     The buffer to which the extracted value should be written.
+ *
+ * @param outlen
+ *     The size of out, in bytes.
+ *
+ * @return
+ *     Non-zero if the key was found and its value written to out, zero
+ *     otherwise.
+ */
+int guac_ipmi_control_json_get(const char* json, const char* key,
+        char* out, int outlen);
+
 #endif
