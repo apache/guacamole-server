@@ -26,48 +26,40 @@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = . tests
+#
+# Unit tests for IPMI support
+#
 
-lib_LTLIBRARIES = libguac-client-ipmi.la
+check_PROGRAMS = test_ipmi
+TESTS = $(check_PROGRAMS)
 
-libguac_client_ipmi_la_SOURCES = \
-    argv.c                       \
-    chassis.c                    \
-    client.c                     \
-    clipboard.c                  \
-    control.c                    \
-    input.c                      \
-    ipmi.c                       \
-    menu.c                       \
-    pipe.c                       \
-    settings.c                   \
-    user.c
+test_ipmi_SOURCES =        \
+    control/json_escape.c  \
+    control/json_get.c
 
-noinst_HEADERS = \
-    argv.h       \
-    chassis.h    \
-    client.h     \
-    clipboard.h  \
-    control.h    \
-    input.h      \
-    ipmi.h       \
-    menu.h       \
-    pipe.h       \
-    settings.h   \
-    user.h
+test_ipmi_CFLAGS =                \
+    -Werror -Wall -pedantic       \
+    @LIBGUAC_CLIENT_IPMI_INCLUDE@ \
+    @LIBGUAC_INCLUDE@
 
-libguac_client_ipmi_la_CFLAGS = \
-    -Werror -Wall -Iinclude     \
-    @LIBGUAC_INCLUDE@           \
-    @IPMI_CFLAGS@               \
-    @TERMINAL_INCLUDE@
+test_ipmi_LDADD =               \
+    @CUNIT_LIBS@                \
+    @LIBGUAC_CLIENT_IPMI_LTLIB@
 
-libguac_client_ipmi_la_LIBADD = \
-    @COMMON_LTLIB@              \
-    @LIBGUAC_LTLIB@            \
-    @TERMINAL_LTLIB@           \
-    @IPMI_LIBS@
+#
+# Autogenerate test runner
+#
 
-libguac_client_ipmi_la_LDFLAGS = \
-    -version-info 0:0:0          \
-    @PTHREAD_LIBS@
+GEN_RUNNER = $(top_srcdir)/util/generate-test-runner.pl
+CLEANFILES = _generated_runner.c
+
+_generated_runner.c: $(test_ipmi_SOURCES)
+	$(AM_V_GEN) $(GEN_RUNNER) $(test_ipmi_SOURCES) > $@
+
+nodist_test_ipmi_SOURCES = \
+    _generated_runner.c
+
+# Use automake's TAP test driver for running any tests
+LOG_DRIVER =                \
+    env AM_TAP_AWK='$(AWK)' \
+    $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh

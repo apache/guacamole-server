@@ -75,7 +75,7 @@ typedef struct guac_ipmi_control_stream {
  * Escapes the given string into the body of a JSON string (without the
  * surrounding quotes), writing at most dstlen-1 bytes plus a NUL terminator.
  */
-static void guac_ipmi_control_json_escape(char* dst, int dstlen,
+void guac_ipmi_control_json_escape(char* dst, int dstlen,
         const char* src) {
 
     int j = 0;
@@ -100,7 +100,7 @@ static void guac_ipmi_control_json_escape(char* dst, int dstlen,
  * Extracts the string value of the given key from a flat JSON object into out.
  * Returns non-zero if the key was found.
  */
-static int guac_ipmi_control_json_get(const char* json, const char* key,
+int guac_ipmi_control_json_get(const char* json, const char* key,
         char* out, int outlen) {
 
     char needle[64];

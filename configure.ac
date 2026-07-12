@@ -210,6 +210,10 @@ AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_LTLIB],   '$(top_builddir)/src/protocols/kubernetes/libguac-client-kubernetes.la')
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_INCLUDE], '-I$(top_srcdir)/src/protocols/kubernetes')
 
+# IPMI support
+AC_SUBST([LIBGUAC_CLIENT_IPMI_LTLIB],   '$(top_builddir)/src/protocols/ipmi/libguac-client-ipmi.la')
+AC_SUBST([LIBGUAC_CLIENT_IPMI_INCLUDE], '-I$(top_srcdir)/src/protocols/ipmi')
+
 # RDP support
 AC_SUBST([LIBGUAC_CLIENT_RDP_LTLIB],   '$(top_builddir)/src/protocols/rdp/libguac-client-rdp.la')
 AC_SUBST([LIBGUAC_CLIENT_RDP_INCLUDE], '-I$(top_srcdir)/src/protocols/rdp')
@@ -1522,6 +1526,7 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
                  src/protocols/ipmi/Makefile
+                 src/protocols/ipmi/tests/Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
 
