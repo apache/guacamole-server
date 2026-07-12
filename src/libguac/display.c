@@ -256,8 +256,14 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
 
         const guac_layer* layer = current->layer;
 
-        guac_rect layer_bounds;
-        guac_display_layer_get_bounds(current, &layer_bounds);
+        /* Determine layer bounds from last frame, NOT pending frame as
+         * provided by guac_display_layer_get_bounds() */
+        guac_rect layer_bounds = {
+            .left   = 0,
+            .top    = 0,
+            .right  = current->last_frame.width,
+            .bottom = current->last_frame.height
+        };
 
         int width = guac_rect_width(&layer_bounds);
         int height = guac_rect_height(&layer_bounds);
