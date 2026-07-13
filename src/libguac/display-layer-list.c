@@ -23,6 +23,7 @@
 #include "guacamole/display.h"
 #include "guacamole/layer.h"
 #include "guacamole/mem.h"
+#include "guacamole/protocol.h"
 #include "guacamole/rwlock.h"
 
 #include <cairo/cairo.h>
@@ -308,64 +309,81 @@ void guac_display_remove_layer(guac_display_layer* display_layer) {
     if (display_layer->pending_frame.next != NULL)
         display_layer->pending_frame.next->pending_frame.prev = display_layer->pending_frame.prev;
 
+    /* Clear the now-stale list pointers so that an erroneous second removal of
+     * the same layer trips the assertion above rather than corrupting the
+     * list */
+    display_layer->pending_frame.prev = NULL;
+    display_layer->pending_frame.next = NULL;
+
+    /* Automatically detach any external buffer */
+    if (display_layer->pending_frame.buffer_is_external)
+        display_layer->pending_frame.buffer = NULL;
+
+    /* The layer is deliberately NOT unlinked from the last_frame list here, as
+     * full removal and release of memory is deferred until after frame flush */
+    display_layer->next_removed = display->pending_frame_removed_layers;
+    display->pending_frame_removed_layers = display_layer;
+
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
-    /*
-     * Remove layer from last frame
-     */
+}
 
-    guac_rwlock_acquire_write_lock(&display->last_frame.lock);
-
-    /* Update previous element, if it exists */
-    if (display_layer->last_frame.prev != NULL)
-        display_layer->last_frame.prev->last_frame.next = display_layer->last_frame.next;
-
-    /* If there is no previous element, then this element is the list head if
-     * the list has any elements at all. Update the list head accordingly. */
-    else if (display->last_frame.layers != NULL) {
-        GUAC_ASSERT(display->last_frame.layers == display_layer);
-        display->last_frame.layers = display_layer->last_frame.next;
-    }
-
-    /* Update next element, if it exists */
-    if (display_layer->last_frame.next != NULL)
-        display_layer->last_frame.next->last_frame.prev = display_layer->last_frame.prev;
-
-    guac_rwlock_release_lock(&display->last_frame.lock);
-
-    /*
-     * Layer has now been removed from both pending and last frame lists and
-     * can be safely freed
-     */
+void guac_display_free_removed_layers(guac_display* display,
+        guac_display_layer* removed_layers) {
 
     guac_client* client = display->client;
-    guac_client_free_buffer(client, display_layer->last_frame_buffer);
 
-    /* Release any Cairo resources */
-    guac_display_layer_cairo_context* cairo_context = &(display_layer->pending_frame_cairo_context);
-    if (cairo_context->surface != NULL) {
+    guac_display_layer* current = removed_layers;
+    while (current != NULL) {
 
-        cairo_surface_destroy(cairo_context->surface);
-        cairo_context->surface = NULL;
+        guac_display_layer* next_removed = current->next_removed;
+        const guac_layer* layer = current->layer;
 
-        cairo_destroy(cairo_context->cairo);
-        cairo_context->cairo = NULL;
+        guac_client_free_buffer(client, current->last_frame_buffer);
+
+        /* Release any Cairo resources */
+        guac_display_layer_cairo_context* cairo_context = &(current->pending_frame_cairo_context);
+        if (cairo_context->surface != NULL) {
+
+            cairo_surface_destroy(cairo_context->surface);
+            cairo_context->surface = NULL;
+
+            cairo_destroy(cairo_context->cairo);
+            cairo_context->cairo = NULL;
+
+        }
+
+        /* Free memory for underlying image surface and change tracking cells.
+         * Note that we do NOT free the associated memory for the pending frame
+         * if it was replaced with an external buffer. */
+
+        if (!current->pending_frame.buffer_is_external)
+            guac_mem_free(current->pending_frame.buffer);
+
+        guac_mem_free(current->last_frame.buffer);
+        guac_mem_free(current->pending_frame_cells);
+
+        pthread_mutex_destroy(&current->path_lock);
+
+        if (layer->index != 0) {
+
+            /* Free the corresponding layer/buffer on the remote side */
+            guac_protocol_send_dispose(client->socket, layer);
+
+            /* As long as this isn't the display layer, it's safe to cast away
+             * the constness and free the underlying layer/buffer. Only the
+             * default layer (layer #0) is truly const. */
+            if (layer->index > 0)
+                guac_client_free_layer(client, (guac_layer*) layer);
+            else
+                guac_client_free_buffer(client, (guac_layer*) layer);
+
+        }
+
+        guac_mem_free(current);
+        current = next_removed;
 
     }
-
-    /* Free memory for underlying image surface and change tracking cells. Note
-     * that we do NOT free the associated memory for the pending frame if it
-     * was replaced with an external buffer. */
-
-    if (!display_layer->pending_frame.buffer_is_external)
-        guac_mem_free(display_layer->pending_frame.buffer);
-
-    guac_mem_free(display_layer->last_frame.buffer);
-    guac_mem_free(display_layer->pending_frame_cells);
-
-    pthread_mutex_destroy(&display_layer->path_lock);
-
-    guac_mem_free(display_layer);
 
 }
 

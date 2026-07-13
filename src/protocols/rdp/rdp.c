@@ -680,12 +680,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_display_render_thread_destroy(rdp_client->render_thread);
     rdp_client->render_thread = NULL;
 
-    /* Remove reference to FreeRDP's GDI buffer so that it can be safely freed
-     * prior to freeing the guac_display */
-    guac_display_layer_raw_context* context = guac_display_layer_open_raw(default_layer);
-    context->buffer = NULL;
-    guac_display_layer_close_raw(default_layer, context);
-
     /* Ensure all background rendering processes are stopped before freeing
      * underlying memory */
     guac_display_stop(rdp_client->display);
