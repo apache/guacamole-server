@@ -56,6 +56,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"usbconnect",    __guac_handle_usbconnect},
    {"usbdata",       __guac_handle_usbdata},
    {"usbdisconnect", __guac_handle_usbdisconnect},
+   {"auth-response", __guac_handle_auth_response},
    {NULL,            NULL}
 };
 
@@ -317,6 +318,7 @@ static guac_stream* __init_input_stream(guac_user* user, int stream_index) {
     stream->ack_handler = NULL;
     stream->blob_handler = NULL;
     stream->end_handler = NULL;
+    stream->free_handler = NULL;
 
     return stream;
 
@@ -855,3 +857,32 @@ int __guac_user_call_opcode_handler(__guac_instruction_handler_mapping* map,
     return 0;
 
 }
+
+int __guac_handle_auth_response(guac_user* user, int argc, char** argv) {
+
+    /* Need stream index, mimetype, and challenge id */
+    if (argc < 3)
+        return 0;
+
+    /* Pull corresponding stream */
+    int stream_index = atoi(argv[0]);
+    guac_stream* stream = __init_input_stream(user, stream_index);
+    if (stream == NULL)
+        return 0;
+
+    /* If supported, call handler */
+    if (user->auth_response_handler)
+        return user->auth_response_handler(
+            user,
+            stream,
+            argv[1], /* mimetype */
+            argv[2]  /* challenge_id */
+        );
+
+    /* Otherwise, abort */
+    guac_protocol_send_ack(user->socket, stream,
+            "Auth responses unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
+    return 0;
+
+}
+

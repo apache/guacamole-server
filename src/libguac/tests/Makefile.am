@@ -41,6 +41,7 @@ noinst_HEADERS =                     \
 test_libguac_SOURCES =               \
     client/buffer_pool.c             \
     client/layer_pool.c              \
+    client/stream_free_handler.c     \
     fifo/fifo.c                      \
     file/openat.c                    \
     flag/flag.c                      \
@@ -61,6 +62,7 @@ test_libguac_SOURCES =               \
     pool/next_free.c                 \
     protocol/base64_decode.c         \
     protocol/guac_protocol_version.c \
+    protocol/auth_send.c             \
     rect/align.c                     \
     rect/constrain.c                 \
     rect/extend.c                    \
@@ -76,7 +78,8 @@ test_libguac_SOURCES =               \
     unicode/charsize.c               \
     unicode/read.c                   \
     unicode/strlen.c                 \
-    unicode/write.c
+    unicode/write.c                  \
+    user/auth_dispatch.c
 
 test_libguac_CFLAGS =       \
     -Werror -Wall -pedantic \

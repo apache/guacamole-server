@@ -189,6 +189,13 @@ __guac_instruction_handler __guac_handle_disconnect;
 __guac_instruction_handler __guac_handle_nop;
 
 /**
+ * Internal handler for the auth-response instruction. Looks up the
+ * stream announced by the instruction and dispatches to the user's
+ * auth_response_handler so the body riding the stream can be consumed.
+ */
+__guac_instruction_handler __guac_handle_auth_response;
+
+/**
  * Internal handler function that is called when the size instruction is
  * received during the handshake process.
  */

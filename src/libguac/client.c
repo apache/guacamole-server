@@ -138,12 +138,24 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
     allocd_stream->ack_handler = NULL;
     allocd_stream->blob_handler = NULL;
     allocd_stream->end_handler = NULL;
+    allocd_stream->free_handler = NULL;
 
     return allocd_stream;
 
 }
 
 void guac_client_free_stream(guac_client* client, guac_stream* stream) {
+
+    /* Run the registered free handler for the stream's data, if any */
+    if (stream->free_handler != NULL)
+        stream->free_handler(stream);
+
+    /* Clean up any remaining dangling pointers before permitting reuse */
+    stream->data = NULL;
+    stream->ack_handler = NULL;
+    stream->blob_handler = NULL;
+    stream->end_handler = NULL;
+    stream->free_handler = NULL;
 
     /* Mark stream as closed */
     int freed_index = stream->index;
@@ -292,6 +304,7 @@ guac_client* guac_client_alloc(void) {
 
     for (i=0; i<GUAC_CLIENT_MAX_STREAMS; i++) {
         client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
+        client->__output_streams[i].free_handler = NULL;
     }
 
     /* Init locks */
@@ -346,6 +359,15 @@ void guac_client_free(guac_client* client) {
     /* Free layer pools */
     guac_pool_free(client->__buffer_pool);
     guac_pool_free(client->__layer_pool);
+
+    /* Run any registered free handlers for streams still open at
+     * disconnect so their data pointers do not leak */
+    for (int i = 0; i < GUAC_CLIENT_MAX_STREAMS; i++) {
+        guac_stream* stream = &client->__output_streams[i];
+        if (stream->index != GUAC_CLIENT_CLOSED_STREAM_INDEX
+                && stream->free_handler != NULL)
+            stream->free_handler(stream);
+    }
 
     /* Free streams */
     guac_mem_free(client->__output_streams);
