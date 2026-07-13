@@ -21,9 +21,11 @@
 # Dockerfile for guacamole-server
 #
 
-# The Alpine Linux image that should be used as the basis for the guacd image
-# NOTE: Using 3.18 because the required openssl1.1-compat-dev package was
-# removed in more recent versions.
+# The Alpine Linux image that should be used as the basis for the guacd image.
+# NOTE: still pinned to 3.18. Moving to a newer base is a separate, larger
+# change (newer Alpine renames packages such as webkit2gtk and ships a CMake
+# that rejects the older cmake_minimum_required used by some bundled dependency
+# sources), and is out of scope for database protocol support.
 ARG ALPINE_BASE_IMAGE=3.18
 
 # The target architecture of the build. Valid values are "ARM" and "X86". By
@@ -161,7 +163,10 @@ ARG LIBWEBSOCKETS_X86_OPTS=""
 FROM alpine:${ALPINE_BASE_IMAGE} AS builder
 ARG BUILD_DIR
 
-# Install build dependencies
+# Install build dependencies. openssl-dev (OpenSSL 3) replaces the older
+# openssl1.1-compat-dev previously used here: the database client libraries
+# require it, and the VNC/OpenSSL 3 incompatibility that originally required
+# OpenSSL 1.1 (GUACAMOLE-1741) was fixed upstream in LibVNCServer 0.9.15.
 RUN apk add --no-cache                \
         autoconf                      \
         automake                      \
@@ -170,15 +175,19 @@ RUN apk add --no-cache                \
         cjson-dev                     \
         cmake                         \
         cunit-dev                     \
+        freetds-dev                   \
         git                           \
         grep                          \
         krb5-dev                      \
         libjpeg-turbo-dev             \
         libpng-dev                    \
+        libpq-dev                     \
         libtool                       \
         libwebp-dev                   \
         make                          \
-        openssl1.1-compat-dev         \
+        mariadb-connector-c-dev       \
+        mongo-c-driver-dev            \
+        openssl-dev                   \
         pango-dev                     \
         pulseaudio-dev                \
         sdl2-dev                      \
