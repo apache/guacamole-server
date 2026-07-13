@@ -1496,6 +1496,53 @@ AC_SUBST(MARIADB_CFLAGS)
 AC_SUBST(MARIADB_LIBS)
 
 #
+# libpq
+#
+
+have_libpq=disabled
+LIBPQ_CFLAGS=
+LIBPQ_LIBS=
+AC_ARG_WITH([libpq],
+            [AS_HELP_STRING([--with-libpq],
+                            [support the PostgreSQL protocol via libpq @<:@default=check@:>@])],
+            [],
+            [with_libpq=check])
+
+if test "x$with_libpq" != "xno"
+then
+
+    PKG_CHECK_MODULES([LIBPQ], [libpq],
+                      [have_libpq=yes],
+                      [have_libpq=no])
+
+    # Fall back to searching the standard paths if pkg-config metadata is
+    # unavailable
+    if test "x${have_libpq}" = "xno"
+    then
+        AC_CHECK_LIB([pq], [PQconnectdbParams],
+                     [AC_CHECK_HEADER([libpq-fe.h],
+                                      [LIBPQ_LIBS="-lpq"
+                                       have_libpq=yes])])
+    fi
+
+    if test "x${have_libpq}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libpq.
+   Support for the PostgreSQL protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_POSTGRESQL], [test "x${have_libpq}"    = "xyes" \
+                                       -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(LIBPQ_CFLAGS)
+AC_SUBST(LIBPQ_LIBS)
+
+#
 # guacd
 #
 
@@ -1563,6 +1610,7 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
                  src/protocols/mysql/Makefile
+                 src/protocols/postgresql/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
@@ -1576,6 +1624,7 @@ AC_OUTPUT
 
 AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
 AM_COND_IF([ENABLE_MYSQL],      [build_mysql=yes],      [build_mysql=no])
+AM_COND_IF([ENABLE_POSTGRESQL], [build_postgresql=yes], [build_postgresql=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
 AM_COND_IF([ENABLE_TELNET],     [build_telnet=yes],     [build_telnet=no])
@@ -1625,6 +1674,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libavformat ......... ${have_libavformat}
      libavutil ........... ${have_libavutil}
      libmariadb .......... ${have_mariadb}
+     libpq ............... ${have_libpq}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
      libswscale .......... ${have_libswscale}
@@ -1640,6 +1690,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
       Kubernetes .... ${build_kubernetes}
       MySQL ......... ${build_mysql}
+      PostgreSQL .... ${build_postgresql}
       RDP ........... ${build_rdp}
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
