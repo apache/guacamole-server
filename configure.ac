@@ -214,6 +214,10 @@ AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_INCLUDE], '-I$(top_srcdir)/src/protocols/kub
 AC_SUBST([LIBGUAC_CLIENT_RDP_LTLIB],   '$(top_builddir)/src/protocols/rdp/libguac-client-rdp.la')
 AC_SUBST([LIBGUAC_CLIENT_RDP_INCLUDE], '-I$(top_srcdir)/src/protocols/rdp')
 
+# SPICE support
+AC_SUBST([LIBGUAC_CLIENT_SPICE_LTLIB],   '$(top_builddir)/src/protocols/spice/libguac-client-spice.la')
+AC_SUBST([LIBGUAC_CLIENT_SPICE_INCLUDE], '-I$(top_srcdir)/src/protocols/spice')
+
 # Terminal emulator
 AC_SUBST([TERMINAL_LTLIB],   '$(top_builddir)/src/terminal/libguac-terminal.la')
 AC_SUBST([TERMINAL_INCLUDE], '-I$(top_srcdir)/src/terminal $(PANGO_CFLAGS) $(PANGOCAIRO_CFLAGS) $(COMMON_INCLUDE)')
@@ -557,6 +561,45 @@ fi
 
 AM_CONDITIONAL([ENABLE_VNC], [test "x${have_libvncserver}" = "xyes"])
 AC_SUBST(VNC_LIBS)
+
+#
+# spice-gtk (SPICE protocol support)
+#
+
+have_spice=disabled
+AC_ARG_WITH([spice],
+            [AS_HELP_STRING([--with-spice],
+                            [support SPICE @<:@default=check@:>@])],
+            [],
+            [with_spice=check])
+
+if test "x$with_spice" != "xno"
+then
+    have_spice=yes
+
+    # libguac-client-spice is built against the GObject-based SPICE client
+    # library provided by spice-gtk. PKG_CHECK_MODULES automatically defines
+    # and AC_SUBSTs SPICE_CFLAGS and SPICE_LIBS.
+    PKG_CHECK_MODULES([SPICE], [spice-client-glib-2.0 >= 0.38],,
+                      [have_spice=no])
+fi
+
+#
+# Optional shared-folder (WebDAV) support for SPICE via libphodav
+#
+
+have_phodav=no
+if test "x${have_spice}" = "xyes"
+then
+    PKG_CHECK_MODULES([PHODAV], [libphodav-3.0],
+                      [have_phodav=yes
+                       AC_DEFINE([ENABLE_SPICE_WEBDAV],,
+                                 [Whether SPICE shared-folder (WebDAV) support via libphodav is enabled.])],
+                      [have_phodav=no])
+fi
+
+AM_CONDITIONAL([ENABLE_SPICE], [test "x${have_spice}" = "xyes"])
+AM_CONDITIONAL([ENABLE_SPICE_WEBDAV], [test "x${have_phodav}" = "xyes"])
 
 #
 # Repeater support within libVNCServer
@@ -1461,6 +1504,18 @@ AC_ARG_ENABLE([guaclog],
 AM_CONDITIONAL([ENABLE_GUACLOG], [test "x${enable_guaclog}"  = "xyes"])
 
 #
+# guacclip
+#
+
+AC_ARG_ENABLE([guacclip],
+              [AS_HELP_STRING([--disable-guacclip],
+                              [do not build the Guacamole clipboard artifact extraction tool])],
+              [],
+              [enable_guacclip=yes])
+
+AM_CONDITIONAL([ENABLE_GUACCLIP], [test "x${enable_guacclip}"  = "xyes"])
+
+#
 # Output Makefiles
 #
 
@@ -1482,6 +1537,9 @@ AC_CONFIG_FILES([Makefile
                  src/guacenc/man/guacenc.1
                  src/guaclog/Makefile
                  src/guaclog/man/guaclog.1
+                 src/guacclip/Makefile
+                 src/guacclip/tests/Makefile
+                 src/guacclip/man/guacclip.1
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
@@ -1489,7 +1547,9 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
-                 src/protocols/vnc/Makefile])
+                 src/protocols/vnc/Makefile
+                 src/protocols/spice/Makefile
+                 src/protocols/spice/tests/Makefile])
 AC_OUTPUT
 
 #
@@ -1501,6 +1561,7 @@ AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
 AM_COND_IF([ENABLE_TELNET],     [build_telnet=yes],     [build_telnet=no])
 AM_COND_IF([ENABLE_VNC],        [build_vnc=yes],        [build_vnc=no])
+AM_COND_IF([ENABLE_SPICE],      [build_spice=yes],      [build_spice=no])
 
 #
 # Service / tool build status
@@ -1509,6 +1570,7 @@ AM_COND_IF([ENABLE_VNC],        [build_vnc=yes],        [build_vnc=no])
 AM_COND_IF([ENABLE_GUACD],   [build_guacd=yes],   [build_guacd=no])
 AM_COND_IF([ENABLE_GUACENC], [build_guacenc=yes], [build_guacenc=no])
 AM_COND_IF([ENABLE_GUACLOG], [build_guaclog=yes], [build_guaclog=no])
+AM_COND_IF([ENABLE_GUACCLIP], [build_guacclip=yes], [build_guacclip=no])
 
 #
 # Init scripts
@@ -1550,6 +1612,8 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libswscale .......... ${have_libswscale}
      libtelnet ........... ${have_libtelnet}
      libVNCServer ........ ${have_libvncserver}
+     spice-gtk ........... ${have_spice}
+     libphodav ........... ${have_phodav}
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
      libwebsockets ....... ${have_libwebsockets}
@@ -1563,12 +1627,14 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
       VNC ........... ${build_vnc}
+      SPICE ......... ${build_spice}
 
    Services / tools:
 
       guacd ...... ${build_guacd}
       guacenc .... ${build_guacenc}
       guaclog .... ${build_guaclog}
+      guacclip ... ${build_guacclip}
 
    FreeRDP plugins: ${build_rdp_plugins}
    Init scripts: ${build_init}

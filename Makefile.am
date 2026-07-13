@@ -34,12 +34,14 @@ DIST_SUBDIRS =               \
     src/guacd                \
     src/guacenc              \
     src/guaclog              \
+    src/guacclip             \
     src/pulse                \
     src/protocols/kubernetes \
     src/protocols/rdp        \
     src/protocols/ssh        \
     src/protocols/telnet     \
-    src/protocols/vnc
+    src/protocols/vnc        \
+    src/protocols/spice
 
 SUBDIRS =        \
     src/libguac  \
@@ -77,6 +79,10 @@ if ENABLE_VNC
 SUBDIRS += src/protocols/vnc
 endif
 
+if ENABLE_SPICE
+SUBDIRS += src/protocols/spice
+endif
+
 if ENABLE_GUACD
 SUBDIRS += src/guacd
 endif
@@ -87,6 +93,10 @@ endif
 
 if ENABLE_GUACLOG
 SUBDIRS += src/guaclog
+endif
+
+if ENABLE_GUACCLIP
+SUBDIRS += src/guacclip
 endif
 
 EXTRA_DIST =                         \
