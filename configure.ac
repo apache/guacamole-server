@@ -1543,6 +1543,49 @@ AC_SUBST(LIBPQ_CFLAGS)
 AC_SUBST(LIBPQ_LIBS)
 
 #
+# FreeTDS (CT-Library)
+#
+
+have_freetds=disabled
+FREETDS_CFLAGS=
+FREETDS_LIBS=
+AC_ARG_WITH([freetds],
+            [AS_HELP_STRING([--with-freetds],
+                            [support the SQL Server protocol via FreeTDS @<:@default=check@:>@])],
+            [],
+            [with_freetds=check])
+
+if test "x$with_freetds" != "xno"
+then
+
+    have_freetds=yes
+    AC_CHECK_LIB([ct], [ct_connect],
+                 [FREETDS_LIBS="-lct"],
+                 [have_freetds=no])
+
+    if test "x${have_freetds}" = "xyes"
+    then
+        AC_CHECK_HEADER([ctpublic.h],, [have_freetds=no])
+    fi
+
+    if test "x${have_freetds}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find FreeTDS (CT-Library).
+   Support for the SQL Server protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_MSSQL], [test "x${have_freetds}"  = "xyes" \
+                                  -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(FREETDS_CFLAGS)
+AC_SUBST(FREETDS_LIBS)
+
+#
 # guacd
 #
 
@@ -1609,6 +1652,7 @@ AC_CONFIG_FILES([Makefile
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
+                 src/protocols/mssql/Makefile
                  src/protocols/mysql/Makefile
                  src/protocols/postgresql/Makefile
                  src/protocols/rdp/Makefile
@@ -1623,6 +1667,7 @@ AC_OUTPUT
 #
 
 AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
+AM_COND_IF([ENABLE_MSSQL],      [build_mssql=yes],      [build_mssql=no])
 AM_COND_IF([ENABLE_MYSQL],      [build_mysql=yes],      [build_mysql=no])
 AM_COND_IF([ENABLE_POSTGRESQL], [build_postgresql=yes], [build_postgresql=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
@@ -1673,6 +1718,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libavcodec .......... ${have_libavcodec}
      libavformat ......... ${have_libavformat}
      libavutil ........... ${have_libavutil}
+     freetds ............. ${have_freetds}
      libmariadb .......... ${have_mariadb}
      libpq ............... ${have_libpq}
      libssh2 ............. ${have_libssh2}
@@ -1691,6 +1737,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       Kubernetes .... ${build_kubernetes}
       MySQL ......... ${build_mysql}
       PostgreSQL .... ${build_postgresql}
+      SQL Server .... ${build_mssql}
       RDP ........... ${build_rdp}
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
