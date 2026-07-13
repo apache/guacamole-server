@@ -37,6 +37,7 @@ DIST_SUBDIRS =               \
     src/guaclog              \
     src/pulse                \
     src/protocols/kubernetes \
+    src/protocols/mysql      \
     src/protocols/rdp        \
     src/protocols/ssh        \
     src/protocols/telnet     \
@@ -64,6 +65,10 @@ endif
 
 if ENABLE_KUBERNETES
 SUBDIRS += src/protocols/kubernetes
+endif
+
+if ENABLE_MYSQL
+SUBDIRS += src/protocols/mysql
 endif
 
 if ENABLE_RDP

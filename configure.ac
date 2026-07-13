@@ -1431,6 +1431,71 @@ AM_CONDITIONAL([ENABLE_KUBERNETES], [test "x${enable_kubernetes}"  = "xyes" \
                                        -a "x${have_terminal}"      = "xyes"])
 
 #
+# MariaDB Connector/C
+#
+
+have_mariadb=disabled
+MARIADB_CFLAGS=
+MARIADB_LIBS=
+AC_ARG_WITH([mariadb],
+            [AS_HELP_STRING([--with-mariadb],
+                            [support the MySQL protocol via MariaDB Connector/C @<:@default=check@:>@])],
+            [],
+            [with_mariadb=check])
+
+if test "x$with_mariadb" != "xno"
+then
+
+    PKG_CHECK_MODULES([MARIADB], [libmariadb],
+                      [have_mariadb=yes],
+                      [have_mariadb=no])
+
+    # Fall back to mariadb_config if pkg-config metadata is unavailable
+    if test "x${have_mariadb}" = "xno"
+    then
+        AC_PATH_PROG([MARIADB_CONFIG], [mariadb_config], [no])
+        if test "x$MARIADB_CONFIG" != "xno"
+        then
+            MARIADB_CFLAGS=`$MARIADB_CONFIG --include`
+            MARIADB_LIBS=`$MARIADB_CONFIG --libs`
+            have_mariadb=yes
+        fi
+    fi
+
+    # The non-blocking API of MariaDB Connector/C is required, such that
+    # session teardown can never block on an unresponsive database server
+    if test "x${have_mariadb}" = "xyes"
+    then
+
+        mariadb_saved_LIBS="$LIBS"
+        LIBS="$LIBS $MARIADB_LIBS"
+
+        AC_CHECK_FUNC([mysql_real_query_start],,
+                      [have_mariadb=no])
+
+        LIBS="$mariadb_saved_LIBS"
+
+    fi
+
+    if test "x${have_mariadb}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find MariaDB Connector/C (with its
+   non-blocking API).
+   Support for the MySQL protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_MYSQL], [test "x${have_mariadb}"  = "xyes" \
+                                  -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(MARIADB_CFLAGS)
+AC_SUBST(MARIADB_LIBS)
+
+#
 # guacd
 #
 
@@ -1497,6 +1562,7 @@ AC_CONFIG_FILES([Makefile
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
+                 src/protocols/mysql/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
@@ -1509,6 +1575,7 @@ AC_OUTPUT
 #
 
 AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
+AM_COND_IF([ENABLE_MYSQL],      [build_mysql=yes],      [build_mysql=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
 AM_COND_IF([ENABLE_TELNET],     [build_telnet=yes],     [build_telnet=no])
@@ -1557,6 +1624,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libavcodec .......... ${have_libavcodec}
      libavformat ......... ${have_libavformat}
      libavutil ........... ${have_libavutil}
+     libmariadb .......... ${have_mariadb}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
      libswscale .......... ${have_libswscale}
@@ -1571,6 +1639,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
    Protocol support:
 
       Kubernetes .... ${build_kubernetes}
+      MySQL ......... ${build_mysql}
       RDP ........... ${build_rdp}
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
