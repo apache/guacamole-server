@@ -37,6 +37,7 @@ DIST_SUBDIRS =               \
     src/guaclog              \
     src/pulse                \
     src/protocols/kubernetes \
+    src/protocols/mongodb    \
     src/protocols/mssql      \
     src/protocols/mysql      \
     src/protocols/postgresql \
@@ -67,6 +68,10 @@ endif
 
 if ENABLE_KUBERNETES
 SUBDIRS += src/protocols/kubernetes
+endif
+
+if ENABLE_MONGODB
+SUBDIRS += src/protocols/mongodb
 endif
 
 if ENABLE_MSSQL

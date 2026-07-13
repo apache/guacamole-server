@@ -1586,6 +1586,52 @@ AC_SUBST(FREETDS_CFLAGS)
 AC_SUBST(FREETDS_LIBS)
 
 #
+# libmongoc
+#
+
+have_mongoc=disabled
+MONGOC_CFLAGS=
+MONGOC_LIBS=
+AC_ARG_WITH([mongoc],
+            [AS_HELP_STRING([--with-mongoc],
+                            [support the MongoDB protocol via the MongoDB C Driver @<:@default=check@:>@])],
+            [],
+            [with_mongoc=check])
+
+if test "x$with_mongoc" != "xno"
+then
+
+    PKG_CHECK_MODULES([MONGOC], [libmongoc-1.0],
+                      [have_mongoc=yes],
+                      [have_mongoc=no])
+
+    # Newer releases of the MongoDB C Driver install different pkg-config
+    # metadata
+    if test "x${have_mongoc}" = "xno"
+    then
+        PKG_CHECK_MODULES([MONGOC], [mongoc2],
+                          [have_mongoc=yes],
+                          [have_mongoc=no])
+    fi
+
+    if test "x${have_mongoc}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find the MongoDB C Driver (libmongoc).
+   Support for the MongoDB protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_MONGODB], [test "x${have_mongoc}"   = "xyes" \
+                                    -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(MONGOC_CFLAGS)
+AC_SUBST(MONGOC_LIBS)
+
+#
 # guacd
 #
 
@@ -1652,6 +1698,7 @@ AC_CONFIG_FILES([Makefile
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
+                 src/protocols/mongodb/Makefile
                  src/protocols/mssql/Makefile
                  src/protocols/mysql/Makefile
                  src/protocols/postgresql/Makefile
@@ -1667,6 +1714,7 @@ AC_OUTPUT
 #
 
 AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
+AM_COND_IF([ENABLE_MONGODB],    [build_mongodb=yes],    [build_mongodb=no])
 AM_COND_IF([ENABLE_MSSQL],      [build_mssql=yes],      [build_mssql=no])
 AM_COND_IF([ENABLE_MYSQL],      [build_mysql=yes],      [build_mysql=no])
 AM_COND_IF([ENABLE_POSTGRESQL], [build_postgresql=yes], [build_postgresql=no])
@@ -1720,6 +1768,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libavutil ........... ${have_libavutil}
      freetds ............. ${have_freetds}
      libmariadb .......... ${have_mariadb}
+     libmongoc ........... ${have_mongoc}
      libpq ............... ${have_libpq}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
@@ -1735,6 +1784,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
    Protocol support:
 
       Kubernetes .... ${build_kubernetes}
+      MongoDB ....... ${build_mongodb}
       MySQL ......... ${build_mysql}
       PostgreSQL .... ${build_postgresql}
       SQL Server .... ${build_mssql}
