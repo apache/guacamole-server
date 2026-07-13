@@ -118,25 +118,28 @@ char* guac_strnstr(const char *haystack, const char *needle, size_t len) {
 #ifdef HAVE_STRNSTR
     return strnstr(haystack, needle, len);
 #else
-    char* chr;
-    size_t nlen = strlen(needle), off = 0;
+    const char* chr;
+    size_t nlen = strlen(needle);
 
     /* Follow documented API: return haystack if needle is the empty string. */
     if (nlen == 0)
-        return (char *)haystack;
+        return (char*) haystack;
 
     /* Use memchr to find candidates. It might be optimized in asm. */
-    while (off < len && NULL != (chr = memchr(haystack + off, needle[0], len - off))) {
+    for (size_t off = 0; off < len
+            && NULL != (chr = memchr(haystack + off, needle[0], len - off)); off++) {
+
         /* chr is guaranteed to be in bounds of and >= haystack. */
         off = chr - haystack;
+
         /* If needle would go beyond provided len, it doesn't exist in haystack. */
         if (off + nlen > len)
             return NULL;
+
         /* Now that we know we have at least nlen bytes, compare them. */
         if (!memcmp(chr, needle, nlen))
-            return chr;
-        /* Make sure we make progress. */
-        off += 1;
+            return (char*) chr;
+
     }
 
     /* memchr ran out of candidates, needle wasn't found. */

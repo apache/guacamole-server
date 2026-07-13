@@ -144,7 +144,7 @@ static int guaclog_keydef_bsearch_compare(const void* key,
         const void* member) {
 
     int keysym = (int) ((intptr_t) key);
-    guaclog_keydef* current = (guaclog_keydef*) member;
+    const guaclog_keydef* current = (const guaclog_keydef*) member;
 
     /* Compare given keysym to keysym of current member */
     return keysym  - current->keysym;
@@ -163,7 +163,7 @@ static int guaclog_keydef_bsearch_compare(const void* key,
  *     A pointer to the static guaclog_keydef associated with the given keysym,
  *     or NULL if the key could not be found.
  */
-static guaclog_keydef* guaclog_get_known_key(int keysym) {
+static const guaclog_keydef* guaclog_get_known_key(int keysym) {
 
     /* Search through known keys for given keysym */
     return bsearch((void*) ((intptr_t) keysym),
@@ -280,7 +280,7 @@ static guaclog_keydef* guaclog_get_unicode_key(int keysym) {
  *     A newly-allocated guaclog_keydef structure copied from the given
  *     guaclog_keydef.
  */
-static guaclog_keydef* guaclog_copy_key(guaclog_keydef* keydef) {
+static guaclog_keydef* guaclog_copy_key(const guaclog_keydef* keydef) {
 
     guaclog_keydef* copy = guac_mem_alloc(sizeof(guaclog_keydef));
 
@@ -301,7 +301,7 @@ static guaclog_keydef* guaclog_copy_key(guaclog_keydef* keydef) {
 
 guaclog_keydef* guaclog_keydef_alloc(int keysym) {
 
-    guaclog_keydef* keydef;
+    const guaclog_keydef* keydef;
 
     /* Check list of known keys first */
     keydef = guaclog_get_known_key(keysym);
