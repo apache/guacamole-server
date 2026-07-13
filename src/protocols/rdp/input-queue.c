@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "channels/disp.h"
 #include "channels/rdpei.h"
 #include "input.h"

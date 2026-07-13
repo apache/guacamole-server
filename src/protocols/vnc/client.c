@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "client.h"
 #include "user.h"
 #include "vnc.h"

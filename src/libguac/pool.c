@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "guacamole/assert.h"
 #include "guacamole/mem.h"
 #include "guacamole/pool.h"

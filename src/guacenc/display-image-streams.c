@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "display.h"
 #include "image-stream.h"
 #include "log.h"

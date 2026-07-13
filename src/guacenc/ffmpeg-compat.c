@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "ffmpeg-compat.h"
 #include "log.h"
 #include "video.h"

@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "guacamole/mem.h"
 #include "guacamole/audio.h"
 #include "guacamole/client.h"

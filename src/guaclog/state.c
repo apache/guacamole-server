@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "keydef.h"
 #include "log.h"
 #include "state.h"
