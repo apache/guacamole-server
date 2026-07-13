@@ -1632,6 +1632,62 @@ AC_SUBST(MONGOC_CFLAGS)
 AC_SUBST(MONGOC_LIBS)
 
 #
+# Oracle Call Interface (Oracle Instant Client)
+#
+
+have_oracle=no
+ORACLE_CFLAGS=
+ORACLE_LIBS=
+AC_ARG_WITH([oracle],
+            [AS_HELP_STRING([--with-oracle@<:@=<path>@:>@],
+                            [support the Oracle Database protocol via the Oracle Instant Client SDK installed at the given path @<:@default=no@:>@])],
+            [],
+            [with_oracle=no])
+
+if test "x$with_oracle" != "xno"
+then
+
+    # If a path was given, assume the Instant Client directory layout
+    if test "x$with_oracle" != "xyes"
+    then
+        ORACLE_CFLAGS="-I$with_oracle/sdk/include"
+        ORACLE_LIBS="-L$with_oracle -Wl,-rpath,$with_oracle -lclntsh"
+    else
+        ORACLE_LIBS="-lclntsh"
+    fi
+
+    have_oracle=yes
+
+    oracle_saved_CPPFLAGS="$CPPFLAGS"
+    oracle_saved_LIBS="$LIBS"
+    CPPFLAGS="$CPPFLAGS $ORACLE_CFLAGS"
+    LIBS="$LIBS $ORACLE_LIBS"
+
+    AC_CHECK_HEADER([oci.h],, [have_oracle=no])
+    AC_CHECK_FUNC([OCIEnvNlsCreate],, [have_oracle=no])
+
+    CPPFLAGS="$oracle_saved_CPPFLAGS"
+    LIBS="$oracle_saved_LIBS"
+
+    if test "x${have_oracle}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find the Oracle Call Interface (OCI)
+   headers and library of the Oracle Instant Client SDK.
+   Support for the Oracle Database protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_ORACLE], [test "x${have_oracle}"   = "xyes" \
+                                   -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(ORACLE_CFLAGS)
+AC_SUBST(ORACLE_LIBS)
+
+#
 # guacd
 #
 
@@ -1701,6 +1757,7 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/mongodb/Makefile
                  src/protocols/mssql/Makefile
                  src/protocols/mysql/Makefile
+                 src/protocols/oracle/Makefile
                  src/protocols/postgresql/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/rdp/tests/Makefile
@@ -1717,6 +1774,7 @@ AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
 AM_COND_IF([ENABLE_MONGODB],    [build_mongodb=yes],    [build_mongodb=no])
 AM_COND_IF([ENABLE_MSSQL],      [build_mssql=yes],      [build_mssql=no])
 AM_COND_IF([ENABLE_MYSQL],      [build_mysql=yes],      [build_mysql=no])
+AM_COND_IF([ENABLE_ORACLE],     [build_oracle=yes],     [build_oracle=no])
 AM_COND_IF([ENABLE_POSTGRESQL], [build_postgresql=yes], [build_postgresql=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
@@ -1774,6 +1832,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libssl .............. ${have_ssl}
      libswscale .......... ${have_libswscale}
      libtelnet ........... ${have_libtelnet}
+     oracle (OCI) ........ ${have_oracle}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
@@ -1786,6 +1845,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       Kubernetes .... ${build_kubernetes}
       MongoDB ....... ${build_mongodb}
       MySQL ......... ${build_mysql}
+      Oracle ........ ${build_oracle}
       PostgreSQL .... ${build_postgresql}
       SQL Server .... ${build_mssql}
       RDP ........... ${build_rdp}

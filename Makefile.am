@@ -40,6 +40,7 @@ DIST_SUBDIRS =               \
     src/protocols/mongodb    \
     src/protocols/mssql      \
     src/protocols/mysql      \
+    src/protocols/oracle     \
     src/protocols/postgresql \
     src/protocols/rdp        \
     src/protocols/ssh        \
@@ -80,6 +81,10 @@ endif
 
 if ENABLE_MYSQL
 SUBDIRS += src/protocols/mysql
+endif
+
+if ENABLE_ORACLE
+SUBDIRS += src/protocols/oracle
 endif
 
 if ENABLE_POSTGRESQL
