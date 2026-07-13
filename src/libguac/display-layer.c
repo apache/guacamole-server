@@ -217,6 +217,26 @@ void guac_display_layer_close_raw(guac_display_layer* layer, guac_display_layer_
 
     guac_display* display = layer->display;
 
+    /* Release any Cairo resources that were created around the external buffer,
+     * in case the details of the buffer have now changed */
+    if (context->buffer != layer->pending_frame.buffer) {
+        guac_display_layer_cairo_context* cairo_context = &(layer->pending_frame_cairo_context);
+        if (cairo_context->surface != NULL) {
+
+            /* NOTE: We do NOT flush any outstanding changes to the Cairo
+             * surface here, as the underlying buffer may already have been
+             * freed by the caller, and flushing the surface might write to
+             * that buffer */
+
+            cairo_surface_destroy(cairo_context->surface);
+            cairo_context->surface = NULL;
+
+            cairo_destroy(cairo_context->cairo);
+            cairo_context->cairo = NULL;
+
+        }
+    }
+
     /* Replace buffer if requested with an external buffer. This intentionally
      * falls through to the following buffer_is_external check to update the
      * buffer details. */
@@ -239,21 +259,13 @@ void guac_display_layer_close_raw(guac_display_layer* layer, guac_display_layer_
         if (height > GUAC_DISPLAY_MAX_HEIGHT)
             height = GUAC_DISPLAY_MAX_HEIGHT;
 
-        /* Release any Cairo surface that was created around the external
-         * buffer, in case the details of the buffer have now changed */
-        guac_display_layer_cairo_context* cairo_context = &(layer->pending_frame_cairo_context);
-        if (cairo_context->surface != NULL) {
-            cairo_surface_destroy(cairo_context->surface);
-            cairo_context->surface = NULL;
-        }
-
         layer->pending_frame.buffer = context->buffer;
         layer->pending_frame.buffer_width = width;
         layer->pending_frame.buffer_height = height;
         layer->pending_frame.buffer_stride = context->stride;
 
-        layer->pending_frame.width = layer->pending_frame.buffer_width;
-        layer->pending_frame.height = layer->pending_frame.buffer_height;
+        /* Update layer size and resize cell tracking array */
+        PFW_guac_display_layer_resize(layer, width, height);
 
     }
 
