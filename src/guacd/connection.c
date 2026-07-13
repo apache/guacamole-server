@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "connection.h"
 #include "log.h"
 #include "move-fd.h"

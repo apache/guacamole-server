@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "clipboard.h"
 #include "input.h"
 #include "user.h"

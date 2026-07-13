@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "guaclog.h"
 #include "interpret.h"
 #include "log.h"

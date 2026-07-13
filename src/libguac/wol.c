@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "guacamole/error.h"
 #include "guacamole/tcp.h"
 #include "guacamole/timestamp.h"

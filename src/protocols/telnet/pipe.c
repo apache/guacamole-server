@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "pipe.h"
 #include "telnet.h"
 #include "terminal/terminal.h"

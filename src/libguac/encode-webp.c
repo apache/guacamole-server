@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "encode-webp.h"
 #include "guacamole/error.h"
 #include "guacamole/protocol.h"

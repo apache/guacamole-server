@@ -25,6 +25,8 @@
 
 AUTOMAKE_OPTIONS = foreign 
 
+AM_CPPFLAGS = -include config.h
+
 bin_PROGRAMS = guacenc
 
 man_MANS =        \

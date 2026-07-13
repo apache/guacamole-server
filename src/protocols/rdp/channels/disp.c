@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "channels/disp.h"
 #include "plugins/channels.h"
 #include "fs.h"

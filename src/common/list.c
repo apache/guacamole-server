@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "common/list.h"
 
 #include <guacamole/mem.h>

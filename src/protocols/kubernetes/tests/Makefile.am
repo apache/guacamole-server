@@ -24,6 +24,8 @@
 #
 
 AUTOMAKE_OPTIONS = foreign
+
+AM_CPPFLAGS = -include config.h
 ACLOCAL_AMFLAGS = -I m4
 
 #
