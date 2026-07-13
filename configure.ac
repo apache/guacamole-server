@@ -206,6 +206,10 @@ AC_SUBST([PULSE_INCLUDE], '-I$(top_srcdir)/src/pulse')
 AC_SUBST([COMMON_SSH_LTLIB],   '$(top_builddir)/src/common-ssh/libguac_common_ssh.la')
 AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
 
+# Common database shell (REPL) library
+AC_SUBST([DBSHELL_LTLIB],   '$(top_builddir)/src/dbshell/libguac_dbshell.la')
+AC_SUBST([DBSHELL_INCLUDE], '-I$(top_srcdir)/src/dbshell')
+
 # Kubernetes support
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_LTLIB],   '$(top_builddir)/src/protocols/kubernetes/libguac-client-kubernetes.la')
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_INCLUDE], '-I$(top_srcdir)/src/protocols/kubernetes')
@@ -515,6 +519,12 @@ then
 fi
 
 AM_CONDITIONAL([ENABLE_TERMINAL], [test "x${have_terminal}" = "xyes"])
+
+#
+# Database shell (REPL) library, used by the database protocol plugins
+#
+
+AM_CONDITIONAL([ENABLE_DBSHELL], [test "x${have_terminal}" = "xyes"])
 
 #
 # libVNCServer
@@ -1471,6 +1481,8 @@ AC_CONFIG_FILES([Makefile
                  src/common/tests/Makefile
                  src/common-ssh/Makefile
                  src/common-ssh/tests/Makefile
+                 src/dbshell/Makefile
+                 src/dbshell/tests/Makefile
                  src/terminal/Makefile
                  src/terminal/tests/Makefile
                  src/libguac/Makefile

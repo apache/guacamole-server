@@ -30,6 +30,7 @@ DIST_SUBDIRS =               \
     src/libguac              \
     src/common               \
     src/common-ssh           \
+    src/dbshell              \
     src/terminal             \
     src/guacd                \
     src/guacenc              \
@@ -51,6 +52,10 @@ endif
 
 if ENABLE_TERMINAL
 SUBDIRS += src/terminal
+endif
+
+if ENABLE_DBSHELL
+SUBDIRS += src/dbshell
 endif
 
 if ENABLE_PULSE
