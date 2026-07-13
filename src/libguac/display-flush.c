@@ -115,15 +115,20 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
     int retval = 0;
 
     display->last_frame.layers = display->pending_frame.layers;
-    guac_display_layer* current = display->pending_frame.layers;
-    while (current != NULL) {
+    for (guac_display_layer* current = display->pending_frame.layers;
+            current != NULL; current = current->pending_frame.next) {
 
-        /* Skip processing any layers whose buffers have been replaced with
-         * NULL (this is intentionally allowed to ensure references to external
-         * buffers can be safely removed if necessary, even before guac_display
-         * is freed) */
+        /* Duplicate layers from pending frame to last frame */
+        current->last_frame.prev = current->pending_frame.prev;
+        current->last_frame.next = current->pending_frame.next;
+
+        /* Skip non-existential updates for any layer whose buffer has been
+         * replaced with NULL (this is intentionally allowed to ensure references
+         * to external buffers can be safely removed if necessary, even before
+         * guac_display is freed) */
         if (current->pending_frame.buffer == NULL) {
             GUAC_ASSERT(current->pending_frame.buffer_is_external);
+            current->last_frame.dirty = (guac_rect) { 0 };
             continue;
         }
 
@@ -251,11 +256,6 @@ static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
          * to the client - it affects only how last_frame is interpreted) */
         current->last_frame.lossless = current->pending_frame.lossless;
 
-        /* Duplicate layers from pending frame to last frame */
-        current->last_frame.prev = current->pending_frame.prev;
-        current->last_frame.next = current->pending_frame.next;
-        current = current->pending_frame.next;
-
     }
 
     display->last_frame.timestamp = display->pending_frame.timestamp;
@@ -304,6 +304,7 @@ void guac_display_end_mouse_frame(guac_display* display) {
 void guac_display_end_multiple_frames(guac_display* display, int frames) {
 
     guac_display_plan* plan = NULL;
+    guac_display_layer* removed_layers = NULL;
 
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
     display->pending_frame.frames += frames;
@@ -380,6 +381,16 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
 
     guac_rwlock_release_lock(&display->last_frame.lock);
 
+    /* The last frame layer list has now been rebuilt from the pending frame
+     * layer list, so any layers removed since the previous flush are no longer
+     * part of either frame. Detach them for destruction below.
+     *
+     * IMPORTANT: These layers MUST NOT be freed until after the frame is fully
+     * flushed. The display plan may reference a removed layer's buffer as the
+     * source of a copy operation, and that plan has not yet been applied. */
+    removed_layers = display->pending_frame_removed_layers;
+    display->pending_frame_removed_layers = NULL;
+
     /* Awaken worker threads to perform the rest of the tasks required for the
      * frame (if any such tasks remain) */
     if (plan != NULL) {
@@ -402,5 +413,9 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
 
 finished_with_pending_frame_lock:
     guac_rwlock_release_lock(&display->pending_frame.lock);
+
+    /* Free any layers detached above. NOTE: This is intentionally done outside
+     * the pending frame lock to avoid contending with drawing operations. */
+    guac_display_free_removed_layers(display, removed_layers);
 
 }
