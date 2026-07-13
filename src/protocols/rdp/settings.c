@@ -152,6 +152,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
     "force-lossless",
     "normalize-clipboard",
+    "desktop-scale-factor",
     NULL
 };
 
@@ -739,6 +740,17 @@ enum RDP_ARGS_IDX {
      */
     IDX_NORMALIZE_CLIPBOARD,
 
+    /**
+     * The desktop scale factor to request from the RDP server, as a percentage
+     * between 100 and 500. When set, the remote Windows session is asked to
+     * scale its UI accordingly (the equivalent of the Windows display scaling
+     * setting), keeping UI and text comfortably sized even when a
+     * high-resolution (device-pixel) framebuffer is requested. If omitted or
+     * set to 0, no scale factor is sent and the server uses its default (no
+     * scaling).
+     */
+    IDX_DESKTOP_SCALE_FACTOR,
+
     RDP_ARGS_COUNT
 };
 
@@ -909,6 +921,45 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
             settings->width,
             settings->height,
             settings->resolution);
+
+    /*
+     * Desktop scale factor to request from the RDP server, as a percentage. A
+     * value of 0 (the default) disables the feature entirely, preserving the
+     * historical behavior of never asking the server to scale its session UI.
+     * Any non-zero value is clamped to the range permitted by [MS-RDPBCGR]
+     * (100-500), as values outside that range are silently ignored by the
+     * server.
+     */
+    settings->desktop_scale_factor =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DESKTOP_SCALE_FACTOR, 0);
+
+    if (settings->desktop_scale_factor != 0) {
+
+        if (settings->desktop_scale_factor < 100) {
+            guac_user_log(user, GUAC_LOG_WARNING,
+                    "Requested desktop scale factor of %i%% is below the "
+                    "minimum supported by RDP. Clamping to 100%%.",
+                    settings->desktop_scale_factor);
+            settings->desktop_scale_factor = 100;
+        }
+
+        else if (settings->desktop_scale_factor > 500) {
+            guac_user_log(user, GUAC_LOG_WARNING,
+                    "Requested desktop scale factor of %i%% is above the "
+                    "maximum supported by RDP. Clamping to 500%%.",
+                    settings->desktop_scale_factor);
+            settings->desktop_scale_factor = 500;
+        }
+
+        guac_user_log(user, GUAC_LOG_DEBUG,
+                "Requesting desktop scale factor of %i%% "
+                "(device scale factor %i%%)",
+                settings->desktop_scale_factor,
+                guac_rdp_get_device_scale_factor(
+                    settings->desktop_scale_factor));
+
+    }
 
     /* Lossless compression */
     settings->lossless =
@@ -1543,6 +1594,27 @@ int guac_rdp_get_depth(freerdp* rdp) {
 #endif
 }
 
+int guac_rdp_get_device_scale_factor(int desktop_scale_factor) {
+
+    /*
+     * Per [MS-RDPBCGR] and [MS-RDPEDISP], the device scale factor MUST be one
+     * of exactly 100, 140, or 180 percent. Any other value causes both the
+     * device scale factor AND the accompanying desktop scale factor to be
+     * ignored by the server, so we always map to one of these three values.
+     * The thresholds mirror the behavior of native RDP clients (mstsc /
+     * FreeRDP): scales below 120% use 100, 120%-160% use 140, and anything
+     * higher uses 180.
+     */
+    if (desktop_scale_factor < 120)
+        return 100;
+
+    if (desktop_scale_factor <= 160)
+        return 140;
+
+    return 180;
+
+}
+
 void guac_rdp_push_settings(guac_client* client,
         guac_rdp_settings* guac_settings, freerdp* rdp) {
 
@@ -1566,6 +1638,19 @@ void guac_rdp_push_settings(guac_client* client,
     freerdp_settings_set_string(rdp_settings, FreeRDP_AlternateShell, guac_strdup(guac_settings->initial_program));
     freerdp_settings_set_uint32(rdp_settings, FreeRDP_KeyboardLayout, guac_settings->server_layout->freerdp_keyboard_layout);
 
+    /*
+     * Request server-side UI scaling if a desktop scale factor was specified.
+     * These values are sent to the server within the client core data
+     * ([MS-RDPBCGR] TS_UD_CS_CORE) during connection negotiation. The desktop
+     * scale factor MUST be paired with a protocol-valid device scale factor
+     * (100, 140, or 180), otherwise the server ignores both values.
+     */
+    if (guac_settings->desktop_scale_factor != 0) {
+        freerdp_settings_set_uint32(rdp_settings, FreeRDP_DesktopScaleFactor,
+                guac_settings->desktop_scale_factor);
+        freerdp_settings_set_uint32(rdp_settings, FreeRDP_DeviceScaleFactor,
+                guac_rdp_get_device_scale_factor(guac_settings->desktop_scale_factor));
+    }
 
     /* Performance flags */
     /* Explicitly set flag value */
@@ -1801,6 +1886,19 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->DesktopHeight = guac_settings->height;
     rdp_settings->AlternateShell = guac_strdup(guac_settings->initial_program);
     rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
+
+    /*
+     * Request server-side UI scaling if a desktop scale factor was specified.
+     * These values are sent to the server within the client core data
+     * ([MS-RDPBCGR] TS_UD_CS_CORE) during connection negotiation. The desktop
+     * scale factor MUST be paired with a protocol-valid device scale factor
+     * (100, 140, or 180), otherwise the server ignores both values.
+     */
+    if (guac_settings->desktop_scale_factor != 0) {
+        rdp_settings->DesktopScaleFactor = guac_settings->desktop_scale_factor;
+        rdp_settings->DeviceScaleFactor =
+            guac_rdp_get_device_scale_factor(guac_settings->desktop_scale_factor);
+    }
 
     /* Performance flags */
     /* Explicitly set flag value */
