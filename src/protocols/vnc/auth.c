@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "argv.h"
 #include "auth.h"
 #include "vnc.h"

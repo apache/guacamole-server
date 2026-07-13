@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "move-fd.h"
 
 /* Required for CMSG_* macros on BSD */

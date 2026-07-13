@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-#include "config.h"
-
 #include "guacamole/proctitle.h"
 
 #include <guacamole/mem.h>

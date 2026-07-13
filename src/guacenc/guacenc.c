@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "encode.h"
 #include "guacenc.h"
 #include "log.h"

@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include <openssl/bn.h>
 #include <openssl/ossl_typ.h>
 

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "wait-fd.h"
 
 #include "guacamole/mem.h"

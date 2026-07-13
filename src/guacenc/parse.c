@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include <guacamole/timestamp.h>
 
 #include <errno.h>

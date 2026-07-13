@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "common/rect.h"
 
 void guac_common_rect_init(guac_common_rect* rect, int x, int y, int width, int height) {

@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "pulse/pulse.h"
 
 #include <guacamole/audio.h>

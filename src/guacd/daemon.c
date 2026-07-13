@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "conf.h"
 #include "conf-args.h"
 #include "conf-file.h"

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "argv.h"
 #include "rdp.h"
 #include "settings.h"

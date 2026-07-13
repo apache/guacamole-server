@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "cursor.h"
 #include "display.h"
 #include "video.h"

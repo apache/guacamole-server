@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "decompose.h"
 #include "keyboard.h"
 #include "keymap.h"

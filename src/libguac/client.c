@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "encode-jpeg.h"
 #include "encode-png.h"
 #include "encode-webp.h"

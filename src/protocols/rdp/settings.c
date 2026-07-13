@@ -20,7 +20,6 @@
 #include "argv.h"
 #include "common/defaults.h"
 #include "common/string.h"
-#include "config.h"
 #include "rdp.h"
 #include "resolution.h"
 #include "settings.h"
