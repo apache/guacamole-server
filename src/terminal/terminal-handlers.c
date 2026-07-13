@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "terminal/char-mappings.h"
 #include "terminal/palette.h"
 #include "terminal/terminal.h"

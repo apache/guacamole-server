@@ -25,6 +25,8 @@
 
 AUTOMAKE_OPTIONS = foreign 
 
+AM_CPPFLAGS = -include config.h
+
 sbin_PROGRAMS = guacd
 
 man_MANS =           \

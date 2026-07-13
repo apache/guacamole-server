@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include <cairo/cairo.h>
 
 #include <stdint.h>

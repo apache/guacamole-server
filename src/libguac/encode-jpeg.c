@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "encode-jpeg.h"
 #include "guacamole/mem.h"
 #include "guacamole/error.h"

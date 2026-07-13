@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "guacamole/mem.h"
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"

@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "argv.h"
 #include "beep.h"
 #include "channels/audio-input/audio-buffer.h"
@@ -33,7 +31,6 @@
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
 #include "color.h"
-#include "config.h"
 #include "error.h"
 #include "fs.h"
 #include "gdi.h"

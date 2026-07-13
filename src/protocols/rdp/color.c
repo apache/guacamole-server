@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "settings.h"
 
 #include <freerdp/codec/color.h>

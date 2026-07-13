@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "guacamole/fips.h"
 
 /* If OpenSSL is available, include header for version numbers */

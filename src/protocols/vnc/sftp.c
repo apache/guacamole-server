@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "common-ssh/sftp.h"
 #include "sftp.h"
 #include "vnc.h"

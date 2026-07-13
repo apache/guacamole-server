@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "ssh.h"
 #include "terminal/terminal.h"
 
