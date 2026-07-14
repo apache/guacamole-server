@@ -214,6 +214,8 @@ struct guac_user {
      */
     guac_object* __objects;
 
+    int sftp_attr_permissions;
+
     /**
      * Arbitrary user-specific data.
      */

@@ -409,7 +409,7 @@ int guac_common_ssh_sftp_handle_file_stream(
     /* Open file via SFTP */
     file = libssh2_sftp_open(filesystem->sftp_session, fullpath,
             LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
-            S_IRUSR | S_IWUSR);
+            user->sftp_attr_permissions);
 
     /* Inform of status */
     if (file != NULL) {
