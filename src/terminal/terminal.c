@@ -1558,6 +1558,79 @@ int guac_terminal_send_data(guac_terminal* term, const char* data, int length) {
 
 }
 
+/**
+ * Sends clipboard contents as keyboard input, converting LF and CRLF to
+ * CR (and passing bare CR through as CR). Clipboard data is normalized
+ * on receipt so CRLF pairs are stored as LF, but bare CR can still be
+ * present. When sending the data as keyboard input, it must be CR, since
+ * CR represents the Enter key. LF is just a text newline and isn't
+ * reliably treated as Enter (e.g. on Windows). This also avoids CRLF
+ * being interpreted as two Enters (CRCR).
+ *
+ * This has to be done server-side. When the user pastes via right-click
+ * or middle-click, the browser only sends a mouse event; the server then
+ * pastes directly from its clipboard buffer. The client doesn't get a
+ * chance to intercept or normalize the content at that point.
+ *
+ * @param term
+ *     The terminal whose clipboard contents should be sent.
+ *
+ * @return
+ *     The number of bytes written to STDIN (zero if the clipboard was empty),
+ *     or a negative value (if an error occurred preventing the
+ *     data from being written).
+ */
+static int guac_terminal_send_clipboard(guac_terminal* term) {
+
+    int length = term->clipboard->length;
+
+    if (length <= 0)
+        return 0;
+
+    char* buf = guac_mem_alloc(length);
+
+    if (buf == NULL)
+        return -1;
+
+    int written = guac_terminal_paste_normalize_newlines(
+            term->clipboard->buffer, length, buf);
+
+    int ret = guac_terminal_send_data(term, buf, written);
+    guac_mem_free(buf);
+    return ret;
+
+}
+
+int guac_terminal_paste_normalize_newlines(const char* src, int length,
+        char* dest) {
+
+    const char* end = src + length;
+    char* out = dest;
+
+    while (src < end) {
+
+        if (*src == '\r') {
+            *(out++) = '\r';
+            src++;
+
+            /* CRLF collapses to a single CR */
+            if (src < end && *src == '\n')
+                src++;
+        }
+        else if (*src == '\n') {
+            *(out++) = '\r';
+            src++;
+        }
+        else {
+            *(out++) = *(src++);
+        }
+
+    }
+
+    return out - dest;
+
+}
+
 int guac_terminal_send_string(guac_terminal* term, const char* data) {
 
     /* Block all other sources of input if input is coming from a stream */
@@ -1830,7 +1903,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
         /* Ctrl+Shift+V or Cmd+v (mac style) shortcuts for paste */
         if ((keysym == 'V' && term->mod_ctrl) || (keysym == 'v' && term->mod_meta))
-            return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+            return guac_terminal_send_clipboard(term);
 
         /* If Shift+Tab (Backtab), send the appropriate escape sequence */
         if (term->mod_shift && keysym == 0xFF09) {
@@ -2197,7 +2270,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
 
     /* Paste contents of clipboard on right or middle mouse button up */
     if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE))
-        return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+        return guac_terminal_send_clipboard(term);
 
     /* If left mouse button was just released, stop selection */
     if (released_mask & GUAC_CLIENT_MOUSE_LEFT)

@@ -36,6 +36,7 @@ check_PROGRAMS = test_terminal
 TESTS = $(check_PROGRAMS)
 
 test_terminal_SOURCES =            \
+    paste/normalize-newlines.c     \
     selection-point/enclose-text.c \
     selection-point/point-after.c  \
     selection-point/rounding.c
