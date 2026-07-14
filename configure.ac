@@ -206,6 +206,10 @@ AC_SUBST([PULSE_INCLUDE], '-I$(top_srcdir)/src/pulse')
 AC_SUBST([COMMON_SSH_LTLIB],   '$(top_builddir)/src/common-ssh/libguac_common_ssh.la')
 AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
 
+# Common database shell (REPL) library
+AC_SUBST([DBSHELL_LTLIB],   '$(top_builddir)/src/dbshell/libguac_dbshell.la')
+AC_SUBST([DBSHELL_INCLUDE], '-I$(top_srcdir)/src/dbshell')
+
 # Kubernetes support
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_LTLIB],   '$(top_builddir)/src/protocols/kubernetes/libguac-client-kubernetes.la')
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_INCLUDE], '-I$(top_srcdir)/src/protocols/kubernetes')
@@ -515,6 +519,12 @@ then
 fi
 
 AM_CONDITIONAL([ENABLE_TERMINAL], [test "x${have_terminal}" = "xyes"])
+
+#
+# Database shell (REPL) library, used by the database protocol plugins
+#
+
+AM_CONDITIONAL([ENABLE_DBSHELL], [test "x${have_terminal}" = "xyes"])
 
 #
 # libVNCServer
@@ -1421,6 +1431,263 @@ AM_CONDITIONAL([ENABLE_KUBERNETES], [test "x${enable_kubernetes}"  = "xyes" \
                                        -a "x${have_terminal}"      = "xyes"])
 
 #
+# MariaDB Connector/C
+#
+
+have_mariadb=disabled
+MARIADB_CFLAGS=
+MARIADB_LIBS=
+AC_ARG_WITH([mariadb],
+            [AS_HELP_STRING([--with-mariadb],
+                            [support the MySQL protocol via MariaDB Connector/C @<:@default=check@:>@])],
+            [],
+            [with_mariadb=check])
+
+if test "x$with_mariadb" != "xno"
+then
+
+    PKG_CHECK_MODULES([MARIADB], [libmariadb],
+                      [have_mariadb=yes],
+                      [have_mariadb=no])
+
+    # Fall back to mariadb_config if pkg-config metadata is unavailable
+    if test "x${have_mariadb}" = "xno"
+    then
+        AC_PATH_PROG([MARIADB_CONFIG], [mariadb_config], [no])
+        if test "x$MARIADB_CONFIG" != "xno"
+        then
+            MARIADB_CFLAGS=`$MARIADB_CONFIG --include`
+            MARIADB_LIBS=`$MARIADB_CONFIG --libs`
+            have_mariadb=yes
+        fi
+    fi
+
+    # The non-blocking API of MariaDB Connector/C is required, such that
+    # session teardown can never block on an unresponsive database server
+    if test "x${have_mariadb}" = "xyes"
+    then
+
+        mariadb_saved_LIBS="$LIBS"
+        LIBS="$LIBS $MARIADB_LIBS"
+
+        AC_CHECK_FUNC([mysql_real_query_start],,
+                      [have_mariadb=no])
+
+        LIBS="$mariadb_saved_LIBS"
+
+    fi
+
+    if test "x${have_mariadb}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find MariaDB Connector/C (with its
+   non-blocking API).
+   Support for the MySQL protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_MYSQL], [test "x${have_mariadb}"  = "xyes" \
+                                  -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(MARIADB_CFLAGS)
+AC_SUBST(MARIADB_LIBS)
+
+#
+# libpq
+#
+
+have_libpq=disabled
+LIBPQ_CFLAGS=
+LIBPQ_LIBS=
+AC_ARG_WITH([libpq],
+            [AS_HELP_STRING([--with-libpq],
+                            [support the PostgreSQL protocol via libpq @<:@default=check@:>@])],
+            [],
+            [with_libpq=check])
+
+if test "x$with_libpq" != "xno"
+then
+
+    PKG_CHECK_MODULES([LIBPQ], [libpq],
+                      [have_libpq=yes],
+                      [have_libpq=no])
+
+    # Fall back to searching the standard paths if pkg-config metadata is
+    # unavailable
+    if test "x${have_libpq}" = "xno"
+    then
+        AC_CHECK_LIB([pq], [PQconnectdbParams],
+                     [AC_CHECK_HEADER([libpq-fe.h],
+                                      [LIBPQ_LIBS="-lpq"
+                                       have_libpq=yes])])
+    fi
+
+    if test "x${have_libpq}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libpq.
+   Support for the PostgreSQL protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_POSTGRESQL], [test "x${have_libpq}"    = "xyes" \
+                                       -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(LIBPQ_CFLAGS)
+AC_SUBST(LIBPQ_LIBS)
+
+#
+# FreeTDS (CT-Library)
+#
+
+have_freetds=disabled
+FREETDS_CFLAGS=
+FREETDS_LIBS=
+AC_ARG_WITH([freetds],
+            [AS_HELP_STRING([--with-freetds],
+                            [support the SQL Server protocol via FreeTDS @<:@default=check@:>@])],
+            [],
+            [with_freetds=check])
+
+if test "x$with_freetds" != "xno"
+then
+
+    have_freetds=yes
+    AC_CHECK_LIB([ct], [ct_connect],
+                 [FREETDS_LIBS="-lct"],
+                 [have_freetds=no])
+
+    if test "x${have_freetds}" = "xyes"
+    then
+        AC_CHECK_HEADER([ctpublic.h],, [have_freetds=no])
+    fi
+
+    if test "x${have_freetds}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find FreeTDS (CT-Library).
+   Support for the SQL Server protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_MSSQL], [test "x${have_freetds}"  = "xyes" \
+                                  -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(FREETDS_CFLAGS)
+AC_SUBST(FREETDS_LIBS)
+
+#
+# libmongoc
+#
+
+have_mongoc=disabled
+MONGOC_CFLAGS=
+MONGOC_LIBS=
+AC_ARG_WITH([mongoc],
+            [AS_HELP_STRING([--with-mongoc],
+                            [support the MongoDB protocol via the MongoDB C Driver @<:@default=check@:>@])],
+            [],
+            [with_mongoc=check])
+
+if test "x$with_mongoc" != "xno"
+then
+
+    PKG_CHECK_MODULES([MONGOC], [libmongoc-1.0],
+                      [have_mongoc=yes],
+                      [have_mongoc=no])
+
+    # Newer releases of the MongoDB C Driver install different pkg-config
+    # metadata
+    if test "x${have_mongoc}" = "xno"
+    then
+        PKG_CHECK_MODULES([MONGOC], [mongoc2],
+                          [have_mongoc=yes],
+                          [have_mongoc=no])
+    fi
+
+    if test "x${have_mongoc}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find the MongoDB C Driver (libmongoc).
+   Support for the MongoDB protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_MONGODB], [test "x${have_mongoc}"   = "xyes" \
+                                    -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(MONGOC_CFLAGS)
+AC_SUBST(MONGOC_LIBS)
+
+#
+# Oracle Call Interface (Oracle Instant Client)
+#
+
+have_oracle=no
+ORACLE_CFLAGS=
+ORACLE_LIBS=
+AC_ARG_WITH([oracle],
+            [AS_HELP_STRING([--with-oracle@<:@=<path>@:>@],
+                            [support the Oracle Database protocol via the Oracle Instant Client SDK installed at the given path @<:@default=no@:>@])],
+            [],
+            [with_oracle=no])
+
+if test "x$with_oracle" != "xno"
+then
+
+    # If a path was given, assume the Instant Client directory layout
+    if test "x$with_oracle" != "xyes"
+    then
+        ORACLE_CFLAGS="-I$with_oracle/sdk/include"
+        ORACLE_LIBS="-L$with_oracle -Wl,-rpath,$with_oracle -lclntsh"
+    else
+        ORACLE_LIBS="-lclntsh"
+    fi
+
+    have_oracle=yes
+
+    oracle_saved_CPPFLAGS="$CPPFLAGS"
+    oracle_saved_LIBS="$LIBS"
+    CPPFLAGS="$CPPFLAGS $ORACLE_CFLAGS"
+    LIBS="$LIBS $ORACLE_LIBS"
+
+    AC_CHECK_HEADER([oci.h],, [have_oracle=no])
+    AC_CHECK_FUNC([OCIEnvNlsCreate],, [have_oracle=no])
+
+    CPPFLAGS="$oracle_saved_CPPFLAGS"
+    LIBS="$oracle_saved_LIBS"
+
+    if test "x${have_oracle}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find the Oracle Call Interface (OCI)
+   headers and library of the Oracle Instant Client SDK.
+   Support for the Oracle Database protocol will be disabled.
+  --------------------------------------------])
+    fi
+
+fi
+
+AM_CONDITIONAL([ENABLE_ORACLE], [test "x${have_oracle}"   = "xyes" \
+                                   -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(ORACLE_CFLAGS)
+AC_SUBST(ORACLE_LIBS)
+
+#
 # guacd
 #
 
@@ -1471,6 +1738,8 @@ AC_CONFIG_FILES([Makefile
                  src/common/tests/Makefile
                  src/common-ssh/Makefile
                  src/common-ssh/tests/Makefile
+                 src/dbshell/Makefile
+                 src/dbshell/tests/Makefile
                  src/terminal/Makefile
                  src/terminal/tests/Makefile
                  src/libguac/Makefile
@@ -1485,6 +1754,11 @@ AC_CONFIG_FILES([Makefile
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
+                 src/protocols/mongodb/Makefile
+                 src/protocols/mssql/Makefile
+                 src/protocols/mysql/Makefile
+                 src/protocols/oracle/Makefile
+                 src/protocols/postgresql/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
@@ -1497,6 +1771,11 @@ AC_OUTPUT
 #
 
 AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
+AM_COND_IF([ENABLE_MONGODB],    [build_mongodb=yes],    [build_mongodb=no])
+AM_COND_IF([ENABLE_MSSQL],      [build_mssql=yes],      [build_mssql=no])
+AM_COND_IF([ENABLE_MYSQL],      [build_mysql=yes],      [build_mysql=no])
+AM_COND_IF([ENABLE_ORACLE],     [build_oracle=yes],     [build_oracle=no])
+AM_COND_IF([ENABLE_POSTGRESQL], [build_postgresql=yes], [build_postgresql=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
 AM_COND_IF([ENABLE_TELNET],     [build_telnet=yes],     [build_telnet=no])
@@ -1545,10 +1824,15 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libavcodec .......... ${have_libavcodec}
      libavformat ......... ${have_libavformat}
      libavutil ........... ${have_libavutil}
+     freetds ............. ${have_freetds}
+     libmariadb .......... ${have_mariadb}
+     libmongoc ........... ${have_mongoc}
+     libpq ............... ${have_libpq}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
      libswscale .......... ${have_libswscale}
      libtelnet ........... ${have_libtelnet}
+     oracle (OCI) ........ ${have_oracle}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
@@ -1559,6 +1843,11 @@ $PACKAGE_NAME version $PACKAGE_VERSION
    Protocol support:
 
       Kubernetes .... ${build_kubernetes}
+      MongoDB ....... ${build_mongodb}
+      MySQL ......... ${build_mysql}
+      Oracle ........ ${build_oracle}
+      PostgreSQL .... ${build_postgresql}
+      SQL Server .... ${build_mssql}
       RDP ........... ${build_rdp}
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
