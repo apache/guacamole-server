@@ -1,0 +1,78 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include "config.h"
+#include "clipboard.h"
+#include "serial.h"
+#include "terminal/terminal.h"
+
+#include <guacamole/client.h>
+#include <guacamole/stream.h>
+#include <guacamole/user.h>
+
+int guac_serial_clipboard_handler(guac_user* user, guac_stream* stream,
+        char* mimetype) {
+
+    /* Clear clipboard and prepare for new data */
+    guac_client* client = user->client;
+    guac_serial_client* serial_client = (guac_serial_client*) client->data;
+    guac_terminal_clipboard_reset(serial_client->term, mimetype);
+
+    /* Set handlers for clipboard stream */
+    stream->blob_handler = guac_serial_clipboard_blob_handler;
+    stream->end_handler = guac_serial_clipboard_end_handler;
+
+    /* Report clipboard within recording */
+    if (serial_client->recording != NULL)
+        guac_recording_report_clipboard_begin(serial_client->recording, stream,
+                mimetype);
+
+    return 0;
+}
+
+int guac_serial_clipboard_blob_handler(guac_user* user, guac_stream* stream,
+        void* data, int length) {
+
+    guac_client* client = user->client;
+    guac_serial_client* serial_client = (guac_serial_client*) client->data;
+
+    /* Report clipboard blob within recording */
+    if (serial_client->recording != NULL)
+        guac_recording_report_clipboard_blob(serial_client->recording, stream,
+                data, length);
+
+    /* Append new data */
+    guac_terminal_clipboard_append(serial_client->term, data, length);
+
+    return 0;
+}
+
+int guac_serial_clipboard_end_handler(guac_user* user, guac_stream* stream) {
+
+    guac_client* client = user->client;
+    guac_serial_client* serial_client = (guac_serial_client*) client->data;
+
+    /* Report clipboard stream end within recording */
+    if (serial_client->recording != NULL)
+        guac_recording_report_clipboard_end(serial_client->recording, stream);
+
+    /* Nothing to do - clipboard is implemented within client */
+
+    return 0;
+}
