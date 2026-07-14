@@ -271,6 +271,13 @@ typedef struct guac_telnet_settings {
     bool recording_write_existing;
 
     /**
+     * Whether the connection should be closed when a recording cannot be
+     * created. Disabled by default, meaning the connection will proceed even
+     * if recording fails.
+     */
+    bool require_recording;
+
+    /**
      * The ASCII code, as an integer, that the telnet client will use when the
      * backspace key is pressed.  By default, this is 127, ASCII delete, if
      * not specified in the client settings.

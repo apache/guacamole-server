@@ -59,6 +59,7 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "recording-include-clipboard",
     "create-recording-path",
     "recording-write-existing",
+    "require-recording",
     "read-only",
     "backspace",
     "func-keys-and-keypad",
@@ -220,6 +221,12 @@ enum TELNET_ARGS_IDX {
      * Disabled by default.
      */
     IDX_RECORDING_WRITE_EXISTING,
+
+    /**
+     * Whether recording is required. If set to "true", the connection will
+     * be closed if the recording cannot be created for any reason.
+     */
+    IDX_REQUIRE_RECORDING,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -539,6 +546,11 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
     settings->recording_write_existing =
         guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_RECORDING_WRITE_EXISTING, false);
+
+    /* Parse require recording flag */
+    settings->require_recording =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_REQUIRE_RECORDING, false);
 
     /* Parse backspace key code */
     settings->backspace =

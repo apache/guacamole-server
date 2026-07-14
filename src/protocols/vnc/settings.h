@@ -331,6 +331,13 @@ typedef struct guac_vnc_settings {
      * Disabled by default.
      */
     bool recording_write_existing;
+
+    /**
+     * Whether the connection should be closed when a recording cannot be
+     * created. Disabled by default, meaning the connection will proceed even
+     * if recording fails.
+     */
+    bool require_recording;
     
     /**
      * Whether or not to send the magic Wake-on-LAN (WoL) packet prior to
