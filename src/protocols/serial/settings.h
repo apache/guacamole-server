@@ -51,6 +51,12 @@
 #define GUAC_SERIAL_DEFAULT_BREAK_DURATION 500
 
 /**
+ * The interval, in seconds, between automatic reconnection attempts after the
+ * serial connection is dropped.
+ */
+#define GUAC_SERIAL_RECONNECT_INTERVAL 2
+
+/**
  * The filename to use for the typescript, if not specified.
  */
 #define GUAC_SERIAL_DEFAULT_TYPESCRIPT_NAME "typescript"
@@ -119,6 +125,30 @@ typedef enum guac_serial_flow_control {
 } guac_serial_flow_control;
 
 /**
+ * The line ending written to the serial line in place of the operator's
+ * outgoing carriage returns/newlines.
+ */
+typedef enum guac_serial_line_ending {
+
+    /**
+     * A single carriage return ("\r"). This is what most network device
+     * consoles (e.g. Cisco) expect, and is the default.
+     */
+    GUAC_SERIAL_LINE_ENDING_CR,
+
+    /**
+     * A single line feed ("\n").
+     */
+    GUAC_SERIAL_LINE_ENDING_LF,
+
+    /**
+     * A carriage return followed by a line feed ("\r\n").
+     */
+    GUAC_SERIAL_LINE_ENDING_CRLF
+
+} guac_serial_line_ending;
+
+/**
  * Settings for the serial connection. The values for this structure are parsed
  * from the arguments given during the Guacamole protocol handshake using the
  * guac_serial_parse_args() function.
@@ -141,6 +171,14 @@ typedef struct guac_serial_settings {
      * connection.
      */
     char* device;
+
+    /**
+     * An optional ":"-separated allowlist of permitted local device paths or
+     * path prefixes, or NULL if no allowlist was configured. Retained so the
+     * device can be re-validated on every (re)open, guarding against a symlink
+     * being repointed at a disallowed device between reconnects.
+     */
+    char* allowed_devices;
 
     /**
      * The hostname of the network serial server to connect to when type is
@@ -196,6 +234,30 @@ typedef struct guac_serial_settings {
      * when pasting to a low-baud line with no flow control.
      */
     int paste_delay;
+
+    /**
+     * Whether the connection should automatically attempt to reconnect if the
+     * serial line is dropped, keeping the terminal and its scrollback intact.
+     */
+    bool auto_reconnect;
+
+    /**
+     * The line ending written to the serial line in place of the operator's
+     * outgoing carriage returns/newlines.
+     */
+    guac_serial_line_ending line_ending;
+
+    /**
+     * Whether user input should be echoed to the terminal locally. Useful for
+     * devices or bootloaders which do not echo typed characters themselves.
+     */
+    bool local_echo;
+
+    /**
+     * Whether the modem control lines should be lowered (HUPCL) when the local
+     * device is closed, which resets many attached devices.
+     */
+    bool hangup_on_close;
 
     /**
      * Whether this connection is read-only, and user input should be dropped.
@@ -386,6 +448,28 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
  *     (speed_t) -1 if the given speed is not supported.
  */
 speed_t guac_serial_baud_to_speed(int baud_rate);
+
+/**
+ * Returns whether the given local device is permitted by the given ":"-
+ * separated allowlist of device paths or path prefixes. Both the device and
+ * each allowlist entry are canonicalized with realpath() before comparison; a
+ * device is permitted if its canonical path equals a canonicalized entry or
+ * falls beneath one of the canonicalized entries. If the device cannot be
+ * resolved (e.g. it does not currently exist), it is not permitted.
+ *
+ * This performs no logging so that it may be reused both at parse time and on
+ * every (re)open.
+ *
+ * @param device
+ *     The local device path to test.
+ *
+ * @param allowed
+ *     The ":"-separated allowlist of permitted device paths or prefixes.
+ *
+ * @return
+ *     true if the device is permitted, false otherwise.
+ */
+bool guac_serial_device_permitted(const char* device, const char* allowed);
 
 /**
  * Frees the given guac_serial_settings object, having been previously

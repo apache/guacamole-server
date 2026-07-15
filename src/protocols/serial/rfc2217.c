@@ -35,9 +35,11 @@
 #include <guacamole/tcp.h>
 #include <libtelnet.h>
 
+#include <errno.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
 
 /**
@@ -241,9 +243,30 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
     int fd = guac_tcp_connect(settings->hostname, settings->port,
             settings->timeout);
     if (fd < 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Unable to connect to serial server \"%s\" port \"%s\".",
-                settings->hostname, settings->port);
+
+        int err = errno;
+
+        /* Distinguish an actively-refused or reset endpoint from other
+         * failures. The client is not aborted here so the caller may retry. */
+        if (err == ECONNREFUSED) {
+            guac_client_log(client, GUAC_LOG_ERROR, "ser2net endpoint "
+                    "\"%s:%s\" refused the connection: %s", settings->hostname,
+                    settings->port, strerror(err));
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+        }
+        else if (err == ECONNRESET) {
+            guac_client_log(client, GUAC_LOG_ERROR, "Connection to ser2net "
+                    "endpoint \"%s:%s\" was reset: %s", settings->hostname,
+                    settings->port, strerror(err));
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+        }
+        else {
+            guac_client_log(client, GUAC_LOG_ERROR, "Unable to connect to "
+                    "serial server \"%s\" port \"%s\".", settings->hostname,
+                    settings->port);
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+        }
+
         return -1;
     }
 
@@ -260,8 +283,9 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
     telnet_t* telnet = telnet_init(rfc2217_options,
             guac_serial_rfc2217_event_handler, 0, stream);
     if (telnet == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+        guac_client_log(client, GUAC_LOG_ERROR,
                 "RFC2217 client allocation failed.");
+        stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
         close(fd);
         stream->fd = -1;
         return -1;
@@ -309,6 +333,11 @@ int guac_serial_rfc2217_send_break(guac_serial_stream* stream) {
 
 }
 
+void guac_serial_rfc2217_set_control(guac_serial_stream* stream, int value) {
+    guac_serial_rfc2217_send_byte((telnet_t*) stream->telnet,
+            GUAC_SERIAL_RFC2217_SET_CONTROL, (unsigned char) value);
+}
+
 void guac_serial_rfc2217_free(guac_serial_stream* stream) {
     if (stream->telnet != NULL) {
         telnet_free((telnet_t*) stream->telnet);
@@ -321,12 +350,11 @@ void guac_serial_rfc2217_free(guac_serial_stream* stream) {
 int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
         guac_serial_settings* settings) {
 
-    (void) stream;
     (void) settings;
 
-    guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-            "RFC2217 support was not compiled in "
-            "(rebuild guacamole-server with libtelnet).");
+    guac_client_log(client, GUAC_LOG_ERROR, "RFC2217 support was not compiled "
+            "in (rebuild guacamole-server with libtelnet).");
+    stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
     return -1;
 
 }
@@ -351,6 +379,12 @@ int guac_serial_rfc2217_send_break(guac_serial_stream* stream) {
     /* RFC2217 unavailable; a stream with this backend is never created */
     (void) stream;
     return 0;
+}
+
+void guac_serial_rfc2217_set_control(guac_serial_stream* stream, int value) {
+    /* RFC2217 unavailable; a stream with this backend is never created */
+    (void) stream;
+    (void) value;
 }
 
 void guac_serial_rfc2217_free(guac_serial_stream* stream) {

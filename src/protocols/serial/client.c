@@ -101,13 +101,13 @@ int guac_serial_client_free_handler(guac_client* client) {
 
     guac_serial_client* serial_client = (guac_serial_client*) client->data;
 
-    /* Close the serial stream's file descriptor, unblocking the client
-     * thread's read loop. The descriptor is cleared so it is not closed a
-     * second time when the stream is later freed. */
-    if (serial_client->stream != NULL && serial_client->stream->fd != -1) {
-        close(serial_client->stream->fd);
-        serial_client->stream->fd = -1;
-    }
+    /* Signal shutdown so the client thread's read loop, reconnect waits, and
+     * auto-reconnect loop all observe the stopped state and exit promptly. The
+     * stream's own file descriptor is not closed here (it is swapped under a
+     * lock during reconnects); the worker unblocks via its bounded poll timeout
+     * and the descriptor is closed when the stream is freed below, after the
+     * worker has been joined. */
+    guac_client_stop(client);
 
     /* Stop the terminal — closing its input pipe to unblock the input thread —
      * WITHOUT freeing it yet. The client thread may still be writing serial

@@ -36,30 +36,67 @@
 int guac_serial_local_open(guac_serial_stream* stream, guac_client* client,
         guac_serial_settings* settings) {
 
-    /* Open device non-blocking so open() does not wait for carrier detect */
-    int fd = open(settings->device, O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if (fd < 0) {
-        int status = (errno == ENOENT)
-                ? GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND
-                : GUAC_PROTOCOL_STATUS_SERVER_ERROR;
-        guac_client_abort(client, status,
-                "Unable to open serial device \"%s\": %s",
-                settings->device, strerror(errno));
+    /* Re-validate the device against the allowlist on every (re)open, guarding
+     * against a symlink being repointed at a disallowed device between
+     * reconnects */
+    if (settings->allowed_devices != NULL && settings->allowed_devices[0] != '\0'
+            && !guac_serial_device_permitted(settings->device,
+                    settings->allowed_devices)) {
+        guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" is not "
+                "permitted by the allowed-devices list, or is not currently "
+                "available.", settings->device);
+        stream->open_status = GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN;
         return -1;
     }
 
-    /* Request exclusive access; warn but continue if unsupported */
-    if (ioctl(fd, TIOCEXCL) != 0)
+    /* Open device non-blocking so open() does not wait for carrier detect */
+    int fd = open(settings->device, O_RDWR | O_NOCTTY | O_NONBLOCK);
+    if (fd < 0) {
+
+        /* Distinguish contention from other failures */
+        if (errno == EBUSY || errno == EACCES || errno == EPERM) {
+            guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" is "
+                    "busy or exclusively locked by another process: %s",
+                    settings->device, strerror(errno));
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+        }
+        else if (errno == ENOENT) {
+            guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" not "
+                    "found: %s", settings->device, strerror(errno));
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+        }
+        else {
+            guac_client_log(client, GUAC_LOG_ERROR, "Unable to open serial "
+                    "device \"%s\": %s", settings->device, strerror(errno));
+            stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
+        }
+
+        return -1;
+    }
+
+    /* Request exclusive access. A busy result means another process holds the
+     * device exclusively; treat that as a distinct contention failure. Other
+     * failures are non-fatal (the device may simply not support it). */
+    if (ioctl(fd, TIOCEXCL) != 0) {
+        if (errno == EBUSY) {
+            guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" is "
+                    "busy or exclusively locked by another process.",
+                    settings->device);
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+            close(fd);
+            return -1;
+        }
         guac_client_log(client, GUAC_LOG_WARNING, "Unable to obtain exclusive "
                 "access to serial device \"%s\": %s", settings->device,
                 strerror(errno));
+    }
 
     /* Read current line settings */
     struct termios tio;
     if (tcgetattr(fd, &tio) != 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Unable to read attributes of serial device \"%s\": %s",
-                settings->device, strerror(errno));
+        guac_client_log(client, GUAC_LOG_ERROR, "Unable to read attributes of "
+                "serial device \"%s\": %s", settings->device, strerror(errno));
+        stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
         close(fd);
         return -1;
     }
@@ -159,15 +196,22 @@ int guac_serial_local_open(guac_serial_stream* stream, guac_client* client,
 
     }
 
+    /* Lower the modem control lines on close if requested (resets many
+     * attached devices), otherwise leave them raised */
+    if (settings->hangup_on_close)
+        tio.c_cflag |= HUPCL;
+    else
+        tio.c_cflag &= ~HUPCL;
+
     /* Block for at least one byte per read, with no inter-byte timeout */
     tio.c_cc[VMIN] = 1;
     tio.c_cc[VTIME] = 0;
 
     /* Apply configuration immediately and discard any pending I/O */
     if (tcsetattr(fd, TCSANOW, &tio) != 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Unable to configure serial device \"%s\": %s",
-                settings->device, strerror(errno));
+        guac_client_log(client, GUAC_LOG_ERROR, "Unable to configure serial "
+                "device \"%s\": %s", settings->device, strerror(errno));
+        stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
         close(fd);
         return -1;
     }

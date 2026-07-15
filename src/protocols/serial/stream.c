@@ -28,12 +28,20 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/mem.h>
+#include <guacamole/protocol.h>
 
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
+
+/**
+ * The granularity, in milliseconds, of the interruptible sleep used to pace
+ * byte-by-byte writes. Shorter slices make teardown more responsive during a
+ * long paced paste; longer slices reduce wakeups.
+ */
+#define GUAC_SERIAL_PACING_SLICE 20
 
 /**
  * Writes the entire buffer given to the specified file descriptor, retrying
@@ -71,7 +79,30 @@ static int guac_serial_stream_write_all(int fd, const char* buffer, int size) {
 
 }
 
-guac_serial_stream* guac_serial_stream_open(guac_client* client,
+/**
+ * Sleeps for the given number of milliseconds, returning early if the client
+ * stops running. The wait is broken into short slices so that teardown is not
+ * delayed by a long paced write.
+ *
+ * @param stream
+ *     The serial stream whose client is checked for shutdown.
+ *
+ * @param milliseconds
+ *     The number of milliseconds to sleep.
+ */
+static void guac_serial_stream_interruptible_sleep(guac_serial_stream* stream,
+        int milliseconds) {
+
+    while (milliseconds > 0 && stream->client->state == GUAC_CLIENT_RUNNING) {
+        int slice = milliseconds < GUAC_SERIAL_PACING_SLICE
+                ? milliseconds : GUAC_SERIAL_PACING_SLICE;
+        usleep((useconds_t) slice * 1000);
+        milliseconds -= slice;
+    }
+
+}
+
+guac_serial_stream* guac_serial_stream_alloc(guac_client* client,
         guac_serial_settings* settings) {
 
     guac_serial_stream* stream = guac_mem_zalloc(sizeof(guac_serial_stream));
@@ -80,9 +111,28 @@ guac_serial_stream* guac_serial_stream_open(guac_client* client,
     stream->telnet = NULL;
     stream->paste_delay = settings->paste_delay;
     stream->break_duration = settings->break_duration;
+    stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
     pthread_mutex_init(&stream->write_lock, NULL);
 
-    /* Dispatch to the appropriate backend */
+    return stream;
+
+}
+
+int guac_serial_stream_reopen(guac_serial_stream* stream, guac_client* client,
+        guac_serial_settings* settings) {
+
+    pthread_mutex_lock(&stream->write_lock);
+
+    /* Tear down any existing transport so the fd/telnet are never stale */
+    guac_serial_rfc2217_free(stream);
+    if (stream->fd != -1) {
+        close(stream->fd);
+        stream->fd = -1;
+    }
+
+    /* Dispatch to the appropriate backend. Backends set stream->fd on success,
+     * or set stream->open_status and return non-zero on failure without
+     * aborting the client (so the caller may retry). */
     int result;
     if (settings->type == GUAC_SERIAL_TYPE_LOCAL)
         result = guac_serial_local_open(stream, client, settings);
@@ -91,37 +141,45 @@ guac_serial_stream* guac_serial_stream_open(guac_client* client,
     else
         result = guac_serial_tcp_open(stream, client, settings);
 
-    /* Clean up and return NULL on failure (backend has already aborted) */
-    if (result != 0) {
-        pthread_mutex_destroy(&stream->write_lock);
-        guac_mem_free(stream);
-        return NULL;
-    }
+    /* Ensure the fd is left invalid on failure */
+    if (result != 0)
+        stream->fd = -1;
 
-    return stream;
+    pthread_mutex_unlock(&stream->write_lock);
+    return result;
 
 }
 
 int guac_serial_stream_write(guac_serial_stream* stream, const char* buffer,
         int length) {
 
-    int result = length;
-
     pthread_mutex_lock(&stream->write_lock);
+
+    /* Drop input while the transport is down (e.g. mid-reconnect) rather than
+     * blocking or writing to a stale descriptor */
+    if (stream->fd < 0) {
+        pthread_mutex_unlock(&stream->write_lock);
+        return length;
+    }
 
     /* Pace output byte-by-byte when a paste delay is configured */
     if (stream->paste_delay > 0) {
 
         for (int i = 0; i < length; i++) {
 
+            /* Bail promptly if the session is tearing down, so a long paste
+             * cannot hold up teardown */
+            if (stream->client->state != GUAC_CLIENT_RUNNING)
+                break;
+
             if (stream->backend == GUAC_SERIAL_BACKEND_RFC2217)
                 guac_serial_rfc2217_send(stream, buffer + i, 1);
-            else if (guac_serial_stream_write_all(stream->fd, buffer + i, 1) != 1) {
-                result = -1;
+            else if (guac_serial_stream_write_all(stream->fd, buffer + i, 1) != 1)
+                /* The descriptor went bad; the read loop will detect the drop
+                 * and reconnect, so simply stop writing */
                 break;
-            }
 
-            usleep((useconds_t) stream->paste_delay * 1000);
+            guac_serial_stream_interruptible_sleep(stream, stream->paste_delay);
 
         }
 
@@ -132,13 +190,13 @@ int guac_serial_stream_write(guac_serial_stream* stream, const char* buffer,
 
         if (stream->backend == GUAC_SERIAL_BACKEND_RFC2217)
             guac_serial_rfc2217_send(stream, buffer, length);
-        else if (guac_serial_stream_write_all(stream->fd, buffer, length) != length)
-            result = -1;
+        else
+            guac_serial_stream_write_all(stream->fd, buffer, length);
 
     }
 
     pthread_mutex_unlock(&stream->write_lock);
-    return result;
+    return length;
 
 }
 
@@ -147,6 +205,12 @@ int guac_serial_stream_send_break(guac_serial_stream* stream) {
     int result = 0;
 
     pthread_mutex_lock(&stream->write_lock);
+
+    /* Ignore if the transport is currently down */
+    if (stream->fd < 0) {
+        pthread_mutex_unlock(&stream->write_lock);
+        return 0;
+    }
 
     switch (stream->backend) {
 
@@ -176,6 +240,60 @@ int guac_serial_stream_send_break(guac_serial_stream* stream) {
         case GUAC_SERIAL_BACKEND_RFC2217:
             guac_serial_rfc2217_send_break(stream);
             break;
+
+    }
+
+    pthread_mutex_unlock(&stream->write_lock);
+    return result;
+
+}
+
+int guac_serial_stream_set_line(guac_serial_stream* stream,
+        guac_serial_control_line line, bool state) {
+
+    int result = 0;
+    const char* line_name = (line == GUAC_SERIAL_CONTROL_LINE_DTR)
+            ? "DTR" : "RTS";
+
+    pthread_mutex_lock(&stream->write_lock);
+
+    /* Ignore if the transport is currently down */
+    if (stream->fd < 0) {
+        pthread_mutex_unlock(&stream->write_lock);
+        return 0;
+    }
+
+    switch (stream->backend) {
+
+        case GUAC_SERIAL_BACKEND_LOCAL: {
+            int flag = (line == GUAC_SERIAL_CONTROL_LINE_DTR)
+                    ? TIOCM_DTR : TIOCM_RTS;
+            if (ioctl(stream->fd, state ? TIOCMBIS : TIOCMBIC, &flag) != 0) {
+                guac_client_log(stream->client, GUAC_LOG_WARNING, "Unable to "
+                        "set %s %s: %s", line_name, state ? "on" : "off",
+                        strerror(errno));
+                result = -1;
+            }
+            break;
+        }
+
+        case GUAC_SERIAL_BACKEND_TCP:
+            guac_client_log(stream->client, GUAC_LOG_WARNING, "Control-line "
+                    "toggles (DTR/RTS) require the rfc2217 transport; ignoring "
+                    "on raw TCP transport.");
+            break;
+
+        case GUAC_SERIAL_BACKEND_RFC2217: {
+            /* RFC2217 SET-CONTROL values: DTR ON=8, DTR OFF=9, RTS ON=11,
+             * RTS OFF=12 */
+            int value;
+            if (line == GUAC_SERIAL_CONTROL_LINE_DTR)
+                value = state ? 8 : 9;
+            else
+                value = state ? 11 : 12;
+            guac_serial_rfc2217_set_control(stream, value);
+            break;
+        }
 
     }
 
