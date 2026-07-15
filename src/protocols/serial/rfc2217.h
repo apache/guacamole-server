@@ -108,6 +108,21 @@ void guac_serial_rfc2217_recv(guac_serial_stream* stream, const char* buffer,
 int guac_serial_rfc2217_send_break(guac_serial_stream* stream);
 
 /**
+ * Sends a COM-PORT-OPTION SET-CONTROL subnegotiation with the given control
+ * value to the remote end of an RFC2217 connection. Used to toggle the modem
+ * control lines (e.g. DTR ON=8, DTR OFF=9, RTS ON=11, RTS OFF=12 per RFC 2217).
+ * This must only be called on a stream whose backend is
+ * GUAC_SERIAL_BACKEND_RFC2217.
+ *
+ * @param stream
+ *     The RFC2217 serial stream on which to send the SET-CONTROL command.
+ *
+ * @param value
+ *     The RFC 2217 SET-CONTROL value to send.
+ */
+void guac_serial_rfc2217_set_control(guac_serial_stream* stream, int value);
+
+/**
  * Frees the libtelnet session associated with the given stream, if any. Safe
  * to call regardless of backend; has no effect if no session is present.
  *

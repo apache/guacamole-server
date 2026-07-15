@@ -27,8 +27,10 @@
 #include <guacamole/protocol.h>
 #include <guacamole/tcp.h>
 
+#include <errno.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <string.h>
 
 int guac_serial_tcp_open(guac_serial_stream* stream, guac_client* client,
         guac_serial_settings* settings) {
@@ -37,9 +39,30 @@ int guac_serial_tcp_open(guac_serial_stream* stream, guac_client* client,
     int fd = guac_tcp_connect(settings->hostname, settings->port,
             settings->timeout);
     if (fd < 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Unable to connect to serial server \"%s\" port \"%s\".",
-                settings->hostname, settings->port);
+
+        int err = errno;
+
+        /* Distinguish an actively-refused or reset endpoint from other
+         * failures (e.g. name resolution, timeout) */
+        if (err == ECONNREFUSED) {
+            guac_client_log(client, GUAC_LOG_ERROR, "ser2net endpoint "
+                    "\"%s:%s\" refused the connection: %s", settings->hostname,
+                    settings->port, strerror(err));
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+        }
+        else if (err == ECONNRESET) {
+            guac_client_log(client, GUAC_LOG_ERROR, "Connection to ser2net "
+                    "endpoint \"%s:%s\" was reset: %s", settings->hostname,
+                    settings->port, strerror(err));
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+        }
+        else {
+            guac_client_log(client, GUAC_LOG_ERROR, "Unable to connect to "
+                    "serial server \"%s\" port \"%s\".", settings->hostname,
+                    settings->port);
+            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+        }
+
         return -1;
     }
 
