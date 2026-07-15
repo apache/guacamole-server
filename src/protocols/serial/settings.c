@@ -74,6 +74,10 @@ const char* GUAC_SERIAL_CLIENT_ARGS[] = {
     "recording-include-clipboard",
     "create-recording-path",
     "recording-write-existing",
+    "auto-reconnect",
+    "line-ending",
+    "local-echo",
+    "hangup-on-close",
     NULL
 };
 
@@ -282,6 +286,30 @@ enum SERIAL_ARGS_IDX {
      */
     IDX_RECORDING_WRITE_EXISTING,
 
+    /**
+     * Whether the connection should automatically reconnect if the serial line
+     * is dropped. Defaults to true.
+     */
+    IDX_AUTO_RECONNECT,
+
+    /**
+     * The line ending written to the serial line for the operator's outgoing
+     * newlines ("cr", "lf", or "crlf"). Defaults to "cr".
+     */
+    IDX_LINE_ENDING,
+
+    /**
+     * Whether user input should be echoed to the terminal locally. Defaults to
+     * false.
+     */
+    IDX_LOCAL_ECHO,
+
+    /**
+     * Whether the modem control lines should be lowered (HUPCL) when the local
+     * device is closed. Defaults to false.
+     */
+    IDX_HANGUP_ON_CLOSE,
+
     SERIAL_ARGS_COUNT
 };
 
@@ -383,33 +411,30 @@ static int guac_serial_parse_flow(const char* str, guac_serial_flow_control* flo
 }
 
 /**
- * Returns whether the given local device is permitted by the given ":"-
- * separated allowlist of device paths or path prefixes. Both the device and
- * each allowlist entry are canonicalized with realpath() before comparison; a
- * device is permitted if its canonical path equals a canonicalized entry or
- * falls beneath one of the canonicalized entries.
+ * Parses the given line-ending string into a guac_serial_line_ending value.
  *
- * @param user
- *     The user on whose behalf error messages should be logged.
+ * @param str
+ *     The line-ending string ("cr", "lf", or "crlf").
  *
- * @param device
- *     The local device path to test.
- *
- * @param allowed
- *     The ":"-separated allowlist of permitted device paths or prefixes.
+ * @param line_ending
+ *     A pointer to the value that should receive the parsed result.
  *
  * @return
- *     true if the device is permitted, false otherwise.
+ *     Zero if the string was successfully parsed, non-zero otherwise.
  */
-static bool guac_serial_device_allowed(guac_user* user, const char* device,
-        const char* allowed) {
+static int guac_serial_parse_line_ending(const char* str,
+        guac_serial_line_ending* line_ending) {
+    if (strcmp(str, "cr") == 0)   { *line_ending = GUAC_SERIAL_LINE_ENDING_CR;   return 0; }
+    if (strcmp(str, "lf") == 0)   { *line_ending = GUAC_SERIAL_LINE_ENDING_LF;   return 0; }
+    if (strcmp(str, "crlf") == 0) { *line_ending = GUAC_SERIAL_LINE_ENDING_CRLF; return 0; }
+    return 1;
+}
+
+bool guac_serial_device_permitted(const char* device, const char* allowed) {
 
     char real_device[PATH_MAX];
-    if (realpath(device, real_device) == NULL) {
-        guac_user_log(user, GUAC_LOG_ERROR, "Unable to resolve serial device "
-                "\"%s\": %s", device, strerror(errno));
+    if (realpath(device, real_device) == NULL)
         return false;
-    }
 
     /* Duplicate the list so it may be tokenized in place */
     char* list = guac_strdup(allowed);
@@ -446,11 +471,6 @@ static bool guac_serial_device_allowed(guac_user* user, const char* device,
     }
 
     guac_mem_free(list);
-
-    if (!permitted)
-        guac_user_log(user, GUAC_LOG_ERROR, "Serial device \"%s\" is not "
-                "permitted by the configured allowed-devices list.", device);
-
     return permitted;
 
 }
@@ -618,18 +638,51 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
     if (settings->paste_delay < 0)
         settings->paste_delay = 0;
 
-    /* Enforce local device allowlist, if configured */
-    char* allowed = guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS,
-            argv, IDX_ALLOWED_DEVICES, NULL);
+    /* Parse auto-reconnect flag */
+    settings->auto_reconnect =
+        guac_user_parse_args_boolean(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                IDX_AUTO_RECONNECT, true);
+
+    /* Parse line ending */
+    char* line_ending_str = guac_user_parse_args_string(user,
+            GUAC_SERIAL_CLIENT_ARGS, argv, IDX_LINE_ENDING, "cr");
+    if (guac_serial_parse_line_ending(line_ending_str, &settings->line_ending)) {
+        guac_user_log(user, GUAC_LOG_ERROR, "Invalid line-ending \"%s\": must "
+                "be \"cr\", \"lf\", or \"crlf\".", line_ending_str);
+        guac_mem_free(line_ending_str);
+        guac_serial_settings_free(settings);
+        return NULL;
+    }
+    guac_mem_free(line_ending_str);
+
+    /* Parse local echo flag */
+    settings->local_echo =
+        guac_user_parse_args_boolean(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                IDX_LOCAL_ECHO, false);
+
+    /* Parse hangup-on-close flag */
+    settings->hangup_on_close =
+        guac_user_parse_args_boolean(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                IDX_HANGUP_ON_CLOSE, false);
+
+    /* Retain the device allowlist so it can be re-checked on every (re)open */
+    settings->allowed_devices =
+        guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                IDX_ALLOWED_DEVICES, NULL);
+
+    /* Enforce local device allowlist at parse time, if configured */
     if (settings->type == GUAC_SERIAL_TYPE_LOCAL
-            && allowed != NULL && allowed[0] != '\0') {
-        if (!guac_serial_device_allowed(user, settings->device, allowed)) {
-            guac_mem_free(allowed);
+            && settings->allowed_devices != NULL
+            && settings->allowed_devices[0] != '\0') {
+        if (!guac_serial_device_permitted(settings->device,
+                settings->allowed_devices)) {
+            guac_user_log(user, GUAC_LOG_ERROR, "Serial device \"%s\" is not "
+                    "permitted by the configured allowed-devices list, or "
+                    "could not be resolved.", settings->device);
             guac_serial_settings_free(settings);
             return NULL;
         }
     }
-    guac_mem_free(allowed);
 
     /* Read-only mode */
     settings->read_only =
@@ -771,6 +824,7 @@ void guac_serial_settings_free(guac_serial_settings* settings) {
 
     /* Free transport connection information */
     guac_mem_free(settings->device);
+    guac_mem_free(settings->allowed_devices);
     guac_mem_free(settings->hostname);
     guac_mem_free(settings->port);
 

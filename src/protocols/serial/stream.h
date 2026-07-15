@@ -50,6 +50,24 @@ typedef enum guac_serial_backend {
 } guac_serial_backend;
 
 /**
+ * A modem control line which may be asserted or de-asserted on the serial
+ * stream.
+ */
+typedef enum guac_serial_control_line {
+
+    /**
+     * The Data Terminal Ready (DTR) line.
+     */
+    GUAC_SERIAL_CONTROL_LINE_DTR,
+
+    /**
+     * The Request To Send (RTS) line.
+     */
+    GUAC_SERIAL_CONTROL_LINE_RTS
+
+} guac_serial_control_line;
+
+/**
  * A transport-neutral, bidirectional serial byte stream. All reads are
  * performed directly on the file descriptor by the main worker thread; writes
  * and break signalling are dispatched to the appropriate backend and
@@ -99,25 +117,54 @@ typedef struct guac_serial_stream {
      */
     guac_client* client;
 
+    /**
+     * The guac_protocol_status describing the most recent failed open attempt.
+     * Used by the initial connect path to abort with an appropriate status.
+     */
+    int open_status;
+
 } guac_serial_stream;
 
 /**
- * Opens a serial byte stream using the transport described by the given
- * settings, dispatching to the local, TCP, or RFC2217 backend as appropriate.
- * On failure, the client is aborted and NULL is returned.
+ * Allocates a serial byte stream for the given client, without yet opening any
+ * transport. The returned stream has no open file descriptor (fd is -1) until
+ * guac_serial_stream_reopen() succeeds. This allows a single stream object to
+ * persist across reconnects for the lifetime of the session.
  *
  * @param client
- *     The client for which the stream is being opened.
+ *     The client for which the stream is being allocated.
  *
  * @param settings
  *     The parsed connection settings describing the transport to use.
  *
  * @return
  *     A newly-allocated serial stream which must be freed with
- *     guac_serial_stream_close(), or NULL if the connection could not be
- *     established.
+ *     guac_serial_stream_close().
  */
-guac_serial_stream* guac_serial_stream_open(guac_client* client,
+guac_serial_stream* guac_serial_stream_alloc(guac_client* client,
+        guac_serial_settings* settings);
+
+/**
+ * (Re)opens the transport for the given serial stream, closing any currently-
+ * open file descriptor and libtelnet session first, then dispatching to the
+ * local, TCP, or RFC2217 backend as appropriate. The stream's fd is swapped
+ * under its write lock so that a concurrent writer never touches a stale
+ * descriptor. On failure, the stream's open_status is set and the fd is left
+ * at -1; the client is NOT aborted, so the caller may retry.
+ *
+ * @param stream
+ *     The serial stream to (re)open.
+ *
+ * @param client
+ *     The client for which the transport is being opened.
+ *
+ * @param settings
+ *     The parsed connection settings describing the transport to use.
+ *
+ * @return
+ *     Zero on success, non-zero on failure.
+ */
+int guac_serial_stream_reopen(guac_serial_stream* stream, guac_client* client,
         guac_serial_settings* settings);
 
 /**
@@ -155,6 +202,28 @@ int guac_serial_stream_write(guac_serial_stream* stream, const char* buffer,
  *     Zero on success, non-zero on error.
  */
 int guac_serial_stream_send_break(guac_serial_stream* stream);
+
+/**
+ * Asserts or de-asserts a modem control line (DTR or RTS) on the serial stream.
+ * For local transports the line is toggled via TIOCMBIS/TIOCMBIC; for RFC2217
+ * transports the corresponding COM-PORT-OPTION SET-CONTROL subnegotiation is
+ * sent. Raw TCP transports do not support control-line signalling; a warning
+ * is logged and the call is a no-op.
+ *
+ * @param stream
+ *     The serial stream on which to toggle the control line.
+ *
+ * @param line
+ *     The control line to toggle (DTR or RTS).
+ *
+ * @param state
+ *     true to assert (raise) the line, false to de-assert (lower) it.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_serial_stream_set_line(guac_serial_stream* stream,
+        guac_serial_control_line line, bool state);
 
 /**
  * Closes the given serial stream, releasing all associated resources. This

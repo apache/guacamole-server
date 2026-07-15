@@ -67,12 +67,27 @@ static void guac_serial_control_dispatch(guac_user* user, const char* token) {
 
     guac_client* client = user->client;
     guac_serial_client* serial_client = (guac_serial_client*) client->data;
+    guac_serial_stream* stream = serial_client->stream;
+
+    /* All commands operate on an established stream */
+    if (stream == NULL)
+        return;
 
     /* Send a serial break */
-    if (strcmp(token, "break") == 0) {
-        if (serial_client->stream != NULL)
-            guac_serial_stream_send_break(serial_client->stream);
-    }
+    if (strcmp(token, "break") == 0)
+        guac_serial_stream_send_break(stream);
+
+    /* Toggle the DTR modem control line */
+    else if (strcmp(token, "dtr-on") == 0)
+        guac_serial_stream_set_line(stream, GUAC_SERIAL_CONTROL_LINE_DTR, true);
+    else if (strcmp(token, "dtr-off") == 0)
+        guac_serial_stream_set_line(stream, GUAC_SERIAL_CONTROL_LINE_DTR, false);
+
+    /* Toggle the RTS modem control line */
+    else if (strcmp(token, "rts-on") == 0)
+        guac_serial_stream_set_line(stream, GUAC_SERIAL_CONTROL_LINE_RTS, true);
+    else if (strcmp(token, "rts-off") == 0)
+        guac_serial_stream_set_line(stream, GUAC_SERIAL_CONTROL_LINE_RTS, false);
 
     /* Ignore unrecognized commands */
     else
