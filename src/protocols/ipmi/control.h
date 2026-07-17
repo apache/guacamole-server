@@ -83,9 +83,13 @@ void guac_ipmi_control_open(guac_user* user, guac_stream* stream);
 void guac_ipmi_control_json_escape(char* dst, int dstlen, const char* src);
 
 /**
- * Extracts the string value of the given key from a flat JSON object into out.
- * The key is matched only when used as an object key (followed by a colon), so
- * an identical token appearing as a value is not matched.
+ * Extracts the value of the given key from a flat JSON object into out. The
+ * key is matched only when used as an object key (followed by a colon), so an
+ * identical token appearing as a value is not matched.
+ *
+ * Quoted string values are unescaped as they are copied. Bare scalars (numbers,
+ * true, false, and null) are copied literally, as clients are free to send
+ * them. Object and array values are not supported and yield no match.
  *
  * Exposed (rather than file-static) so the parser can be unit-tested.
  *
@@ -93,7 +97,7 @@ void guac_ipmi_control_json_escape(char* dst, int dstlen, const char* src);
  *     The null-terminated flat JSON object to search.
  *
  * @param key
- *     The key whose string value should be extracted.
+ *     The key whose value should be extracted.
  *
  * @param out
  *     The buffer to which the extracted value should be written.

@@ -26,13 +26,6 @@
 #include <stdbool.h>
 
 /**
- * The RMCP port used for IPMI 2.0 out-of-band access. This is fixed at 623/UDP
- * by libipmiconsole and libfreeipmi; the "port" parameter is accepted for
- * forward compatibility and informational logging only.
- */
-#define GUAC_IPMI_DEFAULT_PORT "623"
-
-/**
  * The protocol label included in the process title (the first argument passed
  * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
  */
@@ -73,9 +66,29 @@
  * intentionally match those constants.
  */
 typedef enum guac_ipmi_privilege_level {
+
+    /**
+     * Authenticate with USER privilege (IPMICONSOLE_PRIVILEGE_USER).
+     */
     GUAC_IPMI_PRIVILEGE_USER     = 0,
+
+    /**
+     * Authenticate with OPERATOR privilege (IPMICONSOLE_PRIVILEGE_OPERATOR).
+     */
     GUAC_IPMI_PRIVILEGE_OPERATOR = 1,
-    GUAC_IPMI_PRIVILEGE_ADMIN    = 2
+
+    /**
+     * Authenticate with ADMIN privilege (IPMICONSOLE_PRIVILEGE_ADMIN).
+     */
+    GUAC_IPMI_PRIVILEGE_ADMIN    = 2,
+
+    /**
+     * Sentinel indicating the supplied privilege level string was not
+     * recognized. Never passed to libipmiconsole; used only to signal a parse
+     * failure to the caller.
+     */
+    GUAC_IPMI_PRIVILEGE_INVALID  = 3
+
 } guac_ipmi_privilege_level;
 
 /**
@@ -120,7 +133,13 @@ typedef enum guac_ipmi_power_action {
      * Pulse a diagnostic interrupt / NMI
      * (IPMI_CHASSIS_CONTROL_PULSE_DIAGNOSTIC_INTERRUPT).
      */
-    GUAC_IPMI_POWER_DIAGNOSTIC_INTERRUPT
+    GUAC_IPMI_POWER_DIAGNOSTIC_INTERRUPT,
+
+    /**
+     * Sentinel indicating the supplied power action string was not recognized.
+     * Used only to signal a parse failure to the caller.
+     */
+    GUAC_IPMI_POWER_INVALID
 
 } guac_ipmi_power_action;
 
@@ -152,7 +171,13 @@ typedef enum guac_ipmi_boot_device {
     /**
      * Force the next boot into the BIOS/UEFI setup utility.
      */
-    GUAC_IPMI_BOOT_BIOS
+    GUAC_IPMI_BOOT_BIOS,
+
+    /**
+     * Sentinel indicating the supplied boot device string was not recognized.
+     * Used only to signal a parse failure to the caller.
+     */
+    GUAC_IPMI_BOOT_INVALID
 
 } guac_ipmi_boot_device;
 
@@ -179,7 +204,13 @@ typedef enum guac_ipmi_encryption_policy {
     /**
      * Allow any cipher suite, including those providing no confidentiality.
      */
-    GUAC_IPMI_ENCRYPTION_NONE
+    GUAC_IPMI_ENCRYPTION_NONE,
+
+    /**
+     * Sentinel indicating the supplied encryption policy string was not
+     * recognized. Used only to signal a parse failure to the caller.
+     */
+    GUAC_IPMI_ENCRYPTION_INVALID
 
 } guac_ipmi_encryption_policy;
 
@@ -194,12 +225,6 @@ typedef struct guac_ipmi_settings {
      * The hostname or IP address of the BMC to connect to.
      */
     char* hostname;
-
-    /**
-     * The RMCP port, as a string. Accepted for forward compatibility only;
-     * libipmiconsole always uses 623/UDP.
-     */
-    char* port;
 
     /**
      * The IPMI session timeout, in seconds.

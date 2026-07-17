@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "argv.h"
 #include "settings.h"
 #include "terminal/terminal.h"
@@ -39,7 +37,6 @@
 /* Client plugin arguments */
 const char* GUAC_IPMI_CLIENT_ARGS[] = {
     "hostname",
-    "port",
     "timeout",
     "username",
     "password",
@@ -83,11 +80,6 @@ enum IPMI_ARGS_IDX {
      * The hostname or IP address of the BMC to connect to. Required.
      */
     IDX_HOSTNAME,
-
-    /**
-     * The RMCP port. Informational only; libipmiconsole uses 623/UDP.
-     */
-    IDX_PORT,
 
     /**
      * The IPMI session timeout, in seconds. Optional.
@@ -290,26 +282,26 @@ enum IPMI_ARGS_IDX {
 };
 
 /**
- * Parses the given privilege level string into the corresponding
- * guac_ipmi_privilege_level value, logging a warning and falling back to the
- * default (admin) for unrecognized values.
- *
- * @param user
- *     The user who provided the value, on whose behalf warnings are logged.
+ * Converts the given privilege level string to the corresponding
+ * guac_ipmi_privilege_level value. This is a pure converter: it performs no
+ * logging and applies no default. GUAC_IPMI_PRIVILEGE_INVALID is returned if
+ * the value is NULL, empty, or unrecognized, leaving the caller responsible for
+ * applying any default and warning.
  *
  * @param value
  *     The privilege level string ("user", "operator", or "admin").
  *
  * @return
- *     The parsed privilege level, or GUAC_IPMI_PRIVILEGE_ADMIN if the value is
- *     blank or unrecognized.
+ *     The parsed privilege level, or GUAC_IPMI_PRIVILEGE_INVALID if the value
+ *     is NULL, empty, or unrecognized.
  */
 static guac_ipmi_privilege_level guac_ipmi_parse_privilege_level(
-        guac_user* user, const char* value) {
+        const char* value) {
 
-    if (value == NULL || strcmp(value, "") == 0
-            || strcasecmp(value, "admin") == 0
-            || strcasecmp(value, "administrator") == 0)
+    if (value == NULL || *value == '\0')
+        return GUAC_IPMI_PRIVILEGE_INVALID;
+
+    if (strcasecmp(value, "admin") == 0)
         return GUAC_IPMI_PRIVILEGE_ADMIN;
 
     if (strcasecmp(value, "operator") == 0)
@@ -318,32 +310,33 @@ static guac_ipmi_privilege_level guac_ipmi_parse_privilege_level(
     if (strcasecmp(value, "user") == 0)
         return GUAC_IPMI_PRIVILEGE_USER;
 
-    guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized privilege level "
-            "\"%s\"; defaulting to \"admin\".", value);
-    return GUAC_IPMI_PRIVILEGE_ADMIN;
+    return GUAC_IPMI_PRIVILEGE_INVALID;
 
 }
 
 /**
- * Parses the given power action string into the corresponding
+ * Converts the given power action string to the corresponding
  * guac_ipmi_power_action value. Only the actions appropriate for an automatic
- * "on connect" action are accepted ("none", "on", "reset", "cycle").
- *
- * @param user
- *     The user who provided the value, on whose behalf warnings are logged.
+ * "on connect" action are accepted ("none", "on", "reset", "cycle"). This is a
+ * pure converter: it performs no logging and applies no default.
+ * GUAC_IPMI_POWER_INVALID is returned if the value is NULL, empty, or
+ * unrecognized, leaving the caller responsible for applying any default and
+ * warning.
  *
  * @param value
  *     The power action string.
  *
  * @return
- *     The parsed power action, or GUAC_IPMI_POWER_NONE if the value is blank
- *     or unrecognized.
+ *     The parsed power action, or GUAC_IPMI_POWER_INVALID if the value is NULL,
+ *     empty, or unrecognized.
  */
 static guac_ipmi_power_action guac_ipmi_parse_power_action(
-        guac_user* user, const char* value) {
+        const char* value) {
 
-    if (value == NULL || strcmp(value, "") == 0
-            || strcasecmp(value, "none") == 0)
+    if (value == NULL || *value == '\0')
+        return GUAC_IPMI_POWER_INVALID;
+
+    if (strcasecmp(value, "none") == 0)
         return GUAC_IPMI_POWER_NONE;
 
     if (strcasecmp(value, "on") == 0)
@@ -355,31 +348,31 @@ static guac_ipmi_power_action guac_ipmi_parse_power_action(
     if (strcasecmp(value, "cycle") == 0)
         return GUAC_IPMI_POWER_CYCLE;
 
-    guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized power-on-connect "
-            "action \"%s\"; no power action will be taken.", value);
-    return GUAC_IPMI_POWER_NONE;
+    return GUAC_IPMI_POWER_INVALID;
 
 }
 
 /**
- * Parses the given boot device string into the corresponding
- * guac_ipmi_boot_device value.
- *
- * @param user
- *     The user who provided the value, on whose behalf warnings are logged.
+ * Converts the given boot device string to the corresponding
+ * guac_ipmi_boot_device value. This is a pure converter: it performs no logging
+ * and applies no default. GUAC_IPMI_BOOT_INVALID is returned if the value is
+ * NULL, empty, or unrecognized, leaving the caller responsible for applying any
+ * default and warning.
  *
  * @param value
  *     The boot device string ("none", "pxe", "disk", "cdrom", or "bios").
  *
  * @return
- *     The parsed boot device, or GUAC_IPMI_BOOT_NONE if the value is blank or
- *     unrecognized.
+ *     The parsed boot device, or GUAC_IPMI_BOOT_INVALID if the value is NULL,
+ *     empty, or unrecognized.
  */
 static guac_ipmi_boot_device guac_ipmi_parse_boot_device(
-        guac_user* user, const char* value) {
+        const char* value) {
 
-    if (value == NULL || strcmp(value, "") == 0
-            || strcasecmp(value, "none") == 0)
+    if (value == NULL || *value == '\0')
+        return GUAC_IPMI_BOOT_INVALID;
+
+    if (strcasecmp(value, "none") == 0)
         return GUAC_IPMI_BOOT_NONE;
 
     if (strcasecmp(value, "pxe") == 0)
@@ -394,21 +387,31 @@ static guac_ipmi_boot_device guac_ipmi_parse_boot_device(
     if (strcasecmp(value, "bios") == 0 || strcasecmp(value, "setup") == 0)
         return GUAC_IPMI_BOOT_BIOS;
 
-    guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized boot device "
-            "\"%s\"; boot order will be left unchanged.", value);
-    return GUAC_IPMI_BOOT_NONE;
+    return GUAC_IPMI_BOOT_INVALID;
 
 }
 
 /**
- * Parses the given string into a guac_ipmi_encryption_policy. Unrecognized
- * values fall back to the (secure) default of "required".
+ * Converts the given string to the corresponding guac_ipmi_encryption_policy
+ * value. This is a pure converter: it performs no logging and applies no
+ * default. GUAC_IPMI_ENCRYPTION_INVALID is returned if the value is NULL,
+ * empty, or unrecognized, leaving the caller responsible for applying any
+ * default and warning.
+ *
+ * @param value
+ *     The encryption policy string ("required", "preferred", or "none").
+ *
+ * @return
+ *     The parsed encryption policy, or GUAC_IPMI_ENCRYPTION_INVALID if the
+ *     value is NULL, empty, or unrecognized.
  */
 static guac_ipmi_encryption_policy guac_ipmi_parse_encryption_policy(
-        guac_user* user, const char* value) {
+        const char* value) {
 
-    if (value == NULL || strcmp(value, "") == 0
-            || strcasecmp(value, "required") == 0)
+    if (value == NULL || *value == '\0')
+        return GUAC_IPMI_ENCRYPTION_INVALID;
+
+    if (strcasecmp(value, "required") == 0)
         return GUAC_IPMI_ENCRYPTION_REQUIRED;
 
     if (strcasecmp(value, "preferred") == 0)
@@ -417,9 +420,7 @@ static guac_ipmi_encryption_policy guac_ipmi_parse_encryption_policy(
     if (strcasecmp(value, "none") == 0)
         return GUAC_IPMI_ENCRYPTION_NONE;
 
-    guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized encryption policy "
-            "\"%s\"; requiring encryption.", value);
-    return GUAC_IPMI_ENCRYPTION_REQUIRED;
+    return GUAC_IPMI_ENCRYPTION_INVALID;
 
 }
 
@@ -429,10 +430,18 @@ int guac_ipmi_cipher_provides_confidentiality(int cipher_suite) {
      * "none" (i.e. the payload is encrypted). Suites 0, 1, 2, 6, 7, 11, 15,
      * and 16 provide no confidentiality and are therefore excluded. */
     switch (cipher_suite) {
-        case 3:  case 4:  case 5:
-        case 8:  case 9:  case 10:
-        case 12: case 13: case 14:
-        case 17: case 18: case 19:
+        case 3:
+        case 4:
+        case 5:
+        case 8:
+        case 9:
+        case 10:
+        case 12:
+        case 13:
+        case 14:
+        case 17:
+        case 18:
+        case 19:
             return 1;
         default:
             return 0;
@@ -447,9 +456,25 @@ int guac_ipmi_cipher_provides_confidentiality(int cipher_suite) {
  * (out-of-band 2.0) namespace and applies to the SOL session only.
  */
 typedef struct guac_ipmi_workaround_token {
+
+    /**
+     * The user-facing token name identifying this workaround flag.
+     */
     const char* name;
+
+    /**
+     * The corresponding libipmiconsole (SOL) flag bit
+     * (IPMICONSOLE_WORKAROUND_*).
+     */
     unsigned int sol_flag;
+
+    /**
+     * The corresponding libfreeipmi (chassis) flag bit
+     * (IPMI_WORKAROUND_FLAGS_OUTOFBAND_2_0_*), or 0 if the flag has no chassis
+     * equivalent.
+     */
     unsigned int chassis_flag;
+
 } guac_ipmi_workaround_token;
 
 static const guac_ipmi_workaround_token GUAC_IPMI_WORKAROUND_TOKENS[] = {
@@ -473,8 +498,18 @@ static const guac_ipmi_workaround_token GUAC_IPMI_WORKAROUND_TOKENS[] = {
  * be commonly required for that vendor's BMCs.
  */
 typedef struct guac_ipmi_workaround_preset {
+
+    /**
+     * The user-facing vendor preset name.
+     */
     const char* name;
+
+    /**
+     * The comma-separated list of individual workaround tokens this preset
+     * expands to.
+     */
     const char* tokens;
+
 } guac_ipmi_workaround_preset;
 
 static const guac_ipmi_workaround_preset GUAC_IPMI_WORKAROUND_PRESETS[] = {
@@ -493,7 +528,21 @@ static const guac_ipmi_workaround_preset GUAC_IPMI_WORKAROUND_PRESETS[] = {
 
 /**
  * Applies a single individual workaround flag token (not a preset) to the
- * given SOL and chassis masks. Returns non-zero if the token was recognized.
+ * given SOL and chassis masks.
+ *
+ * @param token
+ *     The individual workaround flag token to apply.
+ *
+ * @param sol
+ *     A pointer to the SOL (libipmiconsole) mask into which the token's SOL
+ *     flag bit is ORed.
+ *
+ * @param chassis
+ *     A pointer to the chassis (libfreeipmi) mask into which the token's
+ *     chassis flag bit is ORed.
+ *
+ * @return
+ *     Non-zero if the token was recognized and applied, zero otherwise.
  */
 static int guac_ipmi_apply_workaround_token(const char* token,
         unsigned int* sol, unsigned int* chassis) {
@@ -517,6 +566,19 @@ static int guac_ipmi_apply_workaround_token(const char* token,
  * Parses a comma-separated list of workaround flag tokens and/or vendor preset
  * names, accumulating the resulting flags into the given SOL (libipmiconsole)
  * and chassis (libfreeipmi) masks. Both masks are cleared to 0 first.
+ *
+ * @param user
+ *     The user who provided the value, on whose behalf warnings are logged.
+ *
+ * @param value
+ *     The comma-separated list of workaround tokens and/or preset names, or
+ *     NULL/empty for no workarounds.
+ *
+ * @param sol
+ *     A pointer to the SOL (libipmiconsole) mask to populate.
+ *
+ * @param chassis
+ *     A pointer to the chassis (libfreeipmi) mask to populate.
  */
 static void guac_ipmi_parse_workaround_flags(guac_user* user,
         const char* value, unsigned int* sol, unsigned int* chassis) {
@@ -524,8 +586,11 @@ static void guac_ipmi_parse_workaround_flags(guac_user* user,
     *sol = 0;
     *chassis = 0;
 
-    if (value == NULL || strcmp(value, "") == 0)
+    if (value == NULL || strcmp(value, "") == 0) {
+        guac_user_log(user, GUAC_LOG_DEBUG, "No IPMI workaround flags "
+                "specified.");
         return;
+    }
 
     int preset_count = sizeof(GUAC_IPMI_WORKAROUND_PRESETS)
             / sizeof(GUAC_IPMI_WORKAROUND_PRESETS[0]);
@@ -594,14 +659,30 @@ static void guac_ipmi_parse_workaround_flags(guac_user* user,
  * it is decoded as a hexadecimal byte string (allowing binary keys that may
  * contain NUL bytes); otherwise it is treated as a raw passphrase. Returns NULL
  * (with *length set to 0) if the value is NULL or invalid.
+ *
+ * @param user
+ *     The user who provided the value, on whose behalf warnings are logged.
+ *
+ * @param raw
+ *     The raw K_g argument string, or NULL if unspecified.
+ *
+ * @param length
+ *     A pointer to an int which will receive the length of the returned buffer,
+ *     in bytes, or 0 if NULL is returned.
+ *
+ * @return
+ *     A newly-allocated byte buffer containing the decoded K_g key, which must
+ *     be freed by the caller, or NULL if the value is NULL or invalid.
  */
 static char* guac_ipmi_parse_k_g(guac_user* user, const char* raw,
         int* length) {
 
     *length = 0;
 
-    if (raw == NULL || *raw == '\0')
+    if (raw == NULL || *raw == '\0') {
+        guac_user_log(user, GUAC_LOG_DEBUG, "No K_g key provided.");
         return NULL;
+    }
 
     /* Hexadecimal form: "0x..." decodes to arbitrary bytes */
     if (raw[0] == '0' && (raw[1] == 'x' || raw[1] == 'X')) {
@@ -671,17 +752,6 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
 
-    /* Read port (informational only) */
-    settings->port =
-        guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_IPMI_DEFAULT_PORT);
-
-    /* Warn if a non-default port was requested, as it cannot be honored */
-    if (strcmp(settings->port, GUAC_IPMI_DEFAULT_PORT) != 0)
-        guac_user_log(user, GUAC_LOG_INFO, "A non-default IPMI port (\"%s\") "
-                "was specified, but IPMI out-of-band access always uses "
-                "623/UDP. The provided value will be ignored.", settings->port);
-
     /* Read IPMI session timeout */
     settings->timeout =
         guac_user_parse_args_int(user, GUAC_IPMI_CLIENT_ARGS, argv,
@@ -709,10 +779,20 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
     settings->k_g = guac_ipmi_parse_k_g(user, raw_k_g, &settings->k_g_length);
     guac_mem_free(raw_k_g);
 
-    /* Read privilege level */
-    settings->privilege_level = guac_ipmi_parse_privilege_level(user,
-            guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
-                    IDX_PRIVILEGE_LEVEL, "admin"));
+    /* Read privilege level, applying the default (admin) and warning here so
+     * the parser itself stays a pure string-to-enum converter */
+    char* priv_str =
+        guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
+                IDX_PRIVILEGE_LEVEL, NULL);
+    guac_ipmi_privilege_level priv = guac_ipmi_parse_privilege_level(priv_str);
+    if (priv == GUAC_IPMI_PRIVILEGE_INVALID) {
+        if (priv_str != NULL && *priv_str != '\0')
+            guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized privilege level "
+                    "\"%s\"; defaulting to \"admin\".", priv_str);
+        priv = GUAC_IPMI_PRIVILEGE_ADMIN;
+    }
+    settings->privilege_level = priv;
+    guac_mem_free(priv_str);
 
     /* Read cipher suite */
     settings->cipher_suite =
@@ -725,10 +805,21 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
                 "authentication, integrity, or confidentiality. Its use is "
                 "strongly discouraged.");
 
-    /* Read encryption policy */
-    settings->encryption_policy = guac_ipmi_parse_encryption_policy(user,
-            guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
-                    IDX_ENCRYPTION_POLICY, "required"));
+    /* Read encryption policy, applying the (secure) default of "required" and
+     * warning here so the parser itself stays a pure converter */
+    char* encryption_str =
+        guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
+                IDX_ENCRYPTION_POLICY, NULL);
+    guac_ipmi_encryption_policy encryption =
+        guac_ipmi_parse_encryption_policy(encryption_str);
+    if (encryption == GUAC_IPMI_ENCRYPTION_INVALID) {
+        if (encryption_str != NULL && *encryption_str != '\0')
+            guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized encryption "
+                    "policy \"%s\"; requiring encryption.", encryption_str);
+        encryption = GUAC_IPMI_ENCRYPTION_REQUIRED;
+    }
+    settings->encryption_policy = encryption;
+    guac_mem_free(encryption_str);
 
     /* Read vendor workaround flags, resolving into separate SOL and chassis
      * masks */
@@ -745,14 +836,33 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_IPMI_CLIENT_ARGS, argv,
                 IDX_SOL_PAYLOAD_INSTANCE, GUAC_IPMI_DEFAULT_SOL_PAYLOAD_INSTANCE);
 
-    /* Read pre-connect power and boot actions */
-    settings->power_on_connect = guac_ipmi_parse_power_action(user,
-            guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
-                    IDX_POWER_ON_CONNECT, "none"));
+    /* Read pre-connect power and boot actions, applying their defaults and
+     * warnings here so the parsers themselves stay pure converters */
+    char* power_str =
+        guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
+                IDX_POWER_ON_CONNECT, NULL);
+    guac_ipmi_power_action power = guac_ipmi_parse_power_action(power_str);
+    if (power == GUAC_IPMI_POWER_INVALID) {
+        if (power_str != NULL && *power_str != '\0')
+            guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized power-on-connect "
+                    "action \"%s\"; no power action will be taken.", power_str);
+        power = GUAC_IPMI_POWER_NONE;
+    }
+    settings->power_on_connect = power;
+    guac_mem_free(power_str);
 
-    settings->boot_device = guac_ipmi_parse_boot_device(user,
-            guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
-                    IDX_BOOT_DEVICE, "none"));
+    char* boot_str =
+        guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
+                IDX_BOOT_DEVICE, NULL);
+    guac_ipmi_boot_device boot = guac_ipmi_parse_boot_device(boot_str);
+    if (boot == GUAC_IPMI_BOOT_INVALID) {
+        if (boot_str != NULL && *boot_str != '\0')
+            guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized boot device "
+                    "\"%s\"; boot order will be left unchanged.", boot_str);
+        boot = GUAC_IPMI_BOOT_NONE;
+    }
+    settings->boot_device = boot;
+    guac_mem_free(boot_str);
 
     settings->boot_persistent =
         guac_user_parse_args_boolean(user, GUAC_IPMI_CLIENT_ARGS, argv,
@@ -877,7 +987,6 @@ void guac_ipmi_settings_free(guac_ipmi_settings* settings) {
 
     /* Free network connection information */
     guac_mem_free(settings->hostname);
-    guac_mem_free(settings->port);
 
     /* Free credentials, scrubbing the sensitive BMC secrets from memory before
      * releasing them so plaintext does not linger in freed heap. */

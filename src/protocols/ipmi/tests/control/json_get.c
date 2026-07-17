@@ -74,13 +74,72 @@ void test_json_get__missing(void) {
 }
 
 /**
- * Verifies that a non-string value (e.g. a number) is not matched, as only
- * quoted string values are extracted.
+ * Verifies that a bare numeric value is extracted literally. Clients are free
+ * to send unquoted scalars, so a numeric value must not read as a missing key.
  */
-void test_json_get__non_string_value(void) {
+void test_json_get__numeric_value(void) {
+    char out[64];
+    CU_ASSERT(guac_ipmi_control_json_get(
+            "{\"n\":123}", "n", out, sizeof(out)));
+    CU_ASSERT_STRING_EQUAL(out, "123");
+}
+
+/**
+ * Verifies that bare boolean and null values are extracted literally, and that
+ * a scalar is correctly delimited when followed by a further key.
+ */
+void test_json_get__literal_values(void) {
+
+    char out[64];
+
+    CU_ASSERT(guac_ipmi_control_json_get(
+            "{\"a\":true,\"b\":2}", "a", out, sizeof(out)));
+    CU_ASSERT_STRING_EQUAL(out, "true");
+
+    CU_ASSERT(guac_ipmi_control_json_get(
+            "{\"a\":false}", "a", out, sizeof(out)));
+    CU_ASSERT_STRING_EQUAL(out, "false");
+
+    CU_ASSERT(guac_ipmi_control_json_get(
+            "{ \"a\" : null }", "a", out, sizeof(out)));
+    CU_ASSERT_STRING_EQUAL(out, "null");
+
+}
+
+/**
+ * Verifies that a negative, fractional scalar survives intact, as such a value
+ * must not be truncated at the sign or decimal point.
+ */
+void test_json_get__negative_value(void) {
+    char out[64];
+    CU_ASSERT(guac_ipmi_control_json_get(
+            "{\"t\":-12.5,\"u\":1}", "t", out, sizeof(out)));
+    CU_ASSERT_STRING_EQUAL(out, "-12.5");
+}
+
+/**
+ * Verifies that object and array values yield no match, rather than a fragment
+ * of their contents, as only flat objects are supported.
+ */
+void test_json_get__structured_value(void) {
+
+    char out[64];
+
+    CU_ASSERT_FALSE(guac_ipmi_control_json_get(
+            "{\"o\":{\"k\":\"v\"}}", "o", out, sizeof(out)));
+
+    CU_ASSERT_FALSE(guac_ipmi_control_json_get(
+            "{\"a\":[1,2]}", "a", out, sizeof(out)));
+
+}
+
+/**
+ * Verifies that a key with no value at all yields no match.
+ */
+void test_json_get__empty_value(void) {
     char out[64];
     CU_ASSERT_FALSE(guac_ipmi_control_json_get(
-            "{\"n\":123}", "n", out, sizeof(out)));
+            "{\"n\":}", "n", out, sizeof(out)));
 }
 
 /**

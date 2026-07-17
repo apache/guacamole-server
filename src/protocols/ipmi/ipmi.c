@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "argv.h"
 #include "chassis.h"
 #include "control.h"
@@ -41,53 +39,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-/**
- * Lock guarding the process-global libipmiconsole engine reference count. The
- * libipmiconsole engine is a single process-wide resource; initializing or
- * tearing it down per connection would race with, and disrupt, any other IPMI
- * connections active within the same guacd process.
- */
-static pthread_mutex_t guac_ipmi_engine_lock = PTHREAD_MUTEX_INITIALIZER;
-
-/**
- * The number of IPMI connections currently holding the libipmiconsole engine.
- * The engine is initialized when this count rises from zero and torn down when
- * it returns to zero.
- */
-static int guac_ipmi_engine_refcount = 0;
-
-int guac_ipmi_engine_ref() {
-
-    int result = 0;
-
-    pthread_mutex_lock(&guac_ipmi_engine_lock);
-
-    /* Initialize the shared engine only on the first reference */
-    if (guac_ipmi_engine_refcount == 0)
-        result = ipmiconsole_engine_init(0, 0);
-
-    /* Take the reference only if the engine is available */
-    if (result == 0)
-        guac_ipmi_engine_refcount++;
-
-    pthread_mutex_unlock(&guac_ipmi_engine_lock);
-
-    return result;
-
-}
-
-void guac_ipmi_engine_unref() {
-
-    pthread_mutex_lock(&guac_ipmi_engine_lock);
-
-    /* Tear down the shared engine only once the last reference is released */
-    if (guac_ipmi_engine_refcount > 0 && --guac_ipmi_engine_refcount == 0)
-        ipmiconsole_engine_teardown(0);
-
-    pthread_mutex_unlock(&guac_ipmi_engine_lock);
-
-}
 
 /**
  * Write the entire buffer given to the specified file descriptor, retrying the
@@ -333,7 +284,7 @@ void* guac_ipmi_client_thread(void* data) {
     int wait_result;
 
     guac_process_title_set_endpoint(GUAC_IPMI_PROCESS_TITLE_NAME,
-            settings->username, settings->hostname, settings->port);
+            settings->username, settings->hostname, NULL);
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
@@ -409,8 +360,10 @@ void* guac_ipmi_client_thread(void* data) {
 
     }
 
-    /* Initialize (or reference) the shared libipmiconsole engine */
-    if (guac_ipmi_engine_ref() < 0) {
+    /* Initialize the libipmiconsole engine. guacd forks a dedicated process per
+     * connection, so this engine is private to this connection despite being
+     * process-global to libipmiconsole. */
+    if (ipmiconsole_engine_init(0, 0) < 0) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Unable to initialize IPMI console engine.");
         return NULL;
@@ -420,7 +373,7 @@ void* guac_ipmi_client_thread(void* data) {
     ipmi_client->console_ctx = __guac_ipmi_create_session(client);
     if (ipmi_client->console_ctx == NULL) {
         /* Already aborted within __guac_ipmi_create_session() */
-        guac_ipmi_engine_unref();
+        ipmiconsole_engine_teardown(0);
         return NULL;
     }
 

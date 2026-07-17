@@ -96,17 +96,13 @@ int guac_ipmi_chassis_set_boot_device(guac_client* client,
  * @param size
  *     The size of the given buffer, in bytes.
  *
- * @param power
- *     Optional output for the decoded power state. If non-NULL, it receives
- *     the structured power state parsed from the response (GUAC_IPMI_POWER_
- *     STATE_ON/OFF), leaving callers that only need the state independent of
- *     the human-readable buffer's wording.
- *
  * @return
- *     Zero if the status was retrieved successfully, non-zero otherwise.
+ *     The power state of the chassis, or GUAC_IPMI_POWER_STATE_UNKNOWN if the
+ *     status could not be retrieved, in which case the given buffer is left
+ *     untouched.
  */
-int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size,
-        guac_ipmi_power_state* power);
+guac_ipmi_power_state guac_ipmi_chassis_status(guac_client* client,
+        char* buffer, int size);
 
 /**
  * Activates the chassis identify LED for the given duration.

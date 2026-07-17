@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "chassis.h"
 #include "ipmi.h"
 #include "menu.h"
@@ -58,15 +56,6 @@
  * display to exactly the serial console output present before the menu opened.
  */
 #define GUAC_IPMI_MENU_ALT_EXIT "\x1B[?1049l"
-
-/**
- * Displays a "press any key to return" prompt and marks the current control
- * menu operation complete. Forward-declared for use by the chassis worker.
- *
- * @param client
- *     The guac_client associated with the IPMI connection.
- */
-static void guac_ipmi_menu_await_dismiss(guac_client* client);
 
 /**
  * Writes the given null-terminated string to the client's terminal as console
@@ -123,6 +112,28 @@ static void guac_ipmi_menu_render(guac_client* client) {
 }
 
 /**
+ * Marks the menu as displaying command output, prompting the user to press any
+ * key to return to the serial console. This keeps the output visible on the
+ * alternate screen until the user dismisses it.
+ *
+ * @param client
+ *     The guac_client associated with the IPMI connection.
+ */
+static void guac_ipmi_menu_await_dismiss(guac_client* client) {
+    guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
+
+    guac_ipmi_menu_print(client,
+            "\r\n\x1B[2m[ Press any key to return ]\x1B[0m");
+
+    /* Publish the completed state: the operation (if any) is finished and the
+     * next keypress should return to the console. */
+    pthread_mutex_lock(&ipmi_client->menu_lock);
+    ipmi_client->menu_awaiting_dismiss = true;
+    ipmi_client->chassis_busy = false;
+    pthread_mutex_unlock(&ipmi_client->menu_lock);
+}
+
+/**
  * Background worker thread which performs the pending chassis operation (as
  * described by the client's chassis_op / chassis_action fields) without
  * blocking the user input thread, reports the result to the terminal, and then
@@ -151,8 +162,8 @@ static void* guac_ipmi_menu_chassis_worker(void* data) {
 
         case GUAC_IPMI_CHASSIS_OP_STATUS: {
             char status[128];
-            if (guac_ipmi_chassis_status(client, status, sizeof(status),
-                        NULL) == 0) {
+            if (guac_ipmi_chassis_status(client, status, sizeof(status))
+                    != GUAC_IPMI_POWER_STATE_UNKNOWN) {
                 guac_ipmi_menu_print(client, status);
                 guac_ipmi_menu_print(client, "\r\n");
             }
@@ -261,28 +272,6 @@ static void guac_ipmi_menu_close(guac_client* client) {
     /* Restore the primary screen buffer, returning the display to the serial
      * console exactly as it was before the menu opened. */
     guac_ipmi_menu_print(client, GUAC_IPMI_MENU_ALT_EXIT);
-}
-
-/**
- * Marks the menu as displaying command output, prompting the user to press any
- * key to return to the serial console. This keeps the output visible on the
- * alternate screen until the user dismisses it.
- *
- * @param client
- *     The guac_client associated with the IPMI connection.
- */
-static void guac_ipmi_menu_await_dismiss(guac_client* client) {
-    guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
-
-    guac_ipmi_menu_print(client,
-            "\r\n\x1B[2m[ Press any key to return ]\x1B[0m");
-
-    /* Publish the completed state: the operation (if any) is finished and the
-     * next keypress should return to the console. */
-    pthread_mutex_lock(&ipmi_client->menu_lock);
-    ipmi_client->menu_awaiting_dismiss = true;
-    ipmi_client->chassis_busy = false;
-    pthread_mutex_unlock(&ipmi_client->menu_lock);
 }
 
 /**

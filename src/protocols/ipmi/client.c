@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "argv.h"
 #include "client.h"
 #include "ipmi.h"
@@ -145,7 +143,7 @@ int guac_ipmi_client_free_handler(guac_client* client) {
     /* Clean up the SOL session, if one was established */
     if (ipmi_client->console_ctx != NULL) {
         ipmiconsole_ctx_destroy(ipmi_client->console_ctx);
-        guac_ipmi_engine_unref();
+        ipmiconsole_engine_teardown(0);
     }
 
     /* Clean up recording, if in progress */
