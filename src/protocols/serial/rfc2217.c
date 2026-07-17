@@ -52,6 +52,14 @@
 #endif
 
 /**
+ * The Telnet BREAK (BRK) command, sent as "IAC BRK". libtelnet does not define
+ * this command, so it is defined here.
+ */
+#ifndef TELNET_BREAK
+#define TELNET_BREAK 243   /* Telnet BRK command (RFC 854) */
+#endif
+
+/**
  * COM-PORT-OPTION client-to-server command: set the serial line speed. The
  * data is a 4-byte big-endian unsigned integer giving the speed in bits per
  * second.
@@ -277,6 +285,66 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
 
 }
 
+int guac_serial_telnet_open(guac_serial_stream* stream, guac_client* client,
+        guac_serial_settings* settings) {
+
+    /* Support levels for the telnet options used by the base Telnet session.
+     * Unlike RFC2217, no COM-PORT-OPTION is negotiated. */
+    static const telnet_telopt_t telnet_options[] = {
+        { TELNET_TELOPT_BINARY, TELNET_WILL, TELNET_DO   },
+        { TELNET_TELOPT_SGA,    TELNET_WILL, TELNET_DO   },
+        { TELNET_TELOPT_ECHO,   TELNET_WONT, TELNET_DO   },
+        { -1, 0, 0 }
+    };
+
+    /* Acquire the network socket (dialing out, or accepting an inbound
+     * connection in reverse mode). On failure open_status is already set. */
+    int fd = guac_serial_net_open_fd(stream, client, settings);
+    if (fd < 0)
+        return -1;
+
+    /* Store the socket before initializing libtelnet, as the event handler
+     * writes outbound data to this descriptor */
+    stream->backend = GUAC_SERIAL_BACKEND_TELNET;
+    stream->fd = fd;
+
+    /* Initialize the libtelnet session, reusing the shared event handler and
+     * passing the stream as user data */
+    telnet_t* telnet = telnet_init(telnet_options,
+            guac_serial_rfc2217_event_handler, 0, stream);
+    if (telnet == NULL) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+                "Telnet client allocation failed.");
+        stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
+        close(fd);
+        stream->fd = -1;
+        return -1;
+    }
+
+    stream->telnet = telnet;
+
+    /* Advertise our willingness to use binary mode and suppress go-ahead */
+    telnet_negotiate(telnet, TELNET_WILL, TELNET_TELOPT_BINARY);
+    telnet_negotiate(telnet, TELNET_DO, TELNET_TELOPT_BINARY);
+    telnet_negotiate(telnet, TELNET_WILL, TELNET_TELOPT_SGA);
+
+    /* Plain telnet cannot negotiate serial line parameters; they remain
+     * informational, so no COM-PORT-OPTION line push is performed. */
+
+    return 0;
+
+}
+
+int guac_serial_telnet_send_break(guac_serial_stream* stream) {
+
+    /* Plain telnet has no COM-PORT-OPTION break, so the NVT BREAK function is
+     * used instead. Its effect depends entirely on the remote end. telnet_iac
+     * sends "IAC <cmd>", i.e. "IAC BRK". */
+    telnet_iac((telnet_t*) stream->telnet, TELNET_BREAK);
+    return 0;
+
+}
+
 void guac_serial_rfc2217_send(guac_serial_stream* stream, const char* buffer,
         int length) {
     telnet_send((telnet_t*) stream->telnet, buffer, length);
@@ -329,6 +397,24 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
     stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
     return -1;
 
+}
+
+int guac_serial_telnet_open(guac_serial_stream* stream, guac_client* client,
+        guac_serial_settings* settings) {
+
+    (void) settings;
+
+    guac_client_log(client, GUAC_LOG_ERROR, "Telnet transport support was not "
+            "compiled in (rebuild guacamole-server with libtelnet).");
+    stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
+    return -1;
+
+}
+
+int guac_serial_telnet_send_break(guac_serial_stream* stream) {
+    /* Telnet unavailable; a stream with this backend is never created */
+    (void) stream;
+    return 0;
 }
 
 void guac_serial_rfc2217_send(guac_serial_stream* stream, const char* buffer,

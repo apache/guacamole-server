@@ -45,7 +45,13 @@ typedef enum guac_serial_backend {
     /**
      * An RFC2217 (telnet COM-PORT-OPTION) connection to a remote serial server.
      */
-    GUAC_SERIAL_BACKEND_RFC2217
+    GUAC_SERIAL_BACKEND_RFC2217,
+
+    /**
+     * A base RFC854 Telnet connection to a remote serial server, using Telnet
+     * IAC framing without the RFC2217 COM-PORT-OPTION.
+     */
+    GUAC_SERIAL_BACKEND_TELNET
 
 } guac_serial_backend;
 

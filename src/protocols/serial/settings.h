@@ -106,7 +106,16 @@ typedef enum guac_serial_network_protocol {
      * The RFC2217 (telnet COM-PORT-OPTION) protocol, allowing serial line
      * parameters and break signalling to be negotiated with the remote end.
      */
-    GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217
+    GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217,
+
+    /**
+     * Base RFC854 Telnet framing (IAC escaping plus BINARY/SGA/ECHO option
+     * negotiation) without the RFC2217 COM-PORT-OPTION. Suitable for endpoints
+     * that speak plain Telnet (e.g. QEMU/VMware telnet serial ports, telnet-mode
+     * console servers). Serial line parameters cannot be negotiated and are
+     * purely informational, exactly as with the raw protocol.
+     */
+    GUAC_SERIAL_NETWORK_PROTOCOL_TELNET
 
 } guac_serial_network_protocol;
 

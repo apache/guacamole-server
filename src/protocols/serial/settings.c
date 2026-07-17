@@ -388,6 +388,7 @@ static int guac_serial_parse_network_protocol(const char* str,
         guac_serial_network_protocol* protocol) {
     if (strcmp(str, "raw") == 0)     { *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_RAW;     return 0; }
     if (strcmp(str, "rfc2217") == 0) { *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217; return 0; }
+    if (strcmp(str, "telnet") == 0)  { *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_TELNET;  return 0; }
     return 1;
 }
 
@@ -526,7 +527,7 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
             argv, IDX_NETWORK_PROTOCOL, "raw");
     if (guac_serial_parse_network_protocol(proto_str, &settings->network_protocol)) {
         guac_user_log(user, GUAC_LOG_ERROR, "Invalid network-protocol \"%s\": "
-                "must be \"raw\" or \"rfc2217\".", proto_str);
+                "must be \"raw\", \"rfc2217\", or \"telnet\".", proto_str);
         guac_mem_free(proto_str);
         guac_mem_free(settings);
         return NULL;
@@ -603,11 +604,12 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
     }
 
 #ifndef ENABLE_SERIAL_RFC2217
-    /* Reject RFC2217 if libtelnet support was not compiled in */
+    /* Reject RFC2217/telnet if libtelnet support was not compiled in */
     if (settings->type == GUAC_SERIAL_TYPE_NETWORK
-            && settings->network_protocol == GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217) {
-        guac_user_log(user, GUAC_LOG_ERROR, "RFC2217 transport requested but "
-                "not compiled in; rebuild with libtelnet, or use "
+            && (settings->network_protocol == GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217
+                || settings->network_protocol == GUAC_SERIAL_NETWORK_PROTOCOL_TELNET)) {
+        guac_user_log(user, GUAC_LOG_ERROR, "RFC2217/telnet transport requested "
+                "but not compiled in; rebuild with libtelnet, or use "
                 "network-protocol=raw.");
         guac_serial_settings_free(settings);
         return NULL;
