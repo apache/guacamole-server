@@ -78,6 +78,9 @@ const char* GUAC_SERIAL_CLIENT_ARGS[] = {
     "line-ending",
     "local-echo",
     "hangup-on-close",
+    "reverse-connect",
+    "listen-timeout",
+    "bind-address",
     NULL
 };
 
@@ -310,6 +313,24 @@ enum SERIAL_ARGS_IDX {
      */
     IDX_HANGUP_ON_CLOSE,
 
+    /**
+     * Whether guacd should listen for an inbound connection from the device
+     * (reverse mode) instead of dialing out. Defaults to false.
+     */
+    IDX_REVERSE_CONNECT,
+
+    /**
+     * The number of seconds to wait for an inbound connection in reverse mode
+     * before failing. Zero or negative means wait indefinitely.
+     */
+    IDX_LISTEN_TIMEOUT,
+
+    /**
+     * The local address to bind when listening in reverse mode. Defaults to
+     * "127.0.0.1".
+     */
+    IDX_BIND_ADDRESS,
+
     SERIAL_ARGS_COUNT
 };
 
@@ -530,6 +551,30 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_SERIAL_CLIENT_ARGS, argv,
                 IDX_TIMEOUT, GUAC_SERIAL_DEFAULT_TIMEOUT);
 
+    /* Parse reverse (listen) mode flag */
+    settings->reverse_connect =
+        guac_user_parse_args_boolean(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                IDX_REVERSE_CONNECT, false);
+
+    /* Parse listen timeout, treating negative values as "wait indefinitely" */
+    settings->listen_timeout =
+        guac_user_parse_args_int(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                IDX_LISTEN_TIMEOUT, GUAC_SERIAL_DEFAULT_LISTEN_TIMEOUT);
+    if (settings->listen_timeout < 0)
+        settings->listen_timeout = 0;
+
+    /* Parse local bind address used when listening in reverse mode */
+    settings->bind_address =
+        guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                IDX_BIND_ADDRESS, "127.0.0.1");
+
+    /* Reverse mode is meaningless for local connections */
+    if (settings->reverse_connect && settings->type == GUAC_SERIAL_TYPE_LOCAL) {
+        guac_user_log(user, GUAC_LOG_WARNING, "reverse-connect has no effect on "
+                "local serial connections; ignoring.");
+        settings->reverse_connect = false;
+    }
+
     /* Validate transport-specific requirements */
     if (settings->type == GUAC_SERIAL_TYPE_LOCAL) {
         if (settings->device == NULL || settings->device[0] == '\0') {
@@ -540,7 +585,10 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
         }
     }
     else {
-        if (settings->hostname == NULL || settings->hostname[0] == '\0') {
+        /* In reverse mode guacd binds and listens rather than dialing out, so
+         * a hostname is only required when dialing out */
+        if (!settings->reverse_connect
+                && (settings->hostname == NULL || settings->hostname[0] == '\0')) {
             guac_user_log(user, GUAC_LOG_ERROR, "A \"hostname\" is required for "
                     "network serial connections.");
             guac_serial_settings_free(settings);
@@ -827,6 +875,7 @@ void guac_serial_settings_free(guac_serial_settings* settings) {
     guac_mem_free(settings->allowed_devices);
     guac_mem_free(settings->hostname);
     guac_mem_free(settings->port);
+    guac_mem_free(settings->bind_address);
 
     /* Free display preferences */
     guac_mem_free(settings->font_name);

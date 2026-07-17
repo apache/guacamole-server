@@ -22,6 +22,7 @@
 #include "rfc2217.h"
 #include "settings.h"
 #include "stream.h"
+#include "tcp.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -239,40 +240,11 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
         { -1, 0, 0 }
     };
 
-    /* Connect to the remote serial server */
-    int fd = guac_tcp_connect(settings->hostname, settings->port,
-            settings->timeout);
-    if (fd < 0) {
-
-        int err = errno;
-
-        /* Distinguish an actively-refused or reset endpoint from other
-         * failures. The client is not aborted here so the caller may retry. */
-        if (err == ECONNREFUSED) {
-            guac_client_log(client, GUAC_LOG_ERROR, "ser2net endpoint "
-                    "\"%s:%s\" refused the connection: %s", settings->hostname,
-                    settings->port, strerror(err));
-            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
-        }
-        else if (err == ECONNRESET) {
-            guac_client_log(client, GUAC_LOG_ERROR, "Connection to ser2net "
-                    "endpoint \"%s:%s\" was reset: %s", settings->hostname,
-                    settings->port, strerror(err));
-            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
-        }
-        else {
-            guac_client_log(client, GUAC_LOG_ERROR, "Unable to connect to "
-                    "serial server \"%s\" port \"%s\".", settings->hostname,
-                    settings->port);
-            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
-        }
-
+    /* Acquire the network socket (dialing out, or accepting an inbound
+     * connection in reverse mode). On failure open_status is already set. */
+    int fd = guac_serial_net_open_fd(stream, client, settings);
+    if (fd < 0)
         return -1;
-    }
-
-    /* Disable Nagle's algorithm so keystrokes are sent without delay */
-    int flag = 1;
-    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
 
     /* Store the socket before initializing libtelnet, as the event handler
      * writes outbound data to this descriptor */
