@@ -51,6 +51,12 @@
 #define GUAC_SERIAL_DEFAULT_BREAK_DURATION 500
 
 /**
+ * The default number of seconds to wait for an inbound connection in reverse
+ * mode before failing.
+ */
+#define GUAC_SERIAL_DEFAULT_LISTEN_TIMEOUT 60
+
+/**
  * The interval, in seconds, between automatic reconnection attempts after the
  * serial connection is dropped.
  */
@@ -191,6 +197,24 @@ typedef struct guac_serial_settings {
      * GUAC_SERIAL_TYPE_NETWORK.
      */
     char* port;
+
+    /**
+     * Whether guacd should listen for an inbound connection from the device
+     * (reverse mode) instead of dialing out. Only meaningful for network type.
+     */
+    bool reverse_connect;
+
+    /**
+     * Seconds to wait for an inbound connection in reverse mode before failing.
+     * Zero or negative means wait indefinitely (bounded by client shutdown).
+     */
+    int listen_timeout;
+
+    /**
+     * Local address to bind when listening in reverse mode. NULL/empty =>
+     * 127.0.0.1.
+     */
+    char* bind_address;
 
     /**
      * The number of seconds to wait for a connection before timing out.
