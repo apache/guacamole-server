@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "chassis.h"
 #include "control.h"
 #include "ipmi.h"
@@ -71,10 +69,6 @@ typedef struct guac_ipmi_control_stream {
 
 } guac_ipmi_control_stream;
 
-/**
- * Escapes the given string into the body of a JSON string (without the
- * surrounding quotes), writing at most dstlen-1 bytes plus a NUL terminator.
- */
 void guac_ipmi_control_json_escape(char* dst, int dstlen,
         const char* src) {
 
@@ -96,10 +90,6 @@ void guac_ipmi_control_json_escape(char* dst, int dstlen,
 
 }
 
-/**
- * Extracts the string value of the given key from a flat JSON object into out.
- * Returns non-zero if the key was found.
- */
 int guac_ipmi_control_json_get(const char* json, const char* key,
         char* out, int outlen) {
 
@@ -122,18 +112,38 @@ int guac_ipmi_control_json_get(const char* json, const char* key,
             q++;
             while (*q == ' ' || *q == '\t')
                 q++;
-            if (*q != '"')
-                return 0;
-            q++;
 
             int j = 0;
-            while (*q != '\0' && *q != '"' && j < outlen - 1) {
-                if (*q == '\\' && q[1] != '\0')
-                    q++;
-                out[j++] = *q++;
+
+            /* Quoted string value; copy, resolving escapes */
+            if (*q == '"') {
+
+                q++;
+                while (*q != '\0' && *q != '"' && j < outlen - 1) {
+                    if (*q == '\\' && q[1] != '\0')
+                        q++;
+                    out[j++] = *q++;
+                }
+
+                out[j] = '\0';
+                return 1;
             }
+
+            /* Objects and arrays are beyond the flat structure this parser
+             * handles; treat them as no match rather than copying a fragment */
+            if (*q == '{' || *q == '[')
+                return 0;
+
+            /* Bare scalar (number, true, false, null); copy the literal token
+             * up to whatever ends the value, so that a client sending e.g.
+             * {"id":123} is not read as having omitted the key */
+            while (*q != '\0' && *q != ',' && *q != '}' && *q != ' '
+                    && *q != '\t' && *q != '\n' && *q != '\r'
+                    && j < outlen - 1)
+                out[j++] = *q++;
+
             out[j] = '\0';
-            return 1;
+            return j > 0;
         }
 
         /* This occurrence was a value, not a key; keep searching */
@@ -147,6 +157,12 @@ int guac_ipmi_control_json_get(const char* json, const char* key,
 /**
  * Sends one newline-delimited JSON message to the given user on a fresh
  * outbound "ipmi-control" pipe stream.
+ *
+ * @param user
+ *     The user to which the message should be sent.
+ *
+ * @param json
+ *     The null-terminated JSON message to send.
  */
 static void guac_ipmi_control_send(guac_user* user, const char* json) {
 
@@ -167,12 +183,23 @@ static void guac_ipmi_control_send(guac_user* user, const char* json) {
  * the client's last-known power value untouched. This lets health-only updates
  * (initial state, and the broadcast when SOL connects/disconnects) refresh the
  * connection badge without regressing the displayed power state to "unknown".
+ *
+ * @param user
+ *     The user to which the state message should be sent.
+ *
+ * @param client
+ *     The guac_client associated with the IPMI connection.
+ *
+ * @param query
+ *     Non-zero to actively read the chassis power state from the BMC and
+ *     include it in the message; zero to send only the SOL health.
  */
 static void guac_ipmi_control_send_state(guac_user* user, guac_client* client,
         bool query) {
 
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
 
+    /* Snapshot the SOL health under the state lock */
     pthread_mutex_lock(&ipmi_client->state_lock);
     bool sol_connected = ipmi_client->sol_connected;
     pthread_mutex_unlock(&ipmi_client->state_lock);
@@ -183,22 +210,25 @@ static void guac_ipmi_control_send_state(guac_user* user, guac_client* client,
 
     if (query) {
 
+        /* Actively read the chassis power state from the BMC, which opens a
+         * short-lived session and may block for several seconds */
         const char* power = "unknown";
         char status[128];
-        guac_ipmi_power_state power_state;
-        if (guac_ipmi_chassis_status(client, status, sizeof(status),
-                    &power_state) == 0) {
-            if (power_state == GUAC_IPMI_POWER_STATE_ON)
-                power = "on";
-            else if (power_state == GUAC_IPMI_POWER_STATE_OFF)
-                power = "off";
-        }
+        guac_ipmi_power_state power_state =
+            guac_ipmi_chassis_status(client, status, sizeof(status));
+
+        if (power_state == GUAC_IPMI_POWER_STATE_ON)
+            power = "on";
+        else if (power_state == GUAC_IPMI_POWER_STATE_OFF)
+            power = "off";
 
         snprintf(json, sizeof(json),
                 "{\"type\":\"state\",\"power\":\"%s\",\"health\":\"%s\"}",
                 power, health);
 
     }
+
+    /* Health-only update; leave the client's last-known power value untouched */
     else
         snprintf(json, sizeof(json),
                 "{\"type\":\"state\",\"health\":\"%s\"}", health);
@@ -207,6 +237,19 @@ static void guac_ipmi_control_send_state(guac_user* user, guac_client* client,
 
 }
 
+/**
+ * Callback for guac_client_foreach_user() which pushes a health-only state
+ * message to each connected user.
+ *
+ * @param user
+ *     The user to which the state message should be sent.
+ *
+ * @param data
+ *     The guac_client associated with the IPMI connection.
+ *
+ * @return
+ *     Always NULL.
+ */
 static void* guac_ipmi_control_broadcast_state_callback(guac_user* user,
         void* data) {
 
@@ -224,6 +267,18 @@ void guac_ipmi_control_broadcast_state(guac_client* client) {
 
 /**
  * Pushes a command result message to the given user.
+ *
+ * @param user
+ *     The user to which the result message should be sent.
+ *
+ * @param id
+ *     The opaque command identifier echoed back to the client.
+ *
+ * @param ok
+ *     Non-zero if the command succeeded, zero if it failed.
+ *
+ * @param message
+ *     A human-readable description of the result.
  */
 static void guac_ipmi_control_send_result(guac_user* user, const char* id,
         bool ok, const char* message) {
@@ -243,12 +298,20 @@ static void guac_ipmi_control_send_result(guac_user* user, const char* id,
  * Reads the System Event Log and pushes it to the given user. The entries are
  * currently delivered as a preformatted text field; structured per-entry
  * delivery is a planned refinement.
+ *
+ * @param user
+ *     The user to which the System Event Log should be sent.
+ *
+ * @param client
+ *     The guac_client associated with the IPMI connection.
  */
 static void guac_ipmi_control_send_sel(guac_user* user, guac_client* client) {
 
     char* sel = guac_mem_alloc(GUAC_IPMI_CONTROL_SEL_LENGTH);
     char* json = guac_mem_alloc(GUAC_IPMI_CONTROL_SEL_LENGTH * 2);
 
+    /* On a successful read, JSON-escape the rendered log into the "text" field;
+     * the escaped form may be up to twice the size of the raw log */
     if (guac_ipmi_chassis_sel(client, sel, GUAC_IPMI_CONTROL_SEL_LENGTH) == 0) {
         char* esc = guac_mem_alloc(GUAC_IPMI_CONTROL_SEL_LENGTH * 2);
         guac_ipmi_control_json_escape(esc, GUAC_IPMI_CONTROL_SEL_LENGTH * 2, sel);
@@ -256,6 +319,8 @@ static void guac_ipmi_control_send_sel(guac_user* user, guac_client* client) {
                 "{\"type\":\"sel\",\"text\":\"%s\"}", esc);
         guac_mem_free(esc);
     }
+
+    /* Otherwise report the failure to the client rather than an empty log */
     else
         snprintf(json, GUAC_IPMI_CONTROL_SEL_LENGTH * 2,
                 "{\"type\":\"sel\",\"error\":\"Unable to read System Event Log.\"}");
@@ -269,6 +334,13 @@ static void guac_ipmi_control_send_sel(guac_user* user, guac_client* client) {
 /**
  * Maps a command string to a chassis power action, or GUAC_IPMI_POWER_NONE if
  * the command is not a power action.
+ *
+ * @param cmd
+ *     The control command string to map.
+ *
+ * @return
+ *     The corresponding power action, or GUAC_IPMI_POWER_NONE if the command is
+ *     not a power action.
  */
 static guac_ipmi_power_action guac_ipmi_control_power_action(const char* cmd) {
     if (strcmp(cmd, "power-on") == 0)             return GUAC_IPMI_POWER_ON;
@@ -283,7 +355,13 @@ static guac_ipmi_power_action guac_ipmi_control_power_action(const char* cmd) {
 /**
  * Attempts to acquire the shared chassis operation lock, so control-channel
  * operations and the in-terminal menu never run overlapping BMC sessions.
- * Returns non-zero if the lock was acquired.
+ *
+ * @param ipmi_client
+ *     The guac_ipmi_client whose chassis operation lock should be acquired.
+ *
+ * @return
+ *     Non-zero if the lock was acquired, zero if a chassis operation was
+ *     already in progress.
  */
 static int guac_ipmi_control_try_acquire(guac_ipmi_client* ipmi_client) {
     int acquired = 0;
@@ -296,6 +374,13 @@ static int guac_ipmi_control_try_acquire(guac_ipmi_client* ipmi_client) {
     return acquired;
 }
 
+/**
+ * Releases the shared chassis operation lock previously acquired with
+ * guac_ipmi_control_try_acquire().
+ *
+ * @param ipmi_client
+ *     The guac_ipmi_client whose chassis operation lock should be released.
+ */
 static void guac_ipmi_control_release(guac_ipmi_client* ipmi_client) {
     pthread_mutex_lock(&ipmi_client->menu_lock);
     ipmi_client->chassis_busy = false;
@@ -304,6 +389,12 @@ static void guac_ipmi_control_release(guac_ipmi_client* ipmi_client) {
 
 /**
  * Parses and executes a single inbound control command line.
+ *
+ * @param user
+ *     The user which sent the control command.
+ *
+ * @param line
+ *     The null-terminated JSON command line to parse and execute.
  */
 static void guac_ipmi_control_dispatch(guac_user* user, const char* line) {
 
@@ -341,6 +432,11 @@ static void guac_ipmi_control_dispatch(guac_user* user, const char* line) {
         return;
     }
 
+    /* Resolve any power action up front so that it can be tested as one branch
+     * among the others; GUAC_IPMI_POWER_NONE means the command is either one of
+     * the non-power commands handled below or not a valid command at all */
+    guac_ipmi_power_action action = guac_ipmi_control_power_action(command);
+
     if (strcmp(command, "refresh-status") == 0 || strcmp(command, "status") == 0)
         guac_ipmi_control_send_state(user, client, true);
 
@@ -354,16 +450,16 @@ static void guac_ipmi_control_dispatch(guac_user* user, const char* line) {
                 ok ? "Identify LED activated." : "Unable to activate identify LED.");
     }
 
-    else {
-        guac_ipmi_power_action action = guac_ipmi_control_power_action(command);
-        if (action == GUAC_IPMI_POWER_NONE)
-            guac_ipmi_control_send_result(user, id, false, "Unknown command.");
-        else {
-            int ok = guac_ipmi_chassis_power(client, action) == 0;
-            guac_ipmi_control_send_result(user, id, ok,
-                    ok ? "Command sent successfully." : "Command failed.");
-        }
+    else if (action != GUAC_IPMI_POWER_NONE) {
+        int ok = guac_ipmi_chassis_power(client, action) == 0;
+        guac_ipmi_control_send_result(user, id, ok,
+                ok ? "Command sent successfully." : "Command failed.");
     }
+
+    /* The command matched nothing; reject it rather than infer intent, as guacd
+     * may be driven by any client implementation */
+    else
+        guac_ipmi_control_send_result(user, id, false, "Unknown command.");
 
     guac_ipmi_control_release(ipmi_client);
 
@@ -372,6 +468,21 @@ static void guac_ipmi_control_dispatch(guac_user* user, const char* line) {
 /**
  * Blob handler for the inbound control pipe: reassembles newline-delimited JSON
  * and dispatches each complete line.
+ *
+ * @param user
+ *     The user which owns the inbound control pipe.
+ *
+ * @param stream
+ *     The inbound pipe stream, whose data field holds the reassembly state.
+ *
+ * @param data
+ *     The received blob of pipe data.
+ *
+ * @param length
+ *     The length of the received blob, in bytes.
+ *
+ * @return
+ *     Zero on success.
  */
 static int guac_ipmi_control_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
@@ -379,6 +490,8 @@ static int guac_ipmi_control_blob_handler(guac_user* user, guac_stream* stream,
     guac_ipmi_control_stream* cs = (guac_ipmi_control_stream*) stream->data;
     const char* in = (const char*) data;
 
+    /* Accumulate incoming bytes into the per-stream buffer, dispatching each
+     * complete line as its terminating newline arrives */
     for (int i = 0; i < length; i++) {
         char c = in[i];
         if (c == '\n') {
@@ -401,6 +514,19 @@ static int guac_ipmi_control_blob_handler(guac_user* user, guac_stream* stream,
 
 }
 
+/**
+ * End handler for the inbound control pipe: frees the per-stream reassembly
+ * state when the client closes the stream.
+ *
+ * @param user
+ *     The user which owns the inbound control pipe.
+ *
+ * @param stream
+ *     The inbound pipe stream being closed.
+ *
+ * @return
+ *     Zero on success.
+ */
 static int guac_ipmi_control_end_handler(guac_user* user, guac_stream* stream) {
     guac_mem_free(stream->data);
     stream->data = NULL;

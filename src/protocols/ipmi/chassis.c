@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "chassis.h"
 #include "ipmi.h"
 #include "settings.h"
@@ -47,6 +45,36 @@
  * command sessions.
  */
 #define GUAC_IPMI_CHASSIS_RETRANSMISSION_TIMEOUT 1000
+
+/**
+ * The maximum number of System Event Log entries retained by the viewer (the
+ * most recent entries).
+ */
+#define GUAC_IPMI_SEL_MAX_ENTRIES 20
+
+/**
+ * The maximum length, in bytes, of a single formatted SEL entry line.
+ */
+#define GUAC_IPMI_SEL_LINE_LENGTH 160
+
+/**
+ * State accumulated while parsing the System Event Log. Formatted entries are
+ * stored in a ring buffer such that, after parsing, the buffer holds the most
+ * recent GUAC_IPMI_SEL_MAX_ENTRIES entries.
+ */
+typedef struct guac_ipmi_sel_state {
+
+    /**
+     * Ring buffer of formatted SEL entry lines.
+     */
+    char lines[GUAC_IPMI_SEL_MAX_ENTRIES][GUAC_IPMI_SEL_LINE_LENGTH];
+
+    /**
+     * The total number of SEL records parsed so far.
+     */
+    int total;
+
+} guac_ipmi_sel_state;
 
 /**
  * Maps a guac_ipmi_privilege_level to the corresponding libfreeipmi
@@ -281,17 +309,14 @@ int guac_ipmi_chassis_set_boot_device(guac_client* client,
 
 }
 
-int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size,
-        guac_ipmi_power_state* power) {
-
-    if (power != NULL)
-        *power = GUAC_IPMI_POWER_STATE_UNKNOWN;
+guac_ipmi_power_state guac_ipmi_chassis_status(guac_client* client,
+        char* buffer, int size) {
 
     ipmi_ctx_t ctx = guac_ipmi_chassis_connect(client);
     if (ctx == NULL)
-        return 1;
+        return GUAC_IPMI_POWER_STATE_UNKNOWN;
 
-    int result = 1;
+    guac_ipmi_power_state power = GUAC_IPMI_POWER_STATE_UNKNOWN;
     fiid_obj_t obj_cmd_rs = fiid_obj_create(tmpl_cmd_get_chassis_status_rs);
     if (obj_cmd_rs != NULL) {
 
@@ -327,12 +352,9 @@ int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size,
                         power_fault ? " (fault)" : "",
                         power_overload ? " (overload)" : "");
 
-                if (power != NULL)
-                    *power = power_is_on
-                            ? GUAC_IPMI_POWER_STATE_ON
-                            : GUAC_IPMI_POWER_STATE_OFF;
-
-                result = 0;
+                power = power_is_on
+                        ? GUAC_IPMI_POWER_STATE_ON
+                        : GUAC_IPMI_POWER_STATE_OFF;
             }
         }
 
@@ -340,7 +362,7 @@ int guac_ipmi_chassis_status(guac_client* client, char* buffer, int size,
     }
 
     guac_ipmi_chassis_disconnect(ctx);
-    return result;
+    return power;
 
 }
 
@@ -372,36 +394,6 @@ int guac_ipmi_chassis_identify(guac_client* client, int interval) {
     return result;
 
 }
-
-/**
- * The maximum number of System Event Log entries retained by the viewer (the
- * most recent entries).
- */
-#define GUAC_IPMI_SEL_MAX_ENTRIES 20
-
-/**
- * The maximum length, in bytes, of a single formatted SEL entry line.
- */
-#define GUAC_IPMI_SEL_LINE_LENGTH 160
-
-/**
- * State accumulated while parsing the System Event Log. Formatted entries are
- * stored in a ring buffer such that, after parsing, the buffer holds the most
- * recent GUAC_IPMI_SEL_MAX_ENTRIES entries.
- */
-typedef struct guac_ipmi_sel_state {
-
-    /**
-     * Ring buffer of formatted SEL entry lines.
-     */
-    char lines[GUAC_IPMI_SEL_MAX_ENTRIES][GUAC_IPMI_SEL_LINE_LENGTH];
-
-    /**
-     * The total number of SEL records parsed so far.
-     */
-    int total;
-
-} guac_ipmi_sel_state;
 
 /**
  * libfreeipmi SEL parse callback. Formats the current SEL record into the ring
