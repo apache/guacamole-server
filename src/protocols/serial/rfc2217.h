@@ -59,6 +59,46 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
         guac_serial_settings* settings);
 
 /**
+ * Opens a base RFC854 Telnet connection to the network serial server described
+ * by the given settings, negotiating only Telnet BINARY/SGA/ECHO options (no
+ * RFC2217 COM-PORT-OPTION), and stores the resulting socket and libtelnet
+ * session in the given stream. Serial line parameters are not negotiated and
+ * remain purely informational, as with the raw transport. Works in both forward
+ * and reverse mode, as the socket is obtained via guac_serial_net_open_fd().
+ *
+ * If Telnet support was not compiled in, the client is aborted and -1 is
+ * returned.
+ *
+ * @param stream
+ *     The serial stream to populate with the opened socket and session.
+ *
+ * @param client
+ *     The client for which the connection is being opened.
+ *
+ * @param settings
+ *     The parsed connection settings describing the server to connect to.
+ *
+ * @return
+ *     Zero on success, non-zero on failure.
+ */
+int guac_serial_telnet_open(guac_serial_stream* stream, guac_client* client,
+        guac_serial_settings* settings);
+
+/**
+ * Sends a serial break to the remote end of a base Telnet connection using the
+ * Telnet BREAK (BRK) command. Plain Telnet has no COM-PORT-OPTION break, so the
+ * NVT BREAK function is used instead; its effect depends on the remote end. This
+ * must only be called on a stream whose backend is GUAC_SERIAL_BACKEND_TELNET.
+ *
+ * @param stream
+ *     The Telnet serial stream on which to send the break.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_serial_telnet_send_break(guac_serial_stream* stream);
+
+/**
  * Sends the given buffer to the remote end of an RFC2217 connection, applying
  * telnet IAC framing. This must only be called on a stream whose backend is
  * GUAC_SERIAL_BACKEND_RFC2217.
