@@ -159,6 +159,34 @@ static void* __guac_ipmi_input_thread(void* data) {
 }
 
 /**
+ * Maps a guac_ipmi_privilege_level to the corresponding libipmiconsole
+ * IPMICONSOLE_PRIVILEGE_* constant. This is the SOL-path counterpart to the
+ * chassis path's guac_ipmi_map_privilege_level(); the internal enum values are
+ * independent of either library, so the value must be translated here rather
+ * than passed through raw.
+ *
+ * @param privilege_level
+ *     The privilege level to map.
+ *
+ * @return
+ *     The equivalent IPMICONSOLE_PRIVILEGE_* constant.
+ */
+static int guac_ipmi_map_privilege_level_ipmiconsole(
+        guac_ipmi_privilege_level privilege_level) {
+
+    switch (privilege_level) {
+        case GUAC_IPMI_PRIVILEGE_USER:
+            return IPMICONSOLE_PRIVILEGE_USER;
+        case GUAC_IPMI_PRIVILEGE_OPERATOR:
+            return IPMICONSOLE_PRIVILEGE_OPERATOR;
+        case GUAC_IPMI_PRIVILEGE_ADMIN:
+        default:
+            return IPMICONSOLE_PRIVILEGE_ADMIN;
+    }
+
+}
+
+/**
  * Establishes the IPMI 2.0 Serial-over-LAN session described by the given
  * client's settings, blocking until the session has been established or an
  * error occurs. The libipmiconsole engine must already have been initialized.
@@ -182,7 +210,8 @@ static ipmiconsole_ctx_t __guac_ipmi_create_session(guac_client* client) {
         .password         = settings->password,
         .k_g              = (unsigned char*) settings->k_g,
         .k_g_len          = settings->k_g_length,
-        .privilege_level  = settings->privilege_level,
+        .privilege_level  =
+            guac_ipmi_map_privilege_level_ipmiconsole(settings->privilege_level),
         .cipher_suite_id  = settings->cipher_suite,
         .workaround_flags = settings->sol_workaround_flags
     };

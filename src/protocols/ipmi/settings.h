@@ -61,33 +61,38 @@
 #define GUAC_IPMI_DEFAULT_RECORDING_NAME "recording"
 
 /**
- * The privilege level to authenticate with, expressed using the
- * IPMICONSOLE_PRIVILEGE_* constants from libipmiconsole. The values here
- * intentionally match those constants.
+ * The privilege level to authenticate with. This is an internal representation
+ * whose numeric values are deliberately independent of any library: the two
+ * IPMI back-ends number their privilege constants differently (libipmiconsole's
+ * IPMICONSOLE_PRIVILEGE_* are 0/1/2, while libfreeipmi's IPMI_PRIVILEGE_LEVEL_*
+ * are 0x02/0x03/0x04), so a value must be translated to the appropriate
+ * constant at each boundary rather than passed through raw. The SOL path maps
+ * via guac_ipmi_map_privilege_level_ipmiconsole() (ipmi.c) and the chassis path
+ * via guac_ipmi_map_privilege_level() (chassis.c).
  */
 typedef enum guac_ipmi_privilege_level {
 
     /**
-     * Authenticate with USER privilege (IPMICONSOLE_PRIVILEGE_USER).
+     * Sentinel indicating an unspecified or unrecognized privilege level. Never
+     * mapped to either library; used only to signal a parse failure to the
+     * caller, and the value a zero-initialized field holds.
      */
-    GUAC_IPMI_PRIVILEGE_USER     = 0,
+    GUAC_IPMI_PRIVILEGE_INVALID = 0,
 
     /**
-     * Authenticate with OPERATOR privilege (IPMICONSOLE_PRIVILEGE_OPERATOR).
+     * Authenticate with USER privilege.
      */
-    GUAC_IPMI_PRIVILEGE_OPERATOR = 1,
+    GUAC_IPMI_PRIVILEGE_USER,
 
     /**
-     * Authenticate with ADMIN privilege (IPMICONSOLE_PRIVILEGE_ADMIN).
+     * Authenticate with OPERATOR privilege.
      */
-    GUAC_IPMI_PRIVILEGE_ADMIN    = 2,
+    GUAC_IPMI_PRIVILEGE_OPERATOR,
 
     /**
-     * Sentinel indicating the supplied privilege level string was not
-     * recognized. Never passed to libipmiconsole; used only to signal a parse
-     * failure to the caller.
+     * Authenticate with ADMIN privilege.
      */
-    GUAC_IPMI_PRIVILEGE_INVALID  = 3
+    GUAC_IPMI_PRIVILEGE_ADMIN
 
 } guac_ipmi_privilege_level;
 
