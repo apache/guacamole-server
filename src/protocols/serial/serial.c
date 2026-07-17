@@ -333,8 +333,10 @@ static guac_serial_disconnect_reason guac_serial_run_read_loop(
             return GUAC_SERIAL_DISCONNECT_ERROR;
         }
 
-        /* RFC2217 output must be de-framed; all other transports are raw */
-        if (serial_client->stream->backend == GUAC_SERIAL_BACKEND_RFC2217)
+        /* RFC2217 and telnet output must be de-framed; all other transports are
+         * raw */
+        if (serial_client->stream->backend == GUAC_SERIAL_BACKEND_RFC2217
+                || serial_client->stream->backend == GUAC_SERIAL_BACKEND_TELNET)
             guac_serial_rfc2217_recv(serial_client->stream, buffer, bytes_read);
         else
             guac_terminal_write(serial_client->term, buffer, bytes_read);

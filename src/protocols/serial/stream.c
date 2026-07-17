@@ -138,6 +138,8 @@ int guac_serial_stream_reopen(guac_serial_stream* stream, guac_client* client,
         result = guac_serial_local_open(stream, client, settings);
     else if (settings->network_protocol == GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217)
         result = guac_serial_rfc2217_open(stream, client, settings);
+    else if (settings->network_protocol == GUAC_SERIAL_NETWORK_PROTOCOL_TELNET)
+        result = guac_serial_telnet_open(stream, client, settings);
     else
         result = guac_serial_tcp_open(stream, client, settings);
 
@@ -172,7 +174,8 @@ int guac_serial_stream_write(guac_serial_stream* stream, const char* buffer,
             if (stream->client->state != GUAC_CLIENT_RUNNING)
                 break;
 
-            if (stream->backend == GUAC_SERIAL_BACKEND_RFC2217)
+            if (stream->backend == GUAC_SERIAL_BACKEND_RFC2217
+                    || stream->backend == GUAC_SERIAL_BACKEND_TELNET)
                 guac_serial_rfc2217_send(stream, buffer + i, 1);
             else if (guac_serial_stream_write_all(stream->fd, buffer + i, 1) != 1)
                 /* The descriptor went bad; the read loop will detect the drop
@@ -188,7 +191,8 @@ int guac_serial_stream_write(guac_serial_stream* stream, const char* buffer,
     /* Otherwise, write the entire buffer at once */
     else {
 
-        if (stream->backend == GUAC_SERIAL_BACKEND_RFC2217)
+        if (stream->backend == GUAC_SERIAL_BACKEND_RFC2217
+                || stream->backend == GUAC_SERIAL_BACKEND_TELNET)
             guac_serial_rfc2217_send(stream, buffer, length);
         else
             guac_serial_stream_write_all(stream->fd, buffer, length);
@@ -239,6 +243,10 @@ int guac_serial_stream_send_break(guac_serial_stream* stream) {
 
         case GUAC_SERIAL_BACKEND_RFC2217:
             guac_serial_rfc2217_send_break(stream);
+            break;
+
+        case GUAC_SERIAL_BACKEND_TELNET:
+            guac_serial_telnet_send_break(stream);
             break;
 
     }
@@ -294,6 +302,12 @@ int guac_serial_stream_set_line(guac_serial_stream* stream,
             guac_serial_rfc2217_set_control(stream, value);
             break;
         }
+
+        case GUAC_SERIAL_BACKEND_TELNET:
+            guac_client_log(stream->client, GUAC_LOG_WARNING, "Control-line "
+                    "toggles (DTR/RTS) require the rfc2217 transport; ignoring "
+                    "on telnet transport.");
+            break;
 
     }
 
