@@ -48,8 +48,13 @@
 #include "common-ssh/user.h"
 #endif
 
+#ifdef HAVE_FREERDP_AAD_SUPPORT
+#include "aad.h"
+#endif
+
 #include <freerdp/addin.h>
 #include <freerdp/channels/channels.h>
+#include <freerdp/client.h>
 #include <freerdp/client/channels.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/gdi/gdi.h>
@@ -66,14 +71,18 @@
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
+#include <guacamole/stream.h>
 #include <guacamole/string.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
 #include <guacamole/wol.h>
+#include <winpr/crt.h>
 #include <winpr/error.h>
 #include <winpr/synch.h>
 #include <winpr/wtypes.h>
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -325,6 +334,123 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
 
 }
 
+#ifdef HAVE_FREERDP_AAD_SUPPORT
+/**
+ * Callback invoked by FreeRDP when an Azure AD access token is required.
+ *
+ * The signature (variadic, with a tokenType discriminator) is dictated by
+ * FreeRDP's pGetAccessToken callback. This implementation only handles
+ * ACCESS_TOKEN_TYPE_AAD; other token types are rejected.
+ *
+ * @param instance
+ *     The FreeRDP instance associated with the RDP session.
+ *
+ * @param tokenType
+ *     The type of access token being requested. Must be
+ *     ACCESS_TOKEN_TYPE_AAD; any other value is rejected.
+ *
+ * @param token
+ *     Pointer to a string which will receive the access token. This function
+ *     must allocate and populate this string.
+ *
+ * @param count
+ *     Number of additional variadic arguments. For AAD this must be 2.
+ *
+ * @param ...
+ *     Additional arguments. For AAD: scope (const char*) and
+ *     req_cnf (const char*).
+ *
+ * @return
+ *     TRUE if an access token was successfully obtained, FALSE otherwise.
+ */
+static BOOL rdp_freerdp_get_aad_access_token(freerdp* instance,
+        AccessTokenType tokenType, char** token, size_t count, ...) {
+
+    rdpContext* context = GUAC_RDP_CONTEXT(instance);
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+
+    *token = NULL;
+
+    /* This callback only handles AAD; reject any other token type */
+    if (tokenType != ACCESS_TOKEN_TYPE_AAD) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "Unsupported access token type: %d (only AAD is supported)",
+            tokenType);
+        return FALSE;
+    }
+
+    /* AAD requires exactly two variadic arguments: scope and req_cnf */
+    if (count < 2) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "AAD: Expected 2 arguments (scope and req_cnf)");
+        return FALSE;
+    }
+
+    va_list ap;
+    va_start(ap, count);
+    const char* scope = va_arg(ap, const char*);
+    const char* req_cnf = va_arg(ap, const char*);
+    va_end(ap);
+
+    /* The Azure AD client to authenticate as may be set on the connection via
+     * "aad-client-id"; otherwise use FreeRDP's default (a Microsoft first-party
+     * Remote Desktop client the RD resource preauthorizes). */
+    const char* client_id = settings->aad_client_id;
+    if (client_id == NULL || strlen(client_id) == 0)
+        client_id = freerdp_settings_get_string(context->settings,
+                FreeRDP_GatewayAvdClientID);
+    if (client_id == NULL || strlen(client_id) == 0) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "AAD: No client ID available (set \"aad-client-id\")");
+        return FALSE;
+    }
+
+    /* The device-bound scope requires the request to target the tenant the
+     * device is registered in ("aad-tenant-id"); "organizations" is a fallback. */
+    const char* tenant_id = (settings->aad_tenant_id != NULL
+            && strlen(settings->aad_tenant_id) > 0)
+        ? settings->aad_tenant_id : GUAC_AAD_DEFAULT_TENANT_ID;
+
+    /* Prefer the scope configured on the connection. Otherwise fall back to the
+     * device-bound scope FreeRDP derived for the target host, which arrives
+     * pre-URL-encoded and must be decoded to avoid double-encoding. */
+    char* decoded_scope = NULL;
+    const char* use_scope;
+    if (settings->aad_scope != NULL && strlen(settings->aad_scope) > 0)
+        use_scope = settings->aad_scope;
+    else {
+        decoded_scope = guac_rdp_percent_decode(scope);
+        use_scope = decoded_scope;
+    }
+
+    /* Obtain a Proof-of-Possession token via the OAuth2 device authorization
+     * grant, relaying a QR/user code to the session owner's browser for the
+     * user to complete sign-in on a separate device. */
+    char* access_token = guac_rdp_aad_get_token(client, tenant_id, client_id,
+            use_scope, req_cnf);
+
+    guac_mem_free(decoded_scope);
+
+    if (access_token == NULL)
+        return FALSE;
+
+    /* FreeRDP frees the token with free(), so hand it an independently
+     * allocated copy */
+    *token = _strdup(access_token);
+    guac_mem_free(access_token);
+
+    if (*token == NULL) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "AAD: Failed to allocate access token");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+#endif
+
 #ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
 /**
  * Callback invoked by FreeRDP when the SSL/TLS certificate of the RDP server
@@ -554,6 +680,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
     #endif
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
+
+#ifdef HAVE_FREERDP_AAD_SUPPORT
+    rdp_inst->GetAccessToken = rdp_freerdp_get_aad_access_token;
+#endif
 
 #ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
     rdp_inst->VerifyCertificateEx = rdp_freerdp_verify_certificate;
