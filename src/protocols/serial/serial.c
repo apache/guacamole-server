@@ -116,6 +116,8 @@ static void guac_serial_endpoint(guac_serial_settings* settings, char* buffer,
         int size) {
     if (settings->type == GUAC_SERIAL_TYPE_LOCAL)
         snprintf(buffer, size, "%s", settings->device);
+    else if (settings->reverse_connect)
+        snprintf(buffer, size, "listen:%s", settings->port);
     else
         snprintf(buffer, size, "%s:%s", settings->hostname, settings->port);
 }
@@ -439,9 +441,15 @@ void* guac_serial_client_thread(void* data) {
             settings->baud_rate, settings->data_bits,
             guac_serial_parity_letter(settings->parity), settings->stop_bits);
 
-    /* Set process title to the device or hostname reached by this connection */
-    const char* title_host = settings->type == GUAC_SERIAL_TYPE_LOCAL
-            ? settings->device : settings->hostname;
+    /* Set process title to the device, listen endpoint, or hostname reached by
+     * this connection */
+    const char* title_host;
+    if (settings->type == GUAC_SERIAL_TYPE_LOCAL)
+        title_host = settings->device;
+    else if (settings->reverse_connect)
+        title_host = endpoint;
+    else
+        title_host = settings->hostname;
     guac_process_title_set_endpoint(GUAC_SERIAL_PROCESS_TITLE_NAME,
             NULL, title_host, NULL);
 

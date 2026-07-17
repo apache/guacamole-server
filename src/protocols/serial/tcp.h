@@ -45,4 +45,29 @@
 int guac_serial_tcp_open(guac_serial_stream* stream, guac_client* client,
         guac_serial_settings* settings);
 
+/**
+ * Acquires the network file descriptor for a serial connection. In reverse mode
+ * (settings->reverse_connect) guacd binds, listens, and accepts a single
+ * inbound connection from the device; otherwise it dials out via
+ * guac_tcp_connect(). TCP_NODELAY is set on the resulting socket on success.
+ * This is shared by both the raw TCP and RFC2217 backends so that reverse mode
+ * need only be implemented once.
+ *
+ * @param stream
+ *     The serial stream whose open_status is set on failure.
+ *
+ * @param client
+ *     The client for which the connection is being opened.
+ *
+ * @param settings
+ *     The parsed connection settings describing the server to connect to or the
+ *     address/port to listen on.
+ *
+ * @return
+ *     The acquired file descriptor on success, or -1 on failure with
+ *     stream->open_status set and the reason logged.
+ */
+int guac_serial_net_open_fd(guac_serial_stream* stream, guac_client* client,
+        guac_serial_settings* settings);
+
 #endif
