@@ -210,6 +210,10 @@ AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_LTLIB],   '$(top_builddir)/src/protocols/kubernetes/libguac-client-kubernetes.la')
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_INCLUDE], '-I$(top_srcdir)/src/protocols/kubernetes')
 
+# IPMI support
+AC_SUBST([LIBGUAC_CLIENT_IPMI_LTLIB],   '$(top_builddir)/src/protocols/ipmi/libguac-client-ipmi.la')
+AC_SUBST([LIBGUAC_CLIENT_IPMI_INCLUDE], '-I$(top_srcdir)/src/protocols/ipmi')
+
 # RDP support
 AC_SUBST([LIBGUAC_CLIENT_RDP_LTLIB],   '$(top_builddir)/src/protocols/rdp/libguac-client-rdp.la')
 AC_SUBST([LIBGUAC_CLIENT_RDP_INCLUDE], '-I$(top_srcdir)/src/protocols/rdp')
@@ -1305,6 +1309,38 @@ AM_CONDITIONAL([ENABLE_TELNET], [test "x${have_libtelnet}"  = "xyes" \
 AC_SUBST(TELNET_LIBS)
 
 #
+# FreeIPMI (libipmiconsole + libfreeipmi)
+#
+
+have_freeipmi=disabled
+IPMI_LIBS=
+IPMI_CFLAGS=
+AC_ARG_WITH([ipmi],
+            [AS_HELP_STRING([--with-ipmi],
+                            [support IPMI Serial-over-LAN @<:@default=check@:>@])],
+            [],
+            [with_ipmi=check])
+
+if test "x$with_ipmi" != "xno"
+then
+    have_freeipmi=yes
+
+    # The SOL console is driven by libipmiconsole, while chassis power
+    # management is driven by libfreeipmi.
+    AC_CHECK_HEADER([ipmiconsole.h],, [have_freeipmi=no])
+    AC_CHECK_LIB([ipmiconsole], [ipmiconsole_ctx_create],
+                 [IPMI_LIBS="$IPMI_LIBS -lipmiconsole"], [have_freeipmi=no])
+    AC_CHECK_LIB([freeipmi], [ipmi_ctx_create],
+                 [IPMI_LIBS="$IPMI_LIBS -lfreeipmi"], [have_freeipmi=no])
+fi
+
+AM_CONDITIONAL([ENABLE_IPMI], [test "x${have_freeipmi}" = "xyes" \
+                                 -a "x${have_terminal}" = "xyes"])
+
+AC_SUBST(IPMI_CFLAGS)
+AC_SUBST(IPMI_LIBS)
+
+#
 # libwebp
 #
 
@@ -1489,6 +1525,8 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
+                 src/protocols/ipmi/Makefile
+                 src/protocols/ipmi/tests/Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
 
@@ -1500,6 +1538,7 @@ AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
 AM_COND_IF([ENABLE_TELNET],     [build_telnet=yes],     [build_telnet=no])
+AM_COND_IF([ENABLE_IPMI],       [build_ipmi=yes],       [build_ipmi=no])
 AM_COND_IF([ENABLE_VNC],        [build_vnc=yes],        [build_vnc=no])
 
 #
@@ -1549,6 +1588,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libssl .............. ${have_ssl}
      libswscale .......... ${have_libswscale}
      libtelnet ........... ${have_libtelnet}
+     freeipmi ............ ${have_freeipmi}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
@@ -1562,6 +1602,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       RDP ........... ${build_rdp}
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
+      IPMI .......... ${build_ipmi}
       VNC ........... ${build_vnc}
 
    Services / tools:
