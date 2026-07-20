@@ -225,13 +225,28 @@ typedef int guac_user_clipboard_handler(guac_user* user, guac_stream* stream,
  *
  * @param top_offset
  *   The offset of the monitor from the top of the screen, in pixels.
+ *   Negative values are allowed (monitor above primary).
+ *
+ * @param left_offset
+ *   The offset of the monitor from the left of the screen, in pixels.
+ *   Negative values are allowed (monitor to the left of primary).
+ *
+ *   Special value: INT_MIN signals "not provided by the connecting
+ *   client" and is dispatched to the protocol handler so it can fall
+ *   back to its legacy layout convention (deriving the offset from the
+ *   cumulative width of the monitors preceding x_position, matching
+ *   clients that predate non-linear layouts). The libguac wire-handler
+ *   maps an absent 5th `size` opcode argument to INT_MIN; protocol
+ *   implementations that consume this handler should test for INT_MIN
+ *   explicitly rather than treating it as a regular coordinate.
  *
  * @return
  *     Zero if the size event has been successfully handled, non-zero
  *     otherwise.
  */
 typedef int guac_user_size_handler(guac_user* user,
-        int width, int height, int x_position, int top_offset);
+        int width, int height, int x_position, int top_offset,
+        int left_offset);
 
 /**
  * Handler for Guacamole file streams received from a user. Each such file

@@ -100,7 +100,7 @@ int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed) {
 }
 
 int guac_rdp_user_size_handler(guac_user* user, int width, int height,
-        int x_position, int top_offset) {
+        int x_position, int top_offset, int left_offset) {
 
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;

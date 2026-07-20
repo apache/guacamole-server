@@ -91,9 +91,22 @@ typedef struct guac_spice_monitor {
 
     /**
      * The offset of this monitor from the left of the combined display, in
-     * pixels (the sum of the widths of all monitors to its left).
+     * pixels. This is the value actually sent to the guest, and is either the
+     * offset supplied by the client or, when the client supplies none, the sum
+     * of the widths of all monitors to its left.
      */
     int left_offset;
+
+    /**
+     * The offset of this monitor from the left of the combined display as
+     * supplied by the connecting client, in pixels, or INT_MIN if the client
+     * did not supply one. A client that does not send the optional fifth
+     * argument of the "size" instruction cannot describe a layout that is
+     * anything other than a left-to-right row, so INT_MIN selects the legacy
+     * behaviour of deriving the offset from the widths of the preceding
+     * monitors.
+     */
+    int client_left_offset;
 
 } guac_spice_monitor;
 

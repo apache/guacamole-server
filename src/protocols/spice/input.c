@@ -31,6 +31,8 @@
 #include <spice-client.h>
 #include <spice/vd_agent.h>
 
+#include <limits.h>
+
 /**
  * Translates a Guacamole mouse button mask into the equivalent SPICE button
  * state mask (a bitwise OR of SPICE_MOUSE_BUTTON_MASK_* values). Only the
@@ -250,10 +252,13 @@ int guac_spice_user_key_handler(guac_user* user, int keysym, int pressed) {
 }
 
 /**
- * Recomputes the x_position and left_offset of every active monitor. Monitors
- * are tiled left-to-right, so each monitor's left_offset is the sum of the
- * widths of the monitors before it and its x_position is its array index. Must
- * be called on the SPICE event-loop thread whenever the monitor set changes.
+ * Recomputes the x_position and left_offset of every active monitor. A
+ * monitor's x_position is its array index. Its left_offset is the offset
+ * supplied by the client where one was given, so that arrangements other than
+ * a left-to-right row reach the guest as described; where the client supplied
+ * none, the monitors are tiled left-to-right and the offset is the sum of the
+ * widths of the monitors before it. Must be called on the SPICE event-loop
+ * thread whenever the monitor set changes.
  *
  * @param spice_client
  *     The SPICE client whose monitor offsets should be recomputed.
@@ -262,9 +267,22 @@ static void guac_spice_monitors_recalc_offsets(guac_spice_client* spice_client) 
 
     int left = 0;
     for (int i = 0; i < spice_client->monitors_count; i++) {
-        spice_client->monitors[i].x_position = i;
-        spice_client->monitors[i].left_offset = left;
-        left += spice_client->monitors[i].width;
+
+        guac_spice_monitor* monitor = &spice_client->monitors[i];
+        monitor->x_position = i;
+
+        /* Honour the offset supplied by the client where there is one, so that
+         * arrangements which are not a simple left-to-right row (a vertical
+         * stack, or a row with a gap) reach the guest as described. Clients
+         * that send no offset fall back to the historical behaviour of
+         * deriving it from the widths of the preceding monitors. */
+        if (monitor->client_left_offset != INT_MIN)
+            monitor->left_offset = monitor->client_left_offset;
+        else
+            monitor->left_offset = left;
+
+        left += monitor->width;
+
     }
 
 }
@@ -439,6 +457,7 @@ static void guac_spice_do_queue_resize(guac_spice_deferred_call* call) {
     int height     = (int) call->args[1];
     int x_position = (int) call->args[2];
     int top_offset = (int) call->args[3];
+    int left_offset = (int) call->args[4];
 
     /* Number of monitors permitted (primary plus the configured secondaries),
      * capped at the number of heads guacd supports */
@@ -459,6 +478,7 @@ static void guac_spice_do_queue_resize(guac_spice_deferred_call* call) {
         monitor->width      = width;
         monitor->height     = height;
         monitor->top_offset = top_offset;
+        monitor->client_left_offset = left_offset;
 
         /* Grow the active monitor count if this request adds a new monitor */
         if (x_position == spice_client->monitors_count)
@@ -489,7 +509,7 @@ static void guac_spice_do_queue_resize(guac_spice_deferred_call* call) {
 }
 
 int guac_spice_user_size_handler(guac_user* user, int width, int height,
-        int x_position, int top_offset) {
+        int x_position, int top_offset, int left_offset) {
 
     guac_client* client = user->client;
     guac_spice_client* spice_client = (guac_spice_client*) client->data;
@@ -514,6 +534,7 @@ int guac_spice_user_size_handler(guac_user* user, int width, int height,
     call->args[1] = (unsigned int) height;
     call->args[2] = (unsigned int) x_position;
     call->args[3] = (unsigned int) top_offset;
+    call->args[4] = (unsigned int) left_offset;
     guac_spice_defer_call(call);
 
     return 0;
