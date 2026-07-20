@@ -54,15 +54,16 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/gdi/gdi.h>
 #include <freerdp/graphics.h>
-#include <guacamole/proctitle.h>
 #include <freerdp/primary.h>
 #include <freerdp/settings.h>
 #include <freerdp/update.h>
+#include <freerdp/version.h>
 #include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/display.h>
 #include <guacamole/mem.h>
+#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
@@ -231,6 +232,8 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     return TRUE;
 }
 
+#if defined(HAVE_FREERDP_AUTHENTICATE) || defined(HAVE_FREERDP_AUTHENTICATEEX)
+
 /**
  * Provided a guac_client, a NULL-terminated list of parameters, and the
  * pointers to the various authentication-related parameters, send the
@@ -271,20 +274,36 @@ static void guac_rdp_send_auth_params(guac_client* client, const char** params,
     /* Free old values and get new values from settings. */
     for (int i = 0; params[i] != NULL; i++) {
 
-        if (!strcmp(params[i], GUAC_RDP_ARGV_USERNAME)) {
+        if (strcmp(params[i], GUAC_RDP_ARGV_USERNAME) == 0) {
             guac_mem_free(*username);
             *username = guac_strdup(settings->username);
         }
 
-        if (!strcmp(params[i], GUAC_RDP_ARGV_DOMAIN)) {
+        if (strcmp(params[i], GUAC_RDP_ARGV_GATEWAY_USERNAME) == 0) {
+            guac_mem_free(*username);
+            *username = guac_strdup(settings->gateway_username);
+        }
+
+        if (strcmp(params[i], GUAC_RDP_ARGV_DOMAIN) == 0) {
             guac_mem_free(*domain);
             *domain = guac_strdup(settings->domain);
         }
 
-        if (!strcmp(params[i], GUAC_RDP_ARGV_PASSWORD)) {
+        if (strcmp(params[i], GUAC_RDP_ARGV_GATEWAY_DOMAIN) == 0) {
+            guac_mem_free(*domain);
+            *domain = guac_strdup(settings->gateway_domain);
+        }
+
+        if (strcmp(params[i], GUAC_RDP_ARGV_PASSWORD) == 0) {
             guac_mem_free(*password);
             *password = guac_strdup(settings->password);
         }
+
+        if (strcmp(params[i], GUAC_RDP_ARGV_GATEWAY_PASSWORD) == 0) {
+            guac_mem_free(*password);
+            *password = guac_strdup(settings->gateway_password);
+        }
+
     }
 
 }
@@ -337,6 +356,54 @@ static int guac_rdp_register_required_auth(guac_rdp_settings* settings, char** p
     return i;
 
 }
+
+#ifdef HAVE_FREERDP_AUTHENTICATEEX
+/**
+ * A function called when FreeRDP receives a request for gateway-related
+ * authentication settings, returning the number of settings that will be
+ * requested from the client.
+ *
+ * @param settings
+ *     The settings member from the RDP client.
+ *
+ * @param params
+ *     The structure used to store the parameters.
+ *
+ * @return
+ *     The number of settings that will be requested from the client.
+ */
+static int guac_rdp_register_required_gateway_auth(guac_rdp_settings* settings, char** params) {
+
+    int i = 0;
+
+    /* If the gateway username is null, we'll request that. */
+    if (settings->gateway_username == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_GATEWAY_USERNAME, guac_rdp_argv_callback, NULL, 0);
+        params[i] = GUAC_RDP_ARGV_GATEWAY_USERNAME;
+        i++;
+
+        /* If the gateway domain is null, we'll also request that. */
+        if (settings->gateway_domain == NULL) {
+            guac_argv_register(GUAC_RDP_ARGV_GATEWAY_DOMAIN, guac_rdp_argv_callback, NULL, 0);
+            params[i] = GUAC_RDP_ARGV_GATEWAY_DOMAIN;
+            i++;
+        }
+    }
+
+    /* If the gateway password is null, request that. */
+    if (settings->gateway_password == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_GATEWAY_PASSWORD, guac_rdp_argv_callback, NULL, 0);
+        params[i] = GUAC_RDP_ARGV_GATEWAY_PASSWORD;
+        i++;
+    }
+
+    /* NULL-terminate the array and return the number of items. */
+    params[i] = NULL;
+
+    return i;
+
+}
+#endif // HAVE_FREERDP_AUTHENTICATEEX
 
 #ifdef HAVE_FREERDP_AUTHENTICATE
 /**
@@ -456,9 +523,13 @@ static BOOL rdp_freerdp_authenticate_ex(freerdp* instance, char** username,
 
     switch (reason) {
 
-        /* In the case that we just need a PIN, request only the PIN/password. */
-        case AUTH_SMARTCARD_PIN:
+    /* In the case that we just need a PIN, request only the PIN/password. */
+#if (FREERDP_VERSION_MAJOR >= 4) || \
+    (FREERDP_VERSION_MAJOR == 3 && FREERDP_VERSION_MINOR >= 25)
+    /* FIDO PIN support was added in 3.25.0 */
         case AUTH_FIDO_PIN:
+#endif
+        case AUTH_SMARTCARD_PIN:
 
             /* If the password/PIN is undefined, add it to the requested parameters. */
             if (settings->password == NULL) {
@@ -472,16 +543,24 @@ static BOOL rdp_freerdp_authenticate_ex(freerdp* instance, char** username,
 
             break;
 
-        /* For all other cases, request anything that isn't configured. */
+    /* For all other cases, request anything that isn't configured. */
+#if (FREERDP_VERSION_MAJOR >= 4) || \
+    (FREERDP_VERSION_MAJOR == 3 && FREERDP_VERSION_MINOR >= 18)
+    /* RDSTLS support was added in 3.18.0 */
         case AUTH_RDSTLS:
+#endif
         case AUTH_TLS:
         case AUTH_RDP:
         case AUTH_NLA:
+            i = guac_rdp_register_required_auth(settings, params);
+            break;
+
         case GW_AUTH_HTTP:
         case GW_AUTH_RDG:
         case GW_AUTH_RPC:
-            i = guac_rdp_register_required_auth(settings, params);
+            i = guac_rdp_register_required_gateway_auth(settings, params);
             break;
+
     }
 
     /* If one or more params have been required, send them. */
@@ -493,6 +572,7 @@ static BOOL rdp_freerdp_authenticate_ex(freerdp* instance, char** username,
 
 }
 #endif // HAVE_FREERDP_AUTHENTICATEEX
+#endif // HAVE_FREERDP_AUTHENTICATE OR HAVE_FREERDP_AUTHENTICATEEX
 
 #ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
 /**
