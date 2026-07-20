@@ -1998,6 +1998,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
                 if (__guac_terminal_is_editing_keysym(keysym))
                     return __guac_terminal_send_modified_editing(term, keysym);
                 return 0;
+            }
 
             return guac_terminal_send_data(term, &data, 1);
 
