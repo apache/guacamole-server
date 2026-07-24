@@ -47,5 +47,23 @@ guac_argv_callback guac_rdp_argv_callback;
  */
 #define GUAC_RDP_ARGV_DOMAIN "domain"
 
+/**
+ * The name of the parameter that specifies/updates the gateway username that
+ * will be sent to the RDP server during authentication.
+ */
+#define GUAC_RDP_ARGV_GATEWAY_USERNAME "gateway-username"
+
+/**
+ * The name of the parameter that specifies/updates the gateway password that
+ * will be sent to the RDP server during authentication.
+ */
+#define GUAC_RDP_ARGV_GATEWAY_PASSWORD "gateway-password"
+
+/**
+ * The name of the parmaeter that specifies/updates the gateway domain that
+ * will be sent to the RDP server during authentication.
+ */
+#define GUAC_RDP_ARGV_GATEWAY_DOMAIN "gateway-domain"
+
 #endif
 
