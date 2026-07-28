@@ -369,9 +369,11 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
 
     /* Read username regex only if username is specified */
     if (settings->username != NULL) {
-        settings->username_regex = guac_telnet_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                    IDX_USERNAME_REGEX, GUAC_TELNET_DEFAULT_USERNAME_REGEX));
+        char* username_regex = guac_user_parse_args_string(user,
+            GUAC_TELNET_CLIENT_ARGS, argv, IDX_USERNAME_REGEX,
+            GUAC_TELNET_DEFAULT_USERNAME_REGEX);
+        settings->username_regex = guac_telnet_compile_regex(user, username_regex);
+        guac_mem_free(username_regex);
     }
 
     /* Read password */
@@ -381,20 +383,24 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
 
     /* Read password regex only if password is specified */
     if (settings->password != NULL) {
-        settings->password_regex = guac_telnet_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                    IDX_PASSWORD_REGEX, GUAC_TELNET_DEFAULT_PASSWORD_REGEX));
+        char* password_regex = guac_user_parse_args_string(user,
+            GUAC_TELNET_CLIENT_ARGS, argv, IDX_PASSWORD_REGEX,
+            GUAC_TELNET_DEFAULT_PASSWORD_REGEX);
+        settings->password_regex = guac_telnet_compile_regex(user, password_regex);
+        guac_mem_free(password_regex);
     }
 
     /* Read optional login success detection regex */
-    settings->login_success_regex = guac_telnet_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                    IDX_LOGIN_SUCCESS_REGEX, NULL));
+    char* login_success_regex = guac_user_parse_args_string(user,
+        GUAC_TELNET_CLIENT_ARGS, argv, IDX_LOGIN_SUCCESS_REGEX, NULL);
+    settings->login_success_regex = guac_telnet_compile_regex(user, login_success_regex);
+    guac_mem_free(login_success_regex);
 
     /* Read optional login failure detection regex */
-    settings->login_failure_regex = guac_telnet_compile_regex(user,
-            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                    IDX_LOGIN_FAILURE_REGEX, NULL));
+    char* login_failure_regex = guac_user_parse_args_string(user,
+        GUAC_TELNET_CLIENT_ARGS, argv, IDX_LOGIN_FAILURE_REGEX, NULL);
+    settings->login_failure_regex = guac_telnet_compile_regex(user, login_failure_regex);
+    guac_mem_free(login_failure_regex);
 
     /* Both login success and login failure regexes must be provided if either
      * is present at all */

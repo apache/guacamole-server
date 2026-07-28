@@ -555,6 +555,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Fail if display init failed */
     if (term->display == NULL) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Display initialization failed");
+        guac_terminal_buffer_free(term->alternate_buffer);
+        free((char *)(term->color_scheme));
+        guac_terminal_buffer_free(term->current_buffer);
+        free((char *)(term->font_name));
         guac_mem_free(term);
         return NULL;
     }

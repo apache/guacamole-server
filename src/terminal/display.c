@@ -267,6 +267,10 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     if (guac_terminal_display_set_font(display, font_name, font_size, dpi)) {
         guac_client_abort(display->client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Unable to set initial font \"%s\"", font_name);
+        guac_common_surface_free(display->display_surface);
+        guac_client_free_layer(client, display->display_layer);
+        guac_client_free_layer(client, display->select_layer);
+        guac_mem_free(display->default_palette);
         guac_mem_free(display);
         return NULL;
     }

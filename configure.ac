@@ -1010,6 +1010,22 @@ then
                       [[#include <freerdp/freerdp.h>]])
 fi
 
+# Check for either AuthenticateEx or Authenticate callbacks.
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_MEMBERS([freerdp.AuthenticateEx],,
+                     [AC_CHECK_MEMBERS([freerdp.Authenticate],,
+                                       [AC_MSG_WARN([
+  ----------------------------------------------------
+   This version of FreeRDP appears to lack support
+   for both Authenticate and AuthenticateEx functions.
+   RDP connections may fail if credentials are not
+   provided with the connection.
+  ----------------------------------------------------])],
+                                       [[#include <freerdp/freerdp.h>]])],
+                      [[#include <freerdp/freerdp.h>]])
+fi
+
 if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_DECLS([winpr_aligned_free],
