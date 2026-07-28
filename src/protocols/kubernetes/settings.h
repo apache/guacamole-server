@@ -186,6 +186,25 @@ typedef struct guac_kubernetes_settings {
     bool disable_paste;
 
     /**
+     * Whether raw text-output mode is enabled. If set, the raw terminal (PTY)
+     * byte stream is teed, verbatim, to an outbound "STDOUT" pipe stream in
+     * addition to the normal graphical display, enabling a native/CLI client
+     * to render the session as true in-terminal text. Honored only when
+     * disable_copy is not set, as text-output is effectively a copy channel.
+     */
+    bool text_output;
+
+    /**
+     * Whether text-output should run in "raw" (headless) mode. When set, the
+     * graphical terminal is not rendered from remote output: the raw bytes are
+     * delivered only via the text-output pipe, skipping the terminal emulator
+     * and its (CPU- and bandwidth-heavy) graphical instruction stream. Implies
+     * text_output. Intended for connections consumed solely by a text/CLI
+     * client, where nothing renders the graphical display.
+     */
+    bool text_output_raw;
+
+    /**
      * The path in which the typescript should be saved, if enabled. If no
      * typescript should be saved, this will be NULL.
      */

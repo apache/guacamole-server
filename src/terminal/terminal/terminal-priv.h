@@ -38,6 +38,40 @@
 #define GUAC_TERMINAL_MODIFIED 1
 
 /**
+ * The maximum number of text-output blobs that may be outstanding (sent to the
+ * connection owner but not yet acknowledged) before further buffered output is
+ * dropped or, in raw/headless mode, the connection is aborted.
+ *
+ * This bounds the number of blobs tracked, not the volume of data: in raw
+ * (headless) mode every write is flushed as its own blob, so blobs may be only
+ * a few bytes each and this limit alone would be reached after a trivial amount
+ * of output. GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT_BYTES bounds the actual
+ * backlog; this value need only be generous enough that a consumer acking at a
+ * sane rate never reaches it.
+ */
+#define GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT 256
+
+/**
+ * The maximum number of bytes of text-output which may be outstanding (sent to
+ * the connection owner but not yet acknowledged) before further buffered output
+ * is dropped or, in raw/headless mode, the connection is aborted. This is the
+ * meaningful bound on the backlog devoted to a stalled consumer, and is
+ * expressed in bytes so that it is unaffected by how the output happens to be
+ * split into blobs.
+ */
+#define GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT_BYTES (256 * 1024)
+
+/**
+ * The number of seconds raw (headless) text-output mode will wait for a full
+ * outstanding-output window to drain before concluding that the consumer has
+ * stopped acking altogether and aborting the connection. A consumer that is
+ * merely slow keeps the window moving and is throttled rather than aborted;
+ * this bounds how long a consumer that has silently gone away can hold the
+ * remote session open.
+ */
+#define GUAC_TERMINAL_TEXT_OUTPUT_STALL_TIMEOUT 15
+
+/**
  * Handler for characters printed to the terminal. When a character is printed,
  * the current char handler for the terminal is called and given that
  * character.
@@ -145,6 +179,102 @@ struct guac_terminal {
      * The number of bytes currently stored within the pipe_buffer.
      */
     int pipe_buffer_length;
+
+    /**
+     * The currently-open outbound "text-output" pipe stream, to which the raw
+     * byte stream received from the remote terminal (PTY) is teed when
+     * text-output mode is enabled, or NULL if text-output mode is disabled.
+     *
+     * Unlike pipe_stream (used by the in-band guacctl redirection mechanism),
+     * this stream carries the unmodified remote byte stream, including
+     * ANSI/escape sequences, and operates in addition to the normal terminal
+     * display without altering rendering. It is fed directly from each
+     * protocol's PTY read loop, upstream of the terminal emulator, so it is
+     * also charset-agnostic (the exact bytes are forwarded to the client).
+     */
+    guac_stream* text_output_stream;
+
+    /**
+     * Buffer of raw terminal bytes pending write to text_output_stream. Data
+     * within this buffer will be flushed when either (1) the buffer is full
+     * and more data needs to be written, (2) a frame boundary is reached (via
+     * guac_terminal_flush()), or (3) the text-output stream is closed.
+     */
+    char text_output_buffer[6048];
+
+    /**
+     * The number of bytes currently stored within text_output_buffer.
+     */
+    int text_output_length;
+
+    /**
+     * The number of text-output blobs which have been sent to the connection
+     * owner but not yet acknowledged via an "ack" instruction. Together with
+     * text_output_inflight_bytes this applies backpressure: when either this
+     * reaches GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT or the outstanding byte
+     * count would exceed GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT_BYTES, the
+     * consumer is considered stalled.
+     *
+     * The response to a stalled consumer differs by mode. In tee mode the raw
+     * stream shares the protocol read loop with the graphical display, so
+     * buffered output is dropped rather than blocked, to avoid stalling any
+     * co-attached browser user; the session continues. In raw (headless) mode
+     * the stream is the session's only output and is byte-oriented, so the
+     * connection is aborted rather than silently delivering a corrupted stream.
+     */
+    int text_output_inflight;
+
+    /**
+     * The total number of bytes of text-output which have been sent to the
+     * connection owner but not yet acknowledged. Maintained alongside
+     * text_output_inflight_sizes, which records the size of each outstanding
+     * blob so that this count can be reduced by the correct amount as each
+     * "ack" arrives.
+     */
+    int text_output_inflight_bytes;
+
+    /**
+     * Circular buffer recording the size, in bytes, of each text-output blob
+     * which has been sent but not yet acknowledged. The oldest outstanding blob
+     * is at index text_output_inflight_head, and text_output_inflight entries
+     * are valid starting from there. Blobs on a single stream are acknowledged
+     * in the order they were sent, so treating this as a FIFO correctly
+     * attributes each "ack" to the blob it acknowledges.
+     */
+    int text_output_inflight_sizes[GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT];
+
+    /**
+     * The index within text_output_inflight_sizes of the oldest outstanding
+     * text-output blob.
+     */
+    int text_output_inflight_head;
+
+    /**
+     * Condition signalled whenever an outstanding text-output blob is
+     * acknowledged, and thus whenever room may have become available within the
+     * outstanding-output window. Used with the terminal lock so that raw mode
+     * can wait for the consumer to catch up rather than discarding output.
+     */
+    pthread_cond_t text_output_acked;
+
+    /**
+     * The number of seconds raw text-output mode will wait for a full
+     * outstanding-output window to drain before aborting the connection,
+     * initialized from GUAC_TERMINAL_TEXT_OUTPUT_STALL_TIMEOUT when the stream
+     * is opened. Held per-terminal so that tests can exercise the give-up path
+     * without waiting the full production interval.
+     */
+    int text_output_stall_timeout;
+
+    /**
+     * Whether buffered text-output should be flushed immediately as it is
+     * written, rather than at terminal frame boundaries. This is required in
+     * raw (headless) text-output mode, where the graphical terminal is not
+     * rendered and thus the frame/render cycle that would otherwise flush the
+     * buffer never runs. When false, flushing is driven by guac_terminal_flush()
+     * (the graphical frame boundary) as usual.
+     */
+    bool text_output_flush_immediately;
 
     /**
      * The currently-active typescript recording all terminal output, or NULL

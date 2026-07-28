@@ -38,15 +38,18 @@ TESTS = $(check_PROGRAMS)
 test_terminal_SOURCES =            \
     selection-point/enclose-text.c \
     selection-point/point-after.c  \
-    selection-point/rounding.c
+    selection-point/rounding.c     \
+    text-output/flow-control.c
 
 test_terminal_CFLAGS =      \
     -Werror -Wall -pedantic \
-    @TERMINAL_INCLUDE@
+    @TERMINAL_INCLUDE@      \
+    @LIBGUAC_INCLUDE@
 
 test_terminal_LDADD =  \
     @CUNIT_LIBS@       \
-    @TERMINAL_LTLIB@
+    @TERMINAL_LTLIB@   \
+    @LIBGUAC_LTLIB@
 
 #
 # Autogenerate test runner
