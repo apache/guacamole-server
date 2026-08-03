@@ -18,6 +18,7 @@
  */
 
 #include "display.h"
+#include "input.h"
 #include "vnc.h"
 
 #include <guacamole/display.h>
@@ -74,6 +75,47 @@ static int guac_vnc_translate_keysym(int keysym) {
 
 }
 
+/**
+ * Toggles the lock controlled by the given lock keysym within the VNC session
+ * by pressing and releasing that key. The key will be pressed/released only if
+ * the given lock flag is set within the reported lock key state.
+ *
+ * @param rfb_client
+ *     The VNC client to send key events through.
+ *
+ * @param led_state
+ *     The lock key state reported by the VNC server, as a bitmask of
+ *     rfbKeyboardMask* flags.
+ *
+ * @param led_mask
+ *     The single rfbKeyboardMask* flag to test.
+ *
+ * @param keysym
+ *     The keysym of the lock key that toggles the tested lock.
+ */
+static void guac_vnc_release_lock(rfbClient* rfb_client, int led_state,
+        int led_mask, int keysym) {
+    if (led_state & led_mask) {
+        SendKeyEvent(rfb_client, keysym, TRUE);
+        SendKeyEvent(rfb_client, keysym, FALSE);
+    }
+}
+
+void guac_vnc_keyboard_led_state(rfbClient* rfb_client, int state, int pad) {
+
+    guac_client* client = rfbClientGetClientData(rfb_client, GUAC_VNC_CLIENT_KEY);
+    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
+
+    /* Clear lock states once we know which locks need to be cleared */
+    if (!vnc_client->lock_state_synced) {
+        guac_vnc_release_lock(rfb_client, state, rfbKeyboardMaskCapsLock,   0xFFE5 /* Caps_Lock */);
+        guac_vnc_release_lock(rfb_client, state, rfbKeyboardMaskNumLock,    0xFF7F /* Num_Lock */);
+        guac_vnc_release_lock(rfb_client, state, rfbKeyboardMaskScrollLock, 0xFF14 /* Scroll_Lock */);
+        vnc_client->lock_state_synced = 1;
+    }
+
+}
+
 int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
@@ -85,8 +127,21 @@ int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
                 keysym, pressed);
 
     /* Send VNC event only if finished connecting */
-    if (rfb_client != NULL)
+    if (rfb_client != NULL) {
+
+        /* Ensure the lock key state of the VNC session matches the
+         * all-released state assumed by connecting clients before any key
+         * events are forwarded */
+        if (!vnc_client->lock_state_synced) {
+            vnc_client->lock_state_synced = 1;
+            guac_client_log(user->client, GUAC_LOG_WARNING, "VNC server did "
+                "not report which lock keys are active. Client-side use of "
+                "Caps Lock, etc. may not match server-side lock state.");
+        }
+
         SendKeyEvent(rfb_client, guac_vnc_translate_keysym(keysym), pressed);
+
+    }
 
     return 0;
 }
