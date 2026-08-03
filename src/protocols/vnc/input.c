@@ -45,6 +45,35 @@ int guac_vnc_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     return 0;
 }
 
+/**
+ * Translates the keysyms that Guacamole uses to represent platform-specific
+ * keys into the keysyms that established VNC clients conventionally send for
+ * those keys.
+ *
+ * @param keysym
+ *     The keysym received from the Guacamole client.
+ *
+ * @return
+ *     The keysym that should be sent to the VNC server.
+ */
+static int guac_vnc_translate_keysym(int keysym) {
+
+    switch (keysym) {
+
+        /* Command is conventionally sent as Super by VNC clients */
+        case 0xFFE7: return 0xFFEB; /* Command_L (Meta_L) -> Super_L */
+        case 0xFFE8: return 0xFFEC; /* Command_R (Meta_R) -> Super_R */
+
+        /* Option is conventionally sent as Alt by VNC clients */
+        case 0xFFED: return 0xFFE9; /* Option_L (Hyper_L) -> Alt_L */
+        case 0xFFEE: return 0xFFEA; /* Option_R (Hyper_R) -> Alt_R */
+
+    }
+
+    return keysym;
+
+}
+
 int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
@@ -57,7 +86,7 @@ int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     /* Send VNC event only if finished connecting */
     if (rfb_client != NULL)
-        SendKeyEvent(rfb_client, keysym, pressed);
+        SendKeyEvent(rfb_client, guac_vnc_translate_keysym(keysym), pressed);
 
     return 0;
 }
