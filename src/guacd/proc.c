@@ -32,12 +32,15 @@
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
 
+#include <dirent.h>
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -437,6 +440,92 @@ cleanup_process:
 
 }
 
+/**
+ * Returns whether the given file descriptor refers to a socket.
+ *
+ * @param fd
+ *     The file descriptor to test.
+ *
+ * @return
+ *     Non-zero if the given file descriptor refers to a socket, zero
+ *     otherwise.
+ */
+static int guacd_is_socket(int fd) {
+
+    struct stat fd_stat;
+    return !fstat(fd, &fd_stat) && S_ISSOCK(fd_stat.st_mode);
+
+}
+
+/**
+ * Closes all sockets inherited from the parent guacd process, leaving only the
+ * standard streams and the given descriptor open. This function may be called
+ * only from within a newly-forked connection process.
+ *
+ * The sockets closed here belong to unrelated connections: the parent's end of
+ * every other connection's user socketpair, the parent's end of every other
+ * connection process' socketpair, and the socket guacd listens on. Retaining
+ * them keeps those sockets referenced after the parent has closed them, such
+ * that their peers never observe EOF, writes to those peers block indefinitely
+ * rather than failing, and the processes owning them can never determine that
+ * their users have left, nor exit. Note that FD_CLOEXEC cannot serve this
+ * purpose, as connection processes are forked but never exec'd.
+ *
+ * @param keep_fd
+ *     The file descriptor which must be left open. This must be greater than
+ *     STDERR_FILENO.
+ */
+static void guacd_close_inherited_fds(int keep_fd) {
+
+    /* Force syslog to reopen its own descriptor as needed, rather than
+     * continuing to write to whatever ends up occupying the one closed here */
+    closelog();
+
+    /* Only sockets are closed. Descriptors for anything else may be held by
+     * libraries unaware that they are being closed, such that reuse of the
+     * same descriptor number would silently redirect their reads and writes. */
+
+#ifdef __linux__
+    /* Enumerate only the descriptors actually open, as the limit on the number
+     * of descriptors may be arbitrarily high */
+    DIR* open_fds = opendir("/proc/self/fd");
+    if (open_fds != NULL) {
+
+        int dir_fd = dirfd(open_fds);
+
+        struct dirent* entry;
+        while ((entry = readdir(open_fds)) != NULL) {
+
+            /* Non-numeric entries ("." and "..") parse as zero and are thus
+             * skipped along with the standard streams */
+            int fd = atoi(entry->d_name);
+            if (fd <= STDERR_FILENO || fd == keep_fd || fd == dir_fd)
+                continue;
+
+            if (guacd_is_socket(fd))
+                close(fd);
+
+        }
+
+        closedir(open_fds);
+        return;
+
+    }
+#endif
+
+    /* Fall back to testing each descriptor which could possibly be open,
+     * bounding the search arbitrarily if no limit can be determined */
+    long max_fd = sysconf(_SC_OPEN_MAX);
+    if (max_fd < 0)
+        max_fd = 1024;
+
+    for (long fd = STDERR_FILENO + 1; fd < max_fd; fd++) {
+        if (fd != keep_fd && guacd_is_socket(fd))
+            close(fd);
+    }
+
+}
+
 guacd_proc* guacd_create_proc(const char* protocol) {
 
     int sockets[2];
@@ -488,6 +577,9 @@ guacd_proc* guacd_create_proc(const char* protocol) {
         /* Communicate with parent */
         proc->fd_socket = parent_socket;
         close(child_socket);
+
+        /* Discard descriptors belonging to unrelated connections */
+        guacd_close_inherited_fds(proc->fd_socket);
 
         /* Start protocol-specific handling */
         guacd_exec_proc(proc, protocol);
