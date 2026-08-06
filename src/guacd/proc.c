@@ -32,12 +32,15 @@
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
 
+#include <dirent.h>
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -437,6 +440,116 @@ cleanup_process:
 
 }
 
+/**
+ * Closes all file descriptors within the given inclusive range, if the system
+ * provides a means of closing descriptors in bulk. That means is close_range(),
+ * which requires Linux 5.9 or FreeBSD, with glibc 2.34 providing the wrapper.
+ * See: https://man7.org/linux/man-pages/man2/close_range.2.html
+ *
+ * @param first
+ *     The first file descriptor in the range to be closed.
+ *
+ * @param last
+ *     The last file descriptor in the range to be closed.
+ *
+ * @return
+ *     Zero if all descriptors within the given range were closed, non-zero if
+ *     the range could not be closed, including if the system provides no means
+ *     of closing descriptors in bulk.
+ */
+static int guacd_close_fd_range(unsigned int first, unsigned int last) {
+
+#if defined(HAVE_CLOSE_RANGE)
+    return close_range(first, last, 0);
+#elif defined(SYS_close_range)
+    /* musl has no wrapper, its maintainers having observed that callers wanting
+     * close_range() will invoke the system call directly. This applies to the
+     * guacd Docker image, which is based on Alpine.
+     * See: https://www.openwall.com/lists/musl/2022/08/18/5 */
+    return syscall(SYS_close_range, first, last, 0);
+#else
+    return -1;
+#endif
+
+}
+
+/**
+ * Closes all file descriptors inherited from the parent guacd process, leaving
+ * only the standard streams and the given descriptor open. This function may
+ * be called only from within a newly-forked connection process.
+ *
+ * The descriptors closed here belong to unrelated connections: the parent's
+ * end of every other connection's user socketpair, the parent's end of every
+ * other connection process' socketpair, and the socket guacd listens on.
+ * Retaining them keeps those sockets referenced after the parent has closed
+ * them, such that their peers never observe EOF, writes to those peers block
+ * indefinitely rather than failing, and the processes owning them can never
+ * determine that their users have left, nor exit. Note that FD_CLOEXEC cannot
+ * serve this purpose, as connection processes are forked but never exec'd.
+ *
+ * @param keep_fd
+ *     The file descriptor which must be left open. This must be greater than
+ *     STDERR_FILENO.
+ */
+static void guacd_close_inherited_fds(int keep_fd) {
+
+    /* Force syslog to reopen its own descriptor as needed, rather than
+     * continuing to write to whatever ends up occupying the one closed here */
+    closelog();
+
+    /* Everything except the standard streams and the descriptor being kept may
+     * be closed as at most two ranges */
+    if (!guacd_close_fd_range(keep_fd + 1, ~0U)) {
+
+        if (keep_fd <= STDERR_FILENO + 1)
+            return;
+
+        if (!guacd_close_fd_range(STDERR_FILENO + 1, keep_fd - 1))
+            return;
+
+    }
+
+    /* Distributions still under support may predate close_range() entirely,
+     * RHEL 8 pairing glibc 2.28 with Linux 4.18. Close only those descriptors
+     * which are actually open there, as the limit on the number of descriptors
+     * may be orders of magnitude greater than the number in use, and defaults
+     * to 1048576 within a container. */
+#ifdef __linux__
+    DIR* open_fds = opendir("/proc/self/fd");
+    if (open_fds != NULL) {
+
+        int dir_fd = dirfd(open_fds);
+
+        struct dirent* entry;
+        while ((entry = readdir(open_fds)) != NULL) {
+
+            /* Non-numeric entries ("." and "..") parse as zero and are thus
+             * skipped along with the standard streams */
+            int fd = atoi(entry->d_name);
+            if (fd > STDERR_FILENO && fd != keep_fd && fd != dir_fd)
+                close(fd);
+
+        }
+
+        closedir(open_fds);
+        return;
+
+    }
+#endif
+
+    /* Fall back to closing each descriptor which could possibly be open,
+     * bounding the search arbitrarily if no limit can be determined */
+    long max_fd = sysconf(_SC_OPEN_MAX);
+    if (max_fd < 0)
+        max_fd = 1024;
+
+    for (long fd = STDERR_FILENO + 1; fd < max_fd; fd++) {
+        if (fd != keep_fd)
+            close(fd);
+    }
+
+}
+
 guacd_proc* guacd_create_proc(const char* protocol) {
 
     int sockets[2];
@@ -488,6 +601,9 @@ guacd_proc* guacd_create_proc(const char* protocol) {
         /* Communicate with parent */
         proc->fd_socket = parent_socket;
         close(child_socket);
+
+        /* Discard descriptors belonging to unrelated connections */
+        guacd_close_inherited_fds(proc->fd_socket);
 
         /* Start protocol-specific handling */
         guacd_exec_proc(proc, protocol);

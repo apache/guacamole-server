@@ -150,7 +150,7 @@ AC_SUBST(UUID_LIBS)
 AC_SUBST(CUNIT_LIBS)
 
 # Library functions
-AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep prctl])
+AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep prctl close_range])
 
 AC_CHECK_DECL([png_get_io_ptr],
     [AC_DEFINE([HAVE_PNG_GET_IO_PTR],,
