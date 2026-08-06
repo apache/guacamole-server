@@ -101,6 +101,15 @@ Requires
 to bind to a specific port when listening for connections. By default,
 .B guacd
 will bind to port 4822.
+.TP
+\fBmax_worker_threads\fR \fB=\fR \fICOUNT\fR
+Limits the number of worker threads that
+.B guacd
+will create to encode the graphical updates of each connection. By default,
+one worker thread is created per available processor, which can needlessly
+exhaust system resources on machines with very many processors serving many
+concurrent connections. A value of 0 (the default) imposes no limit beyond
+the number of available processors.
 .
 .SH DAEMON PARAMETERS
 .TP

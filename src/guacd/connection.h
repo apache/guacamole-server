@@ -37,6 +37,14 @@ typedef struct guacd_connection_thread_params {
     guacd_proc_map* map;
 
     /**
+     * The maximum number of worker threads that should be created to encode
+     * graphical updates for each connection, as configured for guacd, or
+     * zero if the number of worker threads should be limited only by the
+     * number of available processors.
+     */
+    int max_display_worker_threads;
+
+    /**
      * A file descriptor pointing to the executable of the running copy of
      * guacd. This value is used by guacd_create_proc() to execute subprocesses.
      */

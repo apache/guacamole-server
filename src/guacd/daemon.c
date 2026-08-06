@@ -456,6 +456,14 @@ int main(int argc, char* argv[]) {
     /* Log start */
     guacd_log(GUAC_LOG_INFO, "Guacamole proxy daemon (guacd) version " VERSION " started");
 
+    /* Log any configured limit on the number of worker threads created per
+     * connection (the limit is applied to the client of each connection
+     * process as it is created) */
+    if (config->max_worker_threads > 0)
+        guacd_log(GUAC_LOG_INFO, "Graphical updates of each connection will "
+                "be encoded using no more than %i worker thread(s).",
+                config->max_worker_threads);
+
     int exe_fd = guacd_open_exe(argv[0]);
     if (exe_fd < 0) {
         guacd_log(GUAC_LOG_ERROR, "Bailing out, as the executable for the "
@@ -695,6 +703,7 @@ int main(int argc, char* argv[]) {
         }
 
         params->map = map;
+        params->max_display_worker_threads = config->max_worker_threads;
         params->exe_fd = exe_fd;
         params->connected_socket_fd = connected_socket_fd;
 

@@ -156,12 +156,18 @@ int guacd_open_exe(const char* invoked_path);
  *     A file descriptor referring to the guacd executable, as opened by
  *     guacd_open_exe().
  *
+ * @param max_display_worker_threads
+ *     The maximum number of worker threads that should be created to encode
+ *     graphical updates for this connection, or zero if the number of worker
+ *     threads should be limited only by the number of available processors.
+ *
  * @return
  *     A newly-allocated process structure pointing to the file descriptor of
  *     the background process specific to the specified protocol, or NULL of
  *     the process could not be created.
  */
-guacd_proc* guacd_create_proc(const char* protocol, int exe_fd);
+guacd_proc* guacd_create_proc(const char* protocol, int exe_fd,
+        int max_display_worker_threads);
 
 /**
  * Frees the given process structure and any associated resources, including
