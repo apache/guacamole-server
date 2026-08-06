@@ -316,6 +316,9 @@ void guacd_connection_process(const char* protocol) {
 
     proc->client->log_handler = guacd_client_log;
 
+    /* Apply the configured worker limit before the protocol allocates a display */
+    proc->client->max_display_worker_threads = config.max_display_worker_threads;
+
     /* Serve the connection */
     guacd_exec_proc(proc, protocol);
     GUAC_ASSERT(0); /* guacd_exec_proc() does not return */

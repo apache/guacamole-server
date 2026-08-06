@@ -69,6 +69,12 @@ typedef struct guacd_proc_config {
     int log_level;
 
     /**
+     * The maximum number of display worker threads for this connection, or
+     * zero if limited only by the number of available processors.
+     */
+    int max_display_worker_threads;
+
+    /**
      * The process ID of the parent guacd process.
      */
     pid_t parent_pid;
