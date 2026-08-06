@@ -121,17 +121,22 @@ typedef enum guac_terminal_keysym {
     GUAC_KEYSYM_SHIFT_R = 0xFFE2,           /* Right Shift modifier key.                   */
     GUAC_KEYSYM_CTRL_L = 0xFFE3,            /* Left Control modifier key.                  */
     GUAC_KEYSYM_CTRL_R = 0xFFE4,            /* Right Control modifier key.                 */
-    GUAC_KEYSYM_META_L = 0xFFE7,            /* Left Meta modifier key.                     */
-    GUAC_KEYSYM_META_R = 0xFFE8,            /* Right Meta modifier key.                    */
+    GUAC_KEYSYM_COMMAND_L = 0xFFE7,         /* Left Command key (Mac-specific).            */
+    GUAC_KEYSYM_COMMAND_R = 0xFFE8,         /* Right Command key (Mac-specific).           */
     GUAC_KEYSYM_ALT_L = 0xFFE9,             /* Left Alt modifier key.                      */
     GUAC_KEYSYM_ALT_R = 0xFFEA,             /* Right Alt modifier key.                     */
-    GUAC_KEYSYM_SUPER_L = 0xFFEB,           /* Left Super key, such as Windows/Command.    */
-    GUAC_KEYSYM_SUPER_R = 0xFFEC,           /* Right Super key, such as Windows/Command.   */
-    GUAC_KEYSYM_HYPER_L = 0xFFED,           /* Left Hyper modifier key.                    */
-    GUAC_KEYSYM_HYPER_R = 0xFFEE,           /* Right Hyper modifier key.                   */
+    GUAC_KEYSYM_SUPER_L = 0xFFEB,           /* Left Super key ("OS" or "Windows" key).     */
+    GUAC_KEYSYM_SUPER_R = 0xFFEC,           /* Right Super key ("OS" or "Windows" key).    */
+    GUAC_KEYSYM_OPTION_L = 0xFFED,          /* Left Option key (Mac-specific).             */
+    GUAC_KEYSYM_OPTION_R = 0xFFEE,          /* Right Option key (Mac-specific).            */
     GUAC_KEYSYM_MODE_SWITCH = 0xFF7E,       /* Keyboard group or layout switch key.        */
-    GUAC_KEYSYM_ISO_LEVEL3_SHIFT = 0xFE03,  /* ISO Level 3 shift key, often AltGr/Option.  */
+    GUAC_KEYSYM_ALTGR = 0xFE03,             /* ISO Level 3 shift key (AltGr)               */
     GUAC_KEYSYM_ISO_LEVEL5_SHIFT = 0xFE11,  /* ISO Level 5 shift key.                      */
+
+    /* Lock keys */
+    GUAC_KEYSYM_CAPS_LOCK = 0xFFE5,         /* Caps Lock key.                              */
+    GUAC_KEYSYM_NUM_LOCK = 0xFF7F,          /* Num Lock key.                               */
+    GUAC_KEYSYM_SCROLL_LOCK = 0xFF14,       /* Scroll Lock key.                            */
 
     /* Arrow/navigation direction keys */
     GUAC_KEYSYM_LEFT = 0xFF51,              /* Left arrow key.                             */
@@ -1634,6 +1639,35 @@ static int __guac_terminal_is_editing_keysym(int keysym) {
 }
 
 /**
+ * Returns whether the given keysym is a modifier.
+ *
+ * @param keysym
+ *     The X11 keysym to test.
+ *
+ * @return
+ *     Non-zero if the keysym is a modifier, zero otherwise.
+ */
+static int __guac_terminal_is_modifier_keysym(int keysym) {
+    return (keysym >= GUAC_KEYSYM_SHIFT_L && keysym <= GUAC_KEYSYM_OPTION_R)
+        || keysym == GUAC_KEYSYM_ALTGR;
+}
+
+/**
+ * Returns whether the given keysym is a lock key.
+ *
+ * @param keysym
+ *     The X11 keysym to test.
+ *
+ * @return
+ *     Non-zero if the keysym is a lock key, zero otherwise.
+ */
+static int __guac_terminal_is_lock_keysym(int keysym) {
+    return keysym == GUAC_KEYSYM_CAPS_LOCK
+        || keysym == GUAC_KEYSYM_NUM_LOCK
+        || keysym == GUAC_KEYSYM_SCROLL_LOCK;
+}
+
+/**
  * Returns the xterm-style modifier parameter for CSI key sequences, encoding
  * the current modifier state of the terminal. The value is 1 plus the bitmask
  * of active modifiers: Shift=1, Alt=2, Ctrl=4, Meta=8.
@@ -1810,19 +1844,18 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     }
 
     /*
-     * Super (Windows/Command) and Hyper are treated as Meta since terminals don't
-     * have separate modifier bits for them.
+     * Super (the "Windows" key) and Command are treated as Meta since
+     * terminals don't have separate modifier bits for them.
      *
-     * MODE_SWITCH and the ISO level selectors are intentionally not treated as
-     * Alt. On international layouts these are often used to produce printable
-     * third-/fifth-level characters, and folding them into Alt would inject an
-     * unwanted ESC prefix into normal text input.
+     * Option and AltGr are intentionally not treated as terminal-visible
+     * modifiers. These keys are used purely to compose printable characters
+     * and treating them as a modifiers would add unwanted console code
+     * sequences into otherwise normal text, breaking input.
      */
     if (keysym == GUAC_KEYSYM_CTRL_L || keysym == GUAC_KEYSYM_CTRL_R)
         term->mod_ctrl = pressed;
-    else if (keysym == GUAC_KEYSYM_META_L || keysym == GUAC_KEYSYM_META_R
-            || keysym == GUAC_KEYSYM_SUPER_L || keysym == GUAC_KEYSYM_SUPER_R
-            || keysym == GUAC_KEYSYM_HYPER_L || keysym == GUAC_KEYSYM_HYPER_R)
+    else if (keysym == GUAC_KEYSYM_COMMAND_L || keysym == GUAC_KEYSYM_COMMAND_R
+            || keysym == GUAC_KEYSYM_SUPER_L || keysym == GUAC_KEYSYM_SUPER_R)
         term->mod_meta = pressed;
     else if (keysym == GUAC_KEYSYM_ALT_L || keysym == GUAC_KEYSYM_ALT_R)
         term->mod_alt = pressed;
@@ -1867,9 +1900,12 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
         }
 
-        /* Reset scroll */
-        if (term->scroll_offset != 0)
+        /* Reset scroll, unless the pressed key produces no output (ie: is purely
+         * a modifier or lock key) */
+        if (term->scroll_offset != 0 && !__guac_terminal_is_modifier_keysym(keysym)
+                && !__guac_terminal_is_lock_keysym(keysym)) {
             guac_terminal_scroll_display_down(term, term->scroll_offset);
+        }
 
         /*
          * Modified arrows, function keys, and cursor editing keys encode Alt

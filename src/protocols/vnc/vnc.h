@@ -101,6 +101,13 @@ typedef struct guac_vnc_client {
     int finished_frame_logged;
 
     /**
+     * Whether the initial lock key state of the VNC session has been received
+     * and synchronized with the all-released state that connecting Guacamole
+     * clients assume.
+     */
+    int lock_state_synced;
+
+    /**
      * Client settings, parsed from args.
      */
     guac_vnc_settings* settings;
