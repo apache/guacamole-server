@@ -106,10 +106,13 @@ will bind to port 4822.
 Limits the number of worker threads that
 .B guacd
 will create to encode the graphical updates of each connection. By default,
-one worker thread is created per available processor, which can needlessly
-exhaust system resources on machines with very many processors serving many
-concurrent connections. A value of 0 (the default) imposes no limit beyond
-the number of available processors.
+one worker thread is created per available processor, ensuring encoding
+throughput can scale with demand. As each connection has its own worker
+threads, deployments serving many concurrent connections on machines with
+very many processors may wish to limit the total number of threads created,
+trading peak encoding throughput of each connection for reduced resource
+usage. A value of 0 (the default) imposes no limit beyond the number of
+available processors.
 .
 .SH DAEMON PARAMETERS
 .TP
