@@ -22,4 +22,6 @@ name    "base_altgr"
 
 # Modifiers
 map +ext 0x38 ~ 0xfe03 # AltGr
+map +ext 0x38 ~ 0xffed # Option_L
+map +ext 0x38 ~ 0xffee # Option_R
 
