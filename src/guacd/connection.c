@@ -129,6 +129,16 @@ static void* guacd_connection_write_thread(void* data) {
             break;
     }
 
+    /* Signal end of input to the connection process. Without this, a user
+     * which vanishes without sending "disconnect" leaves that process blocked
+     * awaiting input indefinitely, as nothing further will inform it that its
+     * last user has left. */
+    if (shutdown(params->fd, SHUT_WR))
+        guacd_log(GUAC_LOG_ERROR, "Unable to signal end of user input to "
+                "connection process: %s. That process may remain running but "
+                "inactive, retaining the memory of its connection until guacd "
+                "is restarted.", strerror(errno));
+
     return NULL;
 
 }
