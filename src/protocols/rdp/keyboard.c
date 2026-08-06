@@ -482,9 +482,11 @@ unsigned int guac_rdp_keyboard_get_modifier_flags(guac_rdp_keyboard* keyboard) {
             || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RSHIFT))
         modifier_flags |= GUAC_RDP_KEYMAP_MODIFIER_SHIFT;
 
-    /* Dedicated AltGr key */
+    /* Dedicated AltGr/Option keys */
     if (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RALT)
-            || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_ALTGR))
+            || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_ALTGR)
+            || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LOPTION)
+            || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_ROPTION))
         modifier_flags |= GUAC_RDP_KEYMAP_MODIFIER_ALTGR;
 
     /* AltGr via Ctrl+Alt */
@@ -634,6 +636,8 @@ void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
         guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_RALT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
         guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LCTRL, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
         guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_RCTRL, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LOPTION, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_ROPTION, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
 
 }

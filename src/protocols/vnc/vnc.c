@@ -23,6 +23,7 @@
 #include "common/clipboard.h"
 #include "cursor.h"
 #include "display.h"
+#include "input.h"
 #include "log.h"
 #include "settings.h"
 #include "vnc.h"
@@ -241,6 +242,9 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
     rfb_client->FinishedFrameBufferUpdate = guac_vnc_finished_frame;
     vnc_client->rfb_GotCopyRect = rfb_client->GotCopyRect;
     rfb_client->GotCopyRect = guac_vnc_copyrect;
+
+    /* Lock key state (KeyboardLedState) update handler */
+    rfb_client->HandleKeyboardLedState = guac_vnc_keyboard_led_state;
 
 #ifdef ENABLE_VNC_TLS_LOCKING
     /* TLS Locking and Unlocking */

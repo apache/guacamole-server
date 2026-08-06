@@ -73,6 +73,17 @@
 #define GUAC_RDP_KEYSYM_RALT 0xFFEA
 
 /**
+ * The X11 keysym used by Guacamole for Left Option.
+ */
+#define GUAC_RDP_KEYSYM_LOPTION 0xFFED
+
+/**
+ * The X11 keysym used by Guacamole for Right Option.
+ */
+#define GUAC_RDP_KEYSYM_ROPTION 0xFFEE
+
+
+/**
  * The X11 keysym for AltGr.
  */
 #define GUAC_RDP_KEYSYM_ALTGR 0xFE03

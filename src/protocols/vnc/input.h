@@ -21,6 +21,7 @@
 #define GUAC_VNC_INPUT_H
 
 #include <guacamole/user.h>
+#include <rfb/rfbclient.h>
 
 /**
  * Handler for Guacamole user mouse events.
@@ -31,6 +32,22 @@ guac_user_mouse_handler guac_vnc_user_mouse_handler;
  * Handler for Guacamole user key events.
  */
 guac_user_key_handler guac_vnc_user_key_handler;
+
+/**
+ * Handler for lock key state (KeyboardLedState) updates received from the VNC
+ * server. Where supported, this is used to help ensure the client can assume all
+ * locks are inactive at connection start.
+ *
+ * @param client
+ *     The VNC client associated with the update.
+ *
+ * @param state
+ *     The reported lock key state, as a bitmask of rfbKeyboardMask flags.
+ *
+ * @param pad
+ *     Unused (reserved by libvncclient for future use).
+ */
+void guac_vnc_keyboard_led_state(rfbClient* client, int state, int pad);
 
 /**
  * Handler for Guacamole user resize events.
