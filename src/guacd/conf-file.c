@@ -197,12 +197,16 @@ guacd_config* guacd_conf_load(void) {
     int fd = open(GUACD_CONF_FILE, O_RDONLY);
 
     /* Notify of errors preventing reading */
-    if (fd < 0 && errno != ENOENT) {
-        fprintf(stderr, "Unable to open \"" GUACD_CONF_FILE "\": %s\n", strerror(errno));
-        guac_mem_free(conf->bind_host);
-        guac_mem_free(conf->bind_port);
-        guac_mem_free(conf);
-        return NULL;
+    if (fd < 0) {
+        if (errno != ENOENT) {
+            fprintf(stderr, "Unable to open \"" GUACD_CONF_FILE "\": %s\n", strerror(errno));
+            guac_mem_free(conf->bind_host);
+            guac_mem_free(conf->bind_port);
+            guac_mem_free(conf);
+            return NULL;
+        }
+        /* Return default configuration if the guacd configuration file doesn't exist */
+        return conf;
     }
 
     int retval = guacd_conf_parse_file(conf, fd);
