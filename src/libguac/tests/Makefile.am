@@ -66,6 +66,7 @@ test_libguac_SOURCES =               \
     rect/extend.c                    \
     rect/init.c                      \
     rect/intersects.c                \
+    socket/edge_case_values.c        \
     socket/fd_send_instruction.c     \
     socket/nested_send_instruction.c \
     string/strdup.c                  \
