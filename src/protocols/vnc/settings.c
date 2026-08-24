@@ -136,7 +136,7 @@ enum VNC_ARGS_IDX {
      * Space-separated list of encodings to use within the VNC session. If not
      * specified, this will be:
      *
-     *     "zrle ultra copyrect hextile zlib corre rre raw".
+     *     "tight zrle ultra copyrect hextile zlib corre rre raw".
      */
     IDX_ENCODINGS,
 
@@ -550,7 +550,7 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->encodings =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_ENCODINGS,
-                "zrle ultra copyrect hextile zlib corre rre raw");
+                "tight zrle ultra copyrect hextile zlib corre rre raw");
 
     /* Parse autoretry */
     settings->retries =
