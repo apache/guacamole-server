@@ -107,6 +107,13 @@ typedef struct guac_vnc_settings {
       */
     int quality_level;
 
+    /**
+     * Whether the VNC client library should be allowed to negotiate
+     * JPEG-compression (as used by the "tight" encoding). This will
+     * hurt guacamole's internal PNG compression. Off by default.
+     */
+    bool allow_jpeg;
+
 #ifdef ENABLE_VNC_REPEATER
     /**
      * The VNC host to connect to, if using a repeater.
