@@ -883,8 +883,16 @@ static int guac_rdp_handle_connection(guac_client* client) {
         /* Wait for data and construct a reasonable frame */
 
         int wait_result = rdp_guac_client_wait_for_events(client, GUAC_RDP_MESSAGE_CHECK_INTERVAL);
-        if (wait_result < 0)
+
+        /* Abort if the wait failed or FreeRDP recorded a connection error, as
+         * is the case when an RDP server tears down the connection without
+         * first sending a Set Error Info PDU. Simply leaving the loop would
+         * return from this function with the guac_client still running, which
+         * guac_rdp_client_thread() takes as a request to reconnect. */
+        if (wait_result < 0) {
+            guac_rdp_client_abort(client, rdp_inst);
             break;
+        }
 
         int connection_closing = 0;
         do {
