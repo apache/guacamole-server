@@ -883,8 +883,24 @@ static int guac_rdp_handle_connection(guac_client* client) {
         /* Wait for data and construct a reasonable frame */
 
         int wait_result = rdp_guac_client_wait_for_events(client, GUAC_RDP_MESSAGE_CHECK_INTERVAL);
-        if (wait_result < 0)
+
+        if (wait_result < 0) {
+
+            /* A recorded error info code means the RDP server explained why the
+             * session ended, either through a Set Error Info PDU or through a
+             * Disconnect Provider Ultimatum that FreeRDP translated into an
+             * error info code. Such a session is over and must be closed here;
+             * simply leaving the loop would return from this function with the
+             * guac_client still running, which guac_rdp_client_thread() takes
+             * as a request to reconnect, silently replacing the session that
+             * the user just ended. Errors lacking any such explanation are
+             * connection failures and remain eligible for reconnection. */
+            if (freerdp_error_info(rdp_inst) != ERRINFO_SUCCESS)
+                guac_rdp_client_abort(client, rdp_inst);
+
             break;
+
+        }
 
         int connection_closing = 0;
         do {
