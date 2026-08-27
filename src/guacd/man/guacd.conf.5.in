@@ -101,6 +101,12 @@ Requires
 to bind to a specific port when listening for connections. By default,
 .B guacd
 will bind to port 4822.
+.TP
+\fBclient_timeout\fR \fB=\fR \fIMILLISECONDS\fR
+Sets the maximum number of milliseconds that
+.B guacd
+will wait for the next message from a connected client before closing the
+connection. The value must be a positive integer and defaults to 15000.
 .
 .SH DAEMON PARAMETERS
 .TP
@@ -169,6 +175,7 @@ pid_file = /var/run/guacd.pid
 
 bind_host = localhost
 bind_port = 4822
+client_timeout = 15000
 
 [ssl]
 

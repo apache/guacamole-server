@@ -61,6 +61,22 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
             return 0;
         }
 
+        /* Client timeout */
+        else if (strcmp(param, "client_timeout") == 0) {
+
+            int timeout = guacd_parse_client_timeout(value);
+
+            /* Invalid client timeout */
+            if (timeout < 0) {
+                guacd_conf_parse_error = "Client timeout must be a positive integer number of milliseconds within the supported range";
+                return 1;
+            }
+
+            config->client_timeout = timeout;
+            return 0;
+
+        }
+
     }
 
     /* Options related to daemon startup */
@@ -183,6 +199,7 @@ guacd_config* guacd_conf_load(void) {
     /* Load defaults */
     conf->bind_host = guac_strdup(GUACD_DEFAULT_BIND_HOST);
     conf->bind_port = guac_strdup(GUACD_DEFAULT_BIND_PORT);
+    conf->client_timeout = GUACD_DEFAULT_CLIENT_TIMEOUT;
     conf->pidfile = NULL;
     conf->foreground = 0;
     conf->print_version = 0;
@@ -223,4 +240,3 @@ guacd_config* guacd_conf_load(void) {
     return conf;
 
 }
-
