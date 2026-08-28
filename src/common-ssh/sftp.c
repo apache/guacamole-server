@@ -649,8 +649,12 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
         }
 
         /* Stat explicitly if symbolic link (might point to directory) */
-        if (LIBSSH2_SFTP_S_ISLNK(attributes.permissions))
-            libssh2_sftp_stat(sftp, absolute_path, &attributes);
+        if (LIBSSH2_SFTP_S_ISLNK(attributes.permissions)) {
+            char real_path[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+            if (guac_ssh_append_filename(real_path,
+                        list_state->directory_real_path, filename))
+                libssh2_sftp_stat(sftp, real_path, &attributes);
+        }
 
         /* Determine mimetype */
         const char* mimetype;
@@ -790,6 +794,9 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
             guac_mem_free(list_state);
             return 0;
         }
+
+        guac_strlcpy(list_state->directory_real_path, fullpath,
+                sizeof(list_state->directory_real_path));
 
         /* Allocate stream for body */
         guac_stream* stream = guac_user_alloc_stream(user);
