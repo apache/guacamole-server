@@ -99,9 +99,17 @@ typedef struct guac_common_ssh_sftp_ls_state {
     LIBSSH2_SFTP_HANDLE* directory;
 
     /**
-     * The absolute path of the directory being listed.
+     * The absolute path of the directory being listed, as exposed to the
+     * client via the Guacamole protocol stream name.
      */
     char directory_name[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+
+    /**
+     * The real, server-side filesystem path of the directory being listed,
+     * including any configured SFTP root prefix. Used to resolve symlinks
+     * during listing when the SFTP root is not "/".
+     */
+    char directory_real_path[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
     /**
      * The current state of the JSON directory object being written.
