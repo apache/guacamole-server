@@ -129,6 +129,14 @@ static int guac_rdp_join_pending_handler(guac_client* client) {
     /* Bring user up to date with any registered static channels */
     guac_rdp_pipe_svc_send_pipes(client, broadcast_socket);
 
+#ifdef HAVE_FREERDP_AAD_SUPPORT
+    /* Re-send the Azure AD sign-in prompt if sign-in is still pending, so a
+     * user who reloads or reconnects mid-sign-in still sees it */
+    if (rdp_client->aad_prompt != NULL)
+        guac_rdp_aad_send_prompt(client, broadcast_socket,
+                rdp_client->aad_prompt);
+#endif
+
     /* Synchronize with current display */
     if (rdp_client->display != NULL) {
         guac_display_dup(rdp_client->display, broadcast_socket);
@@ -314,6 +322,11 @@ int guac_rdp_client_free_handler(guac_client* client) {
     /* Clean up audio input buffer, if allocated */
     if (rdp_client->audio_input != NULL)
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
+
+#ifdef HAVE_FREERDP_AAD_SUPPORT
+    /* Free any pending Azure AD sign-in prompt */
+    guac_mem_free(rdp_client->aad_prompt);
+#endif
 
     guac_rwlock_destroy(&(rdp_client->lock));
     pthread_mutex_destroy(&(rdp_client->message_lock));
