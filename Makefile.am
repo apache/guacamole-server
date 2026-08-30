@@ -30,12 +30,18 @@ DIST_SUBDIRS =               \
     src/libguac              \
     src/common               \
     src/common-ssh           \
+    src/dbshell              \
     src/terminal             \
     src/guacd                \
     src/guacenc              \
     src/guaclog              \
     src/pulse                \
     src/protocols/kubernetes \
+    src/protocols/mongodb    \
+    src/protocols/mssql      \
+    src/protocols/mysql      \
+    src/protocols/oracle     \
+    src/protocols/postgresql \
     src/protocols/rdp        \
     src/protocols/ssh        \
     src/protocols/telnet     \
@@ -53,12 +59,36 @@ if ENABLE_TERMINAL
 SUBDIRS += src/terminal
 endif
 
+if ENABLE_DBSHELL
+SUBDIRS += src/dbshell
+endif
+
 if ENABLE_PULSE
 SUBDIRS += src/pulse
 endif
 
 if ENABLE_KUBERNETES
 SUBDIRS += src/protocols/kubernetes
+endif
+
+if ENABLE_MONGODB
+SUBDIRS += src/protocols/mongodb
+endif
+
+if ENABLE_MSSQL
+SUBDIRS += src/protocols/mssql
+endif
+
+if ENABLE_MYSQL
+SUBDIRS += src/protocols/mysql
+endif
+
+if ENABLE_ORACLE
+SUBDIRS += src/protocols/oracle
+endif
+
+if ENABLE_POSTGRESQL
+SUBDIRS += src/protocols/postgresql
 endif
 
 if ENABLE_RDP
