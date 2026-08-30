@@ -22,6 +22,8 @@
 
 #include <guacamole/client.h>
 
+#include <limits.h>
+
 /**
  * The default host that guacd should bind to, if no other host is explicitly
  * specified.
@@ -33,6 +35,18 @@
  * specified.
  */
 #define GUACD_DEFAULT_BIND_PORT "4822"
+
+/**
+ * The default number of milliseconds that guacd should wait for messages from
+ * a connected client before closing the connection.
+ */
+#define GUACD_DEFAULT_CLIENT_TIMEOUT 15000
+
+/**
+ * The maximum client timeout, in milliseconds. The corresponding timeout in
+ * microseconds must fit within the signed integer accepted by libguac.
+ */
+#define GUACD_MAX_CLIENT_TIMEOUT (INT_MAX / 1000)
 
 /**
  * The contents of a guacd configuration file.
@@ -48,6 +62,12 @@ typedef struct guacd_config {
      * The port to bind on.
      */
     char* bind_port;
+
+    /**
+     * The number of milliseconds to wait for messages from a connected client
+     * before closing the connection.
+     */
+    int client_timeout;
 
     /**
      * The file to write the PID in, if any.
@@ -84,4 +104,3 @@ typedef struct guacd_config {
 } guacd_config;
 
 #endif
-
