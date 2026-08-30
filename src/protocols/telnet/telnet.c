@@ -280,7 +280,16 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Terminal output received */
         case TELNET_EV_DATA:
-            guac_terminal_write(telnet_client->term, event->data.buffer, event->data.size);
+            /* Tee the raw remote byte stream to the text-output pipe, if
+             * enabled. Has no effect unless text-output mode opened the pipe. */
+            guac_terminal_text_output_write(telnet_client->term, event->data.buffer, event->data.size);
+
+            /* In raw text-output mode the graphical terminal is not rendered:
+             * the remote bytes are delivered only via the text-output pipe,
+             * skipping the terminal emulator and its graphical output. */
+            if (!settings->text_output_raw)
+                guac_terminal_write(telnet_client->term, event->data.buffer, event->data.size);
+
             guac_telnet_search(client, event->data.buffer, event->data.size);
             break;
 
@@ -604,6 +613,20 @@ void* guac_telnet_client_thread(void* data) {
                 settings->create_typescript_path,
                 settings->typescript_write_existing);
     }
+
+    /* Enable raw text-output mode, if requested. This tees the raw terminal
+     * (PTY) byte stream to an outbound "STDOUT" pipe for native/CLI clients,
+     * in addition to the normal graphical display. As text-output is
+     * effectively a copy/exfiltration channel, it is gated behind
+     * disable-copy. */
+    if (guac_terminal_text_output_should_open(settings->text_output,
+                settings->disable_copy))
+        guac_terminal_text_output_open(telnet_client->term, "STDOUT",
+                settings->text_output_raw);
+    else if (settings->text_output)
+        guac_client_log(client, GUAC_LOG_WARNING, "\"text-output\" was "
+                "requested but is being ignored because copying from the "
+                "terminal is disabled (\"disable-copy\").");
 
     /* Open telnet session */
     telnet_client->telnet = __guac_telnet_create_session(client);

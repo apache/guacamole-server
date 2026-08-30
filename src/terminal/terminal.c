@@ -35,6 +35,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <pthread.h>
+#include <time.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -616,11 +617,18 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init pipe stream (output to display by default) */
     term->pipe_stream = NULL;
 
+    /* No text-output pipe stream by default */
+    term->text_output_stream = NULL;
+    term->text_output_length = 0;
+
     /* No typescript by default */
     term->typescript = NULL;
 
     /* Init terminal lock */
     pthread_mutex_init(&(term->lock), NULL);
+
+    /* Init condition signalling that outstanding text-output has been acked */
+    pthread_cond_init(&(term->text_output_acked), NULL);
 
     /* Repaint and resize overall display */
     guac_terminal_repaint_default_layer(term, term->client->socket);
@@ -708,6 +716,9 @@ void guac_terminal_free(guac_terminal* term) {
     /* Close and flush any open pipe stream */
     guac_terminal_pipe_stream_close(term);
 
+    /* Close and flush any open text-output pipe stream */
+    guac_terminal_text_output_close(term);
+
     /* Close and flush any active typescript */
     guac_terminal_typescript_free(term->typescript);
 
@@ -730,6 +741,7 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Free the terminal itself */
     pthread_mutex_destroy(&term->lock);
+    pthread_cond_destroy(&term->text_output_acked);
     guac_mem_free(term);
 
 }
@@ -1552,6 +1564,11 @@ void guac_terminal_flush(guac_terminal* terminal) {
     /* Flush pipe stream if automatic flushing is enabled */
     if (terminal->pipe_stream_flags & GUAC_TERMINAL_PIPE_AUTOFLUSH)
         guac_terminal_pipe_stream_flush(terminal);
+
+    /* Flush text-output pipe stream, if open, at this frame boundary. The
+     * terminal lock is already held by the caller of guac_terminal_flush(). */
+    if (terminal->text_output_stream != NULL)
+        guac_terminal_text_output_flush(terminal);
 
     /* Flush display state */
     guac_terminal_select_redraw(terminal);
@@ -3046,6 +3063,420 @@ void guac_terminal_pipe_stream_close(guac_terminal* term) {
                 "Terminal output now redirected to display.");
 
     }
+
+}
+
+/**
+ * Handler for "ack" instructions received on the text-output stream. Each
+ * acknowledged blob decrements the count of outstanding blobs, permitting
+ * further buffered output to be sent (see
+ * guac_terminal_text_output_flush_owner()).
+ *
+ * @param user
+ *     The user acknowledging the blob (the connection owner).
+ *
+ * @param stream
+ *     The text-output stream being acknowledged. Its data pointer references
+ *     the associated guac_terminal.
+ *
+ * @param error
+ *     An arbitrary, human-readable description of the status.
+ *
+ * @param status
+ *     The status code describing the acknowledged operation.
+ *
+ * @return
+ *     Always zero.
+ */
+static int guac_terminal_text_output_ack(guac_user* user, guac_stream* stream,
+        char* error, guac_protocol_status status) {
+
+    guac_terminal* term = (guac_terminal*) stream->data;
+
+    guac_terminal_lock(term);
+
+    /* Retire the oldest outstanding blob, reducing the outstanding byte count
+     * by that blob's size. Blobs are acknowledged in the order sent. */
+    if (term->text_output_inflight > 0) {
+
+        term->text_output_inflight_bytes -=
+                term->text_output_inflight_sizes[term->text_output_inflight_head];
+
+        term->text_output_inflight_head =
+                (term->text_output_inflight_head + 1)
+                        % GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT;
+
+        term->text_output_inflight--;
+
+        /* Room may now be available for a writer waiting on the window */
+        pthread_cond_broadcast(&term->text_output_acked);
+
+    }
+
+    guac_terminal_unlock(term);
+
+    return 0;
+
+}
+
+/**
+ * Parameters for guac_terminal_text_output_open_owner(), passed through
+ * guac_client_for_owner().
+ */
+typedef struct guac_terminal_text_output_open_params {
+
+    /**
+     * The terminal whose text-output stream is being opened.
+     */
+    guac_terminal* term;
+
+    /**
+     * The name to assign to the opened pipe stream.
+     */
+    const char* name;
+
+} guac_terminal_text_output_open_params;
+
+/**
+ * Guacamole user callback (guac_client_for_owner()) which allocates and opens
+ * the text-output pipe stream on the connection owner's socket. The owner is
+ * the natural (and, for the native CLI use case, sole) consumer of the raw
+ * text stream. Allocating a user-level stream, rather than a client-level one,
+ * ensures the raw output is delivered only to that user instead of being
+ * broadcast to every user sharing the connection, and yields an even stream
+ * index so that "ack" instructions from the client are routed to the stream.
+ *
+ * @param owner
+ *     The connection owner, or NULL if the connection currently has no owner.
+ *
+ * @param data
+ *     A pointer to a guac_terminal_text_output_open_params.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_terminal_text_output_open_owner(guac_user* owner, void* data) {
+
+    guac_terminal_text_output_open_params* params =
+        (guac_terminal_text_output_open_params*) data;
+    guac_terminal* term = params->term;
+
+    /* Nothing to do if the connection has no owner to receive the stream */
+    if (owner == NULL)
+        return NULL;
+
+    guac_stream* stream = guac_user_alloc_stream(owner);
+
+    /* Route "ack" instructions for this stream back to the terminal so that
+     * outstanding blobs can be tracked for flow control */
+    stream->data = term;
+    stream->ack_handler = guac_terminal_text_output_ack;
+
+    /* Open stream as a raw byte stream; it carries the remote PTY output
+     * verbatim (including ANSI/escape sequences). The mimetype is advisory:
+     * blob payloads are base64-encoded and thus binary-safe regardless. */
+    guac_protocol_send_pipe(owner->socket, stream,
+            "application/octet-stream", params->name);
+    guac_socket_flush(owner->socket);
+
+    term->text_output_stream = stream;
+    return NULL;
+
+}
+
+/**
+ * Guacamole user callback (guac_client_for_owner()) which writes any buffered
+ * text-output data to the connection owner's socket. If the owner has since
+ * left the connection, the (now invalid) user-level stream is abandoned.
+ *
+ * @param owner
+ *     The connection owner, or NULL if the connection currently has no owner.
+ *
+ * @param data
+ *     A pointer to the guac_terminal whose buffered text output should be sent.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_terminal_text_output_flush_owner(guac_user* owner, void* data) {
+
+    guac_terminal* term = (guac_terminal*) data;
+
+    /* If the owner has left, its user-level streams have been freed; abandon
+     * the dangling stream rather than dereferencing it */
+    if (owner == NULL) {
+        term->text_output_stream = NULL;
+        term->text_output_length = 0;
+        return NULL;
+    }
+
+    if (term->text_output_stream != NULL && term->text_output_length > 0) {
+
+        /* Apply backpressure: if too much output is outstanding, the consumer
+         * is not keeping up. The backlog is bounded by bytes rather than by
+         * blob count alone, since raw mode flushes every write as its own blob
+         * and those blobs may be only a few bytes each. Tee mode remains
+         * best-effort and drops buffered raw output rather than stalling browser
+         * users that share the same protocol read loop. Raw/headless mode is
+         * CLI-facing and byte-oriented; fail fast instead of silently
+         * corrupting the stream. */
+        if (term->text_output_inflight >= GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT
+                || term->text_output_inflight_bytes + term->text_output_length
+                        > GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT_BYTES) {
+
+            if (term->text_output_flush_immediately) {
+                guac_client_abort(term->client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "text-output consumer is not keeping up");
+                term->text_output_length = 0;
+                return NULL;
+            }
+
+            guac_client_log(term->client, GUAC_LOG_WARNING, "Dropping %i bytes of "
+                    "text-output: consumer is not keeping up (%i blobs / %i "
+                    "bytes outstanding).", term->text_output_length,
+                    term->text_output_inflight, term->text_output_inflight_bytes);
+            term->text_output_length = 0;
+            return NULL;
+        }
+
+        guac_protocol_send_blob(owner->socket, term->text_output_stream,
+                term->text_output_buffer, term->text_output_length);
+        guac_socket_flush(owner->socket);
+
+        /* Record the size of the newly-outstanding blob so that the byte count
+         * can be reduced by the same amount when it is acknowledged */
+        term->text_output_inflight_sizes[
+                (term->text_output_inflight_head + term->text_output_inflight)
+                        % GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT] =
+                term->text_output_length;
+
+        term->text_output_inflight_bytes += term->text_output_length;
+        term->text_output_length = 0;
+        term->text_output_inflight++;
+    }
+
+    return NULL;
+
+}
+
+/**
+ * Guacamole user callback (guac_client_for_owner()) which flushes any remaining
+ * buffered text output, ends the text-output stream, and frees it. If the owner
+ * has already left, the stream is simply abandoned.
+ *
+ * @param owner
+ *     The connection owner, or NULL if the connection currently has no owner.
+ *
+ * @param data
+ *     A pointer to the guac_terminal whose text-output stream should be closed.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_terminal_text_output_close_owner(guac_user* owner, void* data) {
+
+    guac_terminal* term = (guac_terminal*) data;
+
+    if (owner != NULL && term->text_output_stream != NULL) {
+
+        /* Flush remaining buffered data and write end of stream */
+        if (term->text_output_length > 0) {
+            guac_protocol_send_blob(owner->socket, term->text_output_stream,
+                    term->text_output_buffer, term->text_output_length);
+            term->text_output_length = 0;
+        }
+        guac_protocol_send_end(owner->socket, term->text_output_stream);
+        guac_socket_flush(owner->socket);
+
+        guac_user_free_stream(owner, term->text_output_stream);
+    }
+
+    term->text_output_stream = NULL;
+    return NULL;
+
+}
+
+int guac_terminal_text_output_should_open(int text_output, int disable_copy) {
+    return text_output && !disable_copy;
+}
+
+/**
+ * Waits until the outstanding text-output window has room for another blob, or
+ * until the consumer has made no progress for
+ * GUAC_TERMINAL_TEXT_OUTPUT_STALL_TIMEOUT seconds. The terminal lock must
+ * already be held; it is released while waiting and reacquired before
+ * returning.
+ *
+ * This is used only in raw (headless) mode. Blocking here throttles the
+ * protocol read loop, which in turn applies backpressure to the remote program
+ * through the PTY, preserving the byte stream instead of discarding part of it.
+ * Because raw mode renders nothing graphically, no co-attached browser user can
+ * be starved by the pause.
+ *
+ * @param term
+ *     The terminal whose text-output window should be awaited.
+ */
+static void guac_terminal_text_output_await_window(guac_terminal* term) {
+
+    /* Nothing to wait for if the window already has room */
+    if (term->text_output_inflight < GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT
+            && term->text_output_inflight_bytes + term->text_output_length
+                    <= GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT_BYTES)
+        return;
+
+    struct timespec deadline;
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_sec += term->text_output_stall_timeout;
+
+    while (term->text_output_stream != NULL
+            && (term->text_output_inflight
+                    >= GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT
+                || term->text_output_inflight_bytes + term->text_output_length
+                        > GUAC_TERMINAL_TEXT_OUTPUT_MAX_INFLIGHT_BYTES)) {
+
+        /* Stop waiting once the connection is going away. Only an "ack" signals
+         * this condition, and a client which has disconnected will never send
+         * one, so without this check teardown would stall until the give-up
+         * deadline expired. */
+        if (term->client->state != GUAC_CLIENT_RUNNING)
+            return;
+
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+
+        /* Give up if the consumer has stopped acking entirely. The flush which
+         * follows will then find the window still full and abort. */
+        if (now.tv_sec > deadline.tv_sec
+                || (now.tv_sec == deadline.tv_sec
+                    && now.tv_nsec >= deadline.tv_nsec))
+            return;
+
+        /* Wake at least once a second so that a disconnect is noticed promptly
+         * rather than only when the consumer acks or the deadline expires */
+        struct timespec wake = now;
+        wake.tv_sec += 1;
+        if (wake.tv_sec > deadline.tv_sec
+                || (wake.tv_sec == deadline.tv_sec
+                    && wake.tv_nsec > deadline.tv_nsec))
+            wake = deadline;
+
+        pthread_cond_timedwait(&term->text_output_acked, &term->lock, &wake);
+
+    }
+
+}
+
+void guac_terminal_text_output_open(guac_terminal* term, const char* name,
+        int flush_immediately) {
+
+    guac_client* client = term->client;
+
+    /* Close existing text-output stream, if any */
+    guac_terminal_text_output_close(term);
+
+    guac_terminal_lock(term);
+
+    term->text_output_length = 0;
+    term->text_output_inflight = 0;
+    term->text_output_inflight_bytes = 0;
+    term->text_output_inflight_head = 0;
+    term->text_output_stall_timeout = GUAC_TERMINAL_TEXT_OUTPUT_STALL_TIMEOUT;
+    term->text_output_flush_immediately = flush_immediately;
+
+    /* Allocate and open the stream on the connection owner's socket, so raw
+     * output is delivered only to the owner (not broadcast to every user) and
+     * uses a user-level stream index able to receive "ack" instructions */
+    guac_terminal_text_output_open_params params = { term, name };
+    guac_client_for_owner(client, guac_terminal_text_output_open_owner, &params);
+
+    guac_terminal_unlock(term);
+
+    /* Log redirect at debug level */
+    guac_client_log(client, GUAC_LOG_DEBUG, "Raw terminal output now teed to "
+            "text-output pipe \"%s\".", name);
+
+}
+
+void guac_terminal_text_output_write(guac_terminal* term,
+        const char* buffer, int length) {
+
+    guac_terminal_lock(term);
+
+    /* Append data only if the stream is open. This check must happen under the
+     * terminal lock: owner-disconnect and close paths mutate text_output_stream
+     * while holding the same lock. */
+    if (term->text_output_stream != NULL) {
+
+        while (length > 0) {
+
+            /* Flush buffer if no space is available */
+            if (term->text_output_length == sizeof(term->text_output_buffer))
+                guac_terminal_text_output_flush(term);
+
+            /* Append as many bytes as will fit in the buffer */
+            int chunk = sizeof(term->text_output_buffer)
+                    - term->text_output_length;
+            if (chunk > length)
+                chunk = length;
+
+            memcpy(term->text_output_buffer + term->text_output_length,
+                    buffer, chunk);
+
+            term->text_output_length += chunk;
+            buffer += chunk;
+            length -= chunk;
+
+        }
+
+        /* In raw (headless) mode there is no graphical frame cycle to flush the
+         * buffer, so flush immediately as data arrives. Wait first for room in
+         * the outstanding-output window: raw mode renders nothing graphically,
+         * so no browser user can be starved by pausing here, and pausing
+         * propagates backpressure to the remote program through the PTY exactly
+         * as a slow local terminal would. */
+        if (term->text_output_flush_immediately) {
+            guac_terminal_text_output_await_window(term);
+            guac_terminal_text_output_flush(term);
+        }
+
+    }
+
+    guac_terminal_unlock(term);
+
+}
+
+void guac_terminal_text_output_flush(guac_terminal* term) {
+
+    /* Send buffered data to the connection owner. The terminal lock is already
+     * held by the caller (guac_terminal_flush() or the buffer-full path of
+     * guac_terminal_text_output_write()). */
+    if (term->text_output_stream != NULL && term->text_output_length > 0)
+        guac_client_for_owner(term->client,
+                guac_terminal_text_output_flush_owner, term);
+
+}
+
+void guac_terminal_text_output_close(guac_terminal* term) {
+
+    guac_client* client = term->client;
+
+    guac_terminal_lock(term);
+
+    /* Close any existing text-output stream */
+    if (term->text_output_stream != NULL) {
+
+        /* Flush remaining buffered data, end and free the stream in the
+         * owner's context (or abandon it if the owner has left) */
+        guac_client_for_owner(client,
+                guac_terminal_text_output_close_owner, term);
+
+        /* Log closure at debug level */
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Text-output pipe stream closed.");
+
+    }
+
+    guac_terminal_unlock(term);
 
 }
 
