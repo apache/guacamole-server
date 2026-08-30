@@ -190,9 +190,16 @@ int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     char* output = output_data;
     guac_iconv_write* writer = vnc_client->clipboard_writer;
 
-    /* Convert clipboard contents */
-    guac_iconv(GUAC_READ_UTF8, &input, clipboard->length,
-               writer, &output, output_buf_size);
+    /* Convert clipboard contents. A zero return indicates the output buffer
+     * filled before all input was consumed (truncation) due to charset
+     * expansion; warn rather than silently sending truncated data. */
+    if (!guac_iconv(GUAC_READ_UTF8, &input, clipboard->length,
+               writer, &output, output_buf_size)) {
+        guac_client_log(client, GUAC_LOG_WARNING, "VNC: Outbound clipboard "
+                "data was truncated to fit the %d-byte clipboard buffer. "
+                "Increase \"clipboard-buffer-size\" to transfer larger "
+                "clipboard content.", output_buf_size);
+    }
 
     SendClientCutText(rfb_client, output_data, output - output_data);
 
@@ -223,9 +230,16 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
     char* output = received_data;
     guac_iconv_read* reader = vnc_client->clipboard_reader;
 
-    /* Convert clipboard contents */
-    guac_iconv(reader, &input, textlen,
-               GUAC_WRITE_UTF8, &output, output_buf_size);
+    /* Convert clipboard contents. A zero return indicates the output buffer
+     * filled before all input was consumed (truncation) due to charset
+     * expansion; warn rather than silently delivering truncated data. */
+    if (!guac_iconv(reader, &input, textlen,
+               GUAC_WRITE_UTF8, &output, output_buf_size)) {
+        guac_client_log(gc, GUAC_LOG_WARNING, "VNC: Inbound clipboard data "
+                "was truncated to fit the %d-byte clipboard buffer. Increase "
+                "\"clipboard-buffer-size\" to receive larger clipboard "
+                "content.", output_buf_size);
+    }
 
     /* Send converted data */
     guac_common_clipboard_reset(vnc_client->clipboard, "text/plain");
