@@ -148,6 +148,19 @@ guac_display* guac_display_alloc(guac_client* client) {
     }
 
     display->worker_thread_count = cpu_count * GUAC_DISPLAY_CPU_THREAD_FACTOR;
+
+    /* Limit the number of worker threads if the client is configured with a
+     * maximum. Each connection has its own guac_display (and therefore its
+     * own set of worker threads), so the total number of threads created
+     * scales with both the number of processors and the number of concurrent
+     * connections. Deployments that need to bound that total (hosts with
+     * very many processors, containers with strict process/thread limits,
+     * etc.) can use this limit to trade peak per-connection encoding
+     * throughput for a bounded thread count. */
+    if (client->max_display_worker_threads > 0
+            && display->worker_thread_count > client->max_display_worker_threads)
+        display->worker_thread_count = client->max_display_worker_threads;
+
     display->worker_threads = guac_mem_alloc(display->worker_thread_count, sizeof(pthread_t));
     guac_client_log(client, GUAC_LOG_INFO, "Graphical updates will be encoded "
             "using %i worker thread(s).", display->worker_thread_count);

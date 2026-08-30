@@ -550,7 +550,8 @@ static void guacd_close_inherited_fds(int keep_fd) {
 
 }
 
-guacd_proc* guacd_create_proc(const char* protocol) {
+guacd_proc* guacd_create_proc(const char* protocol,
+        int max_display_worker_threads) {
 
     int sockets[2];
 
@@ -583,6 +584,10 @@ guacd_proc* guacd_create_proc(const char* protocol) {
 
     /* Init logging */
     proc->client->log_handler = guacd_client_log;
+
+    /* Apply any configured limit on the number of worker threads created to
+     * encode graphical updates for this connection */
+    proc->client->max_display_worker_threads = max_display_worker_threads;
 
     /* Fork */
     proc->pid = fork();

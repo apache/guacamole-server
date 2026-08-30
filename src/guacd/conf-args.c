@@ -25,6 +25,7 @@
 #include <guacamole/string.h>
 
 #include <getopt.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +34,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:fv")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:w:fv")) != -1) {
 
         /* -l: Bind port */
         if (opt == 'l') {
@@ -77,6 +78,23 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
         }
 
+        /* -w: Maximum number of worker threads per connection */
+        else if (opt == 'w') {
+
+            /* Validate and parse worker thread limit */
+            char* end;
+            long max_threads = strtol(optarg, &end, 10);
+            if (*optarg == '\0' || *end != '\0'
+                    || max_threads < 0 || max_threads > INT_MAX) {
+                fprintf(stderr, "Invalid maximum number of worker threads. "
+                        "The value must be a non-negative integer.\n");
+                return 1;
+            }
+
+            config->max_worker_threads = (int) max_threads;
+
+        }
+
 #ifdef ENABLE_SSL
         /* -C SSL certificate */
         else if (opt == 'C') {
@@ -111,6 +129,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
                     " [-C CERTIFICATE_FILE]"
                     " [-K PEM_FILE]"
 #endif
+                    " [-w MAX_WORKER_THREADS]"
                     " [-f]"
                     " [-v]\n", argv[0]);
 

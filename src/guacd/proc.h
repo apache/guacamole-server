@@ -87,12 +87,18 @@ typedef struct guacd_proc {
  * @param protocol
  *     The protocol for which this process is client being created.
  *
+ * @param max_display_worker_threads
+ *     The maximum number of worker threads that should be created to encode
+ *     graphical updates for this connection, or zero if the number of worker
+ *     threads should be limited only by the number of available processors.
+ *
  * @return
  *     A newly-allocated process structure pointing to the file descriptor of
  *     the background process specific to the specified protocol, or NULL of
  *     the process could not be created.
  */
-guacd_proc* guacd_create_proc(const char* protocol);
+guacd_proc* guacd_create_proc(const char* protocol,
+        int max_display_worker_threads);
 
 /**
  * Signals the given process to stop accepting new users and clean up. This

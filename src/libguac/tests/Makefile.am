@@ -41,6 +41,7 @@ noinst_HEADERS =                     \
 test_libguac_SOURCES =               \
     client/buffer_pool.c             \
     client/layer_pool.c              \
+    display/max_worker_threads.c     \
     fifo/fifo.c                      \
     file/openat.c                    \
     flag/flag.c                      \

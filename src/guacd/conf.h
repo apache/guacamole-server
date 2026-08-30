@@ -81,6 +81,13 @@ typedef struct guacd_config {
      */
     guac_client_log_level max_log_level;
 
+    /**
+     * The maximum number of worker threads that should be created to encode
+     * graphical updates for each connection, or zero if the number of worker
+     * threads should be limited only by the number of available processors.
+     */
+    int max_worker_threads;
+
 } guacd_config;
 
 #endif
