@@ -104,6 +104,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "force-lossless",
     "compress-level",
     "quality-level",
+    "allow-jpeg",
     NULL
 };
 
@@ -136,7 +137,7 @@ enum VNC_ARGS_IDX {
      * Space-separated list of encodings to use within the VNC session. If not
      * specified, this will be:
      *
-     *     "zrle ultra copyrect hextile zlib corre rre raw".
+     *     "tight zrle ultra copyrect hextile zlib corre rre raw".
      */
     IDX_ENCODINGS,
 
@@ -450,6 +451,13 @@ enum VNC_ARGS_IDX {
      */
     IDX_QUALITY_LEVEL,
 
+    /**
+     * "true" if the VNC client library should be allowed to negotiate
+     * JPEG compression (used by the "tight" encoding), "false" or blank otherwise.
+     * This will hurt guacamole's internal PNG compression. Off by default.
+     */
+    IDX_ALLOW_JPEG,
+
     VNC_ARGS_COUNT
 };
 
@@ -534,6 +542,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_QUALITY_LEVEL, -1);
 
+    /* Whether JPEG (as used by the "tight" encoding) may be negotiated */
+    settings->allow_jpeg =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_ALLOW_JPEG, false);
+
 #ifdef ENABLE_VNC_REPEATER
     /* Set repeater parameters if specified */
     settings->dest_host =
@@ -550,7 +563,7 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->encodings =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_ENCODINGS,
-                "zrle ultra copyrect hextile zlib corre rre raw");
+                "tight zrle ultra copyrect hextile zlib corre rre raw");
 
     /* Parse autoretry */
     settings->retries =
