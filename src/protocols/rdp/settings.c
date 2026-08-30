@@ -870,9 +870,12 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 IDX_DPI, guac_rdp_suggest_resolution(user));
 
     /* Use optimal width unless overridden */
-    settings->width = user->info.optimal_width
-                    * settings->resolution
-                    / user->info.optimal_resolution;
+    if (user->info.optimal_resolution > 0)
+        settings->width = user->info.optimal_width
+                        * settings->resolution
+                        / user->info.optimal_resolution;
+    else
+        settings->width = RDP_DEFAULT_WIDTH;
 
     if (argv[IDX_WIDTH][0] != '\0')
         settings->width = atoi(argv[IDX_WIDTH]);
@@ -889,9 +892,12 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->width = settings->width & ~0x3;
 
     /* Use optimal height unless overridden */
-    settings->height = user->info.optimal_height
-                     * settings->resolution
-                     / user->info.optimal_resolution;
+    if (user->info.optimal_resolution > 0)
+        settings->height = user->info.optimal_height
+                         * settings->resolution
+                         / user->info.optimal_resolution;
+    else
+        settings->height = RDP_DEFAULT_HEIGHT;
 
     if (argv[IDX_HEIGHT][0] != '\0')
         settings->height = atoi(argv[IDX_HEIGHT]);
@@ -1696,93 +1702,107 @@ void guac_rdp_push_settings(guac_client* client,
 
             /* Explicitly disable NLA if FIPS mode is enabled - it won't work */
             if (guac_fips_enabled()) {
-
-                guac_client_log(client, GUAC_LOG_INFO,
-                        "FIPS mode is enabled. Excluding NLA security mode from security negotiation "
-                        "(see: https://github.com/FreeRDP/FreeRDP/issues/3412).");
                 freerdp_settings_set_bool(rdp_settings, FreeRDP_NlaSecurity, FALSE);
-
+                guac_client_log(client, GUAC_LOG_WARNING, fips_nla_mode_warning);
             }
-
-            /* NLA mode is allowed if FIPS is not enabled */
             else
                 freerdp_settings_set_bool(rdp_settings, FreeRDP_NlaSecurity, TRUE);
 
-            freerdp_settings_set_bool(rdp_settings, FreeRDP_ExtSecurity, FALSE);
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_ExtSecurity, TRUE);
             break;
 
     }
 
-    /* Security */
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_Authentication, !guac_settings->disable_authentication);
+    /* Ignore certificate */
     freerdp_settings_set_bool(rdp_settings, FreeRDP_IgnoreCertificate, guac_settings->ignore_certificate);
     freerdp_settings_set_bool(rdp_settings, FreeRDP_AutoAcceptCertificate, guac_settings->certificate_tofu);
-    if (guac_settings->certificate_fingerprints != NULL)
-        freerdp_settings_set_string(rdp_settings, FreeRDP_CertificateAcceptedFingerprints, 
-                guac_strdup(guac_settings->certificate_fingerprints));
 
+    /* Certificate fingerprints */
+    freerdp_settings_set_string(rdp_settings, FreeRDP_CertificateAcceptedFingerprints, guac_strdup(guac_settings->certificate_fingerprints));
 
-    /* RemoteApp */
+    /* Authentication */
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_Authentication, !guac_settings->disable_authentication);
+
+    /* Connection optimizations */
+
+    /* Disable bitmap and offscreen caching by default. Bitmap and offscreen
+     * caching settings can impact memory use, and disabling both seems to be
+     * required for many RDP servers (see GUACAMOLE-118). */
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_BitmapCacheEnabled,
+            !guac_settings->disable_bitmap_caching);
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_OffscreenSupportLevel,
+            !guac_settings->disable_offscreen_caching);
+
+    /* Explicitly disable glyph cache if requested. Glyph cache is disabled by
+     * default by this function, and user request that glyph cache be disabled
+     * is ignored if it would otherwise have no effect. */
+    if (guac_settings->disable_glyph_caching) {
+        freerdp_settings_set_bool(rdp_settings, FreeRDP_GlyphSupportLevel, GLYPH_SUPPORT_NONE);
+    }
+
+    /* Alternate shell */
     if (guac_settings->remote_app != NULL) {
-        freerdp_settings_set_bool(rdp_settings, FreeRDP_Workarea, TRUE);
         freerdp_settings_set_bool(rdp_settings, FreeRDP_RemoteApplicationMode, TRUE);
-        freerdp_settings_set_bool(rdp_settings, FreeRDP_RemoteAppLanguageBarSupported, TRUE);
-        freerdp_settings_set_bool(rdp_settings, FreeRDP_HiDefRemoteApp, guac_settings->enable_gfx);
-        freerdp_settings_set_string(rdp_settings, FreeRDP_RemoteApplicationProgram, guac_strdup(guac_settings->remote_app));
-        freerdp_settings_set_string(rdp_settings, FreeRDP_ShellWorkingDirectory, guac_strdup(guac_settings->remote_app_dir));
-        freerdp_settings_set_string(rdp_settings, FreeRDP_RemoteApplicationCmdLine, guac_strdup(guac_settings->remote_app_args));
+        freerdp_settings_set_string(rdp_settings, FreeRDP_RemoteApplicationProgram,
+                guac_strdup(guac_settings->remote_app));
+        freerdp_settings_set_string(rdp_settings, FreeRDP_ShellWorkingDirectory,
+                guac_strdup(guac_settings->remote_app_dir));
+        freerdp_settings_set_string(rdp_settings, FreeRDP_RemoteApplicationCmdLine,
+                guac_strdup(guac_settings->remote_app_args));
     }
 
-    /* Preconnection ID */
-    if (guac_settings->preconnection_id != -1) {
-        freerdp_settings_set_bool(rdp_settings, FreeRDP_NegotiateSecurityLayer, FALSE);
-        freerdp_settings_set_bool(rdp_settings, FreeRDP_SendPreconnectionPdu, TRUE);
-        freerdp_settings_set_uint32(rdp_settings, FreeRDP_PreconnectionId, guac_settings->preconnection_id);
-    }
-
-    /* Preconnection BLOB */
-    if (guac_settings->preconnection_blob != NULL) {
-        freerdp_settings_set_bool(rdp_settings, FreeRDP_NegotiateSecurityLayer, FALSE);
-        freerdp_settings_set_bool(rdp_settings, FreeRDP_SendPreconnectionPdu, TRUE);
-        freerdp_settings_set_string(rdp_settings, FreeRDP_PreconnectionBlob, guac_strdup(guac_settings->preconnection_blob));
-    }
-
-    /* Enable use of RD gateway if a gateway hostname is provided */
+    /* Gateway configuration */
     if (guac_settings->gateway_hostname != NULL) {
+        freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayHostname,
+                guac_strdup(guac_settings->gateway_hostname));
+        freerdp_settings_set_uint32(rdp_settings, FreeRDP_GatewayPort,
+                guac_settings->gateway_port);
+        freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayDomain,
+                guac_strdup(guac_settings->gateway_domain));
+        freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayUsername,
+                guac_strdup(guac_settings->gateway_username));
+        freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayPassword,
+                guac_strdup(guac_settings->gateway_password));
 
-        /* Enable RD gateway */
         freerdp_settings_set_bool(rdp_settings, FreeRDP_GatewayEnabled, TRUE);
 
-        /* RD gateway connection details */
-        freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayHostname, guac_strdup(guac_settings->gateway_hostname));
-        freerdp_settings_set_uint32(rdp_settings, FreeRDP_GatewayPort, guac_settings->gateway_port);
+        /* Disable use of HTTP transport. Legacy RPC transport is more widely
+         * supported and tends to be faster. If HTTP transport is enabled,
+         * users may need to explicitly disable NLA to avoid known issues with
+         * HTTP and NLA/CredSSP that prevent NLA auth from succeeding. */
+        freerdp_settings_set_bool(rdp_settings, FreeRDP_GatewayHttpTransport, FALSE);
 
-        /* RD gateway credentials */
-        freerdp_settings_set_bool(rdp_settings, FreeRDP_GatewayUseSameCredentials, FALSE);
-        freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayDomain, guac_strdup(guac_settings->gateway_domain));
-        freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayUsername, guac_strdup(guac_settings->gateway_username));
-        freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayPassword, guac_strdup(guac_settings->gateway_password));
-
+        /* Increase timeout from default 5 seconds to avoid premature timeout
+         * in high-latency conditions. */
+        freerdp_settings_set_uint32(rdp_settings, FreeRDP_GatewayRpcConnectTimeout, 20 * 1000);
     }
 
-    /* Store load balance info (and calculate length) if provided */
-    if (guac_settings->load_balance_info != NULL) {
-        freerdp_settings_set_pointer(rdp_settings, FreeRDP_LoadBalanceInfo, (BYTE*) guac_strdup(guac_settings->load_balance_info));
-        freerdp_settings_set_uint32(rdp_settings, FreeRDP_LoadBalanceInfoLength, strlen(guac_settings->load_balance_info));
+    /* Preconnection PDU */
+    freerdp_settings_set_int32(rdp_settings, FreeRDP_PreconnectionId, guac_settings->preconnection_id);
+    freerdp_settings_set_string(rdp_settings, FreeRDP_PreconnectionBlob,
+            guac_strdup(guac_settings->preconnection_blob));
+
+    /* Keyboard layout */
+    freerdp_settings_set_uint32(rdp_settings, FreeRDP_KeyboardType, 0x00000004);
+
+    /* If no keyboard layout provided, use local keyboard layout */
+    if (freerdp_settings_get_uint32(rdp_settings, FreeRDP_KeyboardLayout) == 0)
+        freerdp_settings_set_bool(rdp_settings, FreeRDP_KeyboardLayout, GetKeyboardLayout(0));
+
+    /* Multi-touch */
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_MultiTouchInput, guac_settings->enable_touch);
+
+    /* RemoteFX Codec */
+    if (guac_settings->lossless) {
+        freerdp_settings_set_uint32(rdp_settings, FreeRDP_RemoteFxCodecMode, 0x00);
+        freerdp_settings_set_bool(rdp_settings, FreeRDP_AllowUnanouncedOrdersFromServer, FALSE);
     }
 
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_BitmapCacheEnabled, !guac_settings->disable_bitmap_caching);
-    freerdp_settings_set_uint32(rdp_settings, FreeRDP_OffscreenSupportLevel, !guac_settings->disable_offscreen_caching);
-    freerdp_settings_set_uint32(rdp_settings, FreeRDP_GlyphSupportLevel, 
-            (!guac_settings->disable_glyph_caching ? GLYPH_SUPPORT_FULL : GLYPH_SUPPORT_NONE));
-    freerdp_settings_set_uint32(rdp_settings, FreeRDP_OsMajorType, OSMAJORTYPE_UNSPECIFIED);
-    freerdp_settings_set_uint32(rdp_settings, FreeRDP_OsMinorType, OSMINORTYPE_UNSPECIFIED);
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_DesktopResize, TRUE);
+    /* Printing */
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_RedirectPrinters, guac_settings->printing_enabled);
 
-#ifdef HAVE_RDPSETTINGS_ALLOWUNANOUNCEDORDERSFROMSERVER
-    /* Do not consider server use of unannounced orders to be a fatal error */
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_AllowUnanouncedOrdersFromServer, TRUE);
-#endif
+    /* Device redirection */
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_RedirectDrives, guac_settings->drive_enabled);
 
 #else
     /* Authentication */
@@ -1793,21 +1813,21 @@ void guac_rdp_push_settings(guac_client* client,
     /* Connection */
     rdp_settings->ServerHostname = guac_strdup(guac_settings->hostname);
     rdp_settings->ServerPort = guac_settings->port;
-    rdp_settings->TcpAckTimeout = guac_settings->timeout * 1000;
 
     /* Session */
-    rdp_settings->ColorDepth = guac_settings->color_depth;
     rdp_settings->DesktopWidth = guac_settings->width;
     rdp_settings->DesktopHeight = guac_settings->height;
+    rdp_settings->ColorDepth = guac_settings->color_depth;
     rdp_settings->AlternateShell = guac_strdup(guac_settings->initial_program);
     rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
+
 
     /* Performance flags */
     /* Explicitly set flag value */
     rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
 
     /* Set explicit connection type to LAN to prevent auto-detection */
-    freerdp_settings_set_uint32(rdp_settings, FreeRDP_ConnectionType, CONNECTION_TYPE_LAN);
+    rdp_settings->ConnectionType = CONNECTION_TYPE_LAN;
 
     /* Always request frame markers */
     rdp_settings->FrameMarkerCommandEnabled = TRUE;
@@ -1825,7 +1845,8 @@ void guac_rdp_push_settings(guac_client* client,
         if (rdp_settings->ColorDepth != RDP_GFX_REQUIRED_DEPTH) {
             guac_client_log(client, GUAC_LOG_WARNING, "Ignoring requested "
                     "color depth of %i bpp, as the RDP Graphics Pipeline "
-                    "requires %i bpp.", rdp_settings->ColorDepth, RDP_GFX_REQUIRED_DEPTH);
+                    "requires %i bpp.", rdp_settings->ColorDepth,
+                    RDP_GFX_REQUIRED_DEPTH);
         }
 
         /* Required for RemoteFX / Graphics Pipeline */
@@ -1844,7 +1865,6 @@ void guac_rdp_push_settings(guac_client* client,
 
     /* Client name */
     if (guac_settings->client_name != NULL) {
-        free(rdp_settings->ClientHostname);
         rdp_settings->ClientHostname = guac_strndup(guac_settings->client_name,
                 RDP_CLIENT_HOSTNAME_SIZE);
     }
@@ -1861,7 +1881,7 @@ void guac_rdp_push_settings(guac_client* client,
 
     /* Display Update channel */
     rdp_settings->SupportDisplayControl =
-        (guac_settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE);
+            (guac_settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE);
 
     /* Timezone redirection */
     if (guac_settings->timezone) {
@@ -1873,9 +1893,10 @@ void guac_rdp_push_settings(guac_client* client,
     }
 
     /* Device redirection */
-    rdp_settings->DeviceRedirection =  guac_settings->audio_enabled
-                                    || guac_settings->drive_enabled
-                                    || guac_settings->printing_enabled;
+    rdp_settings->DeviceRedirection =
+            (guac_settings->audio_enabled
+                || guac_settings->drive_enabled
+                || guac_settings->printing_enabled);
 
     /* Security */
     switch (guac_settings->security_mode) {
@@ -1889,8 +1910,8 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->UseRdpSecurityLayer = TRUE;
             rdp_settings->EncryptionLevel = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
             rdp_settings->EncryptionMethods =
-                  ENCRYPTION_METHOD_40BIT
-                | ENCRYPTION_METHOD_128BIT 
+                ENCRYPTION_METHOD_40BIT
+                | ENCRYPTION_METHOD_128BIT
                 | ENCRYPTION_METHOD_FIPS;
             break;
 
@@ -1934,90 +1955,226 @@ void guac_rdp_push_settings(guac_client* client,
 
             /* Explicitly disable NLA if FIPS mode is enabled - it won't work */
             if (guac_fips_enabled()) {
-
-                guac_client_log(client, GUAC_LOG_INFO,
-                        "FIPS mode is enabled. Excluding NLA security mode from security negotiation "
-                        "(see: https://github.com/FreeRDP/FreeRDP/issues/3412).");
                 rdp_settings->NlaSecurity = FALSE;
-
+                guac_client_log(client, GUAC_LOG_WARNING, fips_nla_mode_warning);
             }
-
-            /* NLA mode is allowed if FIPS is not enabled */
             else
                 rdp_settings->NlaSecurity = TRUE;
 
-            rdp_settings->ExtSecurity = FALSE;
+            rdp_settings->ExtSecurity = TRUE;
             break;
 
     }
 
-    /* Security */
-    rdp_settings->Authentication = !guac_settings->disable_authentication;
+    /* Ignore certificate */
     rdp_settings->IgnoreCertificate = guac_settings->ignore_certificate;
     rdp_settings->AutoAcceptCertificate = guac_settings->certificate_tofu;
-    if (guac_settings->certificate_fingerprints != NULL)
-        rdp_settings->CertificateAcceptedFingerprints = guac_strdup(guac_settings->certificate_fingerprints);
 
-    /* RemoteApp */
+    /* Certificate fingerprints */
+    rdp_settings->CertificateAcceptedFingerprints =
+        guac_strdup(guac_settings->certificate_fingerprints);
+
+    /* Authentication */
+    rdp_settings->Authentication = !guac_settings->disable_authentication;
+
+    /* Connection optimizations */
+
+    /* Disable bitmap and offscreen caching by default. Bitmap and offscreen
+     * caching settings can impact memory use, and disabling both seems to be
+     * required for many RDP servers (see GUACAMOLE-118). */
+    rdp_settings->BitmapCacheEnabled = !guac_settings->disable_bitmap_caching;
+    rdp_settings->OffscreenSupportLevel = !guac_settings->disable_offscreen_caching;
+
+    /* Explicitly disable glyph cache if requested. Glyph cache is disabled by
+     * default by this function, and user request that glyph cache be disabled
+     * is ignored if it would otherwise have no effect. */
+    if (guac_settings->disable_glyph_caching)
+        rdp_settings->GlyphSupportLevel = GLYPH_SUPPORT_NONE;
+
+    /* Alternate shell */
     if (guac_settings->remote_app != NULL) {
-        rdp_settings->Workarea = TRUE;
         rdp_settings->RemoteApplicationMode = TRUE;
-        rdp_settings->RemoteAppLanguageBarSupported = TRUE;
-        rdp_settings->HiDefRemoteApp = guac_settings->enable_gfx;
         rdp_settings->RemoteApplicationProgram = guac_strdup(guac_settings->remote_app);
         rdp_settings->ShellWorkingDirectory = guac_strdup(guac_settings->remote_app_dir);
         rdp_settings->RemoteApplicationCmdLine = guac_strdup(guac_settings->remote_app_args);
     }
 
-    /* Preconnection ID */
-    if (guac_settings->preconnection_id != -1) {
-        rdp_settings->NegotiateSecurityLayer = FALSE;
-        rdp_settings->SendPreconnectionPdu = TRUE;
-        rdp_settings->PreconnectionId = guac_settings->preconnection_id;
-    }
-
-    /* Preconnection BLOB */
-    if (guac_settings->preconnection_blob != NULL) {
-        rdp_settings->NegotiateSecurityLayer = FALSE;
-        rdp_settings->SendPreconnectionPdu = TRUE;
-        rdp_settings->PreconnectionBlob = guac_strdup(guac_settings->preconnection_blob);
-    }
-
-    /* Enable use of RD gateway if a gateway hostname is provided */
+    /* Gateway configuration */
     if (guac_settings->gateway_hostname != NULL) {
-
-        /* Enable RD gateway */
-        rdp_settings->GatewayEnabled = TRUE;
-
-        /* RD gateway connection details */
         rdp_settings->GatewayHostname = guac_strdup(guac_settings->gateway_hostname);
         rdp_settings->GatewayPort = guac_settings->gateway_port;
-
-        /* RD gateway credentials */
-        rdp_settings->GatewayUseSameCredentials = FALSE;
         rdp_settings->GatewayDomain = guac_strdup(guac_settings->gateway_domain);
         rdp_settings->GatewayUsername = guac_strdup(guac_settings->gateway_username);
         rdp_settings->GatewayPassword = guac_strdup(guac_settings->gateway_password);
 
+        rdp_settings->GatewayEnabled = TRUE;
+
+        /* Disable use of HTTP transport. Legacy RPC transport is more widely
+         * supported and tends to be faster. If HTTP transport is enabled,
+         * users may need to explicitly disable NLA to avoid known issues with
+         * HTTP and NLA/CredSSP that prevent NLA auth from succeeding. */
+        rdp_settings->GatewayHttpTransport = FALSE;
+
+        /* Increase timeout from default 5 seconds to avoid premature timeout
+         * in high-latency conditions. */
+        rdp_settings->GatewayRpcConnectTimeout = 20 * 1000;
     }
 
-    /* Store load balance info (and calculate length) if provided */
+    /* Preconnection PDU */
+    rdp_settings->PreconnectionId = guac_settings->preconnection_id;
+    rdp_settings->PreconnectionBlob = guac_strdup(guac_settings->preconnection_blob);
+
+    /* Keyboard layout */
+    rdp_settings->KeyboardType = 0x00000004;
+
+    /* If no keyboard layout provided, use local keyboard layout */
+    if (rdp_settings->KeyboardLayout == 0)
+        rdp_settings->KeyboardLayout = GetKeyboardLayout(0);
+
+    /* Multi-touch */
+    rdp_settings->MultiTouchInput = guac_settings->enable_touch;
+
+    /* RemoteFX Codec */
+    if (guac_settings->lossless) {
+        rdp_settings->RemoteFxCodecMode = 0x00;
+        rdp_settings->AllowUnanouncedOrdersFromServer = FALSE;
+    }
+
+    /* Printing */
+    rdp_settings->RedirectPrinters = guac_settings->printing_enabled;
+
+    /* Device redirection */
+    rdp_settings->RedirectDrives = guac_settings->drive_enabled;
+
+#endif
+
+    /* Redirection for GW host and domain */
+    if (guac_settings->gateway_domain || guac_settings->gateway_hostname) {
+
+        /* If only one of host/domain is defined, then define the other with
+         * empty string to force use of redirection packet */
+#ifdef HAVE_SETTERS_GETTERS
+        if (!guac_settings->gateway_hostname)
+            freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayHostname, guac_strdup(""));
+        if (!guac_settings->gateway_domain)
+            freerdp_settings_set_string(rdp_settings, FreeRDP_GatewayDomain, guac_strdup(""));
+#else
+        if (!guac_settings->gateway_hostname)
+            rdp_settings->GatewayHostname = guac_strdup("");
+        if (!guac_settings->gateway_domain)
+            rdp_settings->GatewayDomain = guac_strdup("");
+#endif
+
+    }
+
+    /* Load balancing info */
     if (guac_settings->load_balance_info != NULL) {
-        rdp_settings->LoadBalanceInfo = (BYTE*) guac_strdup(guac_settings->load_balance_info);
-        rdp_settings->LoadBalanceInfoLength = strlen(guac_settings->load_balance_info);
+#ifdef HAVE_SETTERS_GETTERS
+        freerdp_settings_set_string(rdp_settings, FreeRDP_LoadBalanceInfo,
+                guac_strdup(guac_settings->load_balance_info));
+#else
+        rdp_settings->LoadBalanceInfo = guac_strdup(guac_settings->load_balance_info);
+#endif
     }
 
-    rdp_settings->BitmapCacheEnabled = !guac_settings->disable_bitmap_caching;
-    rdp_settings->OffscreenSupportLevel = !guac_settings->disable_offscreen_caching;
-    rdp_settings->GlyphSupportLevel = !guac_settings->disable_glyph_caching ? GLYPH_SUPPORT_FULL : GLYPH_SUPPORT_NONE;
-    rdp_settings->OsMajorType = OSMAJORTYPE_UNSPECIFIED;
-    rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
-    rdp_settings->DesktopResize = TRUE;
+    /* Static channels */
+    if (guac_settings->svc_names != NULL) {
 
-#ifdef HAVE_RDPSETTINGS_ALLOWUNANOUNCEDORDERSFROMSERVER
-    /* Do not consider server use of unannounced orders to be a fatal error */
-    rdp_settings->AllowUnanouncedOrdersFromServer = TRUE;
+        /* Add each static channel name to FreeRDP's settings */
+        char** current = &(guac_settings->svc_names[0]);
+        while (*current != NULL) {
+#ifdef HAVE_SETTERS_GETTERS
+            if (!freerdp_settings_add_static_channel(rdp_settings, *current,
+                    CHANNEL_OPTION_INITIALIZED
+                    | CHANNEL_OPTION_ENCRYPT_RDP
+                    | CHANNEL_OPTION_COMPRESS_RDP
+                    | CHANNEL_OPTION_SHOW_PROTOCOL,
+                    NULL)) {
+                guac_client_log(client, GUAC_LOG_WARNING,
+                        "Unable to register static channel \"%s\". This "
+                        "channel will not be connected and will not be "
+                        "usable.",
+                        *current);
+            }
+#else
+            if (!freerdp_static_channel_collection_add(rdp_settings,
+                    *current,
+                    CHANNEL_OPTION_INITIALIZED
+                    | CHANNEL_OPTION_ENCRYPT_RDP
+                    | CHANNEL_OPTION_COMPRESS_RDP
+                    | CHANNEL_OPTION_SHOW_PROTOCOL,
+                    NULL)) {
+                guac_client_log(client, GUAC_LOG_WARNING,
+                        "Unable to register static channel \"%s\". This "
+                        "channel will not be connected and will not be "
+                        "usable.",
+                        *current);
+            }
 #endif
 
+            current++;
+        }
+
+    }
+
+#ifdef ENABLE_COMMON_SSH
+
+    /* Configure and connect SFTP session, if requested */
+    if (guac_settings->enable_sftp) {
+
+        /* Initializing SFTP settings/sessions not enabled in FIPS mode */
+        if (guac_fips_enabled())
+            guac_client_log(client, GUAC_LOG_WARNING,
+                "File transfer over SFTP and SSH key authentication are"
+                " not supported when running in FIPS mode."
+                " Ignoring related parameters and disabling SFTP support.");
+
+        else if (!guac_common_ssh_init(client, &rdp->context->_p->sftp_session,
+                    guac_settings->sftp_hostname, guac_settings->sftp_port,
+                    guac_settings->sftp_username, guac_settings->sftp_password,
+                    guac_settings->sftp_private_key,
+                    guac_settings->sftp_passphrase,
+                    guac_settings->sftp_host_key,
+                    guac_settings->sftp_server_alive_interval)) {
+
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to start SFTP session. Check that the specified "
+                    "SSH server is reachable and that the given parameters "
+                    "are valid.");
+            return;
+        }
+
+        /* Load public key for SSH auth, if provided */
+        if (guac_settings->sftp_public_key != NULL)
+            if (!guac_common_ssh_user_import_public_key(client,
+                        &rdp->context->_p->sftp_session,
+                        guac_settings->sftp_public_key)) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "Public SSH key authentication configured, but the "
+                        "provided public key is invalid.");
+                return;
+            }
+
+        /* Init, read filesystem */
+        if (!guac_common_ssh_sftp_init(client,
+                    &rdp->context->_p->sftp_filesystem,
+                    &rdp->context->_p->sftp_session,
+                    guac_settings->sftp_root_directory,
+                    guac_settings->sftp_directory,
+                    guac_settings->sftp_disable_download,
+                    guac_settings->sftp_disable_upload)) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to read SFTP directory. Check that the specified "
+                    "SSH server is reachable and that the given parameters "
+                    "are valid.");
+            return;
+        }
+
+        /* Expose filesystem to connection owner only */
+        guac_common_ssh_sftp_set_owner(client,
+                &rdp->context->_p->sftp_filesystem, client->owner);
+
+    }
 #endif
+
 }
