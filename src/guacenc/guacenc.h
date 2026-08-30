@@ -47,5 +47,11 @@
  */
 #define GUACENC_DEFAULT_LOG_LEVEL GUAC_LOG_INFO
 
+/**
+ * The libavformat URL of the current process' STDOUT, as used when encoded
+ * video should be streamed to STDOUT rather than written to a file.
+ */
+#define GUACENC_STDOUT_PATH "pipe:1"
+
 #endif
 

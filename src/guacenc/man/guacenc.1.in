@@ -26,6 +26,7 @@ guacenc \- Guacamole video encoder
 [\fB-s\fR \fIWIDTH\fRx\fIHEIGHT\fR]
 [\fB-r\fR \fIBITRATE\fR]
 [\fB-f\fR]
+[\fB-o\fR \fIOUTPUT\fR]
 [\fIFILE\fR]...
 .
 .SH DESCRIPTION
@@ -45,6 +46,13 @@ with a bitrate of \fI2000000\fR bits per second (2 Mbps). These defaults can be
 overridden with the \fB-s\fR and \fB-r\fR options respectively. Existing files
 will not be overwritten; the encoding process for any input file will be
 aborted if it would result in overwriting an existing file.
+.P
+Alternatively, the \fB-o\fR option may be used to specify the output file
+explicitly. In typical UNIX fashion, specifying "-" as the output file will
+cause the encoded video to be streamed to STDOUT rather than written to a
+file, allowing the video to be piped to another process or streamed as a
+download while it is still being encoded. As only a single output may be
+specified, only one \fIFILE\fR may be given if \fB-o\fR is used.
 .P
 Guacamole acquires a write lock on recordings as they are being written. By
 default,
@@ -75,6 +83,13 @@ Overrides the default behavior of
 .B guacenc
 such that input files will be encoded even if they appear to be recordings of
 in-progress Guacamole sessions.
+.TP
+\fB-o\fR \fIOUTPUT\fR
+Writes the encoded video to \fIOUTPUT\fR instead of a file named after the
+input file. If \fIOUTPUT\fR is "-", the encoded video will be streamed to
+STDOUT rather than written to a file; as all log messages are written to
+STDERR, they will not interfere with the video stream. Only one \fIFILE\fR may
+be given when this option is used.
 .
 .SH SEE ALSO
 .BR guaclog (1)
