@@ -39,10 +39,134 @@
 #include <string.h>
 #include <unistd.h>
 
+/**
+ * Data specific to the write-required socket wrapper, which aborts the
+ * associated client connection if any write to the underlying socket fails.
+ */
+typedef struct guac_socket_require_write_data {
+
+    /**
+     * The wrapped socket to which all write operations are delegated.
+     */
+    guac_socket* wrapped;
+
+    /**
+     * The client to abort if a write fails.
+     */
+    guac_client* client;
+
+} guac_socket_require_write_data;
+
+/**
+ * Write handler for the require-write socket wrapper. Delegates the write to
+ * the wrapped socket, aborting the client connection on failure.
+ */
+static ssize_t __guac_socket_require_write_handler(guac_socket* socket,
+        const void* buf, size_t count) {
+
+    guac_socket_require_write_data* data =
+            (guac_socket_require_write_data*) socket->data;
+
+    if (guac_socket_write(data->wrapped, buf, count)) {
+        guac_client_abort(data->client,
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Write to recording failed. Aborting connection.");
+        return -1;
+    }
+
+    return count;
+
+}
+
+/**
+ * Flush handler for the require-write socket wrapper. Delegates the flush to
+ * the wrapped socket, aborting the client connection on failure.
+ */
+static ssize_t __guac_socket_require_flush_handler(guac_socket* socket) {
+
+    guac_socket_require_write_data* data =
+            (guac_socket_require_write_data*) socket->data;
+
+    if (guac_socket_flush(data->wrapped)) {
+        guac_client_abort(data->client,
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Flush of recording failed. Aborting connection.");
+        return -1;
+    }
+
+    return 0;
+
+}
+
+/**
+ * Lock handler for the require-write socket wrapper.
+ */
+static void __guac_socket_require_lock_handler(guac_socket* socket) {
+    guac_socket_require_write_data* data =
+            (guac_socket_require_write_data*) socket->data;
+    guac_socket_instruction_begin(data->wrapped);
+}
+
+/**
+ * Unlock handler for the require-write socket wrapper.
+ */
+static void __guac_socket_require_unlock_handler(guac_socket* socket) {
+    guac_socket_require_write_data* data =
+            (guac_socket_require_write_data*) socket->data;
+    guac_socket_instruction_end(data->wrapped);
+}
+
+/**
+ * Free handler for the require-write socket wrapper. Frees the wrapped socket
+ * and the wrapper data.
+ */
+static int __guac_socket_require_free_handler(guac_socket* socket) {
+    guac_socket_require_write_data* data =
+            (guac_socket_require_write_data*) socket->data;
+    guac_socket_free(data->wrapped);
+    guac_mem_free(data);
+    return 0;
+}
+
+/**
+ * Creates a socket wrapper that aborts the given client's connection if any
+ * write to the underlying socket fails.
+ *
+ * @param socket
+ *     The socket to wrap.
+ *
+ * @param client
+ *     The client to abort on write failure.
+ *
+ * @return
+ *     A new guac_socket that delegates to the given socket but aborts the
+ *     client on any write or flush error.
+ */
+static guac_socket* guac_socket_require_write(guac_socket* wrapped,
+        guac_client* client) {
+
+    guac_socket_require_write_data* data =
+            guac_mem_alloc(sizeof(guac_socket_require_write_data));
+    data->wrapped = wrapped;
+    data->client = client;
+
+    guac_socket* socket = guac_socket_alloc();
+    socket->data = data;
+    socket->write_handler = __guac_socket_require_write_handler;
+    socket->flush_handler = __guac_socket_require_flush_handler;
+    socket->lock_handler = __guac_socket_require_lock_handler;
+    socket->unlock_handler = __guac_socket_require_unlock_handler;
+    socket->free_handler = __guac_socket_require_free_handler;
+
+    return socket;
+
+}
+
 guac_recording* guac_recording_create(guac_client* client,
         const char* path, const char* name, int create_path,
         int include_output, int include_mouse, int include_touch,
-        int include_keys, int allow_write_existing, int include_clipboard) {
+        int include_keys, int allow_write_existing, int include_clipboard,
+        int require_recording) {
 
     char filename[GUAC_COMMON_RECORDING_MAX_NAME_LENGTH];
 
@@ -77,6 +201,14 @@ guac_recording* guac_recording_create(guac_client* client,
     recording->include_touch = include_touch;
     recording->include_keys = include_keys;
     recording->include_clipboard = include_clipboard;
+    recording->client = client;
+    recording->require_recording = require_recording;
+
+    /* If recording is required, wrap the recording socket so that any write
+     * failure will automatically abort the client connection */
+    if (require_recording)
+        recording->socket = guac_socket_require_write(
+                recording->socket, client);
 
     if (include_clipboard)
         recording->clipboard_stream = guac_client_alloc_stream(client);
