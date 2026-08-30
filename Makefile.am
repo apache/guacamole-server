@@ -39,6 +39,7 @@ DIST_SUBDIRS =               \
     src/protocols/rdp        \
     src/protocols/ssh        \
     src/protocols/telnet     \
+    src/protocols/ipmi       \
     src/protocols/vnc
 
 SUBDIRS =        \
@@ -71,6 +72,10 @@ endif
 
 if ENABLE_TELNET
 SUBDIRS += src/protocols/telnet
+endif
+
+if ENABLE_IPMI
+SUBDIRS += src/protocols/ipmi
 endif
 
 if ENABLE_VNC

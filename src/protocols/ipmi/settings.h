@@ -1,0 +1,506 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#ifndef GUAC_IPMI_SETTINGS_H
+#define GUAC_IPMI_SETTINGS_H
+
+#include <guacamole/user.h>
+
+#include <sys/types.h>
+#include <stdbool.h>
+
+/**
+ * The protocol label included in the process title (the first argument passed
+ * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
+ */
+#define GUAC_IPMI_PROCESS_TITLE_NAME "ipmi"
+
+/**
+ * The default IPMI session timeout, in seconds, used when establishing the
+ * Serial-over-LAN session.
+ */
+#define GUAC_IPMI_DEFAULT_TIMEOUT 60
+
+/**
+ * The default RMCP+ cipher suite ID. Suite 3 (HMAC-SHA1 / HMAC-SHA1-96 /
+ * AES-CBC-128) is the most widely supported authenticated and encrypted
+ * suite. Cipher suite 0 (no auth/integrity/confidentiality) is intentionally
+ * NOT the default for security reasons.
+ */
+#define GUAC_IPMI_DEFAULT_CIPHER_SUITE 3
+
+/**
+ * The default SOL payload instance. Most BMCs support only a single instance.
+ */
+#define GUAC_IPMI_DEFAULT_SOL_PAYLOAD_INSTANCE 1
+
+/**
+ * The filename to use for the typescript, if not specified.
+ */
+#define GUAC_IPMI_DEFAULT_TYPESCRIPT_NAME "typescript"
+
+/**
+ * The filename to use for the screen recording, if not specified.
+ */
+#define GUAC_IPMI_DEFAULT_RECORDING_NAME "recording"
+
+/**
+ * The privilege level to authenticate with. This is an internal representation
+ * whose numeric values are deliberately independent of any library: the two
+ * IPMI back-ends number their privilege constants differently (libipmiconsole's
+ * IPMICONSOLE_PRIVILEGE_* are 0/1/2, while libfreeipmi's IPMI_PRIVILEGE_LEVEL_*
+ * are 0x02/0x03/0x04), so a value must be translated to the appropriate
+ * constant at each boundary rather than passed through raw. The SOL path maps
+ * via guac_ipmi_map_privilege_level_ipmiconsole() (ipmi.c) and the chassis path
+ * via guac_ipmi_map_privilege_level() (chassis.c).
+ */
+typedef enum guac_ipmi_privilege_level {
+
+    /**
+     * Sentinel indicating an unspecified or unrecognized privilege level. Never
+     * mapped to either library; used only to signal a parse failure to the
+     * caller, and the value a zero-initialized field holds.
+     */
+    GUAC_IPMI_PRIVILEGE_INVALID = 0,
+
+    /**
+     * Authenticate with USER privilege.
+     */
+    GUAC_IPMI_PRIVILEGE_USER,
+
+    /**
+     * Authenticate with OPERATOR privilege.
+     */
+    GUAC_IPMI_PRIVILEGE_OPERATOR,
+
+    /**
+     * Authenticate with ADMIN privilege.
+     */
+    GUAC_IPMI_PRIVILEGE_ADMIN
+
+} guac_ipmi_privilege_level;
+
+/**
+ * A chassis power action which may be performed against the BMC, either
+ * automatically when the connection is established or on demand via the
+ * in-terminal control menu.
+ */
+typedef enum guac_ipmi_power_action {
+
+    /**
+     * No power action.
+     */
+    GUAC_IPMI_POWER_NONE,
+
+    /**
+     * Power the system on (IPMI_CHASSIS_CONTROL_POWER_UP).
+     */
+    GUAC_IPMI_POWER_ON,
+
+    /**
+     * Hard power the system off (IPMI_CHASSIS_CONTROL_POWER_DOWN).
+     */
+    GUAC_IPMI_POWER_OFF,
+
+    /**
+     * Power cycle the system (IPMI_CHASSIS_CONTROL_POWER_CYCLE).
+     */
+    GUAC_IPMI_POWER_CYCLE,
+
+    /**
+     * Hard reset the system (IPMI_CHASSIS_CONTROL_HARD_RESET).
+     */
+    GUAC_IPMI_POWER_RESET,
+
+    /**
+     * Request a graceful (ACPI) shutdown
+     * (IPMI_CHASSIS_CONTROL_INITIATE_SOFT_SHUTDOWN).
+     */
+    GUAC_IPMI_POWER_SOFT_SHUTDOWN,
+
+    /**
+     * Pulse a diagnostic interrupt / NMI
+     * (IPMI_CHASSIS_CONTROL_PULSE_DIAGNOSTIC_INTERRUPT).
+     */
+    GUAC_IPMI_POWER_DIAGNOSTIC_INTERRUPT,
+
+    /**
+     * Sentinel indicating the supplied power action string was not recognized.
+     * Used only to signal a parse failure to the caller.
+     */
+    GUAC_IPMI_POWER_INVALID
+
+} guac_ipmi_power_action;
+
+/**
+ * A boot device override which may be applied for the next system boot.
+ */
+typedef enum guac_ipmi_boot_device {
+
+    /**
+     * No boot device override (leave the BMC's configured boot order).
+     */
+    GUAC_IPMI_BOOT_NONE,
+
+    /**
+     * Force the next boot from the network (PXE).
+     */
+    GUAC_IPMI_BOOT_PXE,
+
+    /**
+     * Force the next boot from the primary hard drive.
+     */
+    GUAC_IPMI_BOOT_DISK,
+
+    /**
+     * Force the next boot from removable media (CD/DVD).
+     */
+    GUAC_IPMI_BOOT_CDROM,
+
+    /**
+     * Force the next boot into the BIOS/UEFI setup utility.
+     */
+    GUAC_IPMI_BOOT_BIOS,
+
+    /**
+     * Sentinel indicating the supplied boot device string was not recognized.
+     * Used only to signal a parse failure to the caller.
+     */
+    GUAC_IPMI_BOOT_INVALID
+
+} guac_ipmi_boot_device;
+
+/**
+ * A policy governing whether the negotiated RMCP+ cipher suite must provide
+ * confidentiality (payload encryption). The connection console and credentials
+ * are only protected on the wire when an encrypting cipher suite is used.
+ */
+typedef enum guac_ipmi_encryption_policy {
+
+    /**
+     * Require an encrypting cipher suite. The connection is refused if the
+     * configured cipher suite does not provide confidentiality. This is the
+     * default.
+     */
+    GUAC_IPMI_ENCRYPTION_REQUIRED = 0,
+
+    /**
+     * Prefer an encrypting cipher suite, but allow a non-encrypting one with a
+     * logged warning.
+     */
+    GUAC_IPMI_ENCRYPTION_PREFERRED,
+
+    /**
+     * Allow any cipher suite, including those providing no confidentiality.
+     */
+    GUAC_IPMI_ENCRYPTION_NONE,
+
+    /**
+     * Sentinel indicating the supplied encryption policy string was not
+     * recognized. Used only to signal a parse failure to the caller.
+     */
+    GUAC_IPMI_ENCRYPTION_INVALID
+
+} guac_ipmi_encryption_policy;
+
+/**
+ * Settings for the IPMI Serial-over-LAN connection. The values for this
+ * structure are parsed from the arguments given during the Guacamole protocol
+ * handshake using the guac_ipmi_parse_args() function.
+ */
+typedef struct guac_ipmi_settings {
+
+    /**
+     * The hostname or IP address of the BMC to connect to.
+     */
+    char* hostname;
+
+    /**
+     * The IPMI session timeout, in seconds.
+     */
+    int timeout;
+
+    /**
+     * The interval, in seconds, at which SOL keepalive packets are sent to
+     * prevent idle BMCs from silently dropping the session. Zero requests the
+     * libipmiconsole default.
+     */
+    int keepalive_interval;
+
+    /**
+     * The username to authenticate with, if any. NULL if unspecified (the BMC
+     * default / null username is used).
+     */
+    char* username;
+
+    /**
+     * The password to authenticate with, if any. NULL if unspecified.
+     */
+    char* password;
+
+    /**
+     * The BMC key (K_g) for two-key authentication, if any. NULL if
+     * unspecified, in which case the password is used as the BMC key. This is
+     * a raw byte buffer that may contain NUL bytes; its length is given by
+     * k_g_length rather than being NUL-terminated for length purposes.
+     */
+    char* k_g;
+
+    /**
+     * The length of the K_g key, in bytes. Zero if k_g is NULL. Stored
+     * separately because a binary K_g key may legitimately contain NUL bytes.
+     */
+    int k_g_length;
+
+    /**
+     * The privilege level to authenticate with.
+     */
+    guac_ipmi_privilege_level privilege_level;
+
+    /**
+     * The RMCP+ cipher suite ID determining the authentication, integrity, and
+     * confidentiality algorithms used.
+     */
+    int cipher_suite;
+
+    /**
+     * The policy governing whether a non-confidential cipher suite is
+     * permitted.
+     */
+    guac_ipmi_encryption_policy encryption_policy;
+
+    /**
+     * Workaround flags applied to the libipmiconsole SOL session, as a bitwise
+     * OR of IPMICONSOLE_WORKAROUND_* values. Zero if no workarounds apply.
+     */
+    unsigned int sol_workaround_flags;
+
+    /**
+     * Workaround flags applied to the libfreeipmi chassis session, as a bitwise
+     * OR of IPMI_WORKAROUND_FLAGS_OUTOFBAND_2_0_* values. Zero if no workarounds
+     * apply.
+     */
+    unsigned int chassis_workaround_flags;
+
+    /**
+     * The SOL payload instance to use (1-15).
+     */
+    int sol_payload_instance;
+
+    /**
+     * The chassis power action to perform automatically once the connection is
+     * established, prior to attaching the console. GUAC_IPMI_POWER_NONE if no
+     * action should be taken.
+     */
+    guac_ipmi_power_action power_on_connect;
+
+    /**
+     * The boot device override to apply (for the next boot) prior to any
+     * power-on-connect action. GUAC_IPMI_BOOT_NONE if the BMC's configured
+     * boot order should be left unchanged.
+     */
+    guac_ipmi_boot_device boot_device;
+
+    /**
+     * Whether a configured boot device override should persist across all
+     * subsequent boots rather than applying only to the next boot.
+     */
+    bool boot_persistent;
+
+    /**
+     * Whether this connection is read-only, and user input should be dropped.
+     */
+    bool read_only;
+
+    /**
+     * The maximum size of the scrollback buffer in rows.
+     */
+    int max_scrollback;
+
+    /**
+     * The name of the font to use for display rendering.
+     */
+    char* font_name;
+
+    /**
+     * The size of the font to use, in points.
+     */
+    int font_size;
+
+    /**
+     * The name of the color scheme to use.
+     */
+    char* color_scheme;
+
+    /**
+     * The desired width of the terminal display, in pixels.
+     */
+    int width;
+
+    /**
+     * The desired height of the terminal display, in pixels.
+     */
+    int height;
+
+    /**
+     * The desired screen resolution, in DPI.
+     */
+    int resolution;
+
+    /**
+     * Whether outbound clipboard access should be blocked.
+     */
+    bool disable_copy;
+
+    /**
+     * Whether inbound clipboard access should be blocked.
+     */
+    bool disable_paste;
+
+    /**
+     * The path in which the typescript should be saved, if enabled. NULL if no
+     * typescript should be saved.
+     */
+    char* typescript_path;
+
+    /**
+     * The filename to use for the typescript, if enabled.
+     */
+    char* typescript_name;
+
+    /**
+     * Whether the typescript path should be automatically created if it does
+     * not already exist.
+     */
+    bool create_typescript_path;
+
+    /**
+     * Whether existing files should be appended to when creating a new
+     * typescript.
+     */
+    bool typescript_write_existing;
+
+    /**
+     * The path in which the screen recording should be saved, if enabled. NULL
+     * if no screen recording should be saved.
+     */
+    char* recording_path;
+
+    /**
+     * The filename to use for the screen recording, if enabled.
+     */
+    char* recording_name;
+
+    /**
+     * Whether the screen recording path should be automatically created if it
+     * does not already exist.
+     */
+    bool create_recording_path;
+
+    /**
+     * Whether output which is broadcast to each connected client should NOT be
+     * included in the session recording.
+     */
+    bool recording_exclude_output;
+
+    /**
+     * Whether changes to mouse state should NOT be included in the session
+     * recording.
+     */
+    bool recording_exclude_mouse;
+
+    /**
+     * Whether keys pressed and released should be included in the session
+     * recording.
+     */
+    bool recording_include_keys;
+
+    /**
+     * Whether clipboard data should be included in the session recording.
+     */
+    bool recording_include_clipboard;
+
+    /**
+     * Whether existing files should be appended to when creating a new
+     * recording.
+     */
+    bool recording_write_existing;
+
+    /**
+     * The ASCII code, as an integer, that the terminal will send when the
+     * backspace key is pressed.
+     */
+    int backspace;
+
+    /**
+     * The terminal emulator type that is exposed to the remote system.
+     */
+    char* terminal_type;
+
+} guac_ipmi_settings;
+
+/**
+ * Parses all given args, storing them in a newly-allocated settings object. If
+ * the args fail to parse, NULL is returned.
+ *
+ * @param user
+ *     The user who submitted the given arguments while joining the connection.
+ *
+ * @param argc
+ *     The number of arguments within the argv array.
+ *
+ * @param argv
+ *     The values of all arguments provided by the user.
+ *
+ * @return
+ *     A newly-allocated settings object which must be freed with
+ *     guac_ipmi_settings_free() when no longer needed. If the arguments fail
+ *     to parse, NULL is returned.
+ */
+guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
+        int argc, const char** argv);
+
+/**
+ * Frees the given guac_ipmi_settings object, having been previously allocated
+ * via guac_ipmi_parse_args().
+ *
+ * @param settings
+ *     The settings object to free.
+ */
+void guac_ipmi_settings_free(guac_ipmi_settings* settings);
+
+/**
+ * Returns whether the given RMCP+ cipher suite ID provides confidentiality
+ * (payload encryption). Suites 0, 1, 2, 6, 7, 11, 15, and 16 (and any
+ * unrecognized suite) provide no confidentiality.
+ *
+ * @param cipher_suite
+ *     The cipher suite ID to test.
+ *
+ * @return
+ *     Non-zero if the cipher suite encrypts the payload, zero otherwise.
+ */
+int guac_ipmi_cipher_provides_confidentiality(int cipher_suite);
+
+/**
+ * NULL-terminated array of accepted client args.
+ */
+extern const char* GUAC_IPMI_CLIENT_ARGS[];
+
+#endif
