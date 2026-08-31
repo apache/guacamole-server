@@ -381,6 +381,19 @@ typedef int guac_user_ack_handler(guac_user* user, guac_stream* stream,
 typedef int guac_user_end_handler(guac_user* user, guac_stream* stream);
 
 /**
+ * Optional cleanup callback installed on a guac_stream for whatever the
+ * stream's data pointer holds. Called from guac_user_free_stream and
+ * guac_client_free_stream when the stream is freed, and from
+ * guac_user_free and guac_client_free for any streams still open when
+ * the user or client is disposed.
+ *
+ * @param stream
+ *     The stream being freed. The handler is responsible for releasing
+ *     whatever the stream's data pointer holds.
+ */
+typedef void guac_stream_free_handler(guac_stream* stream);
+
+/**
  * Handler for Guacamole join events. A join event is fired by the
  * guac_client whenever a guac_user joins the connection. There is no
  * instruction associated with a join event.
@@ -500,7 +513,7 @@ typedef int guac_user_put_handler(guac_user* user, guac_object* object,
         guac_stream* stream, char* mimetype, char* name);
 
 /**
- * Handler for Guacamole USB connect events, invoked when a "usbconnect" 
+ * Handler for Guacamole USB connect events, invoked when a "usbconnect"
  * instruction has been received from a user. This indicates that the user
  * has connected a USB device via WebUSB and it is available for redirection.
  *
@@ -540,9 +553,35 @@ typedef int guac_user_put_handler(guac_user* user, guac_object* object,
  *     an error occurred.
  */
 typedef int guac_user_usbconnect_handler(guac_user* user, const char* device_id,
-    int vendor_id, int product_id, const char* device_name, 
+    int vendor_id, int product_id, const char* device_name,
     const char* serial_number, int device_class, int device_subclass,
     int device_protocol, const char* interface_data);
+
+/**
+ * Handler for Guacamole "auth-response" events, invoked when an
+ * "auth-response" instruction has been received from a user. An
+ * auth-response announces a stream carrying the response body for a
+ * previously-issued auth-challenge identified by the same challenge_id.
+ *
+ * @param user
+ *     The user that sent the auth-response.
+ *
+ * @param stream
+ *     The stream along which the response body will be received.
+ *
+ * @param mimetype
+ *     The mimetype of the data that will be received along the given
+ *     stream.
+ *
+ * @param challenge_id
+ *     The challenge identifier of the originating auth-challenge being
+ *     responded to.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+typedef int guac_user_auth_response_handler(guac_user* user,
+        guac_stream* stream, char* mimetype, char* challenge_id);
 
 /**
 * Handler for Guacamole USB data events, invoked when a "usbdata" instruction

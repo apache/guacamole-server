@@ -598,6 +598,24 @@ struct guac_user {
      */
     guac_user_usbdisconnect_handler* usbdisconnect_handler;
 
+    /**
+     * Handler for "auth-response" events sent by the Guacamole web-client,
+     * carrying the response body for a previously-issued auth-challenge
+     * identified by the same challenge_id. The handler installs the blob
+     * and end handlers on the stream so the body can be consumed.
+     *
+     * Example:
+     * @code
+     *     int auth_response_handler(guac_user* user, guac_stream* stream,
+     *             char* mimetype, char* challenge_id);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->auth_response_handler = auth_response_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_auth_response_handler* auth_response_handler;
+
 };
 
 /**

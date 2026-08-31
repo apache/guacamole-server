@@ -1299,13 +1299,34 @@ int guac_protocol_send_video(guac_socket* socket, const guac_stream* stream,
     int ret_val;
 
     guac_socket_instruction_begin(socket);
-    ret_val = 
+    ret_val =
            guac_socket_write_string(socket, "5.video,")
         || __guac_socket_write_length_int(socket, stream->index)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_int(socket, layer->index)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ";");
+    guac_socket_instruction_end(socket);
+
+    return ret_val;
+
+}
+
+int guac_protocol_send_auth_challenge(guac_socket* socket,
+        const guac_stream* stream, const char* mimetype,
+        const char* challenge_id) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "14.auth-challenge,")
+        || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, challenge_id)
         || guac_socket_write_string(socket, ";");
     guac_socket_instruction_end(socket);
 
