@@ -163,11 +163,10 @@ static BOOL rdp_freerdp_load_channels(freerdp* instance) {
 }
 
 /**
- * Prepares the FreeRDP instance for connection by setting up session-specific
- * configurations like graphics, plugins, and RDP settings. This involves
- * integrating Guacamole's custom rendering handlers (for bitmaps, glyphs,
- * and pointers). If using a freerdp instance that does not expect a
- * LoadChannels callback then this function manually loads RDP channels.
+ * Prepares the FreeRDP instance for connection by pushing Guacamole's
+ * session-specific settings and registering the FreeRDP add-in provider. If
+ * using a freerdp instance that does not expect a LoadChannels callback then
+ * this function manually loads RDP channels.
  * 
  * @param instance
  *     The FreeRDP instance to be prepared, containing all context and
@@ -175,13 +174,10 @@ static BOOL rdp_freerdp_load_channels(freerdp* instance) {
  *
  * @return
  *     Returns TRUE if the pre-connection process completes successfully.
- *     Returns FALSE if an error occurs during the initialization of the
- *     FreeRDP GDI system.
  */
 static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = GUAC_RDP_CONTEXT(instance);
-    rdpGraphics* graphics = context->graphics;
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -192,6 +188,46 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Init FreeRDP add-in provider */
     freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
+
+    /*
+     * If the freerdp instance does not have a LoadChannels callback for
+     * loading plugins we use the PreConnect callback to load plugins instead.
+     */
+    #ifndef RDP_INST_HAS_LOAD_CHANNELS
+        rdp_freerdp_load_channels(instance);
+    #endif
+
+    return TRUE;
+}
+
+/**
+ * Initializes the FreeRDP GDI and registers Guacamole's rendering handlers,
+ * once the connection sequence has completed.
+ *
+ * This must occur within PostConnect rather than PreConnect. FreeRDP's
+ * gdi_init() requires that the rdpContext cache already exist, and that cache
+ * is not created until the connection sequence reaches Confirm Active, after
+ * PreConnect has returned. Calling gdi_init() any earlier dereferences a NULL
+ * cache within gdi_init_ex() (FreeRDP 3.31.0 and later). PostConnect is also
+ * where FreeRDP's own clients call gdi_init(), and is where the GDI is sized
+ * using the display geometry the server actually negotiated.
+ *
+ * The update handlers registered here must be registered after gdi_init(), as
+ * gdi_init() installs FreeRDP's own BeginPaint, EndPaint, and DesktopResize
+ * handlers, silently replacing any registered beforehand.
+ *
+ * @param instance
+ *     The FreeRDP instance which has completed its connection sequence.
+ *
+ * @return
+ *     Returns TRUE if post-connection initialization completes successfully.
+ *     Returns FALSE if an error occurs during the initialization of the
+ *     FreeRDP GDI system.
+ */
+static BOOL rdp_freerdp_post_connect(freerdp* instance) {
+
+    rdpContext* context = GUAC_RDP_CONTEXT(instance);
+    rdpGraphics* graphics = context->graphics;
 
     /* Init FreeRDP internal GDI implementation */
     if (!gdi_init(instance, guac_rdp_get_native_pixel_format(FALSE)))
@@ -221,15 +257,8 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     GUAC_RDP_CONTEXT(instance)->update->SurfaceFrameMarker = guac_rdp_gdi_surface_frame_marker;
     GUAC_RDP_CONTEXT(instance)->update->altsec->FrameMarker = guac_rdp_gdi_frame_marker;
 
-    /*
-     * If the freerdp instance does not have a LoadChannels callback for
-     * loading plugins we use the PreConnect callback to load plugins instead.
-     */
-    #ifndef RDP_INST_HAS_LOAD_CHANNELS
-        rdp_freerdp_load_channels(instance);
-    #endif
-
     return TRUE;
+
 }
 
 #if defined(HAVE_FREERDP_AUTHENTICATE) || defined(HAVE_FREERDP_AUTHENTICATEEX)
@@ -809,6 +838,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 #endif
 
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
+    rdp_inst->PostConnect = rdp_freerdp_post_connect;
 
 #ifdef HAVE_FREERDP_AUTHENTICATE
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
