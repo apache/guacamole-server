@@ -51,6 +51,15 @@
 #define GUAC_MSSQL_MSG_TIMEOUT 20003
 
 /**
+ * The number of the CT-Library client message with which FreeTDS reports
+ * that the server was not found within its configuration files
+ * (TDSEINTF). FreeTDS raises this message unconditionally when the server
+ * is addressed directly via CS_SERVERADDR rather than through a
+ * freetds.conf entry, in which case it is meaningless.
+ */
+#define GUAC_MSSQL_MSG_SERVER_NOT_CONFIGURED 20012
+
+/**
  * Returns whether the given CT-Library datatype holds numeric values and
  * should be right-aligned when rendered.
  *
@@ -119,6 +128,10 @@ static guac_dbshell_session* guac_mssql_get_session(
  */
 static CS_RETCODE guac_mssql_client_message(CS_CONTEXT* context,
         CS_CONNECTION* connection, CS_CLIENTMSG* message) {
+
+    /* The server is always addressed directly, never via freetds.conf */
+    if (message->msgnumber == GUAC_MSSQL_MSG_SERVER_NOT_CONFIGURED)
+        return CS_SUCCEED;
 
     guac_dbshell_session* session = guac_mssql_get_session(connection);
     if (session != NULL)
