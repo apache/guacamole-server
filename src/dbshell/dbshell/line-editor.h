@@ -201,6 +201,12 @@ typedef enum guac_dbshell_parser_state {
     GUAC_DBSHELL_PARSER_CSI,
 
     /**
+     * Within a Linux console function key sequence ("ESC [ ["), reading
+     * the single final byte.
+     */
+    GUAC_DBSHELL_PARSER_CSI_LINUX,
+
+    /**
      * Within an SS3 sequence ("ESC O"), reading the single final byte.
      */
     GUAC_DBSHELL_PARSER_SS3,

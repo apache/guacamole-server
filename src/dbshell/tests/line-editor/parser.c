@@ -141,6 +141,38 @@ void test_parser__csi(void) {
 }
 
 /**
+ * Verifies that the function key sequences of the Linux console
+ * ("ESC [ [ A" through "ESC [ [ E") are consumed in their entirety rather
+ * than leaking their final byte into the input.
+ */
+void test_parser__linux_function_keys(void) {
+
+    guac_dbshell_parser parser;
+    guac_dbshell_parser_init(&parser);
+
+    const char* sequences[] = {
+        "\x1B[[A", "\x1B[[B", "\x1B[[C", "\x1B[[D", "\x1B[[E"
+    };
+
+    for (int i = 0; i < 5; i++) {
+
+        CU_ASSERT_EQUAL(feed_all(&parser, sequences[i]),
+                GUAC_DBSHELL_KEY_IGNORED);
+
+        /* Parser returns to ground state afterwards */
+        CU_ASSERT_EQUAL(guac_dbshell_parser_feed(&parser, 'z'),
+                GUAC_DBSHELL_KEY_CHAR);
+
+    }
+
+    /* Function keys of the form "ESC [ n ~" remain ignored */
+    CU_ASSERT_EQUAL(feed_all(&parser, "\x1B[17~"), GUAC_DBSHELL_KEY_IGNORED);
+    CU_ASSERT_EQUAL(guac_dbshell_parser_feed(&parser, 'z'),
+            GUAC_DBSHELL_KEY_CHAR);
+
+}
+
+/**
  * Verifies that SS3 sequences produce the corresponding editing keys.
  */
 void test_parser__ss3(void) {

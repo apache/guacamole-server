@@ -207,6 +207,14 @@ guac_dbshell_key guac_dbshell_parser_feed(guac_dbshell_parser* parser,
 
         case GUAC_DBSHELL_PARSER_CSI:
 
+            /* The Linux console sends F1 through F5 as "ESC [ [ A" through
+             * "ESC [ [ E", where the second '[' would otherwise be taken as
+             * the final byte and the letter leak into the input */
+            if (byte == '[' && parser->csi_length == 0) {
+                parser->state = GUAC_DBSHELL_PARSER_CSI_LINUX;
+                return GUAC_DBSHELL_KEY_NONE;
+            }
+
             /* Parameter and intermediate bytes */
             if (c >= 0x20 && c <= 0x3F) {
 
@@ -225,6 +233,12 @@ guac_dbshell_key guac_dbshell_parser_feed(guac_dbshell_parser* parser,
                 return guac_dbshell_parser_csi(parser, byte);
 
             /* Malformed sequence */
+            return GUAC_DBSHELL_KEY_IGNORED;
+
+        case GUAC_DBSHELL_PARSER_CSI_LINUX:
+
+            /* Function keys have no editing meaning */
+            parser->state = GUAC_DBSHELL_PARSER_GROUND;
             return GUAC_DBSHELL_KEY_IGNORED;
 
         case GUAC_DBSHELL_PARSER_SS3:
