@@ -45,6 +45,12 @@
 #define GUAC_MSSQL_MAX_VALUE_LENGTH 8192
 
 /**
+ * The number of the CT-Library client message with which FreeTDS reports
+ * that an operation has timed out (TDSETIME).
+ */
+#define GUAC_MSSQL_MSG_TIMEOUT 20003
+
+/**
  * Returns whether the given CT-Library datatype holds numeric values and
  * should be right-aligned when rendered.
  *
@@ -107,7 +113,9 @@ static guac_dbshell_session* guac_mssql_get_session(
  *     The client message.
  *
  * @return
- *     Always CS_SUCCEED.
+ *     CS_FAIL if the message reports a timeout, such that CT-Library
+ *     abandons the operation rather than continuing to wait, or CS_SUCCEED
+ *     otherwise.
  */
 static CS_RETCODE guac_mssql_client_message(CS_CONTEXT* context,
         CS_CONNECTION* connection, CS_CLIENTMSG* message) {
@@ -115,6 +123,12 @@ static CS_RETCODE guac_mssql_client_message(CS_CONTEXT* context,
     guac_dbshell_session* session = guac_mssql_get_session(connection);
     if (session != NULL)
         guac_dbshell_println(session, "ERROR: %s", message->msgstring);
+
+    /* For timeouts only, CT-Library interprets CS_SUCCEED as a request to
+     * keep waiting. The configured timeout is to be honored, so give up
+     * instead. */
+    if (message->msgnumber == GUAC_MSSQL_MSG_TIMEOUT)
+        return CS_FAIL;
 
     return CS_SUCCEED;
 
@@ -325,10 +339,14 @@ static int guac_mssql_connect(guac_dbshell_session* session) {
     ct_con_props(connection, CS_SET, CS_APPNAME,
             (CS_VOID*) "guacd", CS_NULLTERM, NULL);
 
-    /* Request a specific TDS protocol version if configured */
-    if (extra->tds_version != NULL) {
+    /* Request the configured TDS protocol version, defaulting to the most
+     * recent version. The server negotiates the version down as needed
+     * during login, whereas leaving the version unspecified would cause
+     * FreeTDS to additionally probe for a Sybase server using TDS 5.0
+     * (and, in some versions, to hang if that probe receives no reply). */
+    CS_INT version = CS_TDS_74;
 
-        CS_INT version = 0;
+    if (extra->tds_version != NULL) {
 
         if (strcmp(extra->tds_version, "7.1") == 0)
             version = CS_TDS_71;
@@ -336,14 +354,11 @@ static int guac_mssql_connect(guac_dbshell_session* session) {
             version = CS_TDS_72;
         else if (strcmp(extra->tds_version, "7.3") == 0)
             version = CS_TDS_73;
-        else if (strcmp(extra->tds_version, "7.4") == 0)
-            version = CS_TDS_74;
-
-        if (version != 0)
-            ct_con_props(connection, CS_SET, CS_TDS_VERSION, &version,
-                    CS_UNUSED, NULL);
 
     }
+
+    ct_con_props(connection, CS_SET, CS_TDS_VERSION, &version, CS_UNUSED,
+            NULL);
 
     /* Use UTF-8 for all character data */
     CS_LOCALE* locale = NULL;

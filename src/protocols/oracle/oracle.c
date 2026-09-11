@@ -49,7 +49,8 @@
 #define GUAC_ORACLE_MAX_VALUE_LENGTH 4000
 
 /**
- * The maximum length of an EZConnect connection string, in bytes.
+ * The maximum length of a connect string (whether in EZConnect or connect
+ * descriptor syntax), in bytes.
  */
 #define GUAC_ORACLE_MAX_CONNECT_LENGTH 1024
 
@@ -325,12 +326,23 @@ static int guac_oracle_connect(guac_dbshell_session* session) {
 
     }
 
-    /* Address the database using EZConnect syntax */
+    /* Address the database using EZConnect syntax when describing the
+     * connection to the user */
     char connect_string[GUAC_ORACLE_MAX_CONNECT_LENGTH];
     snprintf(connect_string, sizeof(connect_string), "//%s:%i/%s",
             settings->hostname, settings->port, extra->service_name);
 
-    /* Connect */
+    /* Connect using the equivalent connect descriptor, which additionally
+     * bounds the time allowed for the connection to be established (the
+     * EZConnect syntax of older clients cannot express this) */
+    char descriptor[GUAC_ORACLE_MAX_CONNECT_LENGTH];
+    snprintf(descriptor, sizeof(descriptor),
+            "(DESCRIPTION=(CONNECT_TIMEOUT=%i)"
+            "(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=%i))"
+            "(CONNECT_DATA=(SERVICE_NAME=%s)))",
+            settings->timeout, settings->hostname, settings->port,
+            extra->service_name);
+
     OCISvcCtx* service = NULL;
     if (OCILogon2(environment, error, &service,
                 (const OraText*) settings->username,
@@ -339,7 +351,7 @@ static int guac_oracle_connect(guac_dbshell_session* session) {
                     ? settings->password : ""),
                 settings->password != NULL
                     ? strlen(settings->password) : 0,
-                (const OraText*) connect_string, strlen(connect_string),
+                (const OraText*) descriptor, strlen(descriptor),
                 OCI_LOGON2_STMTCACHE) != OCI_SUCCESS) {
 
         guac_oracle_print_error(session, error);

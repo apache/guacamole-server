@@ -43,7 +43,7 @@ typedef struct guac_mssql_extra_settings {
 
     /**
      * The TDS protocol version to use, one of "7.1", "7.2", "7.3", or
-     * "7.4", or NULL if the version should be negotiated automatically.
+     * "7.4", or NULL if the default of "7.4" should be used.
      */
     char* tds_version;
 

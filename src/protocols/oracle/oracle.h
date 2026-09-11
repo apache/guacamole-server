@@ -42,8 +42,8 @@
 typedef struct guac_oracle_extra_settings {
 
     /**
-     * The service name of the database to connect to, as used within an
-     * EZConnect connection string ("//host:port/service_name").
+     * The service name of the database to connect to, as would be given
+     * within an EZConnect connection string ("//host:port/service_name").
      */
     char* service_name;
 
