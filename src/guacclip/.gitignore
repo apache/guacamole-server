@@ -1,0 +1,7 @@
+
+# Compiled guacclip
+guacclip
+guacclip.exe
+
+# Documentation (built from .in files)
+man/guacclip.1
