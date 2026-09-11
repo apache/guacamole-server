@@ -78,6 +78,14 @@ typedef struct guac_mongodb_data {
      */
     char* database;
 
+    /**
+     * The server-side identifier of the connection underlying the client
+     * handle, as reported by the server during the handshake, or zero if
+     * the identifier could not be determined. This value identifies the
+     * operations of this session when cancelling them.
+     */
+    int64_t connection_id;
+
 } guac_mongodb_data;
 
 /**

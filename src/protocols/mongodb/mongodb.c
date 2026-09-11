@@ -53,6 +53,12 @@
 #define GUAC_MONGODB_JSON_INDENT 2
 
 /**
+ * The number of seconds to wait for the secondary connection used to
+ * deliver killOp requests.
+ */
+#define GUAC_MONGODB_CANCEL_TIMEOUT 5
+
+/**
  * Guard ensuring that mongoc_init() is invoked exactly once within the
  * guacd process.
  */
@@ -321,17 +327,23 @@ static int guac_mongodb_continue_cursor(guac_dbshell_session* session,
 }
 
 /**
- * Establishes the connection to the MongoDB server described by the
- * settings of the given session. This handler implements
- * guac_dbshell_driver.connect_handler.
+ * Creates a connection URI for the MongoDB server described by the
+ * settings of the given session, including any credentials and TLS
+ * settings.
  *
  * @param session
- *     The session on whose behalf the connection is being established.
+ *     The session whose settings describe the server.
+ *
+ * @param timeout
+ *     The number of seconds to allow for connection establishment and
+ *     server selection.
  *
  * @return
- *     Zero on success, non-zero on failure.
+ *     A newly-allocated URI which must eventually be freed with
+ *     mongoc_uri_destroy(), or NULL if the server address is invalid.
  */
-static int guac_mongodb_connect(guac_dbshell_session* session) {
+static mongoc_uri_t* guac_mongodb_create_uri(guac_dbshell_session* session,
+        int timeout) {
 
     guac_dbshell_settings* settings =
         (guac_dbshell_settings*) session->settings;
@@ -341,21 +353,10 @@ static int guac_mongodb_connect(guac_dbshell_session* session) {
     guac_mongodb_extra_settings* extra =
         (guac_mongodb_extra_settings*) dbshell_client->extra_settings;
 
-    pthread_once(&guac_mongodb_init_once, guac_mongodb_init);
-
-    /* Unlike the SQL protocols, a missing username legitimately denotes
-     * an unauthenticated connection; prompt only for a missing password
-     * when a username was given */
-    if (settings->username != NULL)
-        guac_dbshell_prompt_credentials(session, false, true);
-
     mongoc_uri_t* uri = mongoc_uri_new_for_host_port(settings->hostname,
             settings->port);
-    if (uri == NULL) {
-        guac_dbshell_println(session, "ERROR: Invalid MongoDB server "
-                "address.");
-        return 1;
-    }
+    if (uri == NULL)
+        return NULL;
 
     /* Apply credentials, if given */
     if (settings->username != NULL) {
@@ -372,9 +373,9 @@ static int guac_mongodb_connect(guac_dbshell_session* session) {
 
     /* Bound connection establishment and server selection */
     mongoc_uri_set_option_as_int32(uri, MONGOC_URI_CONNECTTIMEOUTMS,
-            settings->timeout * 1000);
+            timeout * 1000);
     mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS,
-            settings->timeout * 1000);
+            timeout * 1000);
 
     /* Apply TLS settings */
     if (extra->use_ssl) {
@@ -385,6 +386,87 @@ static int guac_mongodb_connect(guac_dbshell_session* session) {
             mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_TLSCAFILE,
                     extra->ssl_ca_file);
 
+    }
+
+    return uri;
+
+}
+
+/**
+ * Returns the server-side identifier of the connection underlying the
+ * given client handle, as reported within the reply to the "hello"
+ * command (or its "isMaster" predecessor on older servers).
+ *
+ * @param client
+ *     The client handle whose connection should be identified.
+ *
+ * @return
+ *     The identifier of the connection, or zero if the identifier could
+ *     not be determined.
+ */
+static int64_t guac_mongodb_get_connection_id(mongoc_client_t* client) {
+
+    static const char* const commands[] = { "hello", "isMaster", NULL };
+
+    int64_t connection_id = 0;
+
+    for (const char* const* command = commands; *command != NULL; command++) {
+
+        bson_t hello;
+        bson_init(&hello);
+        BSON_APPEND_INT32(&hello, *command, 1);
+
+        bson_t reply;
+        bson_error_t error;
+        bool success = mongoc_client_command_simple(client, "admin", &hello,
+                NULL, &reply, &error);
+        bson_destroy(&hello);
+
+        bson_iter_t iter;
+        if (success && bson_iter_init_find(&iter, &reply, "connectionId")
+                && BSON_ITER_HOLDS_NUMBER(&iter))
+            connection_id = bson_iter_as_int64(&iter);
+
+        bson_destroy(&reply);
+
+        if (success)
+            break;
+
+    }
+
+    return connection_id;
+
+}
+
+/**
+ * Establishes the connection to the MongoDB server described by the
+ * settings of the given session. This handler implements
+ * guac_dbshell_driver.connect_handler.
+ *
+ * @param session
+ *     The session on whose behalf the connection is being established.
+ *
+ * @return
+ *     Zero on success, non-zero on failure.
+ */
+static int guac_mongodb_connect(guac_dbshell_session* session) {
+
+    guac_dbshell_settings* settings =
+        (guac_dbshell_settings*) session->settings;
+
+    pthread_once(&guac_mongodb_init_once, guac_mongodb_init);
+
+    /* Unlike the SQL protocols, a missing username legitimately denotes
+     * an unauthenticated connection; prompt only for a missing password
+     * when a username was given */
+    if (settings->username != NULL)
+        guac_dbshell_prompt_credentials(session, false, true);
+
+    mongoc_uri_t* uri = guac_mongodb_create_uri(session, settings->timeout);
+    if (uri == NULL) {
+        guac_dbshell_println(session, "ERROR: Invalid MongoDB server "
+                "address.");
+        return 1;
     }
 
     mongoc_client_t* client = mongoc_client_new_from_uri(uri);
@@ -418,6 +500,7 @@ static int guac_mongodb_connect(guac_dbshell_session* session) {
     data->client = client;
     data->database = guac_strdup(settings->database != NULL
             ? settings->database : GUAC_MONGODB_DEFAULT_DATABASE);
+    data->connection_id = guac_mongodb_get_connection_id(client);
     session->driver_data = data;
 
     guac_dbshell_println(session, "Connected to %s. Each statement is a "
@@ -611,6 +694,98 @@ static void guac_mongodb_help(guac_dbshell_session* session) {
 
 }
 
+/**
+ * Interrupts the command currently executing on the given session by
+ * issuing killOp for each operation running on the session's connection,
+ * over a separate, short-lived connection. Users may kill their own
+ * operations without any specific privilege. This handler implements
+ * guac_dbshell_driver.cancel_handler and is invoked from a thread other
+ * than the session thread.
+ *
+ * @param session
+ *     The session whose current command should be interrupted.
+ */
+static void guac_mongodb_cancel(guac_dbshell_session* session) {
+
+    guac_mongodb_data* data = (guac_mongodb_data*) session->driver_data;
+
+    /* Nothing can be cancelled without knowing the connection */
+    if (data == NULL || data->connection_id == 0)
+        return;
+
+    mongoc_uri_t* uri = guac_mongodb_create_uri(session,
+            GUAC_MONGODB_CANCEL_TIMEOUT);
+    if (uri == NULL)
+        return;
+
+    mongoc_client_t* client = mongoc_client_new_from_uri(uri);
+    mongoc_uri_destroy(uri);
+
+    if (client == NULL)
+        return;
+
+    mongoc_client_set_appname(client, "guacd");
+
+    /* List the operations of the current user running on the session's
+     * connection */
+    bson_t current_op;
+    bson_init(&current_op);
+    BSON_APPEND_INT32(&current_op, "currentOp", 1);
+    BSON_APPEND_BOOL(&current_op, "$ownOps", true);
+    BSON_APPEND_INT64(&current_op, "connectionId", data->connection_id);
+
+    bson_t reply;
+    bson_error_t error;
+    bool success = mongoc_client_command_simple(client, "admin",
+            &current_op, NULL, &reply, &error);
+    bson_destroy(&current_op);
+
+    if (!success) {
+        guac_client_log(session->client, GUAC_LOG_WARNING, "Unable to list "
+                "operations for cancellation: %s", error.message);
+        bson_destroy(&reply);
+        mongoc_client_destroy(client);
+        return;
+    }
+
+    /* Kill each listed operation */
+    bson_iter_t iter;
+    bson_iter_t ops;
+    if (bson_iter_init_find(&iter, &reply, "inprog")
+            && BSON_ITER_HOLDS_ARRAY(&iter)
+            && bson_iter_recurse(&iter, &ops)) {
+
+        while (bson_iter_next(&ops)) {
+
+            bson_iter_t op;
+            if (!BSON_ITER_HOLDS_DOCUMENT(&ops)
+                    || !bson_iter_recurse(&ops, &op)
+                    || !bson_iter_find(&op, "opid"))
+                continue;
+
+            /* The operation ID is numeric, or a string when connected to
+             * a mongos; either way, it is passed back verbatim */
+            bson_t kill_op;
+            bson_init(&kill_op);
+            BSON_APPEND_INT32(&kill_op, "killOp", 1);
+            bson_append_value(&kill_op, "op", -1, bson_iter_value(&op));
+
+            if (!mongoc_client_command_simple(client, "admin", &kill_op,
+                        NULL, NULL, &error))
+                guac_client_log(session->client, GUAC_LOG_WARNING, "Unable "
+                        "to cancel operation: %s", error.message);
+
+            bson_destroy(&kill_op);
+
+        }
+
+    }
+
+    bson_destroy(&reply);
+    mongoc_client_destroy(client);
+
+}
+
 const guac_dbshell_driver guac_mongodb_driver = {
 
     .name = "mongodb",
@@ -620,6 +795,7 @@ const guac_dbshell_driver guac_mongodb_driver = {
     .disconnect_handler = guac_mongodb_disconnect,
     .execute_handler = guac_mongodb_execute,
     .meta_handler = guac_mongodb_meta,
-    .help_handler = guac_mongodb_help
+    .help_handler = guac_mongodb_help,
+    .cancel_handler = guac_mongodb_cancel
 
 };
