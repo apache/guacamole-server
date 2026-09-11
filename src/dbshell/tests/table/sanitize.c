@@ -50,6 +50,35 @@ void test_sanitize__control_characters(void) {
 }
 
 /**
+ * Verifies that C1 control characters, including the 8-bit form of CSI
+ * (U+009B), are replaced with a single space, while other two-byte UTF-8
+ * characters whose bytes fall within the same ranges are preserved.
+ */
+void test_sanitize__c1_controls(void) {
+
+    /* U+009B (CSI) followed by "2J" would clear the screen */
+    char* sanitized = guac_dbshell_table_sanitize("a\xC2\x9B""2Jb");
+    CU_ASSERT_STRING_EQUAL(sanitized, "a 2Jb");
+    guac_mem_free(sanitized);
+
+    /* Bounds of the C1 range */
+    sanitized = guac_dbshell_table_sanitize("\xC2\x80\xC2\x9F");
+    CU_ASSERT_STRING_EQUAL(sanitized, "  ");
+    guac_mem_free(sanitized);
+
+    /* U+00A0 (no-break space) and U+00DB ("\xC3\x9B") are not controls */
+    sanitized = guac_dbshell_table_sanitize("\xC2\xA0\xC3\x9B");
+    CU_ASSERT_STRING_EQUAL(sanitized, "\xC2\xA0\xC3\x9B");
+    guac_mem_free(sanitized);
+
+    /* A trailing lead byte must not be read past the terminator */
+    sanitized = guac_dbshell_table_sanitize("x\xC2");
+    CU_ASSERT_STRING_EQUAL(sanitized, "x\xC2");
+    guac_mem_free(sanitized);
+
+}
+
+/**
  * Verifies that multi-byte UTF-8 content passes through unmodified.
  */
 void test_sanitize__utf8_preserved(void) {

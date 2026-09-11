@@ -75,8 +75,9 @@ static void guac_mongodb_init(void) {
  *     The session to render to.
  *
  * @param json
- *     The null-terminated JSON text to render, as produced by libbson
- *     (all control characters within string literals are escaped).
+ *     The null-terminated JSON text to render, as produced by libbson. C0
+ *     control characters within string literals are already escaped by
+ *     libbson; C1 control characters are escaped here.
  */
 static void guac_mongodb_print_json(guac_dbshell_session* session,
         const char* json) {
@@ -90,6 +91,20 @@ static void guac_mongodb_print_json(guac_dbshell_session* session,
     for (const char* c = json; *c != '\0'; c++) {
 
         if (in_string) {
+
+            /* Escape C1 control characters (U+0080 through U+009F, encoded
+             * in UTF-8 as 0xC2 followed by the codepoint), which libbson
+             * leaves intact, such that the database server cannot inject
+             * the 8-bit form of CSI */
+            unsigned char byte = (unsigned char) *c;
+            unsigned char next = (unsigned char) *(c + 1);
+            if (byte == 0xC2 && next >= 0x80 && next <= 0x9F) {
+                char escaped[8];
+                snprintf(escaped, sizeof(escaped), "\\u%04x", next);
+                guac_dbshell_buffer_append_string(&output, escaped);
+                c++;
+                continue;
+            }
 
             guac_dbshell_buffer_append(&output, c, 1);
 

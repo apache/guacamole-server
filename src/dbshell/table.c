@@ -103,9 +103,25 @@ char* guac_dbshell_table_sanitize(const char* value) {
     /* Replace all control characters, preserving multi-byte UTF-8
      * characters (whose bytes all have the high bit set) */
     for (char* c = sanitized; *c != '\0'; c++) {
+
         unsigned char byte = (unsigned char) *c;
-        if (byte < 0x20 || byte == 0x7F)
+
+        /* C0 control characters and DEL */
+        if (byte < 0x20 || byte == 0x7F) {
             *c = ' ';
+            continue;
+        }
+
+        /* C1 control characters (U+0080 through U+009F), which include the
+         * 8-bit form of CSI, are encoded in UTF-8 as 0xC2 followed by the
+         * codepoint. Both bytes are replaced with a single space such that
+         * the display width of the value is unaffected. */
+        unsigned char next = (unsigned char) *(c + 1);
+        if (byte == 0xC2 && next >= 0x80 && next <= 0x9F) {
+            *c = ' ';
+            memmove(c + 1, c + 2, strlen(c + 2) + 1);
+        }
+
     }
 
     return sanitized;

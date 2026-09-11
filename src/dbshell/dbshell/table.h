@@ -129,10 +129,11 @@ unsigned long guac_dbshell_table_end(guac_dbshell_table* table);
 
 /**
  * Copies the given UTF-8 cell value into a newly-allocated string,
- * replacing each control character (all bytes below 0x20 and the DEL
- * character) with a single space such that data from the database server
- * cannot inject terminal control sequences or break table layout. The
- * result must eventually be freed with guac_mem_free().
+ * replacing each control character (the C0 controls below 0x20, the DEL
+ * character, and the C1 controls U+0080 through U+009F) with a single space
+ * such that data from the database server cannot inject terminal control
+ * sequences or break table layout. The result must eventually be freed with
+ * guac_mem_free().
  *
  * @param value
  *     The null-terminated value to sanitize.
