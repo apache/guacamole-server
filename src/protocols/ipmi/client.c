@@ -1,0 +1,167 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include "argv.h"
+#include "client.h"
+#include "ipmi.h"
+#include "settings.h"
+#include "terminal/terminal.h"
+#include "user.h"
+
+#include <langinfo.h>
+#include <locale.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <guacamole/argv.h>
+#include <guacamole/client.h>
+#include <guacamole/mem.h>
+#include <guacamole/recording.h>
+#include <guacamole/socket.h>
+
+#include <ipmiconsole.h>
+
+/**
+ * A pending join handler implementation that will synchronize the connection
+ * state for all pending users prior to them being promoted to full user.
+ *
+ * @param client
+ *     The client whose pending users are about to be promoted.
+ *
+ * @return
+ *     Always zero.
+ */
+static int guac_ipmi_join_pending_handler(guac_client* client) {
+
+    guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
+
+    /* Synchronize the terminal state to all pending users */
+    if (ipmi_client->term != NULL) {
+        guac_socket* broadcast_socket = client->pending_socket;
+        guac_terminal_sync_users(ipmi_client->term, client, broadcast_socket);
+        guac_ipmi_send_current_argv_batch(client, broadcast_socket);
+        guac_socket_flush(broadcast_socket);
+    }
+
+    return 0;
+
+}
+
+int guac_client_init(guac_client* client) {
+
+    /* Set client args */
+    client->args = GUAC_IPMI_CLIENT_ARGS;
+
+    /* Allocate client instance data */
+    guac_ipmi_client* ipmi_client = guac_mem_zalloc(sizeof(guac_ipmi_client));
+    client->data = ipmi_client;
+
+    /* Init IPMI client */
+    ipmi_client->console_fd = -1;
+    ipmi_client->sol_connected = false;
+    pthread_mutex_init(&ipmi_client->state_lock, NULL);
+    ipmi_client->menu_open = false;
+    ipmi_client->menu_pending_action = GUAC_IPMI_POWER_NONE;
+    pthread_mutex_init(&ipmi_client->menu_lock, NULL);
+
+    /* Set handlers */
+    client->join_handler = guac_ipmi_user_join_handler;
+    client->join_pending_handler = guac_ipmi_join_pending_handler;
+    client->free_handler = guac_ipmi_client_free_handler;
+    client->leave_handler = guac_ipmi_user_leave_handler;
+
+    /* Register handlers for argument values that may be sent after the handshake */
+    guac_argv_register(GUAC_IPMI_ARGV_COLOR_SCHEME, guac_ipmi_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
+    guac_argv_register(GUAC_IPMI_ARGV_FONT_NAME, guac_ipmi_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
+    guac_argv_register(GUAC_IPMI_ARGV_FONT_SIZE, guac_ipmi_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
+
+    /* Set locale and warn if not UTF-8 */
+    setlocale(LC_CTYPE, "");
+    if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Current locale does not use UTF-8. Some characters may "
+                "not render correctly.");
+    }
+
+    /* Success */
+    return 0;
+
+}
+
+int guac_ipmi_client_free_handler(guac_client* client) {
+
+    guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
+
+    /* Wait for any in-progress asynchronous chassis operation to finish before
+     * tearing anything down, as its worker thread accesses the terminal and
+     * settings. */
+    if (ipmi_client->chassis_thread_valid) {
+        pthread_join(ipmi_client->chassis_thread, NULL);
+        ipmi_client->chassis_thread_valid = false;
+    }
+
+    /* Close the SOL file descriptor, unblocking the client thread's read loop.
+     * As the IPMICONSOLE_ENGINE_CLOSE_FD flag is not used, the descriptor is
+     * owned by us and must be closed here. */
+    if (ipmi_client->console_fd != -1)
+        close(ipmi_client->console_fd);
+
+    /* Stop the terminal — closing its input pipe to unblock the input thread —
+     * WITHOUT freeing it yet. The client thread may still be writing SOL output
+     * to the terminal until it has fully exited, so the terminal must outlive
+     * the join below to avoid a use-after-free. */
+    if (ipmi_client->term != NULL)
+        guac_terminal_stop(ipmi_client->term);
+
+    /* Wait for the client thread to fully exit before touching anything it
+     * uses. Joined unconditionally (not only when a SOL context was
+     * established) so early-failure setup paths do not leak the joinable
+     * thread. */
+    if (ipmi_client->client_thread_valid) {
+        pthread_join(ipmi_client->client_thread, NULL);
+        ipmi_client->client_thread_valid = false;
+    }
+
+    /* Clean up the SOL session, if one was established */
+    if (ipmi_client->console_ctx != NULL) {
+        ipmiconsole_ctx_destroy(ipmi_client->console_ctx);
+        ipmiconsole_engine_teardown(0);
+    }
+
+    /* Clean up recording, if in progress */
+    if (ipmi_client->recording != NULL)
+        guac_recording_free(ipmi_client->recording);
+
+    /* With no thread left to touch it, the terminal can now be freed safely */
+    if (ipmi_client->term != NULL)
+        guac_terminal_free(ipmi_client->term);
+
+    /* Free settings */
+    if (ipmi_client->settings != NULL)
+        guac_ipmi_settings_free(ipmi_client->settings);
+
+    pthread_mutex_destroy(&ipmi_client->menu_lock);
+    pthread_mutex_destroy(&ipmi_client->state_lock);
+
+    guac_mem_free(ipmi_client);
+    return 0;
+
+}
