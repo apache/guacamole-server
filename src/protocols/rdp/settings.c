@@ -150,6 +150,9 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
     "force-lossless",
     "normalize-clipboard",
+
+    "disable-fast-path-input",
+    "disable-fast-path-output",
     NULL
 };
 
@@ -722,6 +725,22 @@ enum RDP_ARGS_IDX {
      */
     IDX_NORMALIZE_CLIPBOARD,
 
+    /**
+     * "true" if the RDP fast-path input mechanism should be disabled, forcing
+     * all input events to be sent to the RDP server using slow-path (standard)
+     * input Protocol Data Units (PDUs), "false" or blank otherwise. By
+     * default, fast-path input is used if the RDP server supports it.
+     */
+    IDX_DISABLE_FAST_PATH_INPUT,
+
+    /**
+     * "true" if support for the RDP fast-path output mechanism should not be
+     * advertised to the RDP server, requesting that all graphical updates be
+     * sent using slow-path (standard) update PDUs, "false" or blank otherwise.
+     * By default, support for fast-path output is advertised.
+     */
+    IDX_DISABLE_FAST_PATH_OUTPUT,
+
     RDP_ARGS_COUNT
 };
 
@@ -983,6 +1002,14 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->disable_offscreen_caching =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_DISABLE_OFFSCREEN_CACHING, 0);
+
+    settings->disable_fast_path_input =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_FAST_PATH_INPUT, 0);
+
+    settings->disable_fast_path_output =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_FAST_PATH_OUTPUT, 0);
 
     /* FreeRDP does not consider the glyph cache implementation to be stable as
      * of 2.0.0, and it MUST NOT be used. Usage of the glyph cache results in
@@ -1535,8 +1562,11 @@ void guac_rdp_push_settings(guac_client* client,
     freerdp_settings_set_bool(rdp_settings, FreeRDP_FrameMarkerCommandEnabled, TRUE);
     freerdp_settings_set_bool(rdp_settings, FreeRDP_SurfaceFrameMarkerEnabled, TRUE);
 
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_FastPathInput, TRUE);
-    freerdp_settings_set_bool(rdp_settings, FreeRDP_FastPathOutput, TRUE);
+    /* Use fast-path input/output unless explicitly disabled */
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_FastPathInput,
+            !guac_settings->disable_fast_path_input);
+    freerdp_settings_set_bool(rdp_settings, FreeRDP_FastPathOutput,
+            !guac_settings->disable_fast_path_output);
 
     /* Enable RemoteFX / Graphics Pipeline */
     if (guac_settings->enable_gfx) {
@@ -1770,8 +1800,9 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->FrameMarkerCommandEnabled = TRUE;
     rdp_settings->SurfaceFrameMarkerEnabled = TRUE;
 
-    rdp_settings->FastPathInput = TRUE;
-    rdp_settings->FastPathOutput = TRUE;
+    /* Use fast-path input/output unless explicitly disabled */
+    rdp_settings->FastPathInput = !guac_settings->disable_fast_path_input;
+    rdp_settings->FastPathOutput = !guac_settings->disable_fast_path_output;
 
     /* Enable RemoteFX / Graphics Pipeline */
     if (guac_settings->enable_gfx) {

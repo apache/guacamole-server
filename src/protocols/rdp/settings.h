@@ -433,6 +433,20 @@ typedef struct guac_rdp_settings {
     int disable_glyph_caching;
 
     /**
+     * Whether the RDP fast-path input mechanism should be disabled, forcing
+     * all input events to be sent to the RDP server using slow-path (standard)
+     * input Protocol Data Units (PDUs).
+     */
+    int disable_fast_path_input;
+
+    /**
+     * Whether support for the RDP fast-path output mechanism should not be
+     * advertised to the RDP server, requesting that all graphical updates be
+     * sent using slow-path (standard) update PDUs.
+     */
+    int disable_fast_path_output;
+
+    /**
      * The preconnection ID to send within the preconnection PDU when
      * initiating an RDP connection, if any. If no preconnection ID is
      * specified, this will be -1.
