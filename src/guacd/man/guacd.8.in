@@ -27,6 +27,7 @@ guacd \- Guacamole proxy daemon
 [\fB-l\fR \fIPORT\fR]
 [\fB-p\fR \fIPID FILE\fR]
 [\fB-L\fR \fILOG LEVEL\fR]
+[\fB-T\fR \fIMILLISECONDS\fR]
 [\fB-C\fR \fICERTIFICATE FILE\fR]
 [\fB-K\fR \fIKEY FILE\fR]
 [\fB-f\fR]
@@ -75,6 +76,12 @@ and
 .B error.
 The default value is
 .B info.
+.TP
+\fB\-T\fR \fIMILLISECONDS\fR
+Sets the maximum number of milliseconds that
+.B guacd
+will wait for the next message from a connected client before closing the
+connection. The value must be a positive integer and defaults to 15000.
 .TP
 \fB\-f\fR
 Causes

@@ -102,7 +102,7 @@ static void* guacd_user_thread(void* data) {
     user->owner  = params->owner;
 
     /* Handle user connection from handshake until disconnect/completion */
-    guac_user_handle_connection(user, GUACD_USEC_TIMEOUT);
+    guac_user_handle_connection(user, proc->usec_timeout);
 
     /* Stop client and prevent future users if all users are disconnected */
     if (client->connected_users == 0) {
@@ -550,7 +550,7 @@ static void guacd_close_inherited_fds(int keep_fd) {
 
 }
 
-guacd_proc* guacd_create_proc(const char* protocol) {
+guacd_proc* guacd_create_proc(const char* protocol, int usec_timeout) {
 
     int sockets[2];
 
@@ -570,6 +570,8 @@ guacd_proc* guacd_create_proc(const char* protocol) {
         close(child_socket);
         return NULL;
     }
+
+    proc->usec_timeout = usec_timeout;
 
     /* Associate new client */
     proc->client = guac_client_alloc();

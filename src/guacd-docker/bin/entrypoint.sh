@@ -5,6 +5,12 @@ if [ -n "$GUACD_LOG_LEVEL" ]; then
     echo "WARNING: The GUACD_LOG_LEVEL environment variable has been deprecated in favor of the LOG_LEVEL environment variable. Please migrate your configuration when possible." >&2
 fi
 
+# Allow the client timeout to be overridden with CLIENT_TIMEOUT. Explicit
+# command-line options take precedence over this environment variable.
+if [ -n "$CLIENT_TIMEOUT" ]; then
+    set -- -T "$CLIENT_TIMEOUT" "$@"
+fi
+
 # Listen on 0.0.0.0:4822, logging messages at the info level. Allow log level
 # to be overridden with LOG_LEVEL, and other behavior to be overridden with
 # additional command-line options passed to Docker.

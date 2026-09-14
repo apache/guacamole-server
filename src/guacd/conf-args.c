@@ -33,7 +33,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:fv")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:L:T:C:K:fv")) != -1) {
 
         /* -l: Bind port */
         if (opt == 'l') {
@@ -77,6 +77,19 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
         }
 
+        /* -T: Client timeout */
+        else if (opt == 'T') {
+
+            int timeout = guacd_parse_client_timeout(optarg);
+            if (timeout < 0) {
+                fprintf(stderr, "Client timeout must be a positive integer number of milliseconds no greater than %i.\n", GUACD_MAX_CLIENT_TIMEOUT);
+                return 1;
+            }
+
+            config->client_timeout = timeout;
+
+        }
+
 #ifdef ENABLE_SSL
         /* -C SSL certificate */
         else if (opt == 'C') {
@@ -107,6 +120,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
                     " [-b LISTENADDRESS]"
                     " [-p PIDFILE]"
                     " [-L LEVEL]"
+                    " [-T MILLISECONDS]"
 #ifdef ENABLE_SSL
                     " [-C CERTIFICATE_FILE]"
                     " [-K PEM_FILE]"
@@ -122,4 +136,3 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
     return 0;
 
 }
-

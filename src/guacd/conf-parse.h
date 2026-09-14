@@ -54,6 +54,19 @@ int guacd_parse_conf(guacd_param_callback* callback, char* buffer, int length, v
 int guacd_parse_log_level(const char* name);
 
 /**
+ * Parses the given client timeout, returning the corresponding number of
+ * milliseconds, or -1 if the value is invalid or cannot safely be converted
+ * to the microsecond timeout expected by libguac.
+ *
+ * @param value
+ *     The timeout value to parse, in milliseconds.
+ *
+ * @return
+ *     The parsed positive timeout in milliseconds, or -1 if invalid.
+ */
+int guacd_parse_client_timeout(const char* value);
+
+/**
  * Human-readable description of the current error, if any.
  */
 extern char* guacd_conf_parse_error;
@@ -65,4 +78,3 @@ extern char* guacd_conf_parse_error;
 extern char* guacd_conf_parse_error_location;
 
 #endif
-

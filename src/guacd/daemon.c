@@ -352,6 +352,7 @@ int main(int argc, char* argv[]) {
 
     /* Log start */
     guacd_log(GUAC_LOG_INFO, "Guacamole proxy daemon (guacd) version " VERSION " started");
+    guacd_log(GUAC_LOG_INFO, "Client timeout is %i milliseconds", config->client_timeout);
 
     /* Get addresses for binding */
     if ((retval = getaddrinfo(config->bind_host, config->bind_port,
@@ -576,6 +577,7 @@ int main(int argc, char* argv[]) {
 
         params->map = map;
         params->connected_socket_fd = connected_socket_fd;
+        params->usec_timeout = config->client_timeout * 1000;
 
 #ifdef ENABLE_SSL
         params->ssl_context = ssl_context;

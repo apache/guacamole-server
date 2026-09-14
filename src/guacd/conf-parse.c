@@ -23,7 +23,35 @@
 #include <guacamole/client.h>
 
 #include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
+
+int guacd_parse_client_timeout(const char* value) {
+
+    char* end;
+
+    /* Reject empty values, signs, whitespace, and all other non-digits */
+    if (*value == '\0')
+        return -1;
+
+    for (const char* current = value; *current != '\0'; current++) {
+        if (!isdigit((unsigned char) *current))
+            return -1;
+    }
+
+    errno = 0;
+    long timeout = strtol(value, &end, 10);
+
+    /* Value must be a positive integer that can be safely converted to the
+     * microsecond timeout expected by libguac */
+    if (errno == ERANGE || end == value || *end != '\0'
+            || timeout <= 0 || timeout > GUACD_MAX_CLIENT_TIMEOUT)
+        return -1;
+
+    return (int) timeout;
+
+}
 
 /*
  * Simple recursive descent parser for an INI-like conf file grammar.  The
@@ -532,4 +560,3 @@ int guacd_parse_log_level(const char* name) {
     return -1;
 
 }
-
