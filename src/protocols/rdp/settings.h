@@ -124,6 +124,11 @@ typedef enum guac_rdp_security {
     GUAC_SECURITY_VMCONNECT,
 
     /**
+     * Azure Active Directory authentication.
+     */
+    GUAC_SECURITY_AAD,
+
+    /**
      * Negotiate a security method supported by both server and client.
      */
     GUAC_SECURITY_ANY
@@ -190,6 +195,26 @@ typedef struct guac_rdp_settings {
      * The password of the user logging in.
      */
     char* password;
+
+    /**
+     * The application (client) ID to authenticate as during Azure AD
+     * authentication, or NULL to use the client ID FreeRDP provides for the
+     * target (a Microsoft first-party Remote Desktop client).
+     */
+    char* aad_client_id;
+
+    /**
+     * The OAuth2 scope to request during Azure AD authentication, or NULL to
+     * use the device-bound scope FreeRDP derives for the target host.
+     */
+    char* aad_scope;
+
+    /**
+     * The Azure AD tenant ID (directory ID) whose endpoint should be used for
+     * authentication, or NULL to use the multi-tenant "organizations" endpoint
+     * (which resolves the tenant from the user signing in).
+     */
+    char* aad_tenant_id;
 
     /**
      * Whether this connection is read-only, and user input should be dropped.
@@ -787,4 +812,3 @@ int guac_rdp_get_height(freerdp* rdp);
 int guac_rdp_get_depth(freerdp* rdp);
 
 #endif
-

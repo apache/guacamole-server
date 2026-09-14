@@ -20,6 +20,7 @@
 #ifndef GUAC_RDP_H
 #define GUAC_RDP_H
 
+#include "aad.h"
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
@@ -246,6 +247,16 @@ typedef struct guac_rdp_client {
      * in use.
      */
     RailClientContext* rail_interface;
+
+#ifdef HAVE_FREERDP_AAD_SUPPORT
+    /**
+     * The JSON body of the Azure AD device code prompt currently being
+     * displayed, or NULL if no device code sign-in is in progress. Guarded by
+     * the client lock. Re-sent to users that join while sign-in is pending so a
+     * reload or reconnect during sign-in still shows the prompt.
+     */
+    char* aad_prompt;
+#endif
 
 } guac_rdp_client;
 

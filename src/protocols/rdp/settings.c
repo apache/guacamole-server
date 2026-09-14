@@ -152,6 +152,10 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
     "force-lossless",
     "normalize-clipboard",
+
+    "aad-client-id",
+    "aad-scope",
+    "aad-tenant-id",
     NULL
 };
 
@@ -739,6 +743,26 @@ enum RDP_ARGS_IDX {
      */
     IDX_NORMALIZE_CLIPBOARD,
 
+    /**
+     * The optional application (client) ID to authenticate as when security is
+     * "aad". If unset, the client ID FreeRDP provides for the target (a
+     * Microsoft first-party Remote Desktop client) is used.
+     */
+    IDX_AAD_CLIENT_ID,
+
+    /**
+     * The optional OAuth2 scope to request when authenticating via Azure AD. If
+     * unset, the device-bound scope FreeRDP derives for the target host is used.
+     */
+    IDX_AAD_SCOPE,
+
+    /**
+     * The optional Azure AD tenant ID (directory ID) whose endpoint should be
+     * used for authentication. If unset, the multi-tenant "organizations"
+     * endpoint is used.
+     */
+    IDX_AAD_TENANT_ID,
+
     RDP_ARGS_COUNT
 };
 
@@ -834,6 +858,12 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     else if (strcmp(argv[IDX_SECURITY], "any") == 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Security mode: Negotiate (ANY)");
         settings->security_mode = GUAC_SECURITY_ANY;
+    }
+
+    /* Azure AD authentication */
+    else if (strcmp(argv[IDX_SECURITY], "aad") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Security mode: Azure AD");
+        settings->security_mode = GUAC_SECURITY_AAD;
     }
 
     /* If nothing given, default to RDP */
@@ -1398,8 +1428,21 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_WOL_WAIT_TIME, GUAC_WOL_DEFAULT_BOOT_WAIT_TIME);
-        
+
     }
+
+    /* Parse optional Azure AD overrides (used when security is "aad") */
+    settings->aad_client_id =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_AAD_CLIENT_ID, NULL);
+
+    settings->aad_scope =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_AAD_SCOPE, NULL);
+
+    settings->aad_tenant_id =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_AAD_TENANT_ID, NULL);
 
     /* Success */
     return settings;
@@ -1417,6 +1460,9 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     guac_mem_free(settings->certificate_fingerprints);
     guac_mem_free(settings->initial_program);
     guac_mem_free(settings->password);
+    guac_mem_free(settings->aad_client_id);
+    guac_mem_free(settings->aad_scope);
+    guac_mem_free(settings->aad_tenant_id);
     guac_mem_free(settings->preconnection_blob);
     guac_mem_free(settings->recording_name);
     guac_mem_free(settings->recording_path);
@@ -1662,6 +1708,9 @@ void guac_rdp_push_settings(guac_client* client,
             freerdp_settings_set_bool(rdp_settings, FreeRDP_TlsSecurity, TRUE);
             freerdp_settings_set_bool(rdp_settings, FreeRDP_NlaSecurity, FALSE);
             freerdp_settings_set_bool(rdp_settings, FreeRDP_ExtSecurity, FALSE);
+        #ifdef HAVE_FREERDP_AAD_SUPPORT
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_AadSecurity, FALSE);
+        #endif
             break;
 
         /* Network level authentication */
@@ -1670,6 +1719,9 @@ void guac_rdp_push_settings(guac_client* client,
             freerdp_settings_set_bool(rdp_settings, FreeRDP_TlsSecurity, FALSE);
             freerdp_settings_set_bool(rdp_settings, FreeRDP_NlaSecurity, TRUE);
             freerdp_settings_set_bool(rdp_settings, FreeRDP_ExtSecurity, FALSE);
+        #ifdef HAVE_FREERDP_AAD_SUPPORT
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_AadSecurity, FALSE);
+        #endif
             break;
 
         /* Extended network level authentication */
@@ -1678,6 +1730,9 @@ void guac_rdp_push_settings(guac_client* client,
             freerdp_settings_set_bool(rdp_settings, FreeRDP_TlsSecurity, FALSE);
             freerdp_settings_set_bool(rdp_settings, FreeRDP_NlaSecurity, FALSE);
             freerdp_settings_set_bool(rdp_settings, FreeRDP_ExtSecurity, TRUE);
+        #ifdef HAVE_FREERDP_AAD_SUPPORT
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_AadSecurity, FALSE);
+        #endif
             break;
 
         /* Hyper-V "VMConnect" negotiation mode */
@@ -1687,6 +1742,28 @@ void guac_rdp_push_settings(guac_client* client,
             freerdp_settings_set_bool(rdp_settings, FreeRDP_NlaSecurity, TRUE);
             freerdp_settings_set_bool(rdp_settings, FreeRDP_ExtSecurity, FALSE);
             freerdp_settings_set_bool(rdp_settings, FreeRDP_VmConnectMode, TRUE);
+        #ifdef HAVE_FREERDP_AAD_SUPPORT
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_AadSecurity, FALSE);
+        #endif
+            break;
+
+        /* Azure AD authentication */
+        case GUAC_SECURITY_AAD:
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_RdpSecurity, FALSE);
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_TlsSecurity, FALSE);
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_NlaSecurity, FALSE);
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_ExtSecurity, FALSE);
+
+        /* Enable AAD authentication in FreeRDP (only available in FreeRDP 3.0+) */
+        #ifdef HAVE_FREERDP_AAD_SUPPORT
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_AadSecurity, TRUE);
+            guac_client_log(client, GUAC_LOG_INFO,
+                "Azure AD authentication enabled");
+        #else
+            guac_client_log(client, GUAC_LOG_ERROR,
+                "Azure AD authentication requested but not supported by this version of FreeRDP. "
+                "FreeRDP 3.0 or later is required.");
+        #endif
             break;
 
         /* All security types */
@@ -1709,6 +1786,10 @@ void guac_rdp_push_settings(guac_client* client,
                 freerdp_settings_set_bool(rdp_settings, FreeRDP_NlaSecurity, TRUE);
 
             freerdp_settings_set_bool(rdp_settings, FreeRDP_ExtSecurity, FALSE);
+
+        #ifdef HAVE_FREERDP_AAD_SUPPORT
+            freerdp_settings_set_bool(rdp_settings, FreeRDP_AadSecurity, FALSE);
+        #endif
             break;
 
     }
@@ -1925,6 +2006,25 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->NlaSecurity = TRUE;
             rdp_settings->ExtSecurity = FALSE;
             rdp_settings->VmConnectMode = TRUE;
+            break;
+
+        /* Azure AD authentication */
+        case GUAC_SECURITY_AAD:
+            rdp_settings->RdpSecurity = FALSE;
+            rdp_settings->TlsSecurity = FALSE;
+            rdp_settings->NlaSecurity = FALSE;
+            rdp_settings->ExtSecurity = FALSE;
+
+        /* Enable AAD authentication in FreeRDP (only available in FreeRDP 3.0+) */
+        #ifdef HAVE_FREERDP_AAD_SUPPORT
+            rdp_settings->AadSecurity = TRUE;
+            guac_client_log(client, GUAC_LOG_INFO,
+                "Azure AD authentication enabled");
+        #else
+            guac_client_log(client, GUAC_LOG_ERROR,
+                "Azure AD authentication requested but not supported by this version of FreeRDP. "
+                "FreeRDP 3.0 or later is required.");
+        #endif
             break;
 
         /* All security types */
