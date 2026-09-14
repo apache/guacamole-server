@@ -231,13 +231,21 @@ typedef struct guac_rdp_fs_info {
 
     /**
      * The number of free blocks available.
+     *
+     * 64-bit to match the UINT64 allocation-unit counts used by RDPDR
+     * FileFsSizeInformation / FileFsFullSizeInformation. A 32-bit int
+     * overflows once the backing filesystem reports more than 2^31
+     * allocation units, which can make Windows report zero free space
+     * and refuse copies onto the redirected drive.
      */
-    int blocks_available;
+    uint64_t blocks_available;
 
     /**
      * The number of blocks in the filesystem.
+     *
+     * 64-bit for the same reason as blocks_available.
      */
-    int blocks_total;
+    uint64_t blocks_total;
 
     /**
      * The number of bytes per block.
