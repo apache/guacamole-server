@@ -777,7 +777,7 @@ then
     freerdp_version="(2.x)"
     have_freerdp=yes
     PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror -Wno-deprecated-declarations $CPPFLAGS"]
                       [AS_IF([test "x${FREERDP_PLUGIN_DIR}" = "x"],
                              [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
                       [freerdp_version=
@@ -789,7 +789,7 @@ then
     freerdp_version="(3.x)"
     have_freerdp=yes
     PKG_CHECK_MODULES([RDP], [freerdp3 freerdp-client3 winpr3],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror -Wno-deprecated-declarations $CPPFLAGS"]
                       [AS_IF([test "x${FREERDP_PLUGIN_DIR}" = "x"],
                              [FREERDP_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp3`/freerdp3"])],
                       [AC_MSG_WARN([
