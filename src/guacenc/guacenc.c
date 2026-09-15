@@ -37,13 +37,15 @@ int main(int argc, char* argv[]) {
     /* Load defaults */
     bool force = false;
     const char* out_file = NULL;
+    const char* codec = GUACENC_DEFAULT_CODEC;
+    const char* format = NULL;
     int width = GUACENC_DEFAULT_WIDTH;
     int height = GUACENC_DEFAULT_HEIGHT;
     int bitrate = GUACENC_DEFAULT_BITRATE;
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "s:r:fo:")) != -1) {
+    while ((opt = getopt(argc, argv, "s:r:fo:c:F:")) != -1) {
 
         /* -s: Dimensions (WIDTHxHEIGHT) */
         if (opt == 's') {
@@ -69,6 +71,14 @@ int main(int argc, char* argv[]) {
         else if (opt == 'o')
             out_file = optarg;
 
+        /* -c: Codec (as defined by ffmpeg / libavcodec) */
+        else if (opt == 'c')
+            codec = optarg;
+
+        /* -F: Container format (as defined by ffmpeg / libavformat) */
+        else if (opt == 'F')
+            format = optarg;
+
         /* Invalid option */
         else {
             goto invalid_options;
@@ -88,6 +98,26 @@ int main(int argc, char* argv[]) {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 9, 100)
     av_register_all();
 #endif
+
+    /* Validate any requested container format and note its file extension */
+    char default_ext[32] = "m4v";
+    if (format != NULL) {
+        const AVOutputFormat* container = av_guess_format(format, NULL, NULL);
+        if (container == NULL) {
+            guacenc_log(GUAC_LOG_ERROR, "Unknown output format \"%s\".",
+                    format);
+            goto invalid_options;
+        }
+
+        /* Use first listed extension, falling back to the format name */
+        const char* exts = container->extensions != NULL
+                         ? container->extensions : format;
+        size_t ext_len = strcspn(exts, ",");
+        if (ext_len >= sizeof(default_ext))
+            ext_len = sizeof(default_ext) - 1;
+        memcpy(default_ext, exts, ext_len);
+        default_ext[ext_len] = '\0';
+    }
 
     /* Track number of overall failures */
     int total_files = argc - optind;
@@ -128,7 +158,8 @@ int main(int argc, char* argv[]) {
         /* Otherwise, generate output filename from input filename */
         else {
 
-            int len = snprintf(out_buffer, sizeof(out_buffer), "%s.m4v", path);
+            int len = snprintf(out_buffer, sizeof(out_buffer), "%s.%s",
+                    path, default_ext);
 
             /* Do not write if filename exceeds maximum length */
             if (len >= sizeof(out_buffer)) {
@@ -142,7 +173,7 @@ int main(int argc, char* argv[]) {
         }
 
         /* Attempt encoding, log granular success/failure at debug level */
-        if (guacenc_encode(path, out_path, "mpeg4",
+        if (guacenc_encode(path, out_path, codec, format,
                     width, height, bitrate, force)) {
             failures++;
             guacenc_log(GUAC_LOG_DEBUG,
@@ -173,6 +204,8 @@ invalid_options:
             " [-r BITRATE]"
             " [-f]"
             " [-o OUTPUT]"
+            " [-c CODEC]"
+            " [-F FORMAT]"
             " [FILE]...\n", argv[0]);
 
     return 1;

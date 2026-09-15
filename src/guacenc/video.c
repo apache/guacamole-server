@@ -47,7 +47,7 @@
 #include <unistd.h>
 
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
-        int width, int height, int bitrate) {
+        const char* format_name, int width, int height, int bitrate) {
 
     const AVOutputFormat *container_format;
     AVFormatContext *container_format_context;
@@ -55,12 +55,11 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     int ret;
     int failed_header = 0;
 
-    /* The container format cannot be guessed from a pipe URL and must be
-     * specified explicitly. The "ipod" container is used, matching the
-     * container that would be guessed from the ".m4v" extension of the output
-     * files normally produced */
+    /* A pipe URL has no extension to guess the container from, so default to
+     * "ipod" (the container guessed for the ".m4v" files normally produced) */
     bool is_pipe = (strncmp(path, "pipe:", 5) == 0);
-    const char* format_name = is_pipe ? "ipod" : NULL;
+    if (format_name == NULL && is_pipe)
+        format_name = "ipod";
 
     /* allocate the output media context */
     avformat_alloc_output_context2(&container_format_context, NULL,
@@ -132,6 +131,13 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
 
     /* Open output file, if the container needs it */
     if (!(container_format->flags & AVFMT_NOFILE)) {
+        /* Never overwrite an existing file (pipes are not files) */
+        if (!is_pipe && access(path, F_OK) == 0) {
+            guacenc_log(GUAC_LOG_ERROR, "Refusing to overwrite existing "
+                    "file \"%s\".", path);
+            goto fail_output_avio;
+        }
+
         ret = avio_open(&container_format_context->pb, path, AVIO_FLAG_WRITE);
         if (ret < 0) {
             guacenc_log(GUAC_LOG_ERROR, "Error occurred while opening output file.");
@@ -139,9 +145,8 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         }
     }
 
-    /* A pipe cannot be seeked backwards to finalize the container once
-     * encoding is complete, so fragmented MP4 must be used to produce a
-     * usable video stream */
+    /* Pipes cannot seek back to finalize the container, so fragment MP4-family
+     * output (other containers ignore this option) */
     AVDictionary* header_options = NULL;
     if (is_pipe)
         av_dict_set(&header_options, "movflags",
