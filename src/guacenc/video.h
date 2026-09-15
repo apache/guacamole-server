@@ -117,6 +117,10 @@ typedef struct guacenc_video {
  *     The name of the codec to use for the video encoding, as defined by
  *     ffmpeg / libavcodec.
  *
+ * @param format_name
+ *     The container format name, as defined by ffmpeg / libavformat, or NULL
+ *     to guess from the extension of the given path ("ipod" if a pipe).
+ *
  * @param width
  *     The width of the desired video, in pixels.
  *
@@ -128,7 +132,7 @@ typedef struct guacenc_video {
  *     second.
  */
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
-        int width, int height, int bitrate);
+        const char* format_name, int width, int height, int bitrate);
 
 /**
  * Advances the timeline of the encoding process to the given timestamp, such

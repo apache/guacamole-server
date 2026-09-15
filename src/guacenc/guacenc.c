@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 int main(int argc, char* argv[]) {
 
@@ -35,13 +36,16 @@ int main(int argc, char* argv[]) {
 
     /* Load defaults */
     bool force = false;
+    const char* out_file = NULL;
+    const char* codec = GUACENC_DEFAULT_CODEC;
+    const char* format = NULL;
     int width = GUACENC_DEFAULT_WIDTH;
     int height = GUACENC_DEFAULT_HEIGHT;
     int bitrate = GUACENC_DEFAULT_BITRATE;
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "s:r:f")) != -1) {
+    while ((opt = getopt(argc, argv, "s:r:fo:c:F:")) != -1) {
 
         /* -s: Dimensions (WIDTHxHEIGHT) */
         if (opt == 's') {
@@ -63,6 +67,18 @@ int main(int argc, char* argv[]) {
         else if (opt == 'f')
             force = true;
 
+        /* -o: Output file ("-" for STDOUT) */
+        else if (opt == 'o')
+            out_file = optarg;
+
+        /* -c: Codec (as defined by ffmpeg / libavcodec) */
+        else if (opt == 'c')
+            codec = optarg;
+
+        /* -F: Container format (as defined by ffmpeg / libavformat) */
+        else if (opt == 'F')
+            format = optarg;
+
         /* Invalid option */
         else {
             goto invalid_options;
@@ -83,6 +99,26 @@ int main(int argc, char* argv[]) {
     av_register_all();
 #endif
 
+    /* Validate any requested container format and note its file extension */
+    char default_ext[32] = "m4v";
+    if (format != NULL) {
+        const AVOutputFormat* container = av_guess_format(format, NULL, NULL);
+        if (container == NULL) {
+            guacenc_log(GUAC_LOG_ERROR, "Unknown output format \"%s\".",
+                    format);
+            goto invalid_options;
+        }
+
+        /* Use first listed extension, falling back to the format name */
+        const char* exts = container->extensions != NULL
+                         ? container->extensions : format;
+        size_t ext_len = strcspn(exts, ",");
+        if (ext_len >= sizeof(default_ext))
+            ext_len = sizeof(default_ext) - 1;
+        memcpy(default_ext, exts, ext_len);
+        default_ext[ext_len] = '\0';
+    }
+
     /* Track number of overall failures */
     int total_files = argc - optind;
     int failures = 0;
@@ -91,6 +127,14 @@ int main(int argc, char* argv[]) {
     if (total_files <= 0) {
         guacenc_log(GUAC_LOG_INFO, "No input files specified. Nothing to do.");
         return 0;
+    }
+
+    /* A single explicit output cannot receive the encodings of multiple
+     * input files */
+    if (out_file != NULL && total_files != 1) {
+        guacenc_log(GUAC_LOG_ERROR, "Only one input file may be given if "
+                "the output is specified with the -o option.");
+        goto invalid_options;
     }
 
     guacenc_log(GUAC_LOG_INFO, "%i input file(s) provided.", total_files);
@@ -104,19 +148,33 @@ int main(int argc, char* argv[]) {
         /* Get current filename */
         const char* path = argv[i];
 
-        /* Generate output filename */
-        char out_path[4096];
-        int len = snprintf(out_path, sizeof(out_path), "%s.m4v", path);
+        /* Use the explicitly-provided output path, if any, streaming to
+         * STDOUT if "-" was given as the output */
+        const char* out_path;
+        char out_buffer[4096];
+        if (out_file != NULL)
+            out_path = strcmp(out_file, "-") ? out_file : GUACENC_STDOUT_PATH;
 
-        /* Do not write if filename exceeds maximum length */
-        if (len >= sizeof(out_path)) {
-            guacenc_log(GUAC_LOG_ERROR, "Cannot write output file for \"%s\": "
-                    "Name too long", path);
-            continue;
+        /* Otherwise, generate output filename from input filename */
+        else {
+
+            int len = snprintf(out_buffer, sizeof(out_buffer), "%s.%s",
+                    path, default_ext);
+
+            /* Do not write if filename exceeds maximum length */
+            if (len >= sizeof(out_buffer)) {
+                guacenc_log(GUAC_LOG_ERROR, "Cannot write output file for "
+                        "\"%s\": Name too long", path);
+                failures++;
+                continue;
+            }
+
+            out_path = out_buffer;
+
         }
 
         /* Attempt encoding, log granular success/failure at debug level */
-        if (guacenc_encode(path, out_path, "mpeg4",
+        if (guacenc_encode(path, out_path, codec, format,
                     width, height, bitrate, force)) {
             failures++;
             guacenc_log(GUAC_LOG_DEBUG,
@@ -137,7 +195,7 @@ int main(int argc, char* argv[]) {
         guacenc_log(GUAC_LOG_INFO, "All files encoded successfully.");
 
     /* Encoding complete */
-    return 0;
+    return failures != 0;
 
     /* Display usage and exit with error if options are invalid */
 invalid_options:
@@ -146,6 +204,9 @@ invalid_options:
             " [-s WIDTHxHEIGHT]"
             " [-r BITRATE]"
             " [-f]"
+            " [-o OUTPUT]"
+            " [-c CODEC]"
+            " [-F FORMAT]"
             " [FILE]...\n", argv[0]);
 
     return 1;

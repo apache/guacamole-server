@@ -16,7 +16,7 @@
 .\" specific language governing permissions and limitations
 .\" under the License.
 .\"
-.TH guacenc 1 "26 Jan 2018" "version @PACKAGE_VERSION@" "Apache Guacamole"
+.TH guacenc 1 "15 Sep 2026" "version @PACKAGE_VERSION@" "Apache Guacamole"
 .
 .SH NAME
 guacenc \- Guacamole video encoder
@@ -26,6 +26,9 @@ guacenc \- Guacamole video encoder
 [\fB-s\fR \fIWIDTH\fRx\fIHEIGHT\fR]
 [\fB-r\fR \fIBITRATE\fR]
 [\fB-f\fR]
+[\fB-o\fR \fIOUTPUT\fR]
+[\fB-c\fR \fICODEC\fR]
+[\fB-F\fR \fIFORMAT\fR]
 [\fIFILE\fR]...
 .
 .SH DESCRIPTION
@@ -45,6 +48,15 @@ with a bitrate of \fI2000000\fR bits per second (2 Mbps). These defaults can be
 overridden with the \fB-s\fR and \fB-r\fR options respectively. Existing files
 will not be overwritten; the encoding process for any input file will be
 aborted if it would result in overwriting an existing file.
+The codec and container format may likewise be changed with the \fB-c\fR and
+\fB-F\fR options.
+.P
+Alternatively, the \fB-o\fR option may be used to specify the output file
+explicitly. In typical UNIX fashion, specifying "-" as the output file will
+cause the encoded video to be streamed to STDOUT rather than written to a
+file, allowing the video to be piped to another process or streamed as a
+download while it is still being encoded. As only a single output may be
+specified, only one \fIFILE\fR may be given if \fB-o\fR is used.
 .P
 Guacamole acquires a write lock on recordings as they are being written. By
 default,
@@ -75,6 +87,33 @@ Overrides the default behavior of
 .B guacenc
 such that input files will be encoded even if they appear to be recordings of
 in-progress Guacamole sessions.
+.TP
+\fB-o\fR \fIOUTPUT\fR
+Writes the encoded video to \fIOUTPUT\fR instead of a file named after the
+input file. If \fIOUTPUT\fR is "-", the encoded video will be streamed to
+STDOUT rather than written to a file; as all log messages are written to
+STDERR, they will not interfere with the video stream. Only one \fIFILE\fR may
+be given when this option is used.
+.TP
+\fB-c\fR \fICODEC\fR
+Changes the codec used to encode the video, specified by the name of the codec
+as recognized by ffmpeg / libavcodec (for example, \fImpeg4\fR, \fIlibx264\fR,
+or \fIlibvpx\fR). This is equivalent to the \fB-c:v\fR option of
+.BR ffmpeg (1).
+By default, the \fImpeg4\fR codec is used. The codec must be one that the
+chosen container format can hold; encoding will fail if it is not (for
+example, \fImpeg4\fR cannot be placed in a WebM container).
+.TP
+\fB-F\fR \fIFORMAT\fR
+Changes the container format of the output, specified by the name of the
+format as recognized by ffmpeg / libavformat (for example, \fImp4\fR,
+\fIwebm\fR, or \fImatroska\fR). This is equivalent to the \fB-f\fR option of
+.BR ffmpeg (1)
+and overrides the container that would otherwise be guessed from the output
+filename's extension. If no output filename is given with \fB-o\fR, the
+generated filename uses the container's conventional extension (for example,
+\fIFILE\fR.webm). If the output is STDOUT and \fB-F\fR is not given, the
+\fIipod\fR format is used (the same container as the default \fIFILE\fR.m4v).
 .
 .SH SEE ALSO
 .BR guaclog (1)
