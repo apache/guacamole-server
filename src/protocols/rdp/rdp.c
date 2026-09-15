@@ -885,7 +885,20 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
-        guac_rdp_client_abort(client, rdp_inst);
+
+        /*
+         * If FreeRDP recorded a specific error, translate and send it.
+         * Otherwise fall back to a generic upstream-not-found error. This
+         * ensures guacd always sends an error instruction before closing the
+         * socket, allowing the Java-side FailoverGuacamoleSocket to detect
+         * the failure and trigger balancing-group failover.
+         */
+        if (freerdp_get_last_error(rdp_inst->context) == FREERDP_ERROR_NONE)
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
+                    "Connection failed (server not found or unreachable).");
+        else
+            guac_rdp_client_abort(client, rdp_inst);
+
         goto fail;
     }
 
@@ -913,8 +926,16 @@ static int guac_rdp_handle_connection(guac_client* client) {
         /* Wait for data and construct a reasonable frame */
 
         int wait_result = rdp_guac_client_wait_for_events(client, GUAC_RDP_MESSAGE_CHECK_INTERVAL);
-        if (wait_result < 0)
+        if (wait_result < 0) {
+            /* Connection error detected before events were processed.
+             * Abort here so that client->state is set to STOPPING, preventing
+             * the outer reconnect loop from treating this as a reconnect
+             * request. This is the same logic as the else-if (wait_result < 0)
+             * at the bottom of the loop body, which is only reached for errors
+             * detected inside the do-while, not for errors detected here. */
+            guac_rdp_client_abort(client, rdp_inst);
             break;
+        }
 
         int connection_closing = 0;
         do {
@@ -950,10 +971,61 @@ static int guac_rdp_handle_connection(guac_client* client) {
         if (connection_closing)
             guac_rdp_client_abort(client, rdp_inst);
 
-        /* If a low-level connection error occurred, fail */
+        /* If a low-level connection error occurred, delegate to
+         * guac_rdp_client_abort() rather than sending UPSTREAM_UNAVAILABLE
+         * directly. When the RDP server sends an ERRINFO disconnect reason
+         * (e.g. ERRINFO_LOGOFF_BY_USER 0xC) and then closes the TCP
+         * connection, a race condition can cause freerdp_get_last_error()
+         * to return non-SUCCESS before freerdp_shall_disconnect() is
+         * polled, bypassing the connection_closing path above.
+         * guac_rdp_client_abort() reads freerdp_error_info() independently,
+         * mapping user-initiated reasons to GUAC_PROTOCOL_STATUS_SUCCESS so
+         * the client receives a clean disconnect rather than auto-reconnecting
+         * due to UPSTREAM_UNAVAILABLE. */
         else if (wait_result < 0)
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
-                    "Connection closed.");
+            guac_rdp_client_abort(client, rdp_inst);
+
+    }
+
+    /* If the loop exited because a display reconnect was requested, check
+     * whether the RDP server is simultaneously closing the session before
+     * proceeding with the reconnect. Windows sign-off sends an ERRINFO PDU
+     * (ERRINFO_LOGOFF_BY_USER, 0xC) followed by an MCS Disconnect PDU before
+     * closing the TCP connection. The ERRINFO PDU may arrive before
+     * freerdp_shall_disconnect() returns true (which only happens after the
+     * MCS Disconnect), so we check freerdp_error_info() directly as an early
+     * signal. We wait up to 2 seconds for these PDUs; on a genuine display
+     * resize no server PDUs will arrive and the reconnect proceeds normally. */
+    if (guac_rdp_disp_reconnect_needed(rdp_client->disp)
+            && client->state == GUAC_CLIENT_RUNNING) {
+
+        int connection_closing = 0;
+        int events_ok = 1;
+        int poll_result = rdp_guac_client_wait_for_events(client, 2000);
+
+        while (poll_result > 0 && events_ok && !connection_closing) {
+
+            events_ok = guac_rdp_handle_events(rdp_client);
+            if (events_ok) {
+#ifdef HAVE_DISCONNECT_CONTEXT
+                connection_closing = freerdp_shall_disconnect_context(rdp_inst->context);
+#else
+                connection_closing = freerdp_shall_disconnect(rdp_inst);
+#endif
+                /* ERRINFO arrives before freerdp_shall_disconnect() becomes
+                 * true; treat any non-zero error info as a disconnect signal
+                 * to avoid reconnecting on user-initiated logoff. */
+                if (!connection_closing && freerdp_error_info(rdp_inst) != 0)
+                    connection_closing = 1;
+            }
+
+            if (events_ok && !connection_closing)
+                poll_result = rdp_guac_client_wait_for_events(client, 0);
+
+        }
+
+        if (connection_closing || !events_ok || poll_result < 0)
+            guac_rdp_client_abort(client, rdp_inst);
 
     }
 
