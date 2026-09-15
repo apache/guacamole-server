@@ -76,6 +76,11 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
             guac_rdpsnd_wave_info_handler(svc, input_stream, &header);
             break;
 
+        /* Wave2 PDU */
+        case SNDC_WAVE2:
+            guac_rdpsnd_wave2_handler(svc, input_stream, &header);
+            break;
+
         /* Close PDU */
         case SNDC_CLOSE:
             guac_rdpsnd_close_handler(svc, input_stream, &header);
