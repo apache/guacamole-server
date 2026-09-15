@@ -165,6 +165,7 @@ int main(int argc, char* argv[]) {
             if (len >= sizeof(out_buffer)) {
                 guacenc_log(GUAC_LOG_ERROR, "Cannot write output file for "
                         "\"%s\": Name too long", path);
+                failures++;
                 continue;
             }
 
@@ -194,7 +195,7 @@ int main(int argc, char* argv[]) {
         guacenc_log(GUAC_LOG_INFO, "All files encoded successfully.");
 
     /* Encoding complete */
-    return 0;
+    return failures != 0;
 
     /* Display usage and exit with error if options are invalid */
 invalid_options:
