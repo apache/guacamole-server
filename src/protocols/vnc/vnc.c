@@ -341,6 +341,8 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
     if (vnc_settings->encodings)
         rfb_client->appData.encodingsString = strdup(vnc_settings->encodings);
 
+    rfb_client->appData.enableJPEG = vnc_settings->allow_jpeg;
+
     /* Connect */
     if (rfbInitClient(rfb_client, NULL, NULL))
         return rfb_client;
