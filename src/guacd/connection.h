@@ -49,6 +49,12 @@ typedef struct guacd_connection_thread_params {
      */
     int connected_socket_fd;
 
+    /**
+     * The number of microseconds to wait for messages from the connected
+     * client before closing the connection.
+     */
+    int usec_timeout;
+
 } guacd_connection_thread_params;
 
 /**
@@ -117,4 +123,3 @@ typedef struct guacd_connection_io_thread_params {
 void* guacd_connection_io_thread(void* data);
 
 #endif
-

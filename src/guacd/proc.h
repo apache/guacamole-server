@@ -26,19 +26,6 @@
 #include <unistd.h>
 
 /**
- * The number of milliseconds to wait for messages in any phase before
- * timing out and closing the connection with an error.
- */
-#define GUACD_TIMEOUT 15000
-
-/**
- * The number of microseconds to wait for messages in any phase before
- * timing out and closing the connection with an error. This is always
- * equal to GUACD_TIMEOUT * 1000.
- */
-#define GUACD_USEC_TIMEOUT (GUACD_TIMEOUT*1000)
-
-/**
  * The number of seconds to wait for any particular guac_client instance
  * to be freed following disconnect. If the free operation does not complete
  * within this period of time, the associated process will be forcibly
@@ -76,6 +63,12 @@ typedef struct guacd_proc {
      */
     guac_client* client;
 
+    /**
+     * The number of microseconds to wait for messages from each user before
+     * closing their connection.
+     */
+    int usec_timeout;
+
 } guacd_proc;
 
 /**
@@ -87,12 +80,16 @@ typedef struct guacd_proc {
  * @param protocol
  *     The protocol for which this process is client being created.
  *
+ * @param usec_timeout
+ *     The number of microseconds to wait for messages from users of the
+ *     created client before closing their connections.
+ *
  * @return
  *     A newly-allocated process structure pointing to the file descriptor of
  *     the background process specific to the specified protocol, or NULL of
  *     the process could not be created.
  */
-guacd_proc* guacd_create_proc(const char* protocol);
+guacd_proc* guacd_create_proc(const char* protocol, int usec_timeout);
 
 /**
  * Signals the given process to stop accepting new users and clean up. This
@@ -104,4 +101,3 @@ guacd_proc* guacd_create_proc(const char* protocol);
 void guacd_proc_stop(guacd_proc* proc);
 
 #endif
-

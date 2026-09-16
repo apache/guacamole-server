@@ -38,9 +38,19 @@ Connecting to guacd from an application
 
     docker run --name some-app --link some-guacd:guacd -d application-that-uses-guacd
 
+Configuring the client timeout
+------------------------------
+
+By default, guacd waits up to 15000 milliseconds for the next message from a
+connected client before closing the connection. Set `CLIENT_TIMEOUT` to a
+positive number of milliseconds to override this value:
+
+    docker run --name some-guacd -d -e CLIENT_TIMEOUT=45000 guacamole/guacd
+
+An explicit `-T` command-line option takes precedence over `CLIENT_TIMEOUT`.
+
 Reporting issues
 ================
 
 Please report any bugs encountered by opening a new issue in
 [our JIRA](https://issues.apache.org/jira/browse/GUACAMOLE/).
-

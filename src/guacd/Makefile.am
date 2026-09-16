@@ -28,6 +28,7 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = -include config.h
 
 sbin_PROGRAMS = guacd
+SUBDIRS = . tests
 
 man_MANS =           \
     man/guacd.8      \
@@ -97,4 +98,3 @@ systemd/guacd.service: systemd/guacd.service.in
 	 -e 's,[@]systemduser[@],$(systemduser),g' \
 	 < systemd/guacd.service.in > systemd/guacd.service
 endif
-
