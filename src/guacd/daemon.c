@@ -353,6 +353,14 @@ int main(int argc, char* argv[]) {
     /* Log start */
     guacd_log(GUAC_LOG_INFO, "Guacamole proxy daemon (guacd) version " VERSION " started");
 
+    /* Log any configured limit on the number of worker threads created per
+     * connection (the limit is applied to the client of each connection
+     * process as it is created) */
+    if (config->max_worker_threads > 0)
+        guacd_log(GUAC_LOG_INFO, "Graphical updates of each connection will "
+                "be encoded using no more than %i worker thread(s).",
+                config->max_worker_threads);
+
     /* Get addresses for binding */
     if ((retval = getaddrinfo(config->bind_host, config->bind_port,
                     &hints, &addresses))) {
@@ -575,6 +583,7 @@ int main(int argc, char* argv[]) {
         }
 
         params->map = map;
+        params->max_display_worker_threads = config->max_worker_threads;
         params->connected_socket_fd = connected_socket_fd;
 
 #ifdef ENABLE_SSL

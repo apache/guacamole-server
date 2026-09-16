@@ -260,7 +260,8 @@ static int guacd_add_user(guacd_proc* proc, guac_parser* parser, guac_socket* so
  *     Zero if the connection was successfully routed, non-zero if routing has
  *     failed.
  */
-static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
+static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket,
+        int max_display_worker_threads) {
 
     guac_parser* parser = guac_parser_alloc();
 
@@ -323,7 +324,7 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
                 identifier);
 
         /* Create new process */
-        proc = guacd_create_proc(identifier);
+        proc = guacd_create_proc(identifier, max_display_worker_threads);
         new_process = 1;
 
     }
@@ -423,7 +424,7 @@ void* guacd_connection_thread(void* data) {
 #endif
 
     /* Route connection according to Guacamole, creating a new process if needed */
-    if (guacd_route_connection(map, socket))
+    if (guacd_route_connection(map, socket, params->max_display_worker_threads))
         guac_socket_free(socket);
 
     guac_mem_free(params);

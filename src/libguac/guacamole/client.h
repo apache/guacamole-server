@@ -311,6 +311,16 @@ struct guac_client {
      */
     void* __plugin_handle;
 
+    /**
+     * The maximum number of worker threads that should be created to encode
+     * graphical updates for any guac_display allocated for this client, or
+     * zero (the default) if the number of worker threads should be limited
+     * only by the number of available processors. Negative values are
+     * treated as zero. To have any effect, this value must be assigned
+     * before the guac_display is allocated with guac_display_alloc().
+     */
+    int max_display_worker_threads;
+
 };
 
 /**
