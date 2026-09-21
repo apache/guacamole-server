@@ -1102,6 +1102,12 @@ void* guac_rdp_client_thread(void* data) {
                     settings->create_drive_path, settings->disable_download,
                     settings->disable_upload);
 
+        if (rdp_client->filesystem == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Failed to allocate RDP filesystem");
+            return NULL;
+        }
+
         /* Expose filesystem to owner */
         guac_client_for_owner(client, guac_rdp_fs_expose,
                 rdp_client->filesystem);
