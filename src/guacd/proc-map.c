@@ -22,8 +22,11 @@
 #include "proc-map.h"
 
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 #include <guacamole/mem.h>
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,6 +45,11 @@ typedef struct guacd_proc_map_entry {
      * A pointer to the corresponding entry in the list of all processes.
      */
     guac_common_list_element* element;
+
+    /**
+     * Whether users may still be routed to this process.
+     */
+    int routable;
 
 } guacd_proc_map_entry;
 
@@ -167,6 +175,7 @@ int guacd_proc_map_add(guacd_proc_map* map, guacd_proc* proc) {
         guac_common_list_unlock(map->processes);
 
         entry->proc = proc;
+        entry->routable = 1;
 
         guac_common_list_add(bucket, entry);
         guac_common_list_unlock(bucket);
@@ -180,9 +189,7 @@ int guacd_proc_map_add(guacd_proc_map* map, guacd_proc* proc) {
 
 }
 
-guacd_proc* guacd_proc_map_retrieve(guacd_proc_map* map, const char* id) {
-
-    guacd_proc* proc;
+int guacd_proc_map_open(guacd_proc_map* map, const char* id) {
 
     guac_common_list* bucket = __guacd_proc_find_bucket(map, id);
     guac_common_list_element* found;
@@ -194,19 +201,60 @@ guacd_proc* guacd_proc_map_retrieve(guacd_proc_map* map, const char* id) {
     /* If no such element, fail */
     if (found == NULL) {
         guac_common_list_unlock(bucket);
-        return NULL;
+        guac_error = GUAC_STATUS_NOT_FOUND;
+        guac_error_message = "No such connection";
+        return -1;
     }
 
-    proc = ((guacd_proc_map_entry*) found->data)->proc;
+    /* Consider unroutable connections non-existent for new attempts to join */
+    guacd_proc_map_entry* entry = (guacd_proc_map_entry*) found->data;
+    if (!entry->routable) {
+        guac_common_list_unlock(bucket);
+        guac_error = GUAC_STATUS_NOT_FOUND;
+        guac_error_message = "No such connection";
+        return -1;
+    }
 
+    guacd_proc* proc = entry->proc;
+    int fd = fcntl(proc->fd_socket, F_DUPFD_CLOEXEC, 0);
+
+    /* errno may be clobbered by guac_common_list_unlock() */
+    int dup_errno = errno;
     guac_common_list_unlock(bucket);
-    return proc;
+
+    if (fd < 0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error duplicating socket of connection process";
+        errno = dup_errno;
+        return -1;
+    }
+
+    return fd;
 
 }
 
-guacd_proc* guacd_proc_map_remove(guacd_proc_map* map, const char* id) {
+int guacd_proc_map_stop_routing(guacd_proc_map* map, const char* id) {
 
-    guacd_proc* proc;
+    guac_common_list* bucket = __guacd_proc_find_bucket(map, id);
+
+    /* Retrieve corresponding element, if any */
+    guac_common_list_lock(bucket);
+    guac_common_list_element* found = __guacd_proc_find(bucket, id);
+
+    /* If no such element, fail */
+    if (found == NULL) {
+        guac_common_list_unlock(bucket);
+        return 1;
+    }
+
+    ((guacd_proc_map_entry*) found->data)->routable = 0;
+
+    guac_common_list_unlock(bucket);
+    return 0;
+
+}
+
+int guacd_proc_map_remove(guacd_proc_map* map, const char* id) {
 
     guac_common_list* bucket = __guacd_proc_find_bucket(map, id);
     guac_common_list_element* found;
@@ -218,7 +266,7 @@ guacd_proc* guacd_proc_map_remove(guacd_proc_map* map, const char* id) {
     /* If no such element, fail */
     if (found == NULL) {
         guac_common_list_unlock(bucket);
-        return NULL;
+        return 1;
     }
 
     guacd_proc_map_entry* entry = (guacd_proc_map_entry*) found->data;
@@ -228,13 +276,12 @@ guacd_proc* guacd_proc_map_remove(guacd_proc_map* map, const char* id) {
     guac_common_list_remove(map->processes, entry->element);
     guac_common_list_unlock(map->processes);
 
-    proc = entry->proc;
     guac_common_list_remove(bucket, found);
 
     free (entry);
 
     guac_common_list_unlock(bucket);
-    return proc;
+    return 0;
 
 }
 
