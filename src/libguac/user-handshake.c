@@ -166,8 +166,12 @@ static void* guac_user_input_thread(void* data) {
         guac_error_message = NULL;
 
         /* Call handler, stop on error */
-        if (__guac_user_call_opcode_handler(__guac_instruction_handler_map, 
-                user, parser->opcode, parser->argc, parser->argv)) {
+        guac_client_watchdog_notify_operation_start(client);
+        int handler_failed = __guac_user_call_opcode_handler(__guac_instruction_handler_map,
+                user, parser->opcode, parser->argc, parser->argv);
+        guac_client_watchdog_notify_operation_end(client);
+
+        if (handler_failed) {
 
             /* Log error */
             guac_user_log_guac_error(user, GUAC_LOG_WARNING,
@@ -269,9 +273,13 @@ static int __guac_user_handshake(guac_user* user, guac_parser* parser,
         guac_user_log(user, GUAC_LOG_DEBUG, "Processing instruction: %s",
                 parser->opcode);
         
-        /* Run instruction handler for opcode with arguments. */
-        if (__guac_user_call_opcode_handler(__guac_handshake_handler_map, user,
-                parser->opcode, parser->argc, parser->argv)) {
+        /* Run instruction handler for opcode with arguments */
+        guac_client_watchdog_notify_operation_start(user->client);
+        int handler_failed = __guac_user_call_opcode_handler(__guac_handshake_handler_map,
+                user, parser->opcode, parser->argc, parser->argv);
+        guac_client_watchdog_notify_operation_end(user->client);
+
+        if (handler_failed) {
             
             guac_user_log_handshake_failure(user);
             guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
@@ -279,7 +287,6 @@ static int __guac_user_handshake(guac_user* user, guac_parser* parser,
             guac_user_log(user, GUAC_LOG_DEBUG, "Failed opcode: %s",
                     parser->opcode);
 
-            guac_parser_free(parser);
             return 1;
             
         }
@@ -294,9 +301,17 @@ static int __guac_user_handshake(guac_user* user, guac_parser* parser,
 
 int guac_user_handle_connection(guac_user* user, int usec_timeout) {
 
+    int retval = 1;
+
     guac_socket* socket = user->socket;
     guac_client* client = user->client;
-    
+    guac_parser* parser = NULL;
+
+    /* Immediately report change in user count, denying the attempt if all users
+     * have left */
+    if (guac_client_watchdog_notify_user_joined(client))
+        return 1;
+
     user->info.audio_mimetypes = NULL;
     user->info.image_mimetypes = NULL;
     user->info.video_mimetypes = NULL;
@@ -316,16 +331,14 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
         guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
                 "Error sending \"args\" to new user");
 
-        return 1;
+        goto finished;
     }
 
-    guac_parser* parser = guac_parser_alloc();
+    parser = guac_parser_alloc();
 
     /* Perform the handshake with the client. */
-    if (__guac_user_handshake(user, parser, usec_timeout)) {
-        guac_parser_free(parser);
-        return 1;
-    }
+    if (__guac_user_handshake(user, parser, usec_timeout))
+        goto finished;
 
     /* Acknowledge connection availability */
     guac_protocol_send_ready(socket, client->connection_id);
@@ -335,7 +348,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     if (parser->argc != (num_args + 1)) {
         guac_client_log(client, GUAC_LOG_ERROR, "Client did not return the "
                 "expected number of arguments.");
-        return 1;
+        goto finished;
     }
     
     /* Attempt to join user to connection. */
@@ -378,11 +391,17 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     /* Free name and timezone info. */
     guac_mem_free_const(user->info.name);
     guac_mem_free_const(user->info.timezone);
-    
-    guac_parser_free(parser);
 
     /* Successful disconnect */
-    return 0;
+    retval = 0;
+
+finished:
+
+    if (parser != NULL)
+        guac_parser_free(parser);
+
+    guac_client_watchdog_notify_user_left(client);
+    return retval;
 
 }
 
