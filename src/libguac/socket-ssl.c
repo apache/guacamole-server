@@ -28,6 +28,36 @@
 
 #include <openssl/ssl.h>
 
+/**
+ * SSL socket-specific data.
+ */
+typedef struct guac_socket_ssl_data {
+
+    /**
+     * The file descriptor that SSL communication will take place
+     * over.
+     */
+    int fd;
+
+    /**
+     * The current SSL context.
+     */
+    SSL_CTX* context;
+
+    /**
+     * The SSL connection, created automatically via
+     * guac_socket_open_secure().
+     */
+    SSL* ssl;
+
+    /**
+     * Lock that is acquired when an instruction is being written, and released
+     * when the instruction is finished being written.
+     */
+    pthread_mutex_t socket_lock;
+
+} guac_socket_ssl_data;
+
 static ssize_t __guac_socket_ssl_read_handler(guac_socket* socket,
         void* buf, size_t count) {
 
