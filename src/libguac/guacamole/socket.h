@@ -118,6 +118,12 @@ struct guac_socket {
      */
     pthread_t __keep_alive_thread;
 
+    /**
+     * Handler which will be called whenever guac_socket_shutdown() is invoked
+     * on this socket.
+     */
+    guac_socket_shutdown_handler* shutdown_handler;
+
 };
 
 /**
@@ -128,6 +134,19 @@ struct guac_socket {
  *          not be allocated.
  */
 guac_socket* guac_socket_alloc();
+
+/**
+ * Cancels all pending, active, and future operations on the given guac_socket.
+ * All such operations will cease blocking and fail immediately. The socket
+ * itself remains allocated and must still be freed with guac_socket_free().
+ *
+ * This function may be safely called more than once.
+ *
+ * @param socket
+ *     The guac_socket whose pending, active, and future operations should be
+ *     canceled.
+ */
+void guac_socket_shutdown(guac_socket* socket);
 
 /**
  * Frees the given guac_socket and all associated resources.
