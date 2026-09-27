@@ -92,9 +92,20 @@ int guac_rdp_ls_ack_handler(guac_user* user, guac_stream* stream,
         else
             mimetype = "application/octet-stream";
 
+        /* Size and modification time are known for every file on the
+         * drive; permissions and ownership have no meaning here. Times are
+         * stored as Windows FILETIME values, where zero means unknown. */
+        guac_common_json_file_details details = {
+            .mimetype = mimetype,
+            .has_size = !(file->attributes & FILE_ATTRIBUTE_DIRECTORY),
+            .size = file->size,
+            .has_mtime = file->mtime != 0,
+            .mtime = UNIX_TIME(file->mtime)
+        };
+
         /* Write entry */
-        blob_written |= guac_common_json_write_property(user, stream,
-                &ls_status->json_state, absolute_path, mimetype);
+        blob_written |= guac_common_json_write_file_details(user, stream,
+                &ls_status->json_state, absolute_path, &details);
 
         guac_rdp_fs_close(ls_status->fs, file_id);
 

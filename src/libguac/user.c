@@ -335,6 +335,15 @@ int guac_user_supports_required(guac_user* user) {
     
 }
 
+int guac_user_supports_file_details(guac_user* user) {
+
+    if (user == NULL)
+        return 0;
+
+    return (user->info.protocol_version >= GUAC_PROTOCOL_VERSION_1_7_0);
+
+}
+
 int guac_user_supports_webp(guac_user* user) {
 
 #ifdef ENABLE_WEBP

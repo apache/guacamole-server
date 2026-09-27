@@ -941,6 +941,23 @@ int guac_user_supports_msg(guac_user* user);
 int guac_user_supports_required(guac_user* user);
 
 /**
+ * Returns whether the given user supports stream index entries that carry
+ * file details. Such a user accepts, for each entry of the JSON stream index
+ * sent for a directory, either the mimetype string or an object of the form
+ * {"mimetype": ..., "size": ..., "mtime": ..., ...}. Users that do not
+ * support this must be sent the mimetype string only.
+ *
+ * @param user
+ *     The Guacamole user to check for support of detailed stream index
+ *     entries.
+ *
+ * @return
+ *     Non-zero if the user supports detailed stream index entries, otherwise
+ *     zero.
+ */
+int guac_user_supports_file_details(guac_user* user);
+
+/**
  * Returns whether the given user supports WebP. If the user does not
  * support WebP, or the server cannot encode WebP images, zero is returned.
  *
