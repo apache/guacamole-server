@@ -43,7 +43,8 @@ noinst_HEADERS =  \
     move-fd.h     \
     proc.h        \
     proc-child.h  \
-    proc-map.h
+    proc-map.h    \
+    proc-title.h
 
 guacd_SOURCES =  \
     conf-args.c  \
@@ -55,7 +56,8 @@ guacd_SOURCES =  \
     move-fd.c    \
     proc.c       \
     proc-child.c \
-    proc-map.c
+    proc-map.c   \
+    proc-title.c
 
 guacd_CFLAGS =              \
     -Werror -Wall -pedantic \

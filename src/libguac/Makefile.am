@@ -76,7 +76,6 @@ libguacinc_HEADERS =                  \
     guacamole/plugin.h                \
     guacamole/pool.h                  \
     guacamole/pool-types.h            \
-    guacamole/proctitle.h             \
     guacamole/protocol.h              \
     guacamole/protocol-constants.h    \
     guacamole/protocol-types.h        \
@@ -92,6 +91,9 @@ libguacinc_HEADERS =                  \
     guacamole/stream-types.h          \
     guacamole/string.h                \
     guacamole/tcp.h                   \
+    guacamole/thread.h                \
+    guacamole/thread-fntypes.h        \
+    guacamole/thread-types.h          \
     guacamole/timestamp.h             \
     guacamole/timestamp-types.h       \
     guacamole/unicode.h               \
@@ -159,7 +161,6 @@ libguac_la_SOURCES =          \
     palette.c                 \
     parser.c                  \
     pool.c                    \
-    proctitle.c               \
     protocol.c                \
     raw_encoder.c             \
     recording.c               \
@@ -171,6 +172,7 @@ libguac_la_SOURCES =          \
     socket-tee.c              \
     string.c                  \
     tcp.c                     \
+    thread.c                  \
     timestamp.c               \
     unicode.c                 \
     user.c                    \

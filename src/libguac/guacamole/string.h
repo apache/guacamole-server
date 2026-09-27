@@ -99,6 +99,19 @@ int guac_itoa(char* restrict dest, int integer);
 int guac_itoa_safe(char* restrict dest, size_t dest_size, int integer);
 
 /**
+ * Returns whether the given string is non-empty. Both NULL and the empty
+ * string ("") are considered empty.
+ *
+ * @param str
+ *     The string to test.
+ *
+ * @return
+ *     Non-zero if the provided string is neither NULL nor empty, zero
+ *     otherwise.
+ */
+int guac_is_nonempty(const char* str);
+
+/**
  * Copies a limited number of bytes from the given source string to the given
  * destination buffer. The resulting buffer will always be null-terminated,
  * even if doing so means that the intended string is truncated, unless the

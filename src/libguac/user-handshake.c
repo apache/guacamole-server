@@ -21,9 +21,9 @@
 #include "guacamole/client.h"
 #include "guacamole/error.h"
 #include "guacamole/parser.h"
-#include "guacamole/proctitle.h"
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"
+#include "guacamole/thread.h"
 #include "guacamole/user.h"
 #include "user-handlers.h"
 
@@ -128,10 +128,6 @@ static void guac_user_log_handshake_failure(guac_user* user) {
  */
 static void* guac_user_input_thread(void* data) {
 
-    /* Thread name user-input: reads and parses instructions from a single
-     * user's socket. */
-    guac_thread_name_set("user-input");
-
     guac_user_input_thread_params* params =
         (guac_user_input_thread_params*) data;
 
@@ -218,16 +214,16 @@ static int guac_user_start(guac_parser* parser, guac_user* user,
         .usec_timeout = usec_timeout
     };
 
-    pthread_t input_thread;
-
-    if (pthread_create(&input_thread, NULL, guac_user_input_thread, (void*) &params)) {
+    guac_thread input_thread;
+    if (guac_thread_create(&input_thread, guac_user_input_thread,
+                (void*) &params, "user-input")) {
         guac_user_log(user, GUAC_LOG_ERROR, "Unable to start input thread");
         guac_user_stop(user);
         return -1;
     }
 
     /* Wait for I/O threads */
-    pthread_join(input_thread, NULL);
+    guac_thread_join(&input_thread, NULL);
 
     /* Explicitly signal disconnect */
     guac_protocol_send_disconnect(user->socket);

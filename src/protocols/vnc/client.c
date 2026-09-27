@@ -35,6 +35,7 @@
 #include <guacamole/display.h>
 #include <guacamole/mem.h>
 #include <guacamole/recording.h>
+#include <guacamole/thread.h>
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -140,7 +141,7 @@ int guac_vnc_client_free_handler(guac_client* client) {
     if (rfb_client != NULL) {
 
         /* Wait for client thread to finish */
-        pthread_join(vnc_client->client_thread, NULL);
+        guac_thread_join(&vnc_client->client_thread, NULL);
 
         /* Free memory that may not be free'd by libvncclient's
          * rfbClientCleanup() prior to libvncclient 0.9.12 */

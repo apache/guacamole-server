@@ -27,9 +27,10 @@
 
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
-#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
+#include <guacamole/string.h>
+#include <guacamole/thread.h>
 #include <libwebsockets.h>
 
 #include <pthread.h>
@@ -175,10 +176,6 @@ struct lws_protocols guac_kubernetes_lws_protocols[] = {
  */
 static void* guac_kubernetes_input_thread(void* data) {
 
-    /* Thread name k8s-input: reads user input and forwards it to the
-     * Kubernetes pod. */
-    guac_thread_name_set("k8s-input");
-
     guac_client* client = (guac_client*) data;
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
@@ -201,17 +198,13 @@ static void* guac_kubernetes_input_thread(void* data) {
 
 void* guac_kubernetes_client_thread(void* data) {
 
-    /* Thread name k8s-worker: main Kubernetes client thread; manages the
-     * websocket connection to the pod. */
-    guac_thread_name_set("k8s-worker");
-
     guac_client* client = (guac_client*) data;
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
 
     guac_kubernetes_settings* settings = kubernetes_client->settings;
 
-    pthread_t input_thread;
+    guac_thread input_thread;
     char endpoint_path[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
 
     /* Verify that the pod name was specified (it's always required) */
@@ -222,28 +215,37 @@ void* guac_kubernetes_client_thread(void* data) {
     }
 
     const char* kubernetes_namespace = settings->kubernetes_namespace;
-    char kubernetes_title[GUAC_PROCESS_TITLE_BUFSIZE];
+    char kubernetes_name[GUAC_KUBERNETES_MAX_NAME_LENGTH];
 
     /* Namespace should already be populated by argument parsing, but
      * provide fallback. */
     if (kubernetes_namespace == NULL || *kubernetes_namespace == '\0')
         kubernetes_namespace = GUAC_KUBERNETES_DEFAULT_NAMESPACE;
 
-    /* Identify the attached Kubernetes target (for example,
-     * "k8s default/mypod" or "k8s default/mypod/container"). Include the
-     * container when specified to distinguish multi-container pods. */
+    /* Identify the attached Kubernetes target (for example, "default/mypod" or
+     * "default/mypod/container"). Include the container when specified to
+     * distinguish multi-container pods. */
     if (settings->kubernetes_container != NULL
             && *settings->kubernetes_container != '\0')
-        snprintf(kubernetes_title, sizeof(kubernetes_title),
-                "%s %s/%s/%s", GUAC_KUBERNETES_PROCESS_TITLE_NAME,
+        snprintf(kubernetes_name, sizeof(kubernetes_name), "%s/%s/%s",
                 kubernetes_namespace, settings->kubernetes_pod,
                 settings->kubernetes_container);
     else
-        snprintf(kubernetes_title, sizeof(kubernetes_title),
-                "%s %s/%s", GUAC_KUBERNETES_PROCESS_TITLE_NAME,
+        snprintf(kubernetes_name, sizeof(kubernetes_name), "%s/%s",
                 kubernetes_namespace, settings->kubernetes_pod);
 
-    guac_process_title_set(kubernetes_title);
+    /* A Kubernetes connection accesses a pod served by the Kubernetes server,
+     * and is identified by both */
+    char kubernetes_port[GUAC_USHORT_STRING_BUFSIZE];
+    if (guac_itoa_safe(kubernetes_port, sizeof(kubernetes_port),
+                settings->port) < 1)
+        kubernetes_port[0] = '\0';
+
+    guac_client_set_info(client, &(guac_client_info) {
+        .hostname = settings->hostname,
+        .port = kubernetes_port,
+        .resource_name = kubernetes_name
+    });
 
     /* Generate endpoint for attachment URL */
     if (guac_kubernetes_endpoint_uri(endpoint_path, sizeof(endpoint_path),
@@ -373,7 +375,7 @@ void* guac_kubernetes_client_thread(void* data) {
     pthread_mutex_init(&(kubernetes_client->outbound_message_lock), NULL);
 
     /* Start input thread */
-    if (pthread_create(&(input_thread), NULL, guac_kubernetes_input_thread, (void*) client)) {
+    if (guac_thread_create(&input_thread, guac_kubernetes_input_thread, (void*) client, "k8s-input")) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start input thread");
         goto fail;
     }
@@ -396,7 +398,7 @@ void* guac_kubernetes_client_thread(void* data) {
     /* Kill client and Wait for input thread to die */
     guac_terminal_stop(kubernetes_client->term);
     guac_client_stop(client);
-    pthread_join(input_thread, NULL);
+    guac_thread_join(&input_thread, NULL);
 
 fail:
 

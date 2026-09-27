@@ -22,16 +22,17 @@
 #include "proc.h"
 #include "proc-child.h"
 #include "proc-map.h"
+#include "proc-title.h"
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/mem.h>
 #include <guacamole/parser.h>
 #include <guacamole/plugin.h>
-#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/string.h>
+#include <guacamole/thread.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/user.h>
 
@@ -41,6 +42,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -91,10 +93,6 @@ typedef struct guacd_user_thread_params {
  *     Always NULL.
  */
 static void* guacd_user_thread(void* data) {
-
-    /* Thread name user-conn: manages a single user's connection lifecycle
-     * from handshake through disconnect. */
-    guac_thread_name_set("user-conn");
 
     guacd_user_thread_params* params = (guacd_user_thread_params*) data;
     guac_client* client = params->client;
@@ -212,30 +210,27 @@ static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
     }
 
     /* Start user thread */
-    pthread_t user_thread;
-    int result = pthread_create(&user_thread, NULL, guacd_user_thread, params);
-    if (result) {
+    guac_thread user_thread;
+    if (guac_thread_create(&user_thread, guacd_user_thread, params, "user-conn")) {
 
         close(fd);
         guac_mem_free(params);
 
         if (owner) {
             guacd_proc_stop(proc);
-            guacd_log(GUAC_LOG_ERROR, "Unable to start thread for "
-                    "connection owner: %s. Stopping connection.",
-                    strerror(result));
+            guacd_log_guac_error(GUAC_LOG_ERROR, "Stopping connection: Unable "
+                    "to start thread for connection owner");
         }
         else
-            guacd_log(GUAC_LOG_ERROR, "Unable to start thread for "
-                    "joining user: %s. The user has been dropped.",
-                    strerror(result));
+            guacd_log_guac_error(GUAC_LOG_ERROR, "User dropped: Unable to "
+                    "start thread for joining user");
 
         guac_client_watchdog_notify_user_left(client);
         return;
 
     }
 
-    pthread_detach(user_thread);
+    guac_thread_detach(&user_thread);
 
 }
 
@@ -278,10 +273,6 @@ static guac_client_watchdog* guacd_proc_watchdog = NULL;
  */
 static void* guacd_teardown_watch_thread(void* data) {
 
-    /* Thread name teardown-watch: watches for client teardown to begin and wakes
-     * the main loop. */
-    guac_thread_name_set("teardown-watch");
-
     guacd_proc* proc = (guacd_proc*) data;
 
     guac_client_watchdog_await_teardown(proc->watchdog);
@@ -307,13 +298,37 @@ static void signal_stop_handler(int signal) {
 
 }
 
+/**
+ * Client information handler which updates the title of the current process
+ * according to the details provided.
+ *
+ * @param client
+ *     The client serving the connection described by the given
+ *     guac_client_info.
+ *
+ * @param info
+ *     A guac_client_info structure describing the details of the connection
+ *     being served.
+ */
+static void guacd_client_info(guac_client* client, const guac_client_info* info) {
+    guacd_proc_title_set_connection(NULL, info);
+}
+
 void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
 
-    /* Label the new child process */
-    guac_process_title_set(protocol);
+    /* Label the new child process with at least the protocol */
+    guacd_proc_title_set_connection(protocol, NULL);
+
+    /* Thread name is separate from process title (but with insufficient space
+     * for connection details) */
+    guac_thread_self_set_name(GUACD_PROC_TITLE_PREFIX "%s" GUACD_PROC_TITLE_SUFFIX, protocol);
+
+    /* Relabel the process with additional details once they have been supplied
+     * with guac_client_set_info() */
+    guac_client* client = proc->client;
+    client->info_handler = guacd_client_info;
 
     /* Start watchdog as early as possible, before loading the plugin */
-    guac_client* client = proc->client;
     proc->watchdog = guacd_proc_watchdog = guac_client_watchdog_start(client,
             GUACD_TIMEOUT, GUACD_CLEANUP_TIMEOUT);
     if (proc->watchdog == NULL) {
@@ -332,8 +347,8 @@ void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
     alarm(0);
 
     /* Unblock recvmsg() in the main loop once teardown starts */
-    pthread_t teardown_watch_thread;
-    if (pthread_create(&teardown_watch_thread, NULL, guacd_teardown_watch_thread, proc)) {
+    guac_thread teardown_watch_thread;
+    if (guac_thread_create(&teardown_watch_thread, guacd_teardown_watch_thread, proc, "teardown-watch")) {
         guacd_log(GUAC_LOG_ERROR, "Unable to start the teardown watch thread. "
                 "Refusing to serve the connection unsupervised.");
         _exit(EXIT_FAILURE);
@@ -409,7 +424,7 @@ cleanup_client:
 
     /* Connection has ended and we are preparing to free the client */
     guac_client_watchdog_notify_teardown_start(proc->watchdog);
-    pthread_join(teardown_watch_thread, NULL);
+    guac_thread_join(&teardown_watch_thread, NULL);
 
     /* Request client to stop/disconnect */
     guac_client_stop(client);
@@ -590,8 +605,26 @@ guacd_proc* guacd_create_proc(const char* protocol, int exe_fd) {
 
     /* Compose arguments before forking, as only async-signal-safe operations are
      * permitted between fork and exec */
-    char process_name[128] = GUACD_PROC_NAME_PREFIX;
-    guac_strlcat(process_name, protocol, sizeof(process_name));
+    char process_name[GUACD_PROC_NAME_LENGTH];
+    int name_length = snprintf(process_name, sizeof(process_name), "%s%s%s",
+            GUACD_PROC_TITLE_PREFIX, protocol, GUACD_PROC_TITLE_SUFFIX);
+
+    if (name_length < 0 || (size_t) name_length >= sizeof(process_name)) {
+        guacd_log(GUAC_LOG_ERROR, "Invalid protocol name \"%s\": Name exceeds "
+                "maximum length.", protocol);
+        close(parent_socket);
+        close(config_pipe[0]);
+        close(config_pipe[1]);
+        guacd_proc_free(proc);
+        return NULL;
+    }
+
+    /* Pad argv[0] with spaces to reserve space for connection details within the
+     * process title */
+    if ((size_t) name_length < sizeof(process_name) - 1) {
+        memset(process_name + name_length, ' ', sizeof(process_name) - 1 - name_length);
+        process_name[sizeof(process_name) - 1] = '\0';
+    }
 
     char* const child_argv[] = {
         process_name,
