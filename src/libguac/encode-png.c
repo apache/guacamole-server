@@ -264,6 +264,76 @@ static void guac_png_flush_handler(png_structp png) {
 
 }
 
+/**
+ * Experimental, opt-in truecolor PNG writer for opaque RGB24 surfaces. Skips
+ * palette construction and uses compression level 1 with only the SUB filter.
+ * Decoded pixels remain lossless, but low-color images may require more bytes
+ * than the default palette writer. Uses the existing PNG blob transport.
+ */
+static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
+        cairo_surface_t* surface) {
+    const int width = cairo_image_surface_get_width(surface);
+    const int height = cairo_image_surface_get_height(surface);
+    const int stride = cairo_image_surface_get_stride(surface);
+    const unsigned char* pixels = cairo_image_surface_get_data(surface);
+    if (width < 1 || height < 1 || !pixels) {
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
+        guac_error_message = "Invalid RGB surface for PNG encoding";
+        return -1;
+    }
+
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (!png) {
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
+        guac_error_message = "libpng failed to create write structure";
+        return -1;
+    }
+    png_infop info = png_create_info_struct(png);
+    if (!info) {
+        png_destroy_write_struct(&png, NULL);
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
+        guac_error_message = "libpng failed to create info structure";
+        return -1;
+    }
+    unsigned char* row = guac_mem_alloc(3, width);
+    if (!row) {
+        png_destroy_write_struct(&png, &info);
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate RGB PNG row";
+        return -1;
+    }
+    guac_png_write_state writer = { .socket = socket, .stream = stream, .buffer_size = 0 };
+    if (setjmp(png_jmpbuf(png))) {
+        png_destroy_write_struct(&png, &info);
+        guac_mem_free(row);
+        guac_error = GUAC_STATUS_IO_ERROR;
+        guac_error_message = "libpng output error";
+        return -1;
+    }
+
+    cairo_surface_flush(surface);
+    png_set_write_fn(png, &writer, guac_png_write_handler, guac_png_flush_handler);
+    png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB,
+            PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_set_compression_level(png, 1);
+    png_set_filter(png, PNG_FILTER_TYPE_BASE, PNG_FILTER_SUB);
+    png_write_info(png, info);
+    for (int y = 0; y < height; y++) {
+        const uint32_t* src = (const uint32_t*) (pixels + (size_t) y * stride);
+        for (int x = 0; x < width; x++) {
+            row[3*x] = (src[x] >> 16) & 0xff;
+            row[3*x+1] = (src[x] >> 8) & 0xff;
+            row[3*x+2] = src[x] & 0xff;
+        }
+        png_write_row(png, row);
+    }
+    png_write_end(png, info);
+    png_destroy_write_struct(&png, &info);
+    guac_mem_free(row);
+    guac_png_flush_data(&writer);
+    return 0;
+}
+
 int guac_png_write(guac_socket* socket, guac_stream* stream,
         cairo_surface_t* surface) {
 
@@ -282,6 +352,11 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
     int height = cairo_image_surface_get_height(surface);
     int stride = cairo_image_surface_get_stride(surface);
     unsigned char* data = cairo_image_surface_get_data(surface);
+
+    /* Explicit experimental opt-in. All other values retain existing policy. */
+    const char* fast = getenv("GUAC_PNG_FAST_ENCODING");
+    if (format == CAIRO_FORMAT_RGB24 && fast && strcmp(fast, "1") == 0)
+        return guac_png_rgb_fast_write(socket, stream, surface);
 
     /* If not RGB24, use Cairo PNG writer */
     if (format != CAIRO_FORMAT_RGB24 || data == NULL)

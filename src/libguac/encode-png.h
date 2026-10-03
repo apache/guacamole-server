@@ -29,6 +29,14 @@
  * Encodes the given surface as a PNG, and sends the resulting data over the
  * given stream and socket as blobs.
  *
+ * Setting the experimental GUAC_PNG_FAST_ENCODING environment variable to
+ * exactly "1" enables a lossless truecolor encoder for Cairo RGB24 surfaces
+ * using compression level 1 and the SUB filter. This trades compression effort
+ * for potentially larger PNG output, especially for low-color images. Unset
+ * or other values retain the existing PNG encoder. Non-RGB24 surfaces retain
+ * Cairo's PNG encoder, including transparency. This option affects only PNG
+ * encoding; it does not change which image codec is selected.
+ *
  * @param socket
  *     The socket to send PNG blobs over.
  *

@@ -41,6 +41,7 @@ noinst_HEADERS =                     \
 test_libguac_SOURCES =               \
     client/buffer_pool.c             \
     client/layer_pool.c              \
+    encode/png.c                    \
     fifo/fifo.c                      \
     file/openat.c                    \
     flag/flag.c                      \
@@ -84,6 +85,7 @@ test_libguac_CFLAGS =       \
 
 test_libguac_LDADD = \
     @CUNIT_LIBS@     \
+    @CAIRO_LIBS@     \
     @LIBGUAC_LTLIB@
 
 #
