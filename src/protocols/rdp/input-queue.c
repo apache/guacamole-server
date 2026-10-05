@@ -20,6 +20,7 @@
 #include "channels/disp.h"
 #include "channels/rdpei.h"
 #include "input.h"
+#include "input-wheel.h"
 #include "guacamole/display.h"
 #include "keyboard.h"
 #include "rdp.h"
@@ -34,7 +35,20 @@
 #include <guacamole/rwlock.h>
 #include <guacamole/user.h>
 
+#include <stdint.h>
 #include <stdlib.h>
+
+static uint16_t guac_rdp_smooth_wheel_flags(int delta, int horizontal) {
+
+    uint16_t flags = horizontal ? PTR_FLAGS_HWHEEL : PTR_FLAGS_WHEEL;
+    if (delta < 0)
+        flags |= PTR_FLAGS_WHEEL_NEGATIVE;
+
+    /* RDP stores direction separately from the unsigned rotation magnitude.
+     * Positive vertical values preserve the legacy downward-scroll direction. */
+    return flags | guac_rdp_smooth_wheel_magnitude(delta);
+
+}
 
 /**
  * Processes a single mouse event, updating client state and sending any
@@ -65,6 +79,33 @@ static void guac_rdp_handle_mouse_event(guac_rdp_client* rdp_client,
     freerdp* rdp_inst = rdp_client->rdp_inst;
     if (rdp_inst == NULL)
         goto complete;
+
+    /* Smooth wheel input is a stateless Guac mouse-mask extension. Do not
+     * expose its payload bits to normal button tracking, recordings, or
+     * cursor-position notifications. */
+    if (guac_rdp_mouse_mask_is_smooth_wheel((uint32_t) mask)) {
+
+        int dx = guac_rdp_decode_smooth_wheel_axis(
+                (uint32_t) mask, GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT);
+        int dy = guac_rdp_decode_smooth_wheel_axis(
+                (uint32_t) mask, GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT);
+
+        if (dx || dy) {
+            pthread_mutex_lock(&(rdp_client->message_lock));
+            if (dx)
+                GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
+                        GUAC_RDP_CONTEXT(rdp_inst)->input,
+                        guac_rdp_smooth_wheel_flags(dx, 1), x, y);
+            if (dy)
+                GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
+                        GUAC_RDP_CONTEXT(rdp_inst)->input,
+                        guac_rdp_smooth_wheel_flags(dy, 0), x, y);
+            pthread_mutex_unlock(&(rdp_client->message_lock));
+        }
+
+        goto complete;
+
+    }
 
     /* Store current mouse location/state */
     guac_display_render_thread_notify_user_moved_mouse(rdp_client->render_thread, user, x, y, mask);
