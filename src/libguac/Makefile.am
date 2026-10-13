@@ -132,6 +132,7 @@ libguac_la_SOURCES =          \
     argv.c                    \
     audio.c                   \
     client.c                  \
+    client-watchdog.c         \
     display.c                 \
     display-builtin-cursors.c \
     display-cursor.c          \
