@@ -30,15 +30,26 @@
  */
 #define NANOS_PER_SECOND 1000000000L
 
+/**
+ * The clock to use scheduling the timeout of guac_flag's timed wait. As the
+ * realtime clock is subject to time changes, this will be the system-wide
+ * monotonic clock except on platforms that entirely lack a monotonic clock.
+ *
+ * @see guac_flag_timedwait_and_lock()
+ */
+#ifdef CLOCK_MONOTONIC
+#define GUAC_FLAG_CLOCK CLOCK_MONOTONIC
+#else
+#define GUAC_FLAG_CLOCK CLOCK_REALTIME
+#endif
+
 void guac_flag_init(guac_flag* event_flag) {
 
-    /* The condition used by guac_flag to signal changes in its
-     * value must be safe to share between processes, and must use the
-     * system-wide monotonic clock (not the realtime clock, which is subject to
-     * time changes) */
+    /* The condition guac_flag uses to signal changes must be shareable between
+     * processes, and must use the system-wide monotonic clock where possible */
     pthread_condattr_t cond_attr;
     pthread_condattr_init(&cond_attr);
-    pthread_condattr_setclock(&cond_attr, CLOCK_MONOTONIC);
+    pthread_condattr_setclock(&cond_attr, GUAC_FLAG_CLOCK);
     pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED);
     pthread_cond_init(&event_flag->value_changed, &cond_attr);
 
@@ -151,20 +162,29 @@ int guac_flag_timedwait_and_lock(guac_flag* event_flag,
     }
 
     struct timespec ts_timeout;
-    clock_gettime(CLOCK_MONOTONIC, &ts_timeout);
+    clock_gettime(GUAC_FLAG_CLOCK, &ts_timeout);
 
-    uint64_t nsec_timeout = msec_timeout * 1000000 + ts_timeout.tv_nsec;
+    uint64_t nsec_timeout = (uint64_t) msec_timeout * 1000000 + ts_timeout.tv_nsec;
     ts_timeout.tv_sec += nsec_timeout / NANOS_PER_SECOND;
     ts_timeout.tv_nsec = nsec_timeout % NANOS_PER_SECOND;
 
     /* Continue waiting until at least one of the desired flags has been set */
     while (!(event_flag->value & flags)) {
 
-        /* Wait for any change to any flags, failing if a timeout occurs */
+        /* Wait for any change to any flags, failing if no such change occurs
+         * before the timeout */
         if (pthread_cond_timedwait(&event_flag->value_changed,
                     &event_flag->value_mutex, &ts_timeout)) {
-            guac_flag_unlock(event_flag);
-            return 0;
+
+            /* NOTE: Per POSIX, the predicate must be rechecked even after the
+             * timeout lapses (unavoidable race between the expiration of the
+             * timeout and the flag value change) */
+            int retval = event_flag->value & flags;
+            if (!retval)
+                guac_flag_unlock(event_flag);
+
+            return retval;
+
         }
 
     }

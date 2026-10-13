@@ -311,6 +311,12 @@ struct guac_client {
      */
     void* __plugin_handle;
 
+    /**
+     * The watchdog for this client, or NULL if guac_client_watchdog_start() has
+     * not yet been called.
+     */
+    guac_client_watchdog* __watchdog;
+
 };
 
 /**
@@ -392,6 +398,153 @@ void guac_client_abort(guac_client* client, guac_protocol_status status,
  */
 void vguac_client_abort(guac_client* client, guac_protocol_status status,
         const char* format, va_list ap);
+
+/**
+ * Allocates and starts the watchdog for the given client. If the watchdog could
+ * not be allocated or started, NULL is returned and guac_error is set
+ * appropriately.
+ *
+ * The watchdog observes the behavior of the connection and guarantees the
+ * connection process cleans itself up in a timely manner upon disconnect. If
+ * the connection process fails to clean up in a timely manner, or stops
+ * responding, it is forcibly killed.
+ *
+ * @important
+ *     The client monitored by the watchdog MUST NOT be freed until after
+ *     guac_client_watchdog_notify_teardown_start() has been called and
+ *     no further users remain connected.
+ *
+ * @see guac_client_watchdog_notify_teardown_start()
+ * @see guac_client_watchdog_await_all_users()
+ *
+ * @param client
+ *     The client that the watchdog should observe.
+ *
+ * @param op_timeout
+ *     The number of milliseconds allowed for a timed operation before the
+ *     connection process is considered unresponsive. Within the scope of client
+ *     plugins, and with the sole exception of the free_handler covered by
+ *     cleanup_timeout, the handlers of guac_client and guac_user are considered
+ *     timed operations.
+ *
+ * @param cleanup_timeout
+ *     The maximum number of milliseconds the process may take to clean up
+ *     before it is forcibly killed.
+ *
+ * @return
+ *     The newly started watchdog, or NULL if the watchdog could not be started.
+ */
+guac_client_watchdog* guac_client_watchdog_start(guac_client* client,
+        unsigned int op_timeout, unsigned int cleanup_timeout);
+
+/**
+ * Requests that the given watchdog terminate the connection it is monitoring.
+ *
+ * @note
+ *     This function is intentionally async-signal-safe and may be called at
+ *     any time from any thread, even after the relevant guac_client has been
+ *     freed.
+ *
+ * @param watchdog
+ *     The watchdog of the client whose connection should terminate.
+ */
+void guac_client_watchdog_stop_connection(guac_client_watchdog* watchdog);
+
+/**
+ * Notifies the given watchdog that teardown has begun for the client that the
+ * watchdog is monitoring. Any thread waiting on
+ * guac_client_watchdog_await_teardown() is unblocked. If teardown has already
+ * been notified, this function has no effect.
+ *
+ * @param watchdog
+ *     The watchdog of the client whose connection is being torn down.
+ */
+void guac_client_watchdog_notify_teardown_start(guac_client_watchdog* watchdog);
+
+/**
+ * Notifies the given watchdog that teardown has completed for the client that
+ * the watchdog is monitoring. This function may only be called after
+ * guac_client_watchdog_notify_teardown_start().
+ *
+ * @param watchdog
+ *     The watchdog of the client whose connection has been torn down.
+ */
+void guac_client_watchdog_notify_teardown_end(guac_client_watchdog* watchdog);
+
+/**
+ * Notifies the watchdog of the given client that a new user is joining the
+ * connection. Once all users of a connection have left, any further attempts to
+ * join the connection are refused. If the client does not have an associated
+ * watchdog, this function has no effect.
+ *
+ * @param client
+ *     The client the user has joined.
+ *
+ * @return
+ *     Zero if the user may be accepted, non-zero if all users have left and
+ *     this user's attempt to join should be refused.
+ */
+int guac_client_watchdog_notify_user_joined(guac_client* client);
+
+/**
+ * Notifies the watchdog of the given client that an existing user is leaving
+ * the connection. This function may be called multiple times per user, but
+ * MUST be called exactly once for each call to
+ * guac_client_watchdog_notify_user_joined(). If the client does not have an
+ * associated watchdog, this function has no effect.
+ *
+ * @param client
+ *     The client the user has left.
+ */
+void guac_client_watchdog_notify_user_left(guac_client* client);
+
+/**
+ * Notifies the watchdog of the given client that an operation is beginning that
+ * must complete within a bounded amount of time. The general amount of time
+ * that should be permitted for timed operations is provided when the watchdog
+ * was originally started. Every call must be balanced by a call to
+ * guac_client_watchdog_notify_operation_end(), even if the operation fails.
+ * Calls may safely overlap and nest. If the client does not have an associated
+ * watchdog, this function has no effect.
+ *
+ * @see guac_client_watchdog_start()
+ * @see guac_client_watchdog_notify_operation_end()
+ *
+ * @param client
+ *     The client on whose behalf the operation is about to be performed.
+ */
+void guac_client_watchdog_notify_operation_start(guac_client* client);
+
+/**
+ * Notifies the watchdog of the given client that an operation associated with a
+ * call to guac_client_watchdog_notify_operation_start() has completed. If the
+ * client does not have an associated watchdog, this function has no effect.
+ *
+ * @param client
+ *     The client on whose behalf the operation was performed.
+ */
+void guac_client_watchdog_notify_operation_end(guac_client* client);
+
+/**
+ * Blocks until teardown of the connection monitored by the given watchdog has
+ * begun, whether because the watchdog observed that the connection terminated
+ * or because guac_client_watchdog_notify_teardown_start() was called.
+ *
+ * @see guac_client_watchdog_notify_teardown_start()
+ *
+ * @param watchdog
+ *     The watchdog to wait on.
+ */
+void guac_client_watchdog_await_teardown(guac_client_watchdog* watchdog);
+
+/**
+ * Waits until no users of the connection monitored by the given watchdog remain
+ * connected.
+ *
+ * @param watchdog
+ *     The watchdog to wait on.
+ */
+void guac_client_watchdog_await_all_users(guac_client_watchdog* watchdog);
 
 /**
  * Allocates a new buffer (invisible layer). An arbitrary index is

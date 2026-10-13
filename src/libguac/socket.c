@@ -166,13 +166,14 @@ guac_socket* guac_socket_alloc() {
     socket->__keep_alive_enabled = 0;
 
     /* No handlers yet */
-    socket->read_handler   = NULL;
-    socket->write_handler  = NULL;
-    socket->select_handler = NULL;
-    socket->free_handler   = NULL;
-    socket->flush_handler  = NULL;
-    socket->lock_handler   = NULL;
-    socket->unlock_handler = NULL;
+    socket->read_handler     = NULL;
+    socket->write_handler    = NULL;
+    socket->select_handler   = NULL;
+    socket->free_handler     = NULL;
+    socket->shutdown_handler = NULL;
+    socket->flush_handler    = NULL;
+    socket->lock_handler     = NULL;
+    socket->unlock_handler   = NULL;
 
     return socket;
 
@@ -203,13 +204,15 @@ void guac_socket_instruction_end(guac_socket* socket) {
 
 }
 
+void guac_socket_shutdown(guac_socket* socket) {
+
+    /* Call shutdown handler if defined */
+    if (socket->shutdown_handler)
+        socket->shutdown_handler(socket);
+
+}
+
 void guac_socket_free(guac_socket* socket) {
-
-    guac_socket_flush(socket);
-
-    /* Call free handler if defined */
-    if (socket->free_handler)
-        socket->free_handler(socket);
 
     /* Mark as closed */
     socket->state = GUAC_SOCKET_CLOSED;
@@ -219,6 +222,12 @@ void guac_socket_free(guac_socket* socket) {
         pthread_cancel(socket->__keep_alive_thread);
         pthread_join(socket->__keep_alive_thread, NULL);
     }
+
+    guac_socket_flush(socket);
+
+    /* Call free handler if defined */
+    if (socket->free_handler)
+        socket->free_handler(socket);
 
     guac_mem_free(socket);
 }

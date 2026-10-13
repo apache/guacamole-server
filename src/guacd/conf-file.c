@@ -194,7 +194,7 @@ guacd_config* guacd_conf_load() {
 #endif
 
     /* Read configuration from file */
-    int fd = open(GUACD_CONF_FILE, O_RDONLY);
+    int fd = open(GUACD_CONF_FILE, O_RDONLY | O_CLOEXEC);
 
     /* Notify of errors preventing reading */
     if (fd < 0) {
