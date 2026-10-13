@@ -173,16 +173,19 @@ static void guac_client_promote_pending_users(guac_client* client) {
     /* Run the pending join handler, if one is defined */
     if (client->join_pending_handler) {
 
-        /* If an error occurs in the pending handler */
-        if(client->join_pending_handler(client)) {
+        guac_client_watchdog_notify_operation_start(client);
+        int join_pending_failed = client->join_pending_handler(client);
+        guac_client_watchdog_notify_operation_end(client);
 
-            /* Log a warning and abort the promotion of the pending users */
+        /* Log a warning and abort the promotion of the pending users if an error
+         * occurs in the pending handler */
+        if (join_pending_failed) {
             guac_client_log(client, GUAC_LOG_WARNING,
                     "join_pending_handler did not successfully complete;"
                     " any pending users have not been promoted.\n");
-
             goto promotion_complete;
         }
+
     }
 
     /* The first pending user in the list, if any */
@@ -470,8 +473,11 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
     int retval = 0;
 
     /* Call handler, if defined */
-    if (client->join_handler)
+    if (client->join_handler) {
+        guac_client_watchdog_notify_operation_start(client);
         retval = client->join_handler(user, argc, argv);
+        guac_client_watchdog_notify_operation_end(client);
+    }
 
     if (retval == 0) {
 
@@ -526,10 +532,16 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
         guac_client_owner_notify_leave(client, user);
 
     /* Call handler, if defined */
-    if (user->leave_handler)
+    if (user->leave_handler) {
+        guac_client_watchdog_notify_operation_start(client);
         user->leave_handler(user);
-    else if (client->leave_handler)
+        guac_client_watchdog_notify_operation_end(client);
+    }
+    else if (client->leave_handler) {
+        guac_client_watchdog_notify_operation_start(client);
         client->leave_handler(user);
+        guac_client_watchdog_notify_operation_end(client);
+    }
 
 }
 
@@ -641,6 +653,9 @@ int guac_client_end_multiple_frames(guac_client* client, int frames) {
 
 int guac_client_load_plugin(guac_client* client, const char* protocol) {
 
+    int retval = -1;
+    guac_client_watchdog_notify_operation_start(client);
+
     /* Reference to dlopen()'d plugin */
     void* client_plugin_handle;
 
@@ -661,7 +676,7 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
                 sizeof(protocol_lib)) >= sizeof(protocol_lib)) {
         guac_error = GUAC_STATUS_NO_MEMORY;
         guac_error_message = "Protocol name is too long";
-        return -1;
+        goto finished;
     }
 
     /* Load client plugin */
@@ -669,7 +684,7 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
     if (!client_plugin_handle) {
         guac_error = GUAC_STATUS_NOT_FOUND;
         guac_error_message = dlerror();
-        return -1;
+        goto finished;
     }
 
     dlerror(); /* Clear errors */
@@ -682,13 +697,17 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = dlerror();
         dlclose(client_plugin_handle);
-        return -1;
+        goto finished;
     }
 
     /* Init client */
     client->__plugin_handle = client_plugin_handle;
 
-    return alias.client_init(client);
+    retval = alias.client_init(client);
+
+finished:
+    guac_client_watchdog_notify_operation_end(client);
+    return retval;
 
 }
 

@@ -22,10 +22,13 @@
 #include "conf-file.h"
 #include "connection.h"
 #include "log.h"
+#include "proc-child.h"
 #include "proc-map.h"
 
+#include <guacamole/assert.h>
 #include <guacamole/mem.h>
 #include <guacamole/proctitle.h>
+#include <guacamole/timestamp.h>
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
@@ -42,9 +45,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
-#ifdef HAVE_PRCTL
-#include <sys/prctl.h>
-#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -53,6 +53,12 @@
 
 #define GUACD_DEV_NULL "/dev/null"
 #define GUACD_ROOT     "/"
+
+/**
+ * The number of milliseconds to wait between checks for remaining connection
+ * processes while waiting for all connections to terminate during shutdown.
+ */
+#define GUACD_CLEANUP_POLL_INTERVAL 100
 
 /**
  * Redirects the given file descriptor to /dev/null. The given flags must match
@@ -83,6 +89,37 @@ static int redirect_fd(int fd, int flags) {
     }
 
     return 0;
+
+}
+
+/**
+ * Ensures the given file descriptor is open. If not open, the file descriptor
+ * is opened with the given flags and redirected to /dev/null. If open already,
+ * the given flags are ignored.
+ *
+ * @param fd
+ *     The file descriptor that should be open.
+ *
+ * @param flags
+ *     The read/write flags that should be applied if the descriptor must be
+ *     opened.
+ *
+ * @return
+ *     Zero if the descriptor is open or was successfully redirected,
+ *     non-zero otherwise.
+ */
+static int ensure_open(int fd, int flags) {
+
+    /* Check whether descriptor is already open */
+    if (fcntl(fd, F_GETFD) >= 0)
+        return 0;
+
+    /* Bail out if an unexpected failure prevented checking whether the
+     * descriptor was open */
+    if (errno != EBADF)
+        return 1;
+
+    return redirect_fd(fd, flags);
 
 }
 
@@ -293,9 +330,72 @@ static void stop_process_callback(guacd_proc* proc, void* data) {
 
 }
 
+/**
+ * A callback for guacd_proc_map_foreach which sends SIGKILL to the process and
+ * process group of every guacd_proc in the map.
+ *
+ * @param proc
+ *     The guacd process whose group should be killed.
+ *
+ * @param data
+ *     A pointer to the int that should be set to non-zero if any process was
+ *     still running and sent SIGKILL.
+ */
+static void kill_process_callback(guacd_proc* proc, void* data) {
+
+    int* killed = (int*) data;
+    int still_running = guacd_proc_is_running(proc);
+
+    /* The process group is killed even when the original process is no longer
+     * running, as orphaned child processes are not otherwise observable */
+    kill(-proc->pid, SIGKILL);
+
+    if (still_running) {
+        kill(proc->pid, SIGKILL);
+        *killed = 1;
+    }
+
+}
+
+/**
+ * A callback for guacd_proc_map_foreach which counts the processes remaining
+ * within the map.
+ *
+ * @param proc
+ *     The guacd process being counted.
+ *
+ * @param data
+ *     A pointer to the int that should receive the count. The integer must be
+ *     initialized to zero.
+ */
+static void count_process_callback(guacd_proc* proc, void* data) {
+    (*(int*) data)++;
+}
+
 int main(int argc, char* argv[]) {
 
     guac_process_title_init(argc, argv);
+
+    /* Run as per-connection child process if requested by guacd parent (as
+     * indicated by process name) */
+    if (strncmp(argv[0], GUACD_PROC_NAME_PREFIX, strlen(GUACD_PROC_NAME_PREFIX)) == 0) {
+        guacd_connection_process(argc, argv);
+        GUAC_ASSERT(0); /* guacd_connection_process() does not return */
+    }
+
+    /* Ensure STDIN/STDOUT/STDERR are open - if any is closed, future output may
+     * go to whatever is opened next. The descriptors a connection process
+     * inherits are reserved the same way, such that nothing opened by this
+     * process can occupy them (see guacd_create_proc()). */
+    if (ensure_open(STDIN_FILENO,  O_RDONLY)
+        || ensure_open(STDOUT_FILENO, O_WRONLY)
+        || ensure_open(STDERR_FILENO, O_WRONLY)
+        || ensure_open(GUACD_PROC_SOCKET_FD, O_RDWR)
+        || ensure_open(GUACD_PROC_CONFIG_FD, O_RDWR)) {
+        guacd_log(GUAC_LOG_ERROR, "Unable to ensure standard and reserved file "
+            "descriptors are open. Bailing out.");
+        exit(EXIT_FAILURE);
+    }
 
     /* Server */
     int socket_fd;
@@ -344,6 +444,15 @@ int main(int argc, char* argv[]) {
     /* Log start */
     guacd_log(GUAC_LOG_INFO, "Guacamole proxy daemon (guacd) version " VERSION " started");
 
+    int exe_fd = guacd_open_exe(argv[0]);
+    if (exe_fd < 0) {
+        guacd_log(GUAC_LOG_ERROR, "Bailing out, as the executable for the "
+                "running guacd instance could not be opened (future "
+                "connections will not be able to start): %s",
+                strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
     /* Get addresses for binding */
     if ((retval = getaddrinfo(config->bind_host, config->bind_port,
                     &hints, &addresses))) {
@@ -370,7 +479,7 @@ int main(int argc, char* argv[]) {
                     gai_strerror(retval));
 
         /* Get socket */
-        socket_fd = socket(current_address->ai_family, SOCK_STREAM, 0);
+        socket_fd = socket(current_address->ai_family, SOCK_STREAM | SOCK_CLOEXEC, 0);
         if (socket_fd < 0) {
             guacd_log(GUAC_LOG_ERROR, "Error opening socket: %s", strerror(errno));
 
@@ -501,25 +610,14 @@ int main(int argc, char* argv[]) {
                 "SIGPIPE may cause termination of the daemon.");
     }
 
-    /* Ignore SIGCHLD (force automatic removal of children) */
-    if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-        guacd_log(GUAC_LOG_INFO, "Could not set handler for SIGCHLD to ignore. "
-                "Child processes may pile up in the process table.");
-    }
+    /* NOTE: SIGCHLD is left with its default handling, as each child PID must be
+     * reliable until guacd_proc_free() reaps it */
 
     /* Clean up and exit if SIGINT or SIGTERM signals are caught; don't set
        SA_RESTART as we rely on accept() to return EINTR.*/
     struct sigaction signal_stop_action = { .sa_handler = signal_stop_handler };
     sigaction(SIGINT, &signal_stop_action, NULL);
     sigaction(SIGTERM, &signal_stop_action, NULL);
-
-#ifdef HAVE_PRCTL
-    /* Adopt any orphan processes from clients so we can properly terminate and reap */
-    prctl(PR_SET_CHILD_SUBREAPER, 1);
-#else
-    guacd_log(GUAC_LOG_INFO, "prctl not available on this platform. "
-            "Orphan child processes may pile up in the process table.");
-#endif
 
     /* Log listening status */
     guacd_log(GUAC_LOG_INFO, "Listening on host %s, port %s", bound_address, bound_port);
@@ -540,8 +638,16 @@ int main(int argc, char* argv[]) {
 
         /* Accept connection */
         client_addr_len = sizeof(client_addr);
+#ifdef HAVE_ACCEPT4
+        connected_socket_fd = accept4(socket_fd,
+                (struct sockaddr*) &client_addr, &client_addr_len,
+                SOCK_CLOEXEC);
+#else
         connected_socket_fd = accept(socket_fd,
                 (struct sockaddr*) &client_addr, &client_addr_len);
+        if (connected_socket_fd >= 0)
+            fcntl(connected_socket_fd, F_SETFD, FD_CLOEXEC);
+#endif
 
         if (connected_socket_fd < 0) {
             if (errno == EINTR)
@@ -558,22 +664,42 @@ int main(int argc, char* argv[]) {
                 (const void*) &SO_TRUE, sizeof(SO_TRUE)))
             guacd_log(GUAC_LOG_WARNING, "Unable to set TCP_NODELAY on socket: %s", strerror(errno));
 
+        /* Bound how long a read from or write to the connected user may block
+         * (a full kernel buffer may otherwise block cleanup) */
+        if (setsockopt(connected_socket_fd, SOL_SOCKET, SO_SNDTIMEO,
+                &GUACD_TIMEOUT_TIMEVAL, sizeof(GUACD_TIMEOUT_TIMEVAL)))
+            guacd_log(GUAC_LOG_WARNING, "Unable to set write timeout on socket: %s", strerror(errno));
+
+        if (setsockopt(connected_socket_fd, SOL_SOCKET, SO_RCVTIMEO,
+                &GUACD_TIMEOUT_TIMEVAL, sizeof(GUACD_TIMEOUT_TIMEVAL)))
+            guacd_log(GUAC_LOG_WARNING, "Unable to set read timeout on socket: %s", strerror(errno));
+
         /* Create parameters for connection thread */
         guacd_connection_thread_params* params = guac_mem_alloc(sizeof(guacd_connection_thread_params));
         if (params == NULL) {
             guacd_log(GUAC_LOG_ERROR, "Could not create connection thread: %s", strerror(errno));
+            close(connected_socket_fd);
             continue;
         }
 
         params->map = map;
+        params->exe_fd = exe_fd;
         params->connected_socket_fd = connected_socket_fd;
 
 #ifdef ENABLE_SSL
         params->ssl_context = ssl_context;
 #endif
 
-        /* Spawn thread to handle connection */
-        pthread_create(&child_thread, NULL, guacd_connection_thread, params);
+        /* Spawn thread to handle connection, dropping the connection if that
+         * thread cannot be started */
+        int result = pthread_create(&child_thread, NULL,
+                guacd_connection_thread, params);
+        if (result) {
+            guacd_log(GUAC_LOG_ERROR, "Unable to start connection thread: %s.", strerror(result));
+            close(connected_socket_fd);
+            guac_mem_free(params);
+            continue;
+        }
         pthread_detach(child_thread);
 
     }
@@ -583,17 +709,34 @@ int main(int argc, char* argv[]) {
 
         guacd_proc_map_foreach(map, stop_process_callback, NULL);
 
+        /* Wait up to GUACD_CLEANUP_TIMEOUT for all connections to end */
+        guac_timestamp cleanup_deadline = guac_timestamp_current() + GUACD_CLEANUP_TIMEOUT;
+        for (;;) {
+
+            int remaining = 0;
+            guacd_proc_map_foreach(map, count_process_callback, &remaining);
+            if (remaining == 0 || guac_timestamp_current() >= cleanup_deadline)
+                break;
+
+            guac_timestamp_msleep(GUACD_CLEANUP_POLL_INTERVAL);
+
+        }
+
+        /* Anything remaining has failed to stop in a timely manner and must be
+         * killed */
+        int killed = 0;
+        guacd_proc_map_foreach(map, kill_process_callback, &killed);
+
+        if (killed) {
+            guacd_log(GUAC_LOG_WARNING, "Not all connections terminated in a "
+                    "timely manner. Any connections that failed to stop when "
+                    "requested were forcibly terminated.");
+        }
+
         /*
          * FIXME: Clean up the proc map. This is not as straightforward as it
-         * might seem, since the detached connection threads will attempt to
-         * remove the connection processes from the map when they complete,
-         * which will also happen upon shutdown. So there's a good chance that
-         * this map cleanup will happen at the same time as the thread cleanup.
-         * The map _does_ have locking mechanisms in place for ensuring thread
-         * safety, but cleaning up the map also requires destroying those locks,
-         * making them unusable for this case. One potential fix could be to
-         * join every one of the connection threads instead of detaching them,
-         * but that does complicate the cleanup of thread resources.
+         * might seem, since connection threads may still be in the handshake
+         * phase without any entries in the proc map.
          */
 
     }

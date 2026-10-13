@@ -42,6 +42,7 @@ noinst_HEADERS =  \
     log.h         \
     move-fd.h     \
     proc.h        \
+    proc-child.h  \
     proc-map.h
 
 guacd_SOURCES =  \
@@ -53,6 +54,7 @@ guacd_SOURCES =  \
     log.c        \
     move-fd.c    \
     proc.c       \
+    proc-child.c \
     proc-map.c
 
 guacd_CFLAGS =              \

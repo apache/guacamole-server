@@ -93,25 +93,44 @@ void guacd_proc_map_free(guacd_proc_map* map);
 int guacd_proc_map_add(guacd_proc_map* map, guacd_proc* proc);
 
 /**
- * Retrieves the client process having the client with the given ID, or NULL if
- * no such process is stored.
+ * Locates the client process having the client with the given ID, returning a
+ * new (duplicate) file descriptor that joining users' sockets may be sent over.
+ * The returned file descriptor must eventually be closed. If there is no such
+ * process, or a new file descriptor cannot be obtained, -1 is returned and
+ * guac_error is set appropriately.
  *
  * @param map
- *     The map from which to retrieve the process associated with the client
+ *     The map from which to locate the process associated with the client
  *     having the given ID.
  *
  * @param id
- *     The ID of the client whose process should be retrieved.
+ *     The ID of the client whose process should be located.
  *
  * @return
- *     The process associated with the client having the given ID, or NULL if
- *     no such process exists.
+ *     A new file descriptor that joining users' socket file descriptors may be
+ *     sent over, or -1 if the file descriptor could not be obtained.
  */
-guacd_proc* guacd_proc_map_retrieve(guacd_proc_map* map, const char* id);
+int guacd_proc_map_open(guacd_proc_map* map, const char* id);
 
 /**
- * Removes the client process having the client with the given ID, returning
- * the corresponding process. If no such process exists, NULL is returned.
+ * Stops users being routed to the process serving the connection having the
+ * given ID. The process will no longer be accessible via guacd_proc_map_open(),
+ * but will still be represented within the map.
+ *
+ * @param map
+ *     The map containing the process which should stop accepting users.
+ *
+ * @param id
+ *     The ID of the client whose process should stop accepting users.
+ *
+ * @return
+ *     Zero if routing for the process associated with the client having the
+ *     given ID has been stopped, non-zero if no such process exists.
+ */
+int guacd_proc_map_stop_routing(guacd_proc_map* map, const char* id);
+
+/**
+ * Removes the client process having the client with the given ID.
  *
  * @param map
  *     The map from which to remove the process associated with the client
@@ -121,10 +140,10 @@ guacd_proc* guacd_proc_map_retrieve(guacd_proc_map* map, const char* id);
  *     The ID of the client whose process should be removed.
  *
  * @return
- *     The process associated with the client having the given ID which has now
- *     been removed from the given map, or NULL if no such process exists.
+ *     Zero if the process associated with the client having the given ID has
+ *     been removed from the given map, non-zero if no such process exists.
  */
-guacd_proc* guacd_proc_map_remove(guacd_proc_map* map, const char* id);
+int guacd_proc_map_remove(guacd_proc_map* map, const char* id);
 
 /**
  * A callback function that will be invoked with every guacd_proc stored

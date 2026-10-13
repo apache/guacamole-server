@@ -69,9 +69,26 @@ guac_recording* guac_recording_create(guac_client* client,
         return NULL;
     }
 
+    /* Wrap recording file in socket */
+    guac_socket* socket = guac_socket_open(fd);
+    if (socket == NULL) {
+        guac_client_log(client, GUAC_LOG_ERROR, "Creation of recording "
+                "failed: %s: %s", guac_error_message,
+                guac_status_string(guac_error));
+        close(fd);
+        return NULL;
+    }
+
     /* Create recording structure with reference to underlying socket */
     guac_recording* recording = guac_mem_alloc(sizeof(guac_recording));
-    recording->socket = guac_socket_open(fd);
+    if (recording == NULL) {
+        guac_client_log(client, GUAC_LOG_ERROR, "Creation of recording "
+                "failed: %s", guac_status_string(guac_error));
+        guac_socket_free(socket);
+        return NULL;
+    }
+
+    recording->socket = socket;
     recording->include_output = include_output;
     recording->include_mouse = include_mouse;
     recording->include_touch = include_touch;
@@ -79,8 +96,20 @@ guac_recording* guac_recording_create(guac_client* client,
 
     /* Replace client socket with wrapped recording socket only if including
      * output within the recording */
-    if (include_output)
-        client->socket = guac_socket_tee(client->socket, recording->socket);
+    if (include_output) {
+
+        guac_socket* client_socket = guac_socket_tee(client->socket, recording->socket);
+        if (client_socket == NULL) {
+            guac_client_log(client, GUAC_LOG_ERROR, "Creation of recording "
+                    "failed: %s", guac_status_string(guac_error));
+            guac_socket_free(recording->socket);
+            guac_mem_free(recording);
+            return NULL;
+        }
+
+        client->socket = client_socket;
+
+    }
 
     /* Recording creation succeeded */
     guac_client_log(client, GUAC_LOG_INFO, "Recording of session will be "

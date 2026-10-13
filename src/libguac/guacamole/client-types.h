@@ -35,6 +35,14 @@
 typedef struct guac_client guac_client;
 
 /**
+ * Watchdog guarding resource consumption and termination behavior of
+ * guac_client. The watchdog is intended to guarantee proper cleanup of the
+ * per-connection process and any child processes, as well as to recognize cases
+ * where a connection process has stopped responding and must be terminated.
+ */
+typedef struct guac_client_watchdog guac_client_watchdog;
+
+/**
  * Possible current states of the Guacamole client. Currently, the only
  * two states are GUAC_CLIENT_RUNNING and GUAC_CLIENT_STOPPING.
  */
