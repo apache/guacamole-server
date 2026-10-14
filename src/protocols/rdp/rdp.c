@@ -811,8 +811,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     guac_rwlock_acquire_write_lock(&(rdp_client->lock));
 
-    /* Create display */
-    rdp_client->display = guac_display_alloc(client);
+    /* Create display, reuse if reconnecting */
+    if (rdp_client->display == NULL)
+        rdp_client->display = guac_display_alloc(client);
 
     guac_display_layer* default_layer = guac_display_default_layer(rdp_client->display);
     guac_display_layer_resize(default_layer, rdp_client->settings->width, rdp_client->settings->height);
@@ -900,7 +901,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     guac_rwlock_release_lock(&(rdp_client->lock));
 
-    rdp_client->render_thread = guac_display_render_thread_create(rdp_client->display);
+    if (rdp_client->render_thread == NULL)
+        rdp_client->render_thread = guac_display_render_thread_create(rdp_client->display);
 
     /* Handle messages from RDP server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING
@@ -962,6 +964,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     if (rdp_client->active_job != NULL) {
         guac_rdp_print_job_kill(rdp_client->active_job);
         guac_rdp_print_job_free(rdp_client->active_job);
+        rdp_client->active_job = NULL;
     }
 
     /* Disconnect client and channels */
@@ -969,23 +972,15 @@ static int guac_rdp_handle_connection(guac_client* client) {
     freerdp_disconnect(rdp_inst);
     pthread_mutex_unlock(&(rdp_client->message_lock));
 
-    /* Stop render loop */
-    guac_display_render_thread_destroy(rdp_client->render_thread);
-    rdp_client->render_thread = NULL;
-
-    /* Ensure all background rendering processes are stopped before freeing
-     * underlying memory */
-    guac_display_stop(rdp_client->display);
-
-    /* Clean up FreeRDP internal GDI implementation (this must be done BEFORE
-     * freeing the guac_display, as freeing the GDI will free objects like
-     * rdpPointer that will attempt to free associated guac_display_layer
-     * instances during cleanup) */
+    /* Disassociate GDI framebuffer from guac_display prior to gdi_free() */
+    guac_display_layer_raw_context* context = guac_display_layer_open_raw(default_layer);
+    context->buffer = NULL;
+    guac_display_layer_close_raw(default_layer, context);
+    
+    /* Clean up FreeRDP internal GDI implementation (this will also clean up any
+     * associated guac_display_layer instances for objects using GDI resources
+     * like rdpPointer) */
     gdi_free(rdp_inst);
-
-    /* Free display */
-    guac_display_free(rdp_client->display);
-    rdp_client->display = NULL;
 
     /* Clean up RDP client context */
     freerdp_context_free(rdp_inst);

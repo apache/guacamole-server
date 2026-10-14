@@ -20,10 +20,10 @@
 #ifndef GUAC_RDP_CHANNELS_AUDIO_INPUT_AUDIO_BUFFER_H
 #define GUAC_RDP_CHANNELS_AUDIO_INPUT_AUDIO_BUFFER_H
 
+#include <guacamole/flag.h>
 #include <guacamole/stream.h>
 #include <guacamole/thread.h>
 #include <guacamole/user.h>
-#include <pthread.h>
 #include <time.h>
 
 /**
@@ -36,6 +36,19 @@
 #define GUAC_RDP_AUDIO_BUFFER_MIN_DURATION 250
 
 /**
+ * Bitwise flag set on the state flag in guac_rdp_audio_buffer whenever any part
+ * of the audio buffer structure has been modified.
+ */
+#define GUAC_RDP_AUDIO_BUFFER_MODIFIED 1
+
+/**
+ * Bitwise flag set on the state flag in guac_rdp_audio_buffer when
+ * guac_rdp_audio_buffer_free() has been invoked and the audio buffer is being
+ * cleaned up.
+ */
+#define GUAC_RDP_AUDIO_BUFFER_STOPPING 2
+
+/**
  * A buffer of arbitrary audio data. Received audio data can be written to this
  * buffer, and will automatically be flushed via a given handler once the
  * internal buffer reaches capacity.
@@ -46,16 +59,27 @@ typedef struct guac_rdp_audio_buffer guac_rdp_audio_buffer;
  * Handler which is invoked when a guac_rdp_audio_buffer's internal packet
  * buffer has reached capacity and must be flushed.
  *
+ * @important
+ *     The guac_rdp_audio_buffer's state flag lock is NOT held when this
+ *     handler is invoked. If the handler implementation accesses any data
+ *     within the structure, including the arbitrary data pointer, the handler
+ *     itself MUST manually acquire the lock.
+ *
  * @param audio_buffer
  *     The guac_rdp_audio_buffer that has reached capacity and needs to be
  *     flushed.
  *
+ * @param packet
+ *     The packet of audio data to flush. This buffer is valid only until the
+ *     handler returns.
+ *
  * @param length
- *     The number of bytes stored within the buffer. This is guaranteed to be
+ *     The number of bytes within the packet. This is guaranteed to be
  *     identical to the packet_size value specified when the audio buffer was
  *     initialized.
  */
-typedef void guac_rdp_audio_buffer_flush_handler(guac_rdp_audio_buffer* audio_buffer, int length);
+typedef void guac_rdp_audio_buffer_flush_handler(guac_rdp_audio_buffer* audio_buffer,
+        const char* packet, int length);
 
 /**
  * A description of an arbitrary PCM audio format.
@@ -83,18 +107,15 @@ typedef struct guac_rdp_audio_format {
 struct guac_rdp_audio_buffer {
 
     /**
-     * Lock which is acquired/released to ensure accesses to the audio buffer
-     * are atomic. This lock is also bound to the modified pthread_cond_t,
-     * which should be signalled whenever the audio buffer structure has been
-     * modified.
+     * The current state of this audio buffer. This flag must be locked before
+     * accessing or modifying this audio buffer structure, and 
+     * GUAC_RDP_AUDIO_BUFFER_MODIFIED must be set whenever this audio buffer
+     * structure has been modified.
+     *
+     * @see GUAC_RDP_AUDIO_BUFFER_MODIFIED
+     * @see GUAC_RDP_AUDIO_BUFFER_STOPPING
      */
-    pthread_mutex_t lock;
-
-    /**
-     * Condition which is signalled when any part of the audio buffer structure
-     * has been modified.
-     */
-    pthread_cond_t modified;
+    guac_flag state;
 
     /**
      * The guac_client instance handling the relevant RDP connection.
@@ -182,12 +203,6 @@ struct guac_rdp_audio_buffer {
      * audio packets will simply be ignored.
      */
     guac_rdp_audio_buffer_flush_handler* flush_handler;
-
-    /**
-     * Whether guac_rdp_audio_buffer_free() has been invoked and the audio
-     * buffer is being cleaned up.
-     */
-    int stopping;
 
     /**
      * Arbitrary data assigned by the AUDIO_INPUT plugin implementation.

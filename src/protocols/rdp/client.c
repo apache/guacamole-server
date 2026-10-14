@@ -232,6 +232,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Init required locks */
     guac_rwlock_init(&(rdp_client->lock));
     pthread_mutex_init(&(rdp_client->message_lock), &(rdp_client->attributes));
+    pthread_mutex_init(&(rdp_client->print_job_lock), &(rdp_client->attributes));
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
@@ -261,6 +262,14 @@ int guac_rdp_client_free_handler(guac_client* client) {
 
     /* Wait for client thread */
     guac_thread_join(&rdp_client->client_thread, NULL);
+
+    /* Stop render thread, if started */
+    if (rdp_client->render_thread != NULL)
+        guac_display_render_thread_destroy(rdp_client->render_thread);
+
+    /* Free display, if allocated */
+    if (rdp_client->display != NULL)
+        guac_display_free(rdp_client->display);
 
     /* Clean up event queue and associated signalling handle */
     guac_fifo_destroy(&rdp_client->input_events);
@@ -321,6 +330,7 @@ int guac_rdp_client_free_handler(guac_client* client) {
 
     guac_rwlock_destroy(&(rdp_client->lock));
     pthread_mutex_destroy(&(rdp_client->message_lock));
+    pthread_mutex_destroy(&(rdp_client->print_job_lock));
 
     /* Free client data */
     guac_mem_free(rdp_client);

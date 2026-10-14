@@ -23,6 +23,7 @@
 
 #include <freerdp/dvc.h>
 #include <guacamole/client.h>
+#include <guacamole/flag.h>
 #include <winpr/stream.h>
 
 #include <stdlib.h>
@@ -133,7 +134,7 @@ static void guac_rdp_ai_send_incoming_data(IWTSVirtualChannel* channel) {
  *     The number of bytes of audio data to send.
  */
 static void guac_rdp_ai_send_data(IWTSVirtualChannel* channel,
-        char* buffer, int length) {
+        const char* buffer, int length) {
 
     /* Build data PDU */
     wStream* stream = Stream_New(NULL, length + 1);
@@ -333,16 +334,23 @@ void guac_rdp_ai_process_formats(guac_client* client,
 
 }
 
-void guac_rdp_ai_flush_packet(guac_rdp_audio_buffer* audio_buffer, int length) {
+void guac_rdp_ai_flush_packet(guac_rdp_audio_buffer* audio_buffer,
+        const char* packet, int length) {
 
     guac_client* client = audio_buffer->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    IWTSVirtualChannel* channel = (IWTSVirtualChannel*) audio_buffer->data;
 
-    /* Send data over channel */
     pthread_mutex_lock(&(rdp_client->message_lock));
-    guac_rdp_ai_send_incoming_data(channel);
-    guac_rdp_ai_send_data(channel, audio_buffer->packet, length);
+    guac_flag_lock(&(audio_buffer->state));
+
+    /* Send data over channel, if still open */
+    IWTSVirtualChannel* channel = (IWTSVirtualChannel*) audio_buffer->data;
+    if (channel != NULL) {
+        guac_rdp_ai_send_incoming_data(channel);
+        guac_rdp_ai_send_data(channel, packet, length);
+    }
+
+    guac_flag_unlock(&(audio_buffer->state));
     pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }

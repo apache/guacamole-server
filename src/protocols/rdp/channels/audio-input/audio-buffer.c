@@ -21,8 +21,10 @@
 #include "rdp.h"
 
 #include <guacamole/client.h>
+#include <guacamole/flag.h>
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
+#include <guacamole/rwlock.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
 #include <guacamole/thread.h>
@@ -31,9 +33,9 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 /**
@@ -65,14 +67,41 @@ static int guac_rdp_audio_buffer_is_future(const struct timespec* ts) {
 }
 
 /**
+ * Returns the number of milliseconds remaining until the given point in time.
+ *
+ * @param ts
+ *     The timespec to test.
+ *
+ * @return
+ *     The number of milliseconds remaining until the given timespec, or zero
+ *     if the given timespec is not in the future.
+ */
+static unsigned int guac_rdp_audio_buffer_remaining(const struct timespec* ts) {
+
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+
+    int64_t remaining = (ts->tv_sec - now.tv_sec) * NANOS_PER_SECOND
+            + (ts->tv_nsec - now.tv_nsec);
+
+    if (remaining <= 0)
+        return 0;
+
+    /* Round up such that any time remaining at all is at least 1 ms */
+    return (remaining + 999999) / 1000000;
+
+}
+
+/**
  * Returns whether the given audio buffer may be flushed. An audio buffer may
  * be flushed if the audio buffer is not currently being freed, at least one
  * packet of audio data is available within the buffer, and flushing the next
  * packet of audio data now would not violate scheduling/throttling rules for
  * outbound audio data.
  *
- * IMPORTANT: The guac_rdp_audio_buffer's lock MUST already be held when
- * invoking this function.
+ * @important
+ *     The guac_rdp_audio_buffer's state flag lock MUST already be held when
+ *     invoking this function.
  *
  * @param audio_buffer
  *     The guac_rdp_audio_buffer to test.
@@ -82,7 +111,7 @@ static int guac_rdp_audio_buffer_is_future(const struct timespec* ts) {
  *     buffer cannot be flushed for any reason.
  */
 static int guac_rdp_audio_buffer_may_flush(guac_rdp_audio_buffer* audio_buffer) {
-    return !audio_buffer->stopping
+    return !(audio_buffer->state.value & GUAC_RDP_AUDIO_BUFFER_STOPPING)
         && audio_buffer->packet_size > 0
         && audio_buffer->bytes_written >= audio_buffer->packet_size
         && !guac_rdp_audio_buffer_is_future(&audio_buffer->next_flush);
@@ -129,8 +158,9 @@ static size_t guac_rdp_audio_buffer_length(const guac_rdp_audio_format* format, 
  * generation rate is not exceeded, but will be adjusted as necessary to
  * compensate for latency induced by differences in audio packet size/duration.
  *
- * IMPORTANT: The guac_rdp_audio_buffer's lock MUST already be held when
- * invoking this function.
+ * @important
+ *     The guac_rdp_audio_buffer's state flag lock MUST already be held when
+ *     invoking this function.
  *
  * @param audio_buffer
  *     The guac_rdp_audio_buffer to update.
@@ -181,25 +211,45 @@ static void guac_rdp_audio_buffer_schedule_flush(guac_rdp_audio_buffer* audio_bu
  */
 static void guac_rdp_audio_buffer_wait(guac_rdp_audio_buffer* audio_buffer) {
 
-    pthread_mutex_lock(&(audio_buffer->lock));
+    guac_flag_lock(&(audio_buffer->state));
 
     /* Do not wait if audio_buffer is already closed */
-    if (!audio_buffer->stopping) {
+    if (audio_buffer->state.value & GUAC_RDP_AUDIO_BUFFER_STOPPING) {
+        guac_flag_unlock(&(audio_buffer->state));
+        return;
+    }
 
-        /* If sufficient data exists for a flush, wait until next possible
-         * flush OR until some other state change occurs (such as the buffer
-         * being closed) */
-        if (audio_buffer->bytes_written && audio_buffer->bytes_written >= audio_buffer->packet_size)
-            pthread_cond_timedwait(&audio_buffer->modified, &audio_buffer->lock,
-                    &audio_buffer->next_flush);
+    unsigned int timeout = 0;
+    if (audio_buffer->bytes_written && audio_buffer->bytes_written >= audio_buffer->packet_size) {
 
-        /* If sufficient data DOES NOT exist, we should wait indefinitely */
-        else
-            pthread_cond_wait(&audio_buffer->modified, &audio_buffer->lock);
+        /* Do not wait at all if the next flush is already due */
+        timeout = guac_rdp_audio_buffer_remaining(&audio_buffer->next_flush);
+        if (timeout == 0) {
+            guac_flag_unlock(&(audio_buffer->state));
+            return;
+        }
 
     }
 
-    pthread_mutex_unlock(&(audio_buffer->lock)); 
+    guac_flag_clear(&(audio_buffer->state), GUAC_RDP_AUDIO_BUFFER_MODIFIED);
+    guac_flag_unlock(&(audio_buffer->state));
+
+    /* If sufficient data exists for a flush, wait until next possible
+     * flush OR until some other state change occurs (such as the buffer
+     * being closed) */
+    if (timeout) {
+        if (guac_flag_timedwait_and_lock(&(audio_buffer->state),
+                GUAC_RDP_AUDIO_BUFFER_MODIFIED | GUAC_RDP_AUDIO_BUFFER_STOPPING, timeout)) {
+            guac_flag_unlock(&(audio_buffer->state));
+        }
+    }
+
+    /* If sufficient data DOES NOT exist, we should wait indefinitely */
+    else {
+        guac_flag_wait_and_lock(&(audio_buffer->state),
+                GUAC_RDP_AUDIO_BUFFER_MODIFIED | GUAC_RDP_AUDIO_BUFFER_STOPPING);
+        guac_flag_unlock(&(audio_buffer->state));
+    }
 
 }
 
@@ -219,13 +269,26 @@ static void guac_rdp_audio_buffer_wait(guac_rdp_audio_buffer* audio_buffer) {
 static void* guac_rdp_audio_buffer_flush_thread(void* data) {
 
     guac_rdp_audio_buffer* audio_buffer = (guac_rdp_audio_buffer*) data;
-    while (!audio_buffer->stopping) {
+    guac_rdp_client* rdp_client = (guac_rdp_client*) audio_buffer->client->data;
 
-        pthread_mutex_lock(&(audio_buffer->lock));
+    char* packet = NULL;
+    size_t packet_buffer_size = 0;
+
+    for (;;) {
+
+        guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+        guac_flag_lock(&(audio_buffer->state));
+
+        if (audio_buffer->state.value & GUAC_RDP_AUDIO_BUFFER_STOPPING) {
+            guac_flag_unlock(&(audio_buffer->state));
+            guac_rwlock_release_lock(&(rdp_client->lock));
+            break;
+        }
 
         if (!guac_rdp_audio_buffer_may_flush(audio_buffer)) {
 
-            pthread_mutex_unlock(&(audio_buffer->lock));
+            guac_flag_unlock(&(audio_buffer->state));
+            guac_rwlock_release_lock(&(rdp_client->lock));
 
             /* Wait for additional data if we aren't able to flush */
             guac_rdp_audio_buffer_wait(audio_buffer);
@@ -241,22 +304,41 @@ static void* guac_rdp_audio_buffer_flush_thread(void* data) {
                 guac_rdp_audio_buffer_duration(&audio_buffer->out_format, audio_buffer->bytes_written),
                 audio_buffer->bytes_written);
 
-        /* Only actually invoke if defined */
-        if (audio_buffer->flush_handler) {
-            guac_rdp_audio_buffer_schedule_flush(audio_buffer);
-            audio_buffer->flush_handler(audio_buffer,
-                    audio_buffer->packet_size);
+        guac_rdp_audio_buffer_schedule_flush(audio_buffer);
+
+        /* NOTE: Sending the audio packet requires the RDP message lock, which
+         * must not be acquired after the audio buffer lock. Doing otherwise
+         * would be a lock order violation and could lead to deadlock.
+         *
+         * Here, the packet is copied out of the audio buffer so that nothing
+         * within the audio buffer is in use once unlocked. */
+
+        size_t length = audio_buffer->packet_size;
+        if (length > packet_buffer_size) {
+            packet = guac_mem_realloc_or_die(packet, length);
+            packet_buffer_size = length;
         }
 
-        /* Shift buffer back by one packet */
-        audio_buffer->bytes_written -= audio_buffer->packet_size;
-        memmove(audio_buffer->packet, audio_buffer->packet + audio_buffer->packet_size, audio_buffer->bytes_written);
+        memcpy(packet, audio_buffer->packet, length);
 
-        pthread_cond_broadcast(&(audio_buffer->modified));
-        pthread_mutex_unlock(&(audio_buffer->lock));
+        /* Shift buffer back by one packet */
+        audio_buffer->bytes_written -= length;
+        memmove(audio_buffer->packet, audio_buffer->packet + length, audio_buffer->bytes_written);
+
+        guac_rdp_audio_buffer_flush_handler* flush_handler = audio_buffer->flush_handler;
+
+        guac_flag_set(&(audio_buffer->state), GUAC_RDP_AUDIO_BUFFER_MODIFIED);
+        guac_flag_unlock(&(audio_buffer->state));
+
+        /* Only actually invoke if defined */
+        if (flush_handler != NULL)
+            flush_handler(audio_buffer, packet, length);
+
+        guac_rwlock_release_lock(&(rdp_client->lock));
 
     }
 
+    guac_mem_free(packet);
     return NULL;
 
 }
@@ -265,8 +347,7 @@ guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc(guac_client* client) {
 
     guac_rdp_audio_buffer* buffer = guac_mem_zalloc(sizeof(guac_rdp_audio_buffer));
 
-    pthread_mutex_init(&(buffer->lock), NULL);
-    pthread_cond_init(&(buffer->modified), NULL);
+    guac_flag_init(&(buffer->state));
     buffer->client = client;
 
     /* Begin automated, throttled flush of future data */
@@ -312,8 +393,9 @@ typedef struct guac_rdp_audio_buffer_ack_params {
  * instruction nor been associated with an "ack" having an error code), and is
  * associated with an active RDP AUDIO_INPUT channel.
  *
- * IMPORTANT: The guac_rdp_audio_buffer's lock MUST already be held when
- * invoking this function.
+ * @important
+ *     The guac_rdp_audio_buffer's state flag lock MUST already be held when
+ *     invoking this function.
  *
  * @param user
  *     The user that should receive the "ack".
@@ -346,7 +428,7 @@ static void* guac_rdp_audio_buffer_ack(guac_user* user, void* data) {
 void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
         guac_user* user, guac_stream* stream, int rate, int channels, int bps) {
 
-    pthread_mutex_lock(&(audio_buffer->lock));
+    guac_flag_lock(&(audio_buffer->state));
 
     /* Associate received stream */
     audio_buffer->user = user;
@@ -365,23 +447,23 @@ void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
             audio_buffer->in_format.rate,
             audio_buffer->in_format.bps);
 
-    pthread_cond_broadcast(&(audio_buffer->modified));
-    pthread_mutex_unlock(&(audio_buffer->lock));
+    guac_flag_set(&(audio_buffer->state), GUAC_RDP_AUDIO_BUFFER_MODIFIED);
+    guac_flag_unlock(&(audio_buffer->state));
 
 }
 
 void guac_rdp_audio_buffer_set_output(guac_rdp_audio_buffer* audio_buffer,
         int rate, int channels, int bps) {
 
-    pthread_mutex_lock(&(audio_buffer->lock));
+    guac_flag_lock(&(audio_buffer->state));
 
     /* Set output format */
     audio_buffer->out_format.rate = rate;
     audio_buffer->out_format.channels = channels;
     audio_buffer->out_format.bps = bps;
 
-    pthread_cond_broadcast(&(audio_buffer->modified));
-    pthread_mutex_unlock(&(audio_buffer->lock));
+    guac_flag_set(&(audio_buffer->state), GUAC_RDP_AUDIO_BUFFER_MODIFIED);
+    guac_flag_unlock(&(audio_buffer->state));
 
 }
 
@@ -389,7 +471,7 @@ void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
         int packet_frames, guac_rdp_audio_buffer_flush_handler* flush_handler,
         void* data) {
 
-    pthread_mutex_lock(&(audio_buffer->lock));
+    guac_flag_lock(&(audio_buffer->state));
 
     /* Reset buffer state to provided values */
     audio_buffer->bytes_written = 0;
@@ -428,8 +510,8 @@ void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
         guac_client_for_user(audio_buffer->client, audio_buffer->user, guac_rdp_audio_buffer_ack, &ack_params);
     }
 
-    pthread_cond_broadcast(&(audio_buffer->modified));
-    pthread_mutex_unlock(&(audio_buffer->lock));
+    guac_flag_set(&(audio_buffer->state), GUAC_RDP_AUDIO_BUFFER_MODIFIED);
+    guac_flag_unlock(&(audio_buffer->state));
 
 }
 
@@ -441,9 +523,9 @@ void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
  * input and output formats, the number of bytes sent thus far, and the
  * number of bytes received (excluding the contents of the buffer).
  *
- * IMPORTANT: The guac_rdp_audio_buffer's lock MUST already be held when
- * invoking this function.
- *
+ * @important
+ *     The guac_rdp_audio_buffer's state flag lock MUST already be held when
+ *     invoking this function.
  * @param audio_buffer
  *     The audio buffer dictating the format of the given data buffer, as
  *     well as the offset from which the sample should be read.
@@ -528,7 +610,7 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
 
     int16_t sample;
 
-    pthread_mutex_lock(&(audio_buffer->lock));
+    guac_flag_lock(&(audio_buffer->state));
 
     guac_client_log(audio_buffer->client, GUAC_LOG_TRACE, "Received %i bytes (%i ms) of audio data",
             length, guac_rdp_audio_buffer_duration(&audio_buffer->in_format, length));
@@ -537,7 +619,7 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
     if (audio_buffer->packet_buffer_size == 0 || audio_buffer->packet == NULL) {
         guac_client_log(audio_buffer->client, GUAC_LOG_DEBUG, "Dropped %i "
                 "bytes of received audio data (buffer full or closed).", length);
-        pthread_mutex_unlock(&(audio_buffer->lock));
+        guac_flag_unlock(&(audio_buffer->state));
         return;
     }
 
@@ -577,18 +659,18 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
     /* Track current position in audio stream */
     audio_buffer->total_bytes_received += length;
 
-    pthread_cond_broadcast(&(audio_buffer->modified));
-    pthread_mutex_unlock(&(audio_buffer->lock));
+    guac_flag_set(&(audio_buffer->state), GUAC_RDP_AUDIO_BUFFER_MODIFIED);
+    guac_flag_unlock(&(audio_buffer->state));
 
 }
 
 void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer) {
 
-    pthread_mutex_lock(&(audio_buffer->lock));
+    guac_flag_lock(&(audio_buffer->state));
 
     /* Ignore if stream is already closed */
     if (audio_buffer->stream == NULL) {
-        pthread_mutex_unlock(&(audio_buffer->lock));
+        guac_flag_unlock(&(audio_buffer->state));
         return;
     }
 
@@ -607,6 +689,7 @@ void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer) {
     audio_buffer->packet_size = 0;
     audio_buffer->packet_buffer_size = 0;
     audio_buffer->flush_handler = NULL;
+    audio_buffer->data = NULL;
 
     /* Reset I/O counters */
     audio_buffer->total_bytes_sent = 0;
@@ -614,9 +697,10 @@ void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer) {
 
     /* Free packet (if any) */
     guac_mem_free(audio_buffer->packet);
+    audio_buffer->packet = NULL;
 
-    pthread_cond_broadcast(&(audio_buffer->modified));
-    pthread_mutex_unlock(&(audio_buffer->lock));
+    guac_flag_set(&(audio_buffer->state), GUAC_RDP_AUDIO_BUFFER_MODIFIED);
+    guac_flag_unlock(&(audio_buffer->state));
 
 }
 
@@ -625,16 +709,13 @@ void guac_rdp_audio_buffer_free(guac_rdp_audio_buffer* audio_buffer) {
     guac_rdp_audio_buffer_end(audio_buffer);
 
     /* Signal termination of flush thread */
-    pthread_mutex_lock(&(audio_buffer->lock));
-    audio_buffer->stopping = 1;
-    pthread_cond_broadcast(&(audio_buffer->modified));
-    pthread_mutex_unlock(&(audio_buffer->lock));
+    guac_flag_set(&(audio_buffer->state), GUAC_RDP_AUDIO_BUFFER_STOPPING
+            | GUAC_RDP_AUDIO_BUFFER_MODIFIED);
 
     /* Clean up flush thread */
     guac_thread_join(&audio_buffer->flush_thread, NULL);
 
-    pthread_mutex_destroy(&(audio_buffer->lock));
-    pthread_cond_destroy(&(audio_buffer->modified));
+    guac_flag_destroy(&(audio_buffer->state));
     guac_mem_free(audio_buffer);
 
 }

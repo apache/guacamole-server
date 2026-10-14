@@ -22,6 +22,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
+#include <guacamole/flag.h>
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -57,56 +58,29 @@ char* const guac_rdp_pdf_filter_command[] = {
 };
 
 /**
- * Updates the state of the given print job. Any threads currently blocked by a
- * call to guac_rdp_print_job_wait_for_ack() will be unblocked.
- *
- * @param job
- *     The print job whose state should be updated.
- *
- * @param state
- *     The new state to assign to the given print job.
- */
-static void guac_rdp_print_job_set_state(guac_rdp_print_job* job,
-        guac_rdp_print_job_state state) {
-
-    pthread_mutex_lock(&(job->state_lock));
-
-    /* Update stream state, signalling modification */
-    job->state = state;
-    pthread_cond_signal(&(job->state_modified));
-
-    pthread_mutex_unlock(&(job->state_lock));
-
-}
-
-/**
- * Suspends execution of the current thread until the state of the given print
- * job is not GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK. If the state of the print
- * job is GUAC_RDP_PRINT_JOB_ACK_RECEIVED, the state is automatically reset
- * back to GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK prior to returning.
+ * Suspends execution of the current thread until the Guacamole client has
+ * responded to the print stream with an "ack" or the print stream itself has
+ * been closed. If an "ack" was received, the GUAC_RDP_PRINT_JOB_ACK_RECEIVED
+ * flag is cleared prior to returning.
  *
  * @param job
  *     The print job to wait for.
  *
  * @return
- *     Zero if the state of the print job is GUAC_RDP_PRINT_JOB_CLOSED,
- *     non-zero if the state was GUAC_RDP_PRINT_JOB_ACK_RECEIVED and has been
- *     automatically reset to GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK.
+ *     Zero if the print stream has been closed, non-zero if an "ack" was
+ *     received.
  */
 static int guac_rdp_print_job_wait_for_ack(guac_rdp_print_job* job) {
 
-    /* Wait for ack if stream open and not yet received */
-    pthread_mutex_lock(&(job->state_lock));
-    if (job->state == GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK)
-        pthread_cond_wait(&job->state_modified, &job->state_lock);
+    guac_flag_wait_and_lock(&job->state,
+            GUAC_RDP_PRINT_JOB_ACK_RECEIVED | GUAC_RDP_PRINT_JOB_CLOSED);
 
-    /* Reset state if ack received */
-    int got_ack = (job->state == GUAC_RDP_PRINT_JOB_ACK_RECEIVED);
+    /* Reset state if ack received, ignoring if the print job was closed */
+    int got_ack = !(job->state.value & GUAC_RDP_PRINT_JOB_CLOSED);
     if (got_ack)
-        job->state = GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK;
+        guac_flag_clear(&job->state, GUAC_RDP_PRINT_JOB_ACK_RECEIVED);
 
-    /* Return whether ack was successfully received */
-    pthread_mutex_unlock(&(job->state_lock));
+    guac_flag_unlock(&job->state);
     return got_ack;
 
 }
@@ -252,11 +226,18 @@ static void* guac_rdp_print_job_end_stream(guac_user* user, void* data) {
 static int guac_rdp_print_filter_ack_handler(guac_user* user,
         guac_stream* stream, char* message, guac_protocol_status status) {
 
+    guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
+
+    pthread_mutex_lock(&(rdp_client->print_job_lock));
+
+    /* Ignore if print job is no longer attached to this stream */
     guac_rdp_print_job* job = (guac_rdp_print_job*) stream->data;
+    if (job == NULL)
+        goto complete;
 
     /* Update state for successful acks */
     if (status == GUAC_PROTOCOL_STATUS_SUCCESS)
-        guac_rdp_print_job_set_state(job, GUAC_RDP_PRINT_JOB_ACK_RECEIVED);
+        guac_flag_set(&job->state, GUAC_RDP_PRINT_JOB_ACK_RECEIVED);
 
     /* Terminate stream if ack signals an error */
     else {
@@ -270,6 +251,8 @@ static int guac_rdp_print_filter_ack_handler(guac_user* user,
 
     }
 
+complete:
+    pthread_mutex_unlock(&(rdp_client->print_job_lock));
     return 0;
 
 }
@@ -475,6 +458,7 @@ void* guac_rdp_print_job_alloc(guac_user* user, void* data) {
     strcpy(job->filename, GUAC_RDP_PRINT_JOB_DEFAULT_FILENAME);
 
     /* Prepare stream for receipt of acks */
+    guac_flag_init(&job->state);
     stream->ack_handler = guac_rdp_print_filter_ack_handler;
     stream->data = job;
 
@@ -485,14 +469,10 @@ void* guac_rdp_print_job_alloc(guac_user* user, void* data) {
     /* Abort if print filter process cannot be created */
     if (job->filter_pid == -1) {
         guac_user_free_stream(user, stream);
+        guac_flag_destroy(&job->state);
         guac_mem_free(job);
         return NULL;
     }
-
-    /* Init stream state signal and lock */
-    job->state = GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK;
-    pthread_cond_init(&job->state_modified, NULL);
-    pthread_mutex_init(&job->state_lock, NULL);
 
     /* Start output thread */
     guac_thread_create(&job->output_thread,
@@ -644,6 +624,36 @@ int guac_rdp_print_job_write(guac_rdp_print_job* job,
 
 }
 
+/**
+ * Detaches the given print job from its corresponding guac_stream such that any
+ * further "ack" messages will be ignored. The print_job_lock of the RDP
+ * connection MUST already be held when invoking this function.
+ *
+ * @param user
+ *     The user receiving the print job, or NULL if that user has since left the
+ *     connection.
+ *
+ * @param data
+ *     The guac_rdp_print_job to detach.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_rdp_print_job_detach(guac_user* user, void* data) {
+
+    guac_rdp_print_job* job = (guac_rdp_print_job*) data;
+
+    /* The stream has already been freed if the user has left - nothing to do */
+    if (user == NULL)
+        return NULL;
+
+    job->stream->ack_handler = NULL;
+    job->stream->data = NULL;
+
+    return NULL;
+
+}
+
 void guac_rdp_print_job_free(guac_rdp_print_job* job) {
 
     guac_client* client = job->client;
@@ -663,8 +673,12 @@ void guac_rdp_print_job_free(guac_rdp_print_job* job) {
     if (!unlock_status)
         pthread_mutex_lock(&(rdp_client->message_lock));
 
-    /* Destroy lock */
-    pthread_mutex_destroy(&(job->state_lock));
+    /* Detach print job from corresponding guac_stream */
+    pthread_mutex_lock(&(rdp_client->print_job_lock));
+    guac_client_for_user(client, job->user, guac_rdp_print_job_detach, job);
+    pthread_mutex_unlock(&(rdp_client->print_job_lock));
+
+    guac_flag_destroy(&job->state);
 
     /* Free base structure */
     guac_mem_free(job);
@@ -681,7 +695,7 @@ void guac_rdp_print_job_kill(guac_rdp_print_job* job) {
     close(job->output_fd);
 
     /* Mark stream as closed */
-    guac_rdp_print_job_set_state(job, GUAC_RDP_PRINT_JOB_CLOSED);
+    guac_flag_set(&job->state, GUAC_RDP_PRINT_JOB_CLOSED);
 
 }
 

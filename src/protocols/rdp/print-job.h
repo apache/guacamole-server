@@ -25,7 +25,7 @@
 #include <guacamole/thread.h>
 #include <guacamole/user.h>
 
-#include <pthread.h>
+#include <guacamole/flag.h>
 #include <unistd.h>
 
 /**
@@ -47,31 +47,19 @@
 #define GUAC_RDP_PRINT_JOB_TITLE_SEARCH_LENGTH 2048
 
 /**
- * The current state of an RDP print job.
+ * Bitwise flag set on the state flag of a guac_rdp_print_job when the
+ * Guacamole client has responded with an "ack", confirming that it is ready
+ * to receive data (or that data has been received and it is ready to receive
+ * more).
  */
-typedef enum guac_rdp_print_job_state {
+#define GUAC_RDP_PRINT_JOB_ACK_RECEIVED 1
 
-    /**
-     * The print stream has been opened with the Guacamole client, but the
-     * client has not yet confirmed that it is ready to receive data.
-     */
-    GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK,
-
-    /**
-     * The print stream has been opened with the Guacamole client, and the
-     * client has responded with an "ack", confirming that it is ready to
-     * receive data (or that data has been received and it is ready to receive
-     * more).
-     */
-    GUAC_RDP_PRINT_JOB_ACK_RECEIVED,
-
-    /**
-     * The print stream has been closed or the printer is terminating, and no
-     * further data should be sent to the client.
-     */
-    GUAC_RDP_PRINT_JOB_CLOSED
-
-} guac_rdp_print_job_state;
+/**
+ * Bitwise flag set on the state flag of a guac_rdp_print_job when the print
+ * stream has been closed or the printer is terminating, and no further data
+ * should be sent to the client.
+ */
+#define GUAC_RDP_PRINT_JOB_CLOSED 2
 
 /**
  * Data specific to an instance of the printer device.
@@ -118,24 +106,15 @@ typedef struct guac_rdp_print_job {
     int output_fd;
 
     /**
-     * The current state of the print stream, dependent on whether the client
+     * The current state of the print stream, representing whether the client
      * has acknowledged creation of the stream, whether the client has
      * acknowledged receipt of data along the steam, and whether the print
      * stream itself has closed.
+     *
+     * @see GUAC_RDP_PRINT_JOB_ACK_RECEIVED
+     * @see GUAC_RDP_PRINT_JOB_CLOSED
      */
-    guac_rdp_print_job_state state;
-
-    /**
-     * Lock which is acquired prior to modifying the state property or waiting
-     * on the state_modified conditional.
-     */
-    pthread_mutex_t state_lock;
-
-    /**
-     * Conditional which signals modification to the state property of this
-     * structure.
-     */
-    pthread_cond_t state_modified;
+    guac_flag state;
 
     /**
      * Thread which transfers data from the printer to the Guacamole client.
