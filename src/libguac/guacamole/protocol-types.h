@@ -313,7 +313,15 @@ typedef enum guac_protocol_version {
      * messages to be sent to the client, and adds support for the "name"
      * handshake instruction.
      */
-    GUAC_PROTOCOL_VERSION_1_5_0 = 0x010500
+    GUAC_PROTOCOL_VERSION_1_5_0 = 0x010500,
+
+    /**
+     * Protocol version 1.7.0, which allows each entry of a stream index
+     * (the JSON listing sent for a directory of a filesystem object) to be
+     * an object carrying the entry's mimetype along with details such as
+     * size and modification time, rather than only the mimetype string.
+     */
+    GUAC_PROTOCOL_VERSION_1_7_0 = 0x010700
 
 } guac_protocol_version;
 
