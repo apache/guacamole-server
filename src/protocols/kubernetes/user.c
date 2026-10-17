@@ -29,6 +29,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
@@ -61,8 +62,8 @@ int guac_kubernetes_user_join_handler(guac_user* user, int argc, char** argv) {
         kubernetes_client->settings = settings;
 
         /* Start client thread */
-        if (pthread_create(&(kubernetes_client->client_thread), NULL,
-                    guac_kubernetes_client_thread, (void*) client)) {
+        if (guac_thread_create(&kubernetes_client->client_thread,
+                    guac_kubernetes_client_thread, (void*) client, "k8s-client")) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                     "Unable to start Kubernetes client thread");
             return 1;

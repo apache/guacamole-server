@@ -29,9 +29,9 @@
 #include <guacamole/mem.h>
 #include <guacamole/parser.h>
 #include <guacamole/plugin.h>
-#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 #include <guacamole/user.h>
 
 #ifdef ENABLE_SSL
@@ -105,10 +105,6 @@ static int __write_all(int fd, char* buffer, int length) {
  */
 static void* guacd_connection_write_thread(void* data) {
 
-    /* Thread name conn-write: forwards data from the connected user to the
-     * connection's child process. */
-    guac_thread_name_set("conn-write");
-
     guacd_connection_io_thread_params* params = (guacd_connection_io_thread_params*) data;
     char buffer[8192];
 
@@ -145,19 +141,14 @@ static void* guacd_connection_write_thread(void* data) {
 
 void* guacd_connection_io_thread(void* data) {
 
-    /* Thread name conn-read: forwards data from the connection's child
-     * process back to the connected user. */
-    guac_thread_name_set("conn-read");
-
     guacd_connection_io_thread_params* params = (guacd_connection_io_thread_params*) data;
     char buffer[8192];
 
     int length;
 
-    pthread_t write_thread;
-    int result = pthread_create(&write_thread, NULL, guacd_connection_write_thread, params);
-    if (result) {
-        guacd_log(GUAC_LOG_ERROR, "Unable to start write thread for user: %s.", strerror(result));
+    guac_thread write_thread;
+    if (guac_thread_create(&write_thread, guacd_connection_write_thread, params, "conn-write")) {
+        guacd_log_guac_error(GUAC_LOG_ERROR, "Unable to start write thread for user");
         guac_parser_free(params->parser);
     }
 
@@ -178,7 +169,7 @@ void* guacd_connection_io_thread(void* data) {
         /* Stop blocking on any outstanding I/O and wait for write thread to
          * die */
         guac_socket_shutdown(params->socket);
-        pthread_join(write_thread, NULL);
+        guac_thread_join(&write_thread, NULL);
 
     }
 
@@ -260,15 +251,14 @@ static int guacd_add_user(int proc_socket, guac_parser* parser, guac_socket* soc
     params->fd = user_fd;
 
     /* Start I/O thread */
-    pthread_t io_thread;
-    int result = pthread_create(&io_thread, NULL, guacd_connection_io_thread, params);
-    if (result) {
-        guacd_log(GUAC_LOG_ERROR, "Unable to start I/O thread for user: %s.", strerror(result));
+    guac_thread io_thread;
+    if (guac_thread_create(&io_thread, guacd_connection_io_thread, params, "conn-read")) {
+        guacd_log_guac_error(GUAC_LOG_ERROR, "Unable to start I/O thread for user");
         close(user_fd);
         guac_mem_free(params);
         return 1;
     }
-    pthread_detach(io_thread);
+    guac_thread_detach(&io_thread);
 
     return 0;
 
@@ -449,10 +439,6 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket,
 }
 
 void* guacd_connection_thread(void* data) {
-
-    /* Thread name conn-route: performs the protocol handshake for a new
-     * client connection and routes it to a connection process. */
-    guac_thread_name_set("conn-route");
 
     guacd_connection_thread_params* params = (guacd_connection_thread_params*) data;
 

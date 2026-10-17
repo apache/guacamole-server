@@ -25,8 +25,8 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/mem.h>
-#include <guacamole/proctitle.h>
 #include <guacamole/string.h>
+#include <guacamole/thread.h>
 #include <guacamole/timestamp.h>
 
 #include <errno.h>
@@ -70,8 +70,6 @@
  *     Always NULL.
  */
 static void* guacd_parent_watch_thread(void* data) {
-
-    guac_thread_name_set("parent-watch");
 
     /* Parent process has died if the current process has been re-parented (the
      * parent PID has changed) */
@@ -127,7 +125,40 @@ int guacd_proc_config_write(int fd, const guacd_proc_config* config) {
 
 }
 
-void guacd_connection_process(int argc, char** argv) {
+int guacd_proc_name_get_protocol(const char* process_name,
+    char* buffer, size_t buffer_length) {
+
+    if (process_name == NULL)
+        return 1;
+
+    /* Verify presence of required prefix */
+    size_t prefix_length = strlen(GUACD_PROC_TITLE_PREFIX);
+    if (strncmp(process_name, GUACD_PROC_TITLE_PREFIX, prefix_length))
+        return 1;
+
+    /* Verify presence of required suffix */
+    const char* proto_start = process_name + prefix_length;
+    const char* proto_end = strstr(proto_start, GUACD_PROC_TITLE_SUFFIX);
+    if (proto_end == NULL)
+        return 1;
+
+    /* Protocol names must be within defined limit to be valid */
+    size_t proto_length = proto_end - proto_start;
+    if (proto_length >= buffer_length)
+        return 1;
+
+    /* Extract copy of protocol name */
+    memcpy(buffer, proto_start, proto_length);
+    buffer[proto_length] = '\0';
+    return 0;
+
+}
+
+void guacd_connection_process(const char* protocol) {
+
+    /* Main thread name is separate from process title, but with insufficient
+     * space for any connection details */
+    guac_thread_self_set_name(GUACD_PROC_TITLE_PREFIX "%s" GUACD_PROC_TITLE_SUFFIX, protocol);
 
     /* Logging must be reinitialized (fresh process image) */
     openlog(GUACD_LOG_NAME, LOG_PID, LOG_DAEMON);
@@ -190,10 +221,6 @@ void guacd_connection_process(int argc, char** argv) {
     procctl(P_PID, getpid(), PROC_PDEATHSIG_CTL, &(int) { SIGTERM });
 #endif
 
-    /* Copy the protocol out of the process name before
-     * guac_process_title_set() repurposes that memory */
-    char* protocol = guac_strdup(argv[0] + strlen(GUACD_PROC_NAME_PREFIX));
-
     /* Read configuration from dedicated setup pipe */
     guacd_proc_config config;
     size_t config_length = 0;
@@ -210,10 +237,10 @@ void guacd_connection_process(int argc, char** argv) {
     fcntl(GUACD_PROC_SOCKET_FD, F_SETFD, FD_CLOEXEC);
 
     /* Nothing can be served without a complete configuration */
-    if (protocol == NULL || read_length < 0 || config_length != sizeof(config)
+    if (read_length < 0 || config_length != sizeof(config)
             || config.connection_id[0] == '\0') {
         guacd_log(GUAC_LOG_ERROR, "Connection process was started without a "
-                "usable protocol and configuration.");
+                "usable configuration.");
         exit(EXIT_FAILURE);
     }
 
@@ -249,15 +276,15 @@ void guacd_connection_process(int argc, char** argv) {
 
 #if !GUACD_HAVE_PDEATHSIG
     /* Poll for the death of the parent from here on */
-    pthread_t parent_watch_thread;
-    if (pthread_create(&parent_watch_thread, NULL, guacd_parent_watch_thread,
-                (void*) (intptr_t) config.parent_pid)) {
+    guac_thread parent_watch_thread;
+    if (guac_thread_create(&parent_watch_thread, guacd_parent_watch_thread,
+                (void*) (intptr_t) config.parent_pid, "parent-watch")) {
         guacd_log(GUAC_LOG_ERROR, "Unable to start a thread to watch for "
                 "the death of the parent guacd process. Refusing to serve a "
                 "connection which could outlive guacd.");
         exit(EXIT_FAILURE);
     }
-    pthread_detach(parent_watch_thread);
+    guac_thread_detach(&parent_watch_thread);
 #endif
 
     /* Match the log verbosity configured for the parent daemon */
