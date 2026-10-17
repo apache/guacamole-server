@@ -222,6 +222,23 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
     }
 
     else if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
+
+        /*
+         * Forward any requested desktop scale factor to the server so the
+         * remote session keeps scaling its UI across dynamic resizes. Both
+         * fields default to 0 (no scaling requested), which the server ignores
+         * per [MS-RDPEDISP]. When set, the desktop scale factor MUST be paired
+         * with a protocol-valid device scale factor (100, 140, or 180) or both
+         * are ignored.
+         */
+        UINT32 desktop_scale_factor = 0;
+        UINT32 device_scale_factor = 0;
+        if (settings->desktop_scale_factor != 0) {
+            desktop_scale_factor = settings->desktop_scale_factor;
+            device_scale_factor =
+                guac_rdp_get_device_scale_factor(settings->desktop_scale_factor);
+        }
+
         DISPLAY_CONTROL_MONITOR_LAYOUT monitors[1] = {{
             .Flags  = 0x1, /* DISPLAYCONTROL_MONITOR_PRIMARY */
             .Left = 0,
@@ -231,8 +248,8 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
             .PhysicalWidth = 0,
             .PhysicalHeight = 0,
             .Orientation = 0,
-            .DesktopScaleFactor = 0,
-            .DeviceScaleFactor = 0
+            .DesktopScaleFactor = desktop_scale_factor,
+            .DeviceScaleFactor = device_scale_factor
         }};
 
         /* Send display update notification if display channel is connected */
