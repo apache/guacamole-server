@@ -127,6 +127,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-include-clipboard",
     "create-recording-path",
     "recording-write-existing",
+    "require-recording",
     "resize-method",
     "enable-audio-input",
     "enable-touch",
@@ -602,6 +603,12 @@ enum RDP_ARGS_IDX {
      * Disabled by default.
      */
     IDX_RECORDING_WRITE_EXISTING,
+
+    /**
+     * Whether recording is required. If set to "true", the connection will
+     * be closed if the recording cannot be created for any reason.
+     */
+    IDX_REQUIRE_RECORDING,
 
     /**
      * The method to use to apply screen size changes requested by the user.
@@ -1230,6 +1237,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->recording_write_existing =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_RECORDING_WRITE_EXISTING, 0);
+
+    /* Parse require recording flag */
+    settings->require_recording =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_REQUIRE_RECORDING, 0);
 
     /* No resize method */
     if (strcmp(argv[IDX_RESIZE_METHOD], "") == 0) {

@@ -115,6 +115,19 @@ typedef struct guac_recording {
      */
     int include_clipboard;
 
+    /**
+     * The client associated with this recording. Used to abort the connection
+     * if a write to the recording fails and require_recording is set.
+     */
+    guac_client* client;
+
+    /**
+     * Whether the connection should be aborted if writing to the recording
+     * fails. If non-zero, any write error on the recording socket will
+     * trigger a connection abort.
+     */
+    int require_recording;
+
 } guac_recording;
 
 /**
@@ -179,6 +192,11 @@ typedef struct guac_recording {
  *     caution. Clipboard can easily contain sensitive information, such as
  *     passwords, credit card numbers, etc.
  *
+ * @param require_recording
+ *     Non-zero if the connection should be aborted when a write to the
+ *     recording file fails, zero otherwise. If zero, write errors will be
+ *     silently ignored and the connection will continue.
+ *
  * @return
  *     A new guac_recording structure representing the in-progress
  *     recording if the recording file has been successfully created and a
@@ -187,7 +205,8 @@ typedef struct guac_recording {
 guac_recording* guac_recording_create(guac_client* client,
         const char* path, const char* name, int create_path,
         int include_output, int include_mouse, int include_touch,
-        int include_keys, int allow_write_existing, int include_clipboard);
+        int include_keys, int allow_write_existing, int include_clipboard,
+        int require_recording);
 
 /**
  * Frees the resources associated with the given in-progress recording. Note
