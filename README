@@ -8,11 +8,11 @@ technical users intending to compile parts of Apache Guacamole themselves.
 
 Source archives are available from the downloads section of the project website:
  
-    http://guacamole.apache.org/
+    https://guacamole.apache.org/
 
 A full manual is available as well:
 
-    http://guacamole.apache.org/doc/gug/
+    https://guacamole.apache.org/doc/gug/
 
 
 ------------------------------------------------------------
@@ -39,10 +39,10 @@ All software within guacamole-server is built using the popular GNU Automake,
 and thus provides the standard configure script. Before compiling, at least
 the following required dependencies must already be installed:
 
-    1) Cairo (http://cairographics.org/)
+    1) Cairo (https://cairographics.org/)
 
-    2) libjpeg-turbo (http://libjpeg-turbo.virtualgl.org/)
-       OR libjpeg (http://www.ijg.org/)
+    2) libjpeg-turbo (https://libjpeg-turbo.virtualgl.org/)
+       OR libjpeg (https://www.ijg.org/)
 
     3) libpng (http://www.libpng.org/pub/png/libpng.html)
 
@@ -60,25 +60,25 @@ dependencies of at least ONE supported protocol, as Guacamole would be useless
 otherwise.
 
     RDP:
-        * FreeRDP (http://www.freerdp.com/)
+        * FreeRDP (https://www.freerdp.com/)
 
     SSH:
-        * libssh2 (http://www.libssh2.org/)
+        * libssh2 (https://www.libssh2.org/)
         * OpenSSL (https://www.openssl.org/)
-        * Pango (http://www.pango.org/)
+        * Pango (https://www.pango.org/)
 
     Telnet:
         * libtelnet (https://github.com/seanmiddleditch/libtelnet)
-        * Pango (http://www.pango.org/)
+        * Pango (https://www.pango.org/)
 
     VNC:
-        * libVNCserver (http://libvnc.github.io/)
+        * libVNCserver (https://libvnc.github.io/)
 
     Support for audio within VNC:
-        * PulseAudio (http://www.freedesktop.org/wiki/Software/PulseAudio/)
+        * PulseAudio (https://www.freedesktop.org/wiki/Software/PulseAudio/)
 
     Support for SFTP file transfer for VNC or RDP:
-        * libssh2 (http://www.libssh2.org/)
+        * libssh2 (https://www.libssh2.org/)
         * OpenSSL (https://www.openssl.org/)
 
     Support for WebP image compression:
