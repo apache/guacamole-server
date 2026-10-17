@@ -69,28 +69,99 @@ guac_protocol_version_mapping guac_protocol_version_table[] = {
 
 /* Output formatting functions */
 
+/* Longest possible int64_t, e.g. INT64_MIN, is 20 bytes; round up. */
+#define GUAC_PROTOCOL_MAX_INT_LENGTH 32
+
+/* Longest realistic "%.16g" double is ~24 bytes; round up. */
+#define GUAC_PROTOCOL_MAX_DOUBLE_LENGTH 128
+
+/* Longest decimal length prefix needed for a value bounded by
+ * GUAC_PROTOCOL_MAX_DOUBLE_LENGTH (the larger of the two bounds above). */
+#define GUAC_PROTOCOL_MAX_PREFIX_LENGTH 8
+
+/**
+ * Writes a single length-prefixed protocol element ("<length>.<value>") in
+ * one write, given a value already formatted into a buffer of known
+ * length. Shared by __guac_socket_write_length_int() and
+ * __guac_socket_write_length_double().
+ *
+ * @param socket
+ *     The socket to which the element should be written.
+ *
+ * @param value
+ *     The already-formatted value to be written, preceded by its length.
+ *
+ * @param value_len
+ *     The number of bytes in value, as returned by snprintf().
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+static ssize_t guac_socket_write_length_element(guac_socket* socket,
+        const char* value, int value_len) {
+
+    /* Sized for the largest value this is invoked with, plus its length
+     * prefix; the bounds check below is what actually guarantees safety. */
+    char element[GUAC_PROTOCOL_MAX_DOUBLE_LENGTH + GUAC_PROTOCOL_MAX_PREFIX_LENGTH];
+
+    int prefix_len = snprintf(element, sizeof(element), "%d.", value_len);
+    if (prefix_len < 0 || value_len < 0)
+        return 1;
+
+    /* Widen to size_t before adding: catches a too-large value_len without
+     * risking signed-int overflow the way "prefix_len + value_len" would. */
+    size_t total = (size_t) prefix_len + (size_t) value_len;
+    if (total > sizeof(element))
+        return 1;
+
+    memcpy(element + prefix_len, value, value_len);
+
+    return guac_socket_write(socket, element, total);
+
+}
+
 ssize_t __guac_socket_write_length_string(guac_socket* socket, const char* str) {
 
+    /* guac_utf8_strlen() and guac_socket_write_string() both dereference
+     * str unconditionally; treat NULL as an empty string rather than
+     * crashing the daemon over one malformed/optional field. */
+    if (str == NULL)
+        str = "";
+
+    /* Unlike the int/double cases, str is of unbounded length (e.g.
+     * clipboard/file data), so only its length prefix is pre-combined. */
+    char prefix[GUAC_PROTOCOL_MAX_INT_LENGTH];
+    int prefix_len = snprintf(prefix, sizeof(prefix), "%"PRIi64".",
+            (int64_t) guac_utf8_strlen(str));
+
+    if (prefix_len < 0)
+        return 1;
+
     return
-           guac_socket_write_int(socket, guac_utf8_strlen(str))
-        || guac_socket_write_string(socket, ".")
+           guac_socket_write(socket, prefix, prefix_len)
         || guac_socket_write_string(socket, str);
 
 }
 
 ssize_t __guac_socket_write_length_int(guac_socket* socket, int64_t i) {
 
-    char buffer[128];
-    snprintf(buffer, sizeof(buffer), "%"PRIi64, i);
-    return __guac_socket_write_length_string(socket, buffer);
+    char value[GUAC_PROTOCOL_MAX_INT_LENGTH];
+    int value_len = snprintf(value, sizeof(value), "%"PRIi64, i);
+    if (value_len < 0)
+        return 1;
+
+    return guac_socket_write_length_element(socket, value, value_len);
 
 }
 
 ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
 
-    char buffer[128];
-    snprintf(buffer, sizeof(buffer), "%.16g", d);
-    return __guac_socket_write_length_string(socket, buffer);
+    char value[GUAC_PROTOCOL_MAX_DOUBLE_LENGTH];
+    int value_len = snprintf(value, sizeof(value), "%.16g", d);
+    if (value_len < 0)
+        return 1;
+
+    return guac_socket_write_length_element(socket, value, value_len);
 
 }
 
