@@ -402,8 +402,19 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
      * requested */
     BYTE* start = (BYTE*) output;
     guac_iconv_read* local_reader = settings->normalize_clipboard ? GUAC_READ_UTF8_NORMALIZED : GUAC_READ_UTF8;
-    guac_iconv(local_reader, &input, clipboard->clipboard->length,
-            remote_writer, &output, output_buf_size);
+
+    /* A zero return indicates the output buffer filled before all input was
+     * consumed (truncation). Charset expansion (UTF-8 -> UTF-16, CRLF
+     * translation, or multi-byte characters such as emoji) can outgrow the
+     * configured clipboard buffer, so warn the operator rather than silently
+     * sending truncated data. */
+    if (!guac_iconv(local_reader, &input, clipboard->clipboard->length,
+            remote_writer, &output, output_buf_size)) {
+        guac_client_log(client, GUAC_LOG_WARNING, "CLIPRDR: Outbound clipboard "
+                "data was truncated to fit the %d-byte clipboard buffer. "
+                "Increase \"clipboard-buffer-size\" to transfer larger "
+                "clipboard content.", output_buf_size);
+    }
 
     CLIPRDR_FORMAT_DATA_RESPONSE data_response = {
         .requestedFormatData = (BYTE*) start,
@@ -512,11 +523,17 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
     data_len = format_data_response->dataLen;
     #endif
 
-    /* Convert, store, and forward the clipboard data received from RDP
-     * server */
-    if (guac_iconv(remote_reader, &input, data_len,
-            GUAC_WRITE_UTF8, &output, output_buf_size)) {
-        int length = strnlen(received_data, output_buf_size);
+    /* Convert the clipboard data received from the RDP server. A zero return
+     * indicates the output buffer filled before all input was consumed
+     * (truncation) due to charset expansion. */
+    int converted = guac_iconv(remote_reader, &input, data_len,
+            GUAC_WRITE_UTF8, &output, output_buf_size);
+
+    /* Store and forward whatever was converted, even if truncated. Partial
+     * clipboard text is still useful, so we deliver it and warn the operator
+     * rather than dropping the paste entirely. */
+    int length = strnlen(received_data, output_buf_size);
+    if (length > 0) {
         guac_common_clipboard_reset(clipboard->clipboard, "text/plain");
         guac_common_clipboard_append(clipboard->clipboard, received_data, length);
         guac_common_clipboard_send(clipboard->clipboard, client);
@@ -527,6 +544,13 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
                     clipboard->clipboard->mimetype,
                     clipboard->clipboard->buffer,
                     clipboard->clipboard->length);
+    }
+
+    if (!converted) {
+        guac_client_log(client, GUAC_LOG_WARNING, "CLIPRDR: Inbound clipboard "
+                "data was truncated to fit the %d-byte clipboard buffer. "
+                "Increase \"clipboard-buffer-size\" to receive larger "
+                "clipboard content.", output_buf_size);
     }
 
     guac_mem_free(received_data);
