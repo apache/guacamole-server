@@ -31,10 +31,12 @@
 #define GUAC_KUBERNETES_DEFAULT_PORT 8080
 
 /**
- * The protocol label included in the process title (the first argument passed
- * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
+ * The maximum number of bytes to permit for the name identifying the Kubernetes pod and
+ * container served by a connection, including the null terminator. This length
+ * applies to representing the connection in a human-readable way and has no
+ * impact on where connections may be routed.
  */
-#define GUAC_KUBERNETES_PROCESS_TITLE_NAME "k8s"
+#define GUAC_KUBERNETES_MAX_NAME_LENGTH 256
 
 /**
  * The name of the Kubernetes namespace that should be used by default if no

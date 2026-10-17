@@ -21,10 +21,9 @@
 #include "guacamole/error.h"
 #include "guacamole/flag.h"
 #include "guacamole/mem.h"
-#include "guacamole/proctitle.h"
+#include "guacamole/thread.h"
 #include "guacamole/timestamp.h"
 
-#include <errno.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -258,8 +257,6 @@ void guac_client_watchdog_await_all_users(guac_client_watchdog* watchdog) {
  */
 static void* guac_client_watchdog_thread(void* data) {
 
-    guac_thread_name_set("watchdog");
-
     guac_client_watchdog* watchdog = (guac_client_watchdog*) data;
 
     /* Do not allow the signal handlers of any client plugin (or its libraries)
@@ -355,18 +352,14 @@ guac_client_watchdog* guac_client_watchdog_start(guac_client* client,
     *((unsigned int*) &watchdog->op_timeout) = op_timeout;
     *((unsigned int*) &watchdog->cleanup_timeout) = cleanup_timeout;
 
-    pthread_t watchdog_thread;
-    int result = pthread_create(&watchdog_thread, NULL, guac_client_watchdog_thread, watchdog);
-    if (result) {
+    guac_thread watchdog_thread;
+    if (guac_thread_create(&watchdog_thread, guac_client_watchdog_thread, watchdog, "conn-watchdog")) {
         guac_flag_destroy(&watchdog->state);
         guac_mem_free(watchdog);
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Unable to start client watchdog thread";
-        errno = result;
         return NULL;
     }
 
-    pthread_detach(watchdog_thread);
+    guac_thread_detach(&watchdog_thread);
 
     client->__watchdog = watchdog;
     return watchdog;

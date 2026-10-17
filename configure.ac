@@ -181,6 +181,49 @@ AC_CHECK_FUNCS(m4_normalize([
     strdup
 ]))
 
+#
+# pthread_setname_np() variants
+#
+
+have_pthread_setname_np=no
+AC_MSG_CHECKING([whether a variant of pthread_setname_np() is available])
+
+# Three-argument variant accepting the thread, format string, and a single
+# argument for that format string (NetBSD-specific)
+if test "x$have_pthread_setname_np" = "xno"
+then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+        [[#include <pthread.h>]],
+        [[pthread_setname_np(pthread_self(), "%s", "test");]])],
+        [have_pthread_setname_np=three-argument
+        AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_THREAD_FORMAT],,
+                  [Whether pthread_setname_np() accepts the thread, format string, and name])])
+fi
+
+# Two-argument variant accepting the thread and name (GNU libc, FreeBSD, MUSL)
+if test "x$have_pthread_setname_np" = "xno"
+then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+        [[#include <pthread.h>]],
+        [[pthread_setname_np(pthread_self(), "test");]])],
+        [have_pthread_setname_np=two-argument
+        AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_THREAD_NAME],,
+                  [Whether pthread_setname_np() accepts the thread and name])])
+fi
+
+# Single-argument variant accepting only the name (MacOS-specific)
+if test "x$have_pthread_setname_np" = "xno"
+then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+        [#include <pthread.h>]],
+        [[pthread_setname_np("test");]])],
+        [have_pthread_setname_np=single-argument
+        AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_NAME],,
+                  [Whether pthread_setname_np() accepts only the thread name])])
+fi
+
+AC_MSG_RESULT([$have_pthread_setname_np])
+
 AC_CHECK_DECL([png_get_io_ptr],
     [AC_DEFINE([HAVE_PNG_GET_IO_PTR],,
                [Whether png_get_io_ptr() is defined])],,
