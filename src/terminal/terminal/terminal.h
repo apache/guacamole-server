@@ -531,6 +531,28 @@ int guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
 int guac_terminal_send_data(guac_terminal* term, const char* data, int length);
 
 /**
+ * Rewrites clipboard bytes so each line terminator becomes a single CR. LF is
+ * replaced with CR, CRLF collapses to one CR, and bare CR passes through. All
+ * other bytes are copied verbatim. The output is never longer than the input,
+ * so the destination buffer only needs to be as large as the input.
+ *
+ * @param src
+ *     The bytes to rewrite.
+ *
+ * @param length
+ *     The number of bytes available at src.
+ *
+ * @param dest
+ *     The destination buffer. Must be at least length bytes large. May not
+ *     overlap src.
+ *
+ * @return
+ *     The number of bytes written to dest.
+ */
+int guac_terminal_paste_normalize_newlines(const char* src, int length,
+        char* dest);
+
+/**
  * Sends the given string as if typed by the user. If terminal input is
  * currently coming from a stream due to a prior call to
  * guac_terminal_send_stream(), any input which would normally result from
