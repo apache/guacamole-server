@@ -41,6 +41,7 @@
 #endif
 
 #include <guacamole/recording.h>
+#include <guacamole/thread.h>
 
 #include <pthread.h>
 
@@ -58,7 +59,7 @@ typedef struct guac_vnc_client {
     /**
      * The VNC client thread.
      */
-    pthread_t client_thread;
+    guac_thread client_thread;
 
 #ifdef ENABLE_VNC_TLS_LOCKING
     /**

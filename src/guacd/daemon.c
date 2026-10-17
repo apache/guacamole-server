@@ -24,10 +24,11 @@
 #include "log.h"
 #include "proc-child.h"
 #include "proc-map.h"
+#include "proc-title.h"
 
 #include <guacamole/assert.h>
 #include <guacamole/mem.h>
-#include <guacamole/proctitle.h>
+#include <guacamole/thread.h>
 #include <guacamole/timestamp.h>
 
 #ifdef ENABLE_SSL
@@ -374,12 +375,14 @@ static void count_process_callback(guacd_proc* proc, void* data) {
 
 int main(int argc, char* argv[]) {
 
-    guac_process_title_init(argc, argv);
+    char protocol[GUAC_PROTOCOL_NAME_LIMIT];
+
+    guacd_proc_title_init(argv[0]);
 
     /* Run as per-connection child process if requested by guacd parent (as
      * indicated by process name) */
-    if (strncmp(argv[0], GUACD_PROC_NAME_PREFIX, strlen(GUACD_PROC_NAME_PREFIX)) == 0) {
-        guacd_connection_process(argc, argv);
+    if (!guacd_proc_name_get_protocol(argv[0], protocol, sizeof(protocol))) {
+        guacd_connection_process(protocol);
         GUAC_ASSERT(0); /* guacd_connection_process() does not return */
     }
 
@@ -634,7 +637,7 @@ int main(int argc, char* argv[]) {
     /* Daemon loop */
     while (!stop_everything) {
 
-        pthread_t child_thread;
+        guac_thread child_thread;
 
         /* Accept connection */
         client_addr_len = sizeof(client_addr);
@@ -692,15 +695,13 @@ int main(int argc, char* argv[]) {
 
         /* Spawn thread to handle connection, dropping the connection if that
          * thread cannot be started */
-        int result = pthread_create(&child_thread, NULL,
-                guacd_connection_thread, params);
-        if (result) {
-            guacd_log(GUAC_LOG_ERROR, "Unable to start connection thread: %s.", strerror(result));
+        if (guac_thread_create(&child_thread, guacd_connection_thread, params, "conn-route")) {
+            guacd_log_guac_error(GUAC_LOG_ERROR, "Unable to start connection thread");
             close(connected_socket_fd);
             guac_mem_free(params);
             continue;
         }
-        pthread_detach(child_thread);
+        guac_thread_detach(&child_thread);
 
     }
 

@@ -35,9 +35,9 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/mem.h>
-#include <guacamole/proctitle.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/wol-constants.h>
 #include <guacamole/wol.h>
@@ -200,10 +200,6 @@ static char* guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
 void* ssh_input_thread(void* data) {
 
-    /* Thread name ssh-stdin: reads terminal STDIN and forwards it to the
-     * SSH server. */
-    guac_thread_name_set("ssh-stdin");
-
     guac_client* client = (guac_client*) data;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
 
@@ -229,17 +225,13 @@ void* ssh_input_thread(void* data) {
 
 void* ssh_client_thread(void* data) {
 
-    /* Thread name ssh-worker: main SSH client thread; runs the SSH session
-     * and drives the terminal. */
-    guac_thread_name_set("ssh-worker");
-
     guac_client* client = (guac_client*) data;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
     guac_ssh_settings* settings = ssh_client->settings;
 
     char buffer[8192];
 
-    pthread_t input_thread;
+    guac_thread input_thread;
 
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
@@ -352,8 +344,12 @@ void* ssh_client_thread(void* data) {
 
     const char* ssh_port = settings->port != NULL
             ? settings->port : GUAC_SSH_DEFAULT_PORT;
-    guac_process_title_set_endpoint(GUAC_SSH_PROCESS_TITLE_NAME,
-            settings->username, settings->hostname, ssh_port);
+
+    guac_client_set_info(client, &(guac_client_info) {
+        .username = settings->username,
+        .hostname = settings->hostname,
+        .port = ssh_port
+    });
 
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,
@@ -488,7 +484,7 @@ void* ssh_client_thread(void* data) {
     guac_terminal_start(ssh_client->term);
 
     /* Start input thread */
-    if (pthread_create(&(input_thread), NULL, ssh_input_thread, (void*) client)) {
+    if (guac_thread_create(&input_thread, ssh_input_thread, (void*) client, "ssh-stdin")) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start input thread");
         return NULL;
     }
@@ -585,7 +581,7 @@ void* ssh_client_thread(void* data) {
 
     /* Kill client and Wait for input thread to die */
     guac_client_stop(client);
-    pthread_join(input_thread, NULL);
+    guac_thread_join(&input_thread, NULL);
 
     pthread_mutex_destroy(&ssh_client->term_channel_lock);
 
