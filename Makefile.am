@@ -37,6 +37,7 @@ DIST_SUBDIRS =               \
     src/pulse                \
     src/protocols/kubernetes \
     src/protocols/rdp        \
+    src/protocols/serial     \
     src/protocols/ssh        \
     src/protocols/telnet     \
     src/protocols/vnc
@@ -67,6 +68,10 @@ endif
 
 if ENABLE_SSH
 SUBDIRS += src/protocols/ssh
+endif
+
+if ENABLE_SERIAL
+SUBDIRS += src/protocols/serial
 endif
 
 if ENABLE_TELNET
