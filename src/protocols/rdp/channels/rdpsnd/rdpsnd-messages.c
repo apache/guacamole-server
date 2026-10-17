@@ -89,7 +89,7 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
 
     /* Version and padding */
     Stream_Write_UINT8(output_stream,  0);
-    Stream_Write_UINT16(output_stream, 6);
+    Stream_Write_UINT16(output_stream, 8); /* Version 8 is required for the server to use Wave2 (SNDC_WAVE2) */
     Stream_Write_UINT8(output_stream,  0);
 
     /* Check each server format, respond if supported and audio is enabled */
@@ -357,6 +357,79 @@ void guac_rdpsnd_wave_handler(guac_rdp_common_svc* svc,
 
     /* We no longer expect to receive wave data */
     rdpsnd->next_pdu_is_wave = FALSE;
+
+}
+
+void guac_rdpsnd_wave2_handler(guac_rdp_common_svc* svc,
+        wStream* input_stream, guac_rdpsnd_pdu_header* header) {
+
+    int format;
+    int wave_size;
+    int timestamp;
+    int block_number;
+    unsigned char* buffer;
+    wStream* output_stream;
+
+    guac_client* client = svc->client;
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
+
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_audio_stream* audio = rdp_client->audio;
+
+    /* The Wave2 fixed fields occupy 12 bytes (per MS-RDPEA 2.2.3.10). */
+    if (Stream_GetRemainingLength(input_stream) < 12) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Wave2 PDU does "
+                "not contain the expected number of bytes. Sound may not work "
+                "as expected.");
+        return;
+    }
+
+    /* Read Wave2 fixed fields */
+    Stream_Read_UINT16(input_stream, timestamp);      /* wTimeStamp */
+    Stream_Read_UINT16(input_stream, format);         /* wFormatNo */
+    Stream_Read_UINT8(input_stream, block_number);    /* cBlockNo */
+    Stream_Seek(input_stream, 3);                     /* bPad */
+    Stream_Seek_UINT32(input_stream);                 /* dwAudioTimeStamp */
+
+    /*
+     * Unlike the legacy WaveInfo/Wave pair, the Wave2 PDU is self-contained:
+     * the remaining bytes are the complete audio block (with no four-byte
+     * split).
+     */
+    wave_size = Stream_GetRemainingLength(input_stream);
+    Stream_GetPointer(input_stream, buffer);
+
+    if (audio != NULL) {
+
+        /* Reset audio stream to the format indicated by this PDU */
+        if (format < GUAC_RDP_MAX_FORMATS)
+            guac_audio_stream_reset(audio, NULL,
+                    rdpsnd->formats[format].rate,
+                    rdpsnd->formats[format].channels,
+                    rdpsnd->formats[format].bps);
+
+        else
+            guac_client_log(svc->client, GUAC_LOG_WARNING, "RDP server "
+                    "attempted to specify an invalid audio format. Sound may "
+                    "not work as expected.");
+
+        /* Write audio packet */
+        guac_audio_stream_write_pcm(audio, buffer, wave_size);
+        guac_audio_stream_flush(audio);
+
+    }
+
+    /* Acknowledge via Wave Confirmation PDU (same as legacy Wave) */
+    output_stream = Stream_New(NULL, 8);
+    Stream_Write_UINT8(output_stream, SNDC_WAVECONFIRM);
+    Stream_Write_UINT8(output_stream, 0);
+    Stream_Write_UINT16(output_stream, 4);
+    Stream_Write_UINT16(output_stream, timestamp);
+    Stream_Write_UINT8(output_stream, block_number);
+    Stream_Write_UINT8(output_stream, 0);
+
+    /* Send Wave Confirmation PDU */
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
