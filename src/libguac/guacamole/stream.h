@@ -105,6 +105,34 @@ struct guac_stream {
      */
     guac_user_end_handler* end_handler;
 
+    /**
+     * Optional cleanup callback for whatever the stream's data pointer
+     * holds. Called from guac_user_free_stream when the stream is freed,
+     * and from guac_user_free for any streams still open when the user
+     * disconnects. NULL if no cleanup is needed.
+     *
+     * Example:
+     * @code
+     *     static void my_data_free(guac_stream* stream) {
+     *         my_data* d = (my_data*) stream->data;
+     *         free(d->buffer);
+     *         free(d);
+     *     }
+     *
+     *     int my_pipe_handler(guac_user* user, guac_stream* stream,
+     *             char* mimetype, char* name) {
+     *         my_data* d = malloc(sizeof(*d));
+     *         d->buffer = NULL;
+     *         stream->data = d;
+     *         stream->blob_handler = my_blob_handler;
+     *         stream->end_handler = my_end_handler;
+     *         stream->free_handler = my_data_free;
+     *         return 0;
+     *     }
+     * @endcode
+     */
+    guac_stream_free_handler* free_handler;
+
 };
 
 #endif

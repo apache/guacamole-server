@@ -1120,6 +1120,38 @@ int guac_protocol_send_clipboard(guac_socket* socket, const guac_stream* stream,
 int guac_protocol_send_name(guac_socket* socket, const char* name);
 
 /**
+ * Sends an auth-challenge instruction over the given guac_socket
+ * connection, announcing a stream carrying the challenge body for a
+ * pending authentication exchange. The peer responds via an
+ * auth-response instruction carrying the same challenge_id.
+ *
+ * The body is shipped on the given stream as blobs, terminated by an
+ * end, after this function returns. Callers are responsible for
+ * allocating and freeing the stream.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param stream
+ *     The stream along which the challenge body will be sent.
+ *
+ * @param mimetype
+ *     The mimetype of the data that will be sent along the given stream.
+ *     The mimetype identifies the auth flavor (e.g. WebAuthn create vs.
+ *     get).
+ *
+ * @param challenge_id
+ *     Opaque identifier carried by the auth-challenge. The peer's
+ *     matching auth-response will reference this identifier.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_auth_challenge(guac_socket* socket,
+        const guac_stream* stream, const char* mimetype,
+        const char* challenge_id);
+
+/**
  * Decodes the given base64-encoded string in-place. The base64 string must
  * be NULL-terminated.
  *
