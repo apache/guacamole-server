@@ -47,10 +47,10 @@
 #include <guacamole/error.h>
 #include <guacamole/flag.h>
 #include <guacamole/mem.h>
-#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/string.h>
+#include <guacamole/thread.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/user.h>
 
@@ -356,10 +356,6 @@ static void guac_terminal_repaint_default_layer(guac_terminal* terminal,
  */
 void* guac_terminal_thread(void* data) {
 
-    /* Thread name terminal: renders the terminal emulator display and
-     * processes output from the remote. */
-    guac_thread_name_set("term-render");
-
     guac_terminal* terminal = (guac_terminal*) data;
     guac_client* client = terminal->client;
 
@@ -650,8 +646,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     guac_common_cursor_set_blank(term->cursor);
 
     /* Start terminal thread */
-    if (pthread_create(&(term->thread), NULL,
-                guac_terminal_thread, (void*) term)) {
+    if (guac_thread_create(&term->thread, guac_terminal_thread,
+            (void*) term, "term-render")) {
         guac_terminal_free(term);
         return NULL;
     }
@@ -691,7 +687,7 @@ void guac_terminal_free(guac_terminal* term) {
     guac_terminal_stop(term);
 
     /* Wait for render thread to finish */
-    pthread_join(term->thread, NULL);
+    guac_thread_join(&term->thread, NULL);
 
     /* Close and flush any open pipe stream */
     guac_terminal_pipe_stream_close(term);

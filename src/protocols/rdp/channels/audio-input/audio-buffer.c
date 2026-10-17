@@ -22,10 +22,10 @@
 
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
-#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
+#include <guacamole/thread.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/user.h>
 
@@ -218,10 +218,6 @@ static void guac_rdp_audio_buffer_wait(guac_rdp_audio_buffer* audio_buffer) {
  */
 static void* guac_rdp_audio_buffer_flush_thread(void* data) {
 
-    /* Thread name rdp-audio: flushes buffered audio input to the RDP
-     * server at the negotiated rate. */
-    guac_thread_name_set("rdp-audio");
-
     guac_rdp_audio_buffer* audio_buffer = (guac_rdp_audio_buffer*) data;
     while (!audio_buffer->stopping) {
 
@@ -274,8 +270,8 @@ guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc(guac_client* client) {
     buffer->client = client;
 
     /* Begin automated, throttled flush of future data */
-    pthread_create(&(buffer->flush_thread), NULL,
-            guac_rdp_audio_buffer_flush_thread, (void*) buffer);
+    guac_thread_create(&buffer->flush_thread,
+            guac_rdp_audio_buffer_flush_thread, (void*) buffer, "rdp-audio");
 
     return buffer;
 }
@@ -635,7 +631,7 @@ void guac_rdp_audio_buffer_free(guac_rdp_audio_buffer* audio_buffer) {
     pthread_mutex_unlock(&(audio_buffer->lock));
 
     /* Clean up flush thread */
-    pthread_join(audio_buffer->flush_thread, NULL);
+    guac_thread_join(&audio_buffer->flush_thread, NULL);
 
     pthread_mutex_destroy(&(audio_buffer->lock));
     pthread_cond_destroy(&(audio_buffer->modified));

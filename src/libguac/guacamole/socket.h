@@ -30,9 +30,9 @@
 #include "socket-constants.h"
 #include "socket-fntypes.h"
 #include "socket-types.h"
+#include "thread.h"
 #include "timestamp-types.h"
 
-#include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -109,14 +109,10 @@ struct guac_socket {
     char __encoded_buf[GUAC_SOCKET_BASE64_ENCODED_BUFFER_SIZE];
 
     /**
-     * Whether automatic keep-alive is enabled.
+     * The keep-alive thread. This thread is only started if automatic
+     * keep-alive is enabled.
      */
-    int __keep_alive_enabled;
-
-    /**
-     * The keep-alive thread.
-     */
-    pthread_t __keep_alive_thread;
+    guac_thread __keep_alive_thread;
 
     /**
      * Handler which will be called whenever guac_socket_shutdown() is invoked

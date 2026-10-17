@@ -35,15 +35,53 @@
 #include "rwlock.h"
 #include "socket-types.h"
 #include "stream-types.h"
+#include "thread.h"
 #include "timestamp-types.h"
 #include "user-fntypes.h"
 #include "user-types.h"
 
 #include <cairo/cairo.h>
 
-#include <pthread.h>
 #include <stdarg.h>
 #include <time.h>
+
+struct guac_client_info {
+
+    /**
+     * An arbitrary, optional name of the specific resource being accessed. If
+     * included, this value should be in whatever form best describes such a
+     * resource. If inapplicable, or if the connection is fully described by
+     * general endpoint details, this should be NULL.
+     */
+    const char* resource_name;
+
+    /**
+     * The username or unique identifier of the identity that the user is
+     * operating as via the relevant guac_client, or NULL if unknown or
+     * inapplicable. In the case of a remote desktop connection, this would be
+     * expected to be the username of the user within the remote desktop
+     * session.
+     */
+    const char* username;
+
+    /**
+     * The hostname of the service being accessed through the relevant
+     * guac_client, or NULL if unknown or inapplicable.
+     */
+    const char* hostname;
+
+    /**
+     * The port, service name, instance name, or similar identifier of the
+     * service being accessed through the relevant guac_client, or NULL if
+     * unknown or inapplicable.
+     *
+     * @note
+     *     If the port is numeric, such as a TCP or UDP port, it is recommended
+     *     to convert the value to a string using guac_itoa_safe().
+     */
+    const char* port;
+
+};
 
 struct guac_client {
 
@@ -118,19 +156,7 @@ struct guac_client {
      * handler, as those are the programs that would provide the logging
      * facilities.
      *
-     * Client implementations should expect these handlers to already be
-     * set.
-     *
-     * Example:
-     * @code
-     *     void log_handler(guac_client* client, guac_client_log_level level, const char* format, va_list args);
-     *
-     *     void function_of_daemon() {
-     *
-     *         guac_client* client = [pass log_handler to guac_client_plugin_get_client()];
-     *
-     *     }
-     * @endcode
+     * Client implementations should expect this handler to already be set.
      */
     guac_client_log_handler* log_handler;
 
@@ -182,25 +208,20 @@ struct guac_client {
 
     /**
      * Lock which is acquired when the pending users list is being manipulated,
-     * or iterated, or when checking/altering the
-     * __pending_users_thread_started flag.
+     * or iterated, or when starting the pending users thread.
      */
     guac_rwlock __pending_users_lock;
 
     /**
      * A timer that will periodically synchronize the list of pending users,
      * emptying the list once synchronization is complete. Only for internal
-     * use within the client. This will be NULL until the first user joins
-     * the connection, as it is lazily instantiated at that time.
+     * use within the client. This thread is not started until the first user
+     * joins the connection, as it is lazily started at that time. The
+     * __pending_users_lock must be held across both the check of whether this
+     * thread has started and the start itself, such that concurrently joining
+     * users cannot each start one.
      */
-    pthread_t __pending_users_thread;
-
-    /**
-     * Whether the pending users thread has started for this guac_client. The
-     * __pending_users_lock must be acquired before checking or altering this
-     * value.
-     */
-    int __pending_users_thread_started;
+    guac_thread __pending_users_thread;
 
     /**
      * The first user within the list of connected users who have not yet had
@@ -317,6 +338,21 @@ struct guac_client {
      */
     guac_client_watchdog* __watchdog;
 
+    /**
+     * Connection details handler. This handler will be called via
+     * guac_client_set_info() when the client implementation has determined the
+     * details of the connection/resource it serves, and may be called more than
+     * once as additional information becomes available.
+     *
+     * In general, as with the log_handler, only programs loading the client
+     * should implement this handler. It is up to programs implementing this
+     * handler to decide how and whether to present the provided details,
+     * including whether any of those details should be obfuscated.
+     *
+     * Client implementations should expect this handler to already be set.
+     */
+    guac_client_info_handler* info_handler;
+
 };
 
 /**
@@ -360,6 +396,31 @@ void guac_client_log(guac_client* client, guac_client_log_level level,
  */
 void vguac_client_log(guac_client* client, guac_client_log_level level,
         const char* format, va_list ap);
+
+/**
+ * Reports the details of the connection/resource served by the given
+ * guac_client to the program loading that client (normally guacd). It is up to
+ * that program to decide how and whether to present the provided details,
+ * including whether any of those details should be obfuscated.
+ *
+ * Client implementations should call this function as soon as the details of
+ * their connection are known. This function may safely be invoked more than
+ * once for the same guac_client as additional information becomes available.
+ *
+ * @important
+ *     As these details may be exposed to any user able to list the processes of
+ *     the system, they SHOULD NOT contain passwords, tokens, keys, or other
+ *     secrets.
+ *
+ * @param client
+ *     The guac_client serving the connection/resource being described.
+ *
+ * @param info
+ *     Details describing the connection/resource. This structure and any memory
+ *     it references only need to remain valid for the duration of this
+ *     call.
+ */
+void guac_client_set_info(guac_client* client, const guac_client_info* info);
 
 /**
  * Signals the given client to stop gracefully. This is a completely

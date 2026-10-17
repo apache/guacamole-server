@@ -41,6 +41,7 @@
 #include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/rwlock.h>
+#include <guacamole/thread.h>
 
 #include <dirent.h>
 #include <errno.h>
@@ -259,7 +260,7 @@ int guac_rdp_client_free_handler(guac_client* client) {
     guac_argv_stop();
 
     /* Wait for client thread */
-    pthread_join(rdp_client->client_thread, NULL);
+    guac_thread_join(&rdp_client->client_thread, NULL);
 
     /* Clean up event queue and associated signalling handle */
     guac_fifo_destroy(&rdp_client->input_events);

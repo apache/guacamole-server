@@ -37,6 +37,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
+#include <guacamole/thread.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
@@ -67,8 +68,8 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
         rdp_client->settings = settings;
 
         /* Start client thread */
-        if (pthread_create(&rdp_client->client_thread, NULL,
-                    guac_rdp_client_thread, user->client)) {
+        if (guac_thread_create(&rdp_client->client_thread,
+                    guac_rdp_client_thread, user->client, "rdp-client")) {
             guac_user_log(user, GUAC_LOG_ERROR,
                     "Unable to start RDP client thread.");
             return 1;

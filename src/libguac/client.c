@@ -26,12 +26,12 @@
 #include "guacamole/layer.h"
 #include "guacamole/plugin.h"
 #include "guacamole/pool.h"
-#include "guacamole/proctitle.h"
 #include "guacamole/protocol.h"
 #include "guacamole/rwlock.h"
 #include "guacamole/socket.h"
 #include "guacamole/stream.h"
 #include "guacamole/string.h"
+#include "guacamole/thread.h"
 #include "guacamole/timestamp.h"
 #include "guacamole/user.h"
 #include "id.h"
@@ -242,10 +242,6 @@ promotion_complete:
  */
 static void* guac_client_pending_users_thread(void* data) {
 
-    /* Thread name user-pending: periodically promotes pending users into
-     * the active connection. */
-    guac_thread_name_set("user-pending");
-
     guac_client* client = (guac_client*) data;
 
     while (client->state == GUAC_CLIENT_RUNNING) {
@@ -326,14 +322,13 @@ void guac_client_free(guac_client* client) {
     while (client->__users != NULL)
         guac_client_remove_user(client, client->__users);
 
-    /* Clean up the thread monitoring for new pending users, if it's been
-     * started */
-    if (client->__pending_users_thread_started)
-        pthread_join(client->__pending_users_thread, NULL);
-
     /* Release the locks */
     guac_rwlock_release_lock(&(client->__users_lock));
     guac_rwlock_release_lock(&(client->__pending_users_lock));
+
+    /* Clean up the thread monitoring for new pending users, if it's been
+     * started */
+    guac_thread_join(&client->__pending_users_thread, NULL);
 
     if (client->free_handler) {
 
@@ -391,6 +386,14 @@ void guac_client_log(guac_client* client, guac_client_log_level level,
 
 }
 
+void guac_client_set_info(guac_client* client, const guac_client_info* info) {
+
+    /* Call handler if defined */
+    if (client->info_handler != NULL)
+        client->info_handler(client, info);
+
+}
+
 void guac_client_stop(guac_client* client) {
     client->state = GUAC_CLIENT_STOPPING;
 }
@@ -445,12 +448,11 @@ static void guac_client_add_pending_user(guac_client* client,
     /* Acquire the lock for modifying the list of pending users */
     guac_rwlock_acquire_write_lock(&(client->__pending_users_lock));
 
-    /* Set up the pending user promotion mutex */
-    if (!client->__pending_users_thread_started) {
-        pthread_create(&client->__pending_users_thread, NULL,
-                guac_client_pending_users_thread, (void*) client);
-        client->__pending_users_thread_started = 1;
-    }
+    /* Start the pending user promotion thread if not already started */
+    if (!client->__pending_users_thread.started)
+        guac_thread_create(&client->__pending_users_thread,
+                guac_client_pending_users_thread, (void*) client,
+                "user-promote");
 
     user->__prev = NULL;
     user->__next = client->__pending_users;

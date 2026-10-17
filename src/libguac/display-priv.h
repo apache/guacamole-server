@@ -26,6 +26,7 @@
 #include "guacamole/fifo.h"
 #include "guacamole/rect.h"
 #include "guacamole/socket.h"
+#include "guacamole/thread.h"
 
 #include <pthread.h>
 
@@ -287,9 +288,9 @@ struct guac_display_render_thread {
     guac_display* display;
 
     /**
-     * The actual underlying POSIX thread.
+     * The actual underlying thread.
      */
-    pthread_t thread;
+    guac_thread thread;
 
     /**
      * Flag representing render state. This flag is used to store whether the
@@ -785,7 +786,7 @@ struct guac_display {
      * Pool of worker threads that automatically pull from the ops FIFO,
      * sending corresponding Guacamole instructions to all connected clients.
      */
-    pthread_t* worker_threads;
+    guac_thread* worker_threads;
 
     /**
      * FIFO of all graphical operations required to transform the remote
