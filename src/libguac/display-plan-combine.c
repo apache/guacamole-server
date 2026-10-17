@@ -116,6 +116,12 @@ static int guac_display_plan_has_common_edge(const guac_display_plan_operation* 
 static int guac_display_plan_should_combine(const guac_display_plan_operation* op_a,
         const guac_display_plan_operation* op_b) {
 
+    /* A NOP has already been absorbed into another operation. Some cells may
+     * still reference it, so it must not be considered for another merge. */
+    if (op_a->type == GUAC_DISPLAY_PLAN_OPERATION_NOP
+            || op_b->type == GUAC_DISPLAY_PLAN_OPERATION_NOP)
+        return 0;
+
     /* Operations can only be combined within the same layer */
     if (op_a->layer != op_b->layer)
         return 0;
