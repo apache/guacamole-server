@@ -43,9 +43,20 @@
 #define GUACENC_DEFAULT_BITRATE 2000000
 
 /**
+ * The libavcodec name of the codec used if none is given on the command line.
+ */
+#define GUACENC_DEFAULT_CODEC "mpeg4"
+
+/**
  * The default log level below which no messages should be logged.
  */
 #define GUACENC_DEFAULT_LOG_LEVEL GUAC_LOG_INFO
+
+/**
+ * The libavformat URL of the current process' STDOUT, as used when encoded
+ * video should be streamed to STDOUT rather than written to a file.
+ */
+#define GUACENC_STDOUT_PATH "pipe:1"
 
 #endif
 

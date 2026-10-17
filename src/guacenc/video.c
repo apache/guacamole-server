@@ -28,6 +28,7 @@
 #include <libavformat/avformat.h>
 #endif
 #include <libavutil/common.h>
+#include <libavutil/dict.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
 #include <guacamole/client.h>
@@ -40,12 +41,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
-        int width, int height, int bitrate) {
+        const char* format_name, int width, int height, int bitrate) {
 
     const AVOutputFormat *container_format;
     AVFormatContext *container_format_context;
@@ -53,8 +55,15 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     int ret;
     int failed_header = 0;
 
+    /* A pipe URL has no extension to guess the container from, so default to
+     * "ipod" (the container guessed for the ".m4v" files normally produced) */
+    bool is_pipe = (strncmp(path, "pipe:", 5) == 0);
+    if (format_name == NULL && is_pipe)
+        format_name = "ipod";
+
     /* allocate the output media context */
-    avformat_alloc_output_context2(&container_format_context, NULL, NULL, path);
+    avformat_alloc_output_context2(&container_format_context, NULL,
+            format_name, path);
     if (container_format_context == NULL) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to determine container from output file name");
         goto fail_codec;
@@ -122,6 +131,13 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
 
     /* Open output file, if the container needs it */
     if (!(container_format->flags & AVFMT_NOFILE)) {
+        /* Never overwrite an existing file (pipes are not files) */
+        if (!is_pipe && access(path, F_OK) == 0) {
+            guacenc_log(GUAC_LOG_ERROR, "Refusing to overwrite existing "
+                    "file \"%s\".", path);
+            goto fail_output_avio;
+        }
+
         ret = avio_open(&container_format_context->pb, path, AVIO_FLAG_WRITE);
         if (ret < 0) {
             guacenc_log(GUAC_LOG_ERROR, "Error occurred while opening output file.");
@@ -129,8 +145,16 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         }
     }
 
+    /* Pipes cannot seek back to finalize the container, so fragment MP4-family
+     * output (other containers ignore this option) */
+    AVDictionary* header_options = NULL;
+    if (is_pipe)
+        av_dict_set(&header_options, "movflags",
+                "frag_keyframe+empty_moov", 0);
+
     /* write the stream header, if needed */
-    ret = avformat_write_header(container_format_context, NULL);
+    ret = avformat_write_header(container_format_context, &header_options);
+    av_dict_free(&header_options);
     if (ret < 0) {
         guacenc_log(GUAC_LOG_ERROR, "Error occurred while writing output file header.");
         failed_header = true;
@@ -162,8 +186,9 @@ fail_alloc_video:
 fail_output_file:
     avio_close(container_format_context->pb);
 
-    /* Delete the file that was created if it was actually created */
-    if (unlink(path) == -1 && errno != ENOENT)
+    /* Delete the file that was created if it was actually created (no file
+     * exists to be deleted if output was written to a pipe) */
+    if (!is_pipe && unlink(path) == -1 && errno != ENOENT)
         guacenc_log(GUAC_LOG_WARNING, "Failed output file \"%s\" could not "
                 "be automatically deleted: %s", path, strerror(errno));
 

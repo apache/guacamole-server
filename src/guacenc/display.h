@@ -139,6 +139,10 @@ int guacenc_display_flatten(guacenc_display* display);
  *     The name of the codec to use for the video encoding, as defined by
  *     ffmpeg / libavcodec.
  *
+ * @param format
+ *     The container format name, as defined by ffmpeg / libavformat, or NULL
+ *     to guess from the extension of the given path ("ipod" if a pipe).
+ *
  * @param width
  *     The width of the desired video, in pixels.
  *
@@ -154,7 +158,7 @@ int guacenc_display_flatten(guacenc_display* display);
  *     display could not be allocated.
  */
 guacenc_display* guacenc_display_alloc(const char* path, const char* codec,
-        int width, int height, int bitrate);
+        const char* format, int width, int height, int bitrate);
 
 /**
  * Frees all memory associated with the given Guacamole video encoder display,
