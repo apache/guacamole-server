@@ -34,7 +34,6 @@ DIST_SUBDIRS =               \
     src/guacd                \
     src/guacenc              \
     src/guaclog              \
-    src/guacclip             \
     src/pulse                \
     src/protocols/kubernetes \
     src/protocols/rdp        \
@@ -93,10 +92,6 @@ endif
 
 if ENABLE_GUACLOG
 SUBDIRS += src/guaclog
-endif
-
-if ENABLE_GUACCLIP
-SUBDIRS += src/guacclip
 endif
 
 EXTRA_DIST =                         \
