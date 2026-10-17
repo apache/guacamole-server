@@ -180,13 +180,20 @@ static UINT guac_rdp_cliprdr_monitor_ready(CliprdrClientContext* cliprdr,
     guac_client_log(clipboard->client, GUAC_LOG_TRACE, "CLIPRDR: Received "
             "monitor ready.");
 
-    /* Respond with capabilities ... */
+    /* Respond with capabilities, logging (but not aborting on) failure so
+     * that the format list is still advertised even if a single PDU fails */
     int status = guac_rdp_cliprdr_send_capabilities(cliprdr);
     if (status != CHANNEL_RC_OK)
-        return status;
+        guac_client_log(clipboard->client, GUAC_LOG_WARNING, "CLIPRDR: "
+                "Failed to send capabilities (error %d).", status);
 
     /* ... and supported format list */
-    return guac_rdp_cliprdr_send_format_list(cliprdr);
+    status = guac_rdp_cliprdr_send_format_list(cliprdr);
+    if (status != CHANNEL_RC_OK)
+        guac_client_log(clipboard->client, GUAC_LOG_WARNING, "CLIPRDR: "
+                "Failed to send format list (error %d).", status);
+
+    return CHANNEL_RC_OK;
 
 }
 
@@ -219,21 +226,45 @@ static UINT guac_rdp_cliprdr_send_format_data_request(
     guac_client* client = clipboard->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
+    /* Prevent overlapping requests — FreeRDP 3.x tracks pending requests
+     * internally and will disconnect with error 1359 if a response arrives
+     * without a matching pending request. */
+    pthread_mutex_lock(&(clipboard->request_lock));
+    if (clipboard->request_pending) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "CLIPRDR: Skipping format "
+                "data request — previous request still pending.");
+        pthread_mutex_unlock(&(clipboard->request_lock));
+        return CHANNEL_RC_OK;
+    }
+
+    /* Note the format we've requested for reference later when the requested
+     * data is received via a Format Data Response PDU */
+    clipboard->requested_format = format;
+    clipboard->request_pending = 1;
+    pthread_mutex_unlock(&(clipboard->request_lock));
+
     /* Create new data request */
     CLIPRDR_FORMAT_DATA_REQUEST data_request = {
         .requestedFormatId = format
     };
 
-    /* Note the format we've requested for reference later when the requested
-     * data is received via a Format Data Response PDU */
-    clipboard->requested_format = format;
-
-    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format data request.");
+    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format data "
+            "request for format 0x%X.", format);
 
     /* Send request */
     pthread_mutex_lock(&(rdp_client->message_lock));
     int retval = cliprdr->ClientFormatDataRequest(cliprdr, &data_request);
     pthread_mutex_unlock(&(rdp_client->message_lock));
+
+    /* Clear the pending flag if the request could not be sent, otherwise no
+     * Format Data Response will ever arrive to clear it */
+    if (retval != CHANNEL_RC_OK) {
+        pthread_mutex_lock(&(clipboard->request_lock));
+        clipboard->request_pending = 0;
+        pthread_mutex_unlock(&(clipboard->request_lock));
+        guac_client_log(client, GUAC_LOG_WARNING, "CLIPRDR: Failed to send "
+                "format data request (error %d).", retval);
+    }
 
     return retval;
 
@@ -302,6 +333,17 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
 
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format list.");
 
+    /* A new Format List invalidates any pending request — the clipboard
+     * content on the server has changed, so the old response (if it ever
+     * arrives) would carry stale data anyway. */
+    pthread_mutex_lock(&(clipboard->request_lock));
+    if (clipboard->request_pending) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "CLIPRDR: New format list "
+                "received while request pending — clearing stale request.");
+        clipboard->request_pending = 0;
+    }
+    pthread_mutex_unlock(&(clipboard->request_lock));
+
     CLIPRDR_FORMAT_LIST_RESPONSE format_list_response = {
 #ifdef HAVE_CLIPRDR_HEADER
         .common = {
@@ -312,23 +354,27 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
         .msgFlags = CB_RESPONSE_OK
 #endif
     };
+
     /* Report successful processing of format list */
     pthread_mutex_lock(&(rdp_client->message_lock));
-    cliprdr->ClientFormatListResponse(cliprdr, &format_list_response);
+    UINT rc = cliprdr->ClientFormatListResponse(cliprdr, &format_list_response);
     pthread_mutex_unlock(&(rdp_client->message_lock));
 
-    /* Prefer Unicode (in this case, UTF-16) */
+    if (rc != CHANNEL_RC_OK) {
+        guac_client_log(client, GUAC_LOG_WARNING, "CLIPRDR: Failed to send "
+                "format list response (error %u).", rc);
+        return CHANNEL_RC_OK;
+    }
+
+    /* Prefer Unicode (UTF-16), fall back to CP-1252 */
     if (guac_rdp_cliprdr_format_supported(format_list, CF_UNICODETEXT))
-        return guac_rdp_cliprdr_send_format_data_request(cliprdr, CF_UNICODETEXT);
-
-    /* Use Windows' CP-1252 if Unicode unavailable */
-    if (guac_rdp_cliprdr_format_supported(format_list, CF_TEXT))
-        return guac_rdp_cliprdr_send_format_data_request(cliprdr, CF_TEXT);
-
-    /* Ignore any unsupported data */
-    guac_client_log(client, GUAC_LOG_DEBUG, "Ignoring unsupported clipboard "
-            "data. Only Unicode and text clipboard formats are currently "
-            "supported.");
+        guac_rdp_cliprdr_send_format_data_request(cliprdr, CF_UNICODETEXT);
+    else if (guac_rdp_cliprdr_format_supported(format_list, CF_TEXT))
+        guac_rdp_cliprdr_send_format_data_request(cliprdr, CF_TEXT);
+    else
+        guac_client_log(client, GUAC_LOG_DEBUG, "Ignoring unsupported "
+                "clipboard data. Only Unicode and text clipboard formats "
+                "are currently supported.");
 
     return CHANNEL_RC_OK;
 
@@ -366,7 +412,8 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
-    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format data request.");
+    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format data "
+            "request for format 0x%X.", format_data_request->requestedFormatId);
 
     guac_iconv_write* remote_writer;
     const char* input = clipboard->clipboard->buffer;
@@ -385,8 +432,8 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
             remote_writer = settings->clipboard_crlf ? GUAC_WRITE_UTF16_CRLF : GUAC_WRITE_UTF16;
             break;
 
-        /* Warn if clipboard data cannot be sent as intended due to a violation
-         * of the CLIPRDR spec */
+        /* Send a FAIL response for unsupported formats — FreeRDP 3.x will
+         * time out and disconnect if the server never receives a response */
         default:
             guac_client_log(client, GUAC_LOG_WARNING, "Received clipboard "
                     "data cannot be sent to the RDP server because the RDP "
@@ -394,6 +441,24 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
                     "declared as available. This violates the specification "
                     "for the CLIPRDR channel.");
             guac_mem_free(output);
+
+            CLIPRDR_FORMAT_DATA_RESPONSE fail_response = {
+                .requestedFormatData = NULL,
+#ifdef HAVE_CLIPRDR_HEADER
+                .common = {
+                    .msgType = CB_FORMAT_DATA_RESPONSE,
+                    .msgFlags = CB_RESPONSE_FAIL,
+                    .dataLen = 0,
+                }
+#else
+                .dataLen = 0,
+                .msgFlags = CB_RESPONSE_FAIL
+#endif
+            };
+
+            pthread_mutex_lock(&(rdp_client->message_lock));
+            cliprdr->ClientFormatDataResponse(cliprdr, &fail_response);
+            pthread_mutex_unlock(&(rdp_client->message_lock));
             return CHANNEL_RC_OK;
 
     }
@@ -401,7 +466,8 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     /* Send received clipboard data to the RDP server in the format
      * requested */
     BYTE* start = (BYTE*) output;
-    guac_iconv_read* local_reader = settings->normalize_clipboard ? GUAC_READ_UTF8_NORMALIZED : GUAC_READ_UTF8;
+    guac_iconv_read* local_reader = settings->normalize_clipboard
+            ? GUAC_READ_UTF8_NORMALIZED : GUAC_READ_UTF8;
     guac_iconv(local_reader, &input, clipboard->clipboard->length,
             remote_writer, &output, output_buf_size);
 
@@ -419,14 +485,15 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 #endif
     };
 
-    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format data response.");
+    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format data "
+            "response (%d bytes).", (int) (((BYTE*) output) - start));
 
     pthread_mutex_lock(&(rdp_client->message_lock));
-    UINT result = cliprdr->ClientFormatDataResponse(cliprdr, &data_response);
+    cliprdr->ClientFormatDataResponse(cliprdr, &data_response);
     pthread_mutex_unlock(&(rdp_client->message_lock));
 
     guac_mem_free(start);
-    return result;
+    return CHANNEL_RC_OK;
 
 }
 
@@ -461,13 +528,48 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
-    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format data response.");
+    /* The response completes the pending request regardless of success */
+    pthread_mutex_lock(&(clipboard->request_lock));
+    clipboard->request_pending = 0;
+    UINT current_format = clipboard->requested_format;
+    pthread_mutex_unlock(&(clipboard->request_lock));
+
+    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format data "
+            "response.");
+
+    /* Check whether the server reports failure */
+    UINT16 msg_flags;
+    #ifdef HAVE_CLIPRDR_HEADER
+    msg_flags = format_data_response->common.msgFlags;
+    #else
+    msg_flags = format_data_response->msgFlags;
+    #endif
+
+    if (msg_flags & CB_RESPONSE_FAIL) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "CLIPRDR: Server responded "
+                "with CB_RESPONSE_FAIL — no clipboard data available.");
+        return CHANNEL_RC_OK;
+    }
 
     /* Ignore received data if copy has been disabled */
     if (settings->disable_copy) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Ignoring received clipboard "
                 "data as copying from within the remote desktop has been "
                 "explicitly disabled.");
+        return CHANNEL_RC_OK;
+    }
+
+    int data_len;
+    #ifdef HAVE_CLIPRDR_HEADER
+    data_len = format_data_response->common.dataLen;
+    #else
+    data_len = format_data_response->dataLen;
+    #endif
+
+    /* Guard against NULL or empty data */
+    if (format_data_response->requestedFormatData == NULL || data_len <= 0) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "CLIPRDR: Received empty or "
+                "NULL clipboard data — ignoring.");
         return CHANNEL_RC_OK;
     }
 
@@ -479,16 +581,18 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
     char* output = received_data;
 
     /* Find correct source encoding */
-    switch (clipboard->requested_format) {
+    switch (current_format) {
 
         /* Non-Unicode (Windows CP-1252) */
         case CF_TEXT:
-            remote_reader = settings->normalize_clipboard ? GUAC_READ_CP1252_NORMALIZED : GUAC_READ_CP1252;
+            remote_reader = settings->normalize_clipboard
+                    ? GUAC_READ_CP1252_NORMALIZED : GUAC_READ_CP1252;
             break;
 
         /* Unicode (UTF-16) */
         case CF_UNICODETEXT:
-            remote_reader = settings->normalize_clipboard ? GUAC_READ_UTF16_NORMALIZED : GUAC_READ_UTF16;
+            remote_reader = settings->normalize_clipboard
+                    ? GUAC_READ_UTF16_NORMALIZED : GUAC_READ_UTF16;
             break;
 
         /* If the format ID stored within the guac_rdp_clipboard structure is actually
@@ -499,18 +603,11 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
          * completely within our control. */
         default:
             guac_client_log(client, GUAC_LOG_DEBUG, "Requested clipboard data "
-                    "in unsupported format (0x%X).", clipboard->requested_format);
+                    "in unsupported format (0x%X).", current_format);
             guac_mem_free(received_data);
             return CHANNEL_RC_OK;
 
     }
-
-    int data_len;
-    #ifdef HAVE_CLIPRDR_HEADER
-    data_len = format_data_response->common.dataLen;
-    #else
-    data_len = format_data_response->dataLen;
-    #endif
 
     /* Convert, store, and forward the clipboard data received from RDP
      * server */
@@ -637,6 +734,8 @@ guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client, int buffer_siz
     clipboard->client = client;
     clipboard->clipboard = guac_common_clipboard_alloc(buffer_size);
     clipboard->requested_format = CF_TEXT;
+    clipboard->request_pending = 0;
+    pthread_mutex_init(&(clipboard->request_lock), NULL);
 
     return clipboard;
 
@@ -676,6 +775,7 @@ void guac_rdp_clipboard_free(guac_rdp_clipboard* clipboard) {
         return;
 
     /* Free clipboard and underlying storage */
+    pthread_mutex_destroy(&(clipboard->request_lock));
     guac_common_clipboard_free(clipboard->clipboard);
     guac_mem_free(clipboard);
 
@@ -755,7 +855,10 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     if (clipboard->cliprdr != NULL) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Clipboard data received. "
                 "Reporting availability of clipboard data to RDP server.");
-        guac_rdp_cliprdr_send_format_list(clipboard->cliprdr);
+        int rc = guac_rdp_cliprdr_send_format_list(clipboard->cliprdr);
+        if (rc != CHANNEL_RC_OK)
+            guac_client_log(client, GUAC_LOG_WARNING, "CLIPRDR: Failed to "
+                    "send format list after clipboard update (error %d).", rc);
     }
     else
         guac_client_log(client, GUAC_LOG_DEBUG, "Clipboard data has been "
