@@ -264,6 +264,17 @@ void* guac_vnc_display_set_owner_size(guac_user* owner, void* data) {
 }
 
 void guac_vnc_display_set_size(rfbClient* client, int requested_width, int requested_height) {
+    /* The VNC connection may not yet be fully established when this is
+     * called: the "size" instruction from the client can arrive before the
+     * VNC handshake completes and the rfbClient is created, particularly
+     * under load from many concurrent connections (which slows down
+     * handshake completion specifically). This is the same class of race
+     * as GUACAMOLE-306, fixed there for the mouse and keyboard handlers in
+     * input.c (both guard on rfb_client != NULL before use) but missed for
+     * this newer auto-resize handler. Ignore the request; the correct size
+     * will be sent once the connection completes. */
+    if (client == NULL)
+        return;
 
     /* Get the VNC client */
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
