@@ -26,6 +26,7 @@
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
+#include <guacamole/rwlock.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
@@ -154,15 +155,67 @@ int guac_rdp_pipe_svc_pipe_handler(guac_user* user, guac_stream* stream,
 
 }
 
+/**
+ * Returns whether the given SVC is still among the SVCs available on the RDP
+ * connection to the given client.
+ *
+ * @param client
+ *     The guac_client associated with the RDP connection that may have the
+ *     given SVC.
+ *
+ * @param pipe_svc
+ *     The SVC to search for.
+ *
+ * @return
+ *     Non-zero if the given SVC is still available, zero otherwise.
+ */
+static int guac_rdp_pipe_svc_available(guac_client* client,
+        guac_rdp_pipe_svc* pipe_svc) {
+
+    int available = 0;
+
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    if (rdp_client->available_svc == NULL)
+        return 0;
+
+    guac_common_list_lock(rdp_client->available_svc);
+
+    /* Search for SVC among those still available on the connection */
+    for (guac_common_list_element* current = rdp_client->available_svc->head;
+        current != NULL; current = current->next) {
+
+        if (current->data == pipe_svc) {
+            available = 1;
+            break;
+        }
+
+    }
+
+    guac_common_list_unlock(rdp_client->available_svc);
+
+    return available;
+
+}
+
 int guac_rdp_pipe_svc_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
+    guac_client* client = user->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_pipe_svc* pipe_svc = (guac_rdp_pipe_svc*) stream->data;
 
-    /* Write blob data to SVC directly */
-    wStream* output_stream = Stream_New(NULL, length);
-    Stream_Write(output_stream, data, length);
-    guac_rdp_common_svc_write(pipe_svc->svc, output_stream);
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+
+    if (guac_rdp_pipe_svc_available(client, pipe_svc)) {
+
+        /* Write blob data to SVC directly */
+        wStream* output_stream = Stream_New(NULL, length);
+        Stream_Write(output_stream, data, length);
+        guac_rdp_common_svc_write(pipe_svc->svc, output_stream);
+
+    }
+
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     guac_protocol_send_ack(user->socket, stream, "OK (DATA RECEIVED)",
             GUAC_PROTOCOL_STATUS_SUCCESS);

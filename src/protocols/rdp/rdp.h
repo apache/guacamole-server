@@ -243,6 +243,12 @@ typedef struct guac_rdp_client {
     pthread_mutex_t message_lock;
 
     /**
+     * Lock which synchronizes the print job lifecycle with handling of any
+     * stream instructions.
+     */
+    pthread_mutex_t print_job_lock;
+
+    /**
      * A pointer to the RAIL interface provided by the RDP client when rail is
      * in use.
      */

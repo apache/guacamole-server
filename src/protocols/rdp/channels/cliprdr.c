@@ -29,6 +29,7 @@
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
+#include <guacamole/rwlock.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 #include <winpr/wtsapi.h>
@@ -724,6 +725,8 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     /* Terminate clipboard data with NULL */
     guac_common_clipboard_append(clipboard->clipboard, "", 1);
 
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+
     /* Notify RDP server of new data, if connected */
     if (clipboard->cliprdr != NULL) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Clipboard data received. "
@@ -734,6 +737,8 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Clipboard data has been "
                 "received, but cannot be sent to the RDP server because the "
                 "CLIPRDR channel is not yet connected.");
+
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     return 0;
 

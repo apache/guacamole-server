@@ -104,6 +104,9 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height) {
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
+
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+
     freerdp* rdp_inst = rdp_client->rdp_inst;
 
     /* Convert client pixels to remote pixels */
@@ -112,6 +115,8 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height) {
 
     /* Send display update */
     guac_rdp_disp_set_size(rdp_client->disp, settings, rdp_inst, width, height);
+
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     return 0;
 

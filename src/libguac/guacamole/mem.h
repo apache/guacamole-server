@@ -327,6 +327,10 @@
  * call to guac_mem_free(), but MAY instead be freed with a subsequent call to
  * free().
  *
+ * @param mem
+ *     A pointer to the memory to resize. If NULL, this is equivalent to
+ *     guac_mem_alloc().
+ *
  * @param ...
  *     A series of one or more size_t values that should be multiplied together
  *     to produce the desired block size. At least one value MUST be provided.
@@ -364,6 +368,11 @@
  * The pointer returned by guac_mem_realloc() SHOULD be freed with a subsequent
  * call to guac_mem_free(), but MAY instead be freed with a subsequent call to
  * free().
+ *
+ * @param mem
+ *     A pointer to the memory to resize. If NULL, this is equivalent to
+ *     guac_mem_alloc() except that failure to allocate memory will abort the
+ *     process.
  *
  * @param ...
  *     A series of one or more size_t values that should be multiplied together

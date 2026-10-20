@@ -26,6 +26,7 @@
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/rwlock.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
@@ -154,9 +155,14 @@ int guac_rdp_audio_handler(guac_user* user, guac_stream* stream,
     stream->blob_handler = guac_rdp_audio_blob_handler;
     stream->end_handler = guac_rdp_audio_end_handler;
 
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+
     /* Associate stream with audio buffer */
-    guac_rdp_audio_buffer_set_stream(rdp_client->audio_input, user, stream,
-            rate, channels, bps);
+    if (rdp_client->audio_input != NULL)
+        guac_rdp_audio_buffer_set_stream(rdp_client->audio_input, user, stream,
+                rate, channels, bps);
+
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     return 0;
 
@@ -168,8 +174,13 @@ int guac_rdp_audio_blob_handler(guac_user* user, guac_stream* stream,
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+
     /* Write blob to audio stream, buffering if necessary */
-    guac_rdp_audio_buffer_write(rdp_client->audio_input, data, length);
+    if (rdp_client->audio_input != NULL)
+        guac_rdp_audio_buffer_write(rdp_client->audio_input, data, length);
+
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     return 0;
 
