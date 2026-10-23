@@ -44,13 +44,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/**
- * The maximum duration for which a single frame may be displayed, in units of
- * the video time base. Longer gaps in the timeline are filled by encoding
- * multiple duplicate frames. This is necessary because some codecs (MPEG-4,
- * for example) cannot represent arbitrarily long frame display durations.
- */
-
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         int width, int height, int bitrate) {
 
