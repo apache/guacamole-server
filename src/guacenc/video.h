@@ -42,6 +42,12 @@
 #define GUACENC_VIDEO_FRAMERATE 25
 
 /**
+ * The maximum duration of a frame
+ */
+#define GUACENC_MAX_FRAME_DURATION 65535
+
+
+/**
  * A video which is actively being encoded. Frames can be added to the video
  * as they are generated, along with their associated timestamps, and the
  * corresponding video will be continuously written as it is encoded.
