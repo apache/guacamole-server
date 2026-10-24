@@ -958,6 +958,15 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     guac_rwlock_acquire_write_lock(&(rdp_client->lock));
 
+    /* GUACAMOLE-2323: Save the error code before cleanup, as the RDP context
+     * will be freed before the check below. FreeRDP 2 and 3 use different
+     * APIs and different numerical values for the same protocol error codes. */
+#if FREERDP_VERSION_MAJOR >= 3
+    UINT32 __guac_error_code = freerdp_get_last_error(rdp_inst->context);
+#else
+    unsigned int __guac_error_code = freerdp_error_info(rdp_inst);
+#endif
+
     /* Clean up print job, if active */
     if (rdp_client->active_job != NULL) {
         guac_rdp_print_job_kill(rdp_client->active_job);
@@ -1006,6 +1015,27 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Client is now disconnected */
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
+
+    /* GUACAMOLE-2323: A disconnect initiated by the user (logoff, admin
+     * disconnect, idle/logon timeout, or another connection taking over)
+     * must not trigger the reconnect loop. Stop the client explicitly.
+     * Note: FreeRDP 2 and 3 report these codes differently. */
+#if FREERDP_VERSION_MAJOR >= 3
+    if (__guac_error_code == FREERDP_ERROR_LOGOFF_BY_USER ||
+        __guac_error_code == FREERDP_ERROR_RPC_INITIATED_DISCONNECT ||
+        __guac_error_code == FREERDP_ERROR_RPC_INITIATED_LOGOFF ||
+        __guac_error_code == FREERDP_ERROR_DISCONNECTED_BY_OTHER_CONNECTION) {
+        guac_client_stop(client);
+    }
+#else
+    /* FreeRDP 2: raw ERRINFO_* codes from freerdp_error_info() */
+    if (__guac_error_code == ERRINFO_LOGOFF_BY_USER ||
+        __guac_error_code == ERRINFO_RPC_INITIATED_DISCONNECT ||
+        __guac_error_code == ERRINFO_RPC_INITIATED_LOGOFF ||
+        __guac_error_code == ERRINFO_DISCONNECTED_BY_OTHER_CONNECTION) {
+        guac_client_stop(client);
+    }
+#endif
 
     return 0;
 
