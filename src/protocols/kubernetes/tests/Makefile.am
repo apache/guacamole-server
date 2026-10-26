@@ -36,6 +36,7 @@ check_PROGRAMS = test_kubernetes
 TESTS = $(check_PROGRAMS)
 
 test_kubernetes_SOURCES = \
+    settings/args.c       \
     url/append.c          \
     url/escape.c
 
