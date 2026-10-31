@@ -1628,6 +1628,7 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/serial/Makefile
                  src/protocols/spice/Makefile
+                 src/protocols/spice/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
                  src/protocols/vnc/Makefile])
