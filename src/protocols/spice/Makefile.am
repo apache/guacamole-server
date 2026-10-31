@@ -26,7 +26,7 @@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = .
+SUBDIRS = . tests
 
 lib_LTLIBRARIES = libguac-client-spice.la
 
