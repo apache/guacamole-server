@@ -26,13 +26,11 @@
 #include "terminal/terminal.h"
 
 #include <guacamole/mem.h>
-#include <guacamole/string.h>
 #include <guacamole/user.h>
 
 #include <sys/types.h>
 #include <termios.h>
 #include <errno.h>
-#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,7 +49,6 @@ const char* GUAC_SERIAL_CLIENT_ARGS[] = {
     "flow-control",
     "break-duration",
     "paste-delay",
-    "allowed-devices",
     "read-only",
     GUAC_SERIAL_ARGV_FONT_NAME,
     GUAC_SERIAL_ARGV_FONT_SIZE,
@@ -88,106 +85,109 @@ enum SERIAL_ARGS_IDX {
 
     /**
      * The transport used to reach the serial line ("local" or "network").
+     * Defaults to "local".
      */
     IDX_SERIAL_TYPE,
 
     /**
-     * The network protocol used when the transport type is "network" ("raw" or
-     * "rfc2217").
+     * The network protocol used when the transport type is "network" ("raw",
+     * "rfc2217", or "telnet"). Defaults to "raw".
      */
     IDX_NETWORK_PROTOCOL,
 
     /**
      * The absolute path of the local serial device to open (e.g.
-     * "/dev/ttyUSB0"). Required for "local" connections.
+     * "/dev/ttyUSB0"). Required for "local" connections. There is no default.
      */
     IDX_DEVICE,
 
     /**
      * The hostname of the network serial server to connect to. Required for
-     * "network" connections.
+     * "network" connections. There is no default.
      */
     IDX_HOSTNAME,
 
     /**
      * The port of the network serial server to connect to. Required for
-     * "network" connections.
+     * "network" connections. There is no default.
      */
     IDX_PORT,
 
     /**
-     * The number of seconds to wait for the remote server to respond. Optional.
+     * The number of seconds to wait for the remote server to respond. Defaults
+     * to GUAC_SERIAL_DEFAULT_TIMEOUT (10 seconds).
      */
     IDX_TIMEOUT,
 
     /**
-     * The serial line speed, in bits per second (e.g. 9600, 115200).
+     * The serial line speed, in bits per second (e.g. 9600, 115200). Defaults
+     * to 9600.
      */
     IDX_BAUD_RATE,
 
     /**
-     * The number of data bits per character (5, 6, 7, or 8).
+     * The number of data bits per character (5, 6, 7, or 8). Defaults to 8.
      */
     IDX_DATA_BITS,
 
     /**
-     * The number of stop bits per character (1 or 2).
+     * The number of stop bits per character (1 or 2). Defaults to 1.
      */
     IDX_STOP_BITS,
 
     /**
-     * The parity scheme ("none", "odd", "even", "mark", or "space").
+     * The parity scheme ("none", "odd", "even", "mark", or "space"). Defaults
+     * to "none".
      */
     IDX_PARITY,
 
     /**
-     * The flow control scheme ("none", "rts-cts", or "xon-xoff").
+     * The flow control scheme ("none", "rts-cts", or "xon-xoff"). Defaults to
+     * "none".
      */
     IDX_FLOW_CONTROL,
 
     /**
      * The duration, in milliseconds, that the transmit line is held low when
-     * sending a serial break.
+     * sending a serial break. Defaults to GUAC_SERIAL_DEFAULT_BREAK_DURATION
+     * (500 milliseconds).
      */
     IDX_BREAK_DURATION,
 
     /**
      * The delay, in milliseconds, inserted between each byte written to the
-     * serial line. Zero disables pacing.
+     * serial line. Zero disables pacing. Defaults to 0.
      */
     IDX_PASTE_DELAY,
 
     /**
-     * An optional ":"-separated allowlist of local device paths or path
-     * prefixes. If set, a "local" connection whose canonicalized device does
-     * not equal or fall under one of the entries is rejected.
-     */
-    IDX_ALLOWED_DEVICES,
-
-    /**
      * "true" if this connection should be read-only (user input should be
-     * dropped), "false" or blank otherwise.
+     * dropped), "false" or blank otherwise. Defaults to false.
      */
     IDX_READ_ONLY,
 
     /**
-     * The name of the font to use within the terminal.
+     * The name of the font to use within the terminal. Defaults to
+     * GUAC_TERMINAL_DEFAULT_FONT_NAME ("monospace").
      */
     IDX_FONT_NAME,
 
     /**
-     * The size of the font to use within the terminal, in points.
+     * The size of the font to use within the terminal, in points. Defaults to
+     * GUAC_TERMINAL_DEFAULT_FONT_SIZE (12).
      */
     IDX_FONT_SIZE,
 
     /**
      * The color scheme to use, as a series of semicolon-separated color-value
-     * pairs, or one of the special color scheme names.
+     * pairs, or one of the special color scheme names. Defaults to
+     * GUAC_TERMINAL_DEFAULT_COLOR_SCHEME (the default "gray-black" scheme).
      */
     IDX_COLOR_SCHEME,
 
     /**
-     * The maximum size of the scrollback buffer in rows.
+     * The maximum size of the scrollback buffer in rows. Defaults to
+     * GUAC_TERMINAL_DEFAULT_MAX_SCROLLBACK (1000).
      */
     IDX_SCROLLBACK,
 
@@ -204,35 +204,38 @@ enum SERIAL_ARGS_IDX {
     IDX_TERMINAL_TYPE,
 
     /**
-     * The maximum number of bytes to allow within the clipboard.
+     * The maximum number of bytes to allow within the clipboard. If unspecified
+     * or below GUAC_COMMON_CLIPBOARD_MIN_LENGTH,
+     * GUAC_COMMON_CLIPBOARD_MIN_LENGTH is used.
      */
     IDX_CLIPBOARD_BUFFER_SIZE,
 
     /**
-     * Whether outbound clipboard access should be blocked.
+     * Whether outbound clipboard access should be blocked. Defaults to false.
      */
     IDX_DISABLE_COPY,
 
     /**
-     * Whether inbound clipboard access should be blocked.
+     * Whether inbound clipboard access should be blocked. Defaults to false.
      */
     IDX_DISABLE_PASTE,
 
     /**
      * The full absolute path to the directory in which typescripts should be
-     * written.
+     * written. There is no default; if unset, no typescript is written.
      */
     IDX_TYPESCRIPT_PATH,
 
     /**
      * The name that should be given to typescripts which are written in the
-     * given path.
+     * given path. Defaults to GUAC_SERIAL_DEFAULT_TYPESCRIPT_NAME
+     * ("typescript").
      */
     IDX_TYPESCRIPT_NAME,
 
     /**
      * Whether the specified typescript path should automatically be created if
-     * it does not yet exist.
+     * it does not yet exist. Defaults to false.
      */
     IDX_CREATE_TYPESCRIPT_PATH,
 
@@ -243,43 +246,45 @@ enum SERIAL_ARGS_IDX {
     IDX_TYPESCRIPT_WRITE_EXISTING,
 
     /**
-     * The full absolute path to the directory in which screen recordings
-     * should be written.
+     * The full absolute path to the directory in which screen recordings should
+     * be written. There is no default; if unset, no recording is written.
      */
     IDX_RECORDING_PATH,
 
     /**
      * The name that should be given to screen recordings which are written in
-     * the given path.
+     * the given path. Defaults to GUAC_SERIAL_DEFAULT_RECORDING_NAME
+     * ("recording").
      */
     IDX_RECORDING_NAME,
 
     /**
      * Whether output which is broadcast to each connected client should NOT be
-     * included in the session recording.
+     * included in the session recording. Defaults to false.
      */
     IDX_RECORDING_EXCLUDE_OUTPUT,
 
     /**
      * Whether changes to mouse state should NOT be included in the session
-     * recording.
+     * recording. Defaults to false.
      */
     IDX_RECORDING_EXCLUDE_MOUSE,
 
     /**
      * Whether keys pressed and released should be included in the session
-     * recording.
+     * recording. Defaults to false.
      */
     IDX_RECORDING_INCLUDE_KEYS,
 
     /**
      * Whether clipboard data should be included in the session recording.
+     * Defaults to false.
      */
     IDX_RECORDING_INCLUDE_CLIPBOARD,
 
     /**
      * Whether the specified screen recording path should automatically be
-     * created if it does not yet exist.
+     * created if it does not yet exist. Defaults to false.
      */
     IDX_CREATE_RECORDING_PATH,
 
@@ -321,7 +326,8 @@ enum SERIAL_ARGS_IDX {
 
     /**
      * The number of seconds to wait for an inbound connection in reverse mode
-     * before failing. Zero or negative means wait indefinitely.
+     * before failing. Zero or negative means wait indefinitely. Defaults to
+     * GUAC_SERIAL_DEFAULT_LISTEN_TIMEOUT (60 seconds).
      */
     IDX_LISTEN_TIMEOUT,
 
@@ -337,17 +343,40 @@ enum SERIAL_ARGS_IDX {
 speed_t guac_serial_baud_to_speed(int baud_rate) {
 
     switch (baud_rate) {
-        case 300:    return B300;
-        case 1200:   return B1200;
-        case 2400:   return B2400;
-        case 4800:   return B4800;
-        case 9600:   return B9600;
-        case 19200:  return B19200;
-        case 38400:  return B38400;
-        case 57600:  return B57600;
-        case 115200: return B115200;
-        case 230400: return B230400;
-        default:     return (speed_t) -1;
+
+        case 300:
+            return B300;
+
+        case 1200:
+            return B1200;
+
+        case 2400:
+            return B2400;
+
+        case 4800:
+            return B4800;
+
+        case 9600:
+            return B9600;
+
+        case 19200:
+            return B19200;
+
+        case 38400:
+            return B38400;
+
+        case 57600:
+            return B57600;
+
+        case 115200:
+            return B115200;
+
+        case 230400:
+            return B230400;
+
+        default:
+            return (speed_t) -1;
+
     }
 
 }
@@ -366,9 +395,19 @@ speed_t guac_serial_baud_to_speed(int baud_rate) {
  *     Zero if the string was successfully parsed, non-zero otherwise.
  */
 static int guac_serial_parse_type(const char* str, guac_serial_type* type) {
-    if (strcmp(str, "local") == 0)   { *type = GUAC_SERIAL_TYPE_LOCAL;   return 0; }
-    if (strcmp(str, "network") == 0) { *type = GUAC_SERIAL_TYPE_NETWORK; return 0; }
+
+    if (strcmp(str, "local") == 0) {
+        *type = GUAC_SERIAL_TYPE_LOCAL;
+        return 0;
+    }
+
+    if (strcmp(str, "network") == 0) {
+        *type = GUAC_SERIAL_TYPE_NETWORK;
+        return 0;
+    }
+
     return 1;
+
 }
 
 /**
@@ -376,7 +415,7 @@ static int guac_serial_parse_type(const char* str, guac_serial_type* type) {
  * guac_serial_network_protocol value.
  *
  * @param str
- *     The network protocol string ("raw" or "rfc2217").
+ *     The network protocol string ("raw", "rfc2217", or "telnet").
  *
  * @param protocol
  *     A pointer to the value that should receive the parsed result.
@@ -386,10 +425,24 @@ static int guac_serial_parse_type(const char* str, guac_serial_type* type) {
  */
 static int guac_serial_parse_network_protocol(const char* str,
         guac_serial_network_protocol* protocol) {
-    if (strcmp(str, "raw") == 0)     { *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_RAW;     return 0; }
-    if (strcmp(str, "rfc2217") == 0) { *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217; return 0; }
-    if (strcmp(str, "telnet") == 0)  { *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_TELNET;  return 0; }
+
+    if (strcmp(str, "raw") == 0) {
+        *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_RAW;
+        return 0;
+    }
+
+    if (strcmp(str, "rfc2217") == 0) {
+        *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217;
+        return 0;
+    }
+
+    if (strcmp(str, "telnet") == 0) {
+        *protocol = GUAC_SERIAL_NETWORK_PROTOCOL_TELNET;
+        return 0;
+    }
+
     return 1;
+
 }
 
 /**
@@ -404,13 +457,36 @@ static int guac_serial_parse_network_protocol(const char* str,
  * @return
  *     Zero if the string was successfully parsed, non-zero otherwise.
  */
-static int guac_serial_parse_parity(const char* str, guac_serial_parity* parity) {
-    if (strcmp(str, "none") == 0)  { *parity = GUAC_SERIAL_PARITY_NONE;  return 0; }
-    if (strcmp(str, "odd") == 0)   { *parity = GUAC_SERIAL_PARITY_ODD;   return 0; }
-    if (strcmp(str, "even") == 0)  { *parity = GUAC_SERIAL_PARITY_EVEN;  return 0; }
-    if (strcmp(str, "mark") == 0)  { *parity = GUAC_SERIAL_PARITY_MARK;  return 0; }
-    if (strcmp(str, "space") == 0) { *parity = GUAC_SERIAL_PARITY_SPACE; return 0; }
+static int guac_serial_parse_parity(const char* str,
+        guac_serial_parity* parity) {
+
+    if (strcmp(str, "none") == 0) {
+        *parity = GUAC_SERIAL_PARITY_NONE;
+        return 0;
+    }
+
+    if (strcmp(str, "odd") == 0) {
+        *parity = GUAC_SERIAL_PARITY_ODD;
+        return 0;
+    }
+
+    if (strcmp(str, "even") == 0) {
+        *parity = GUAC_SERIAL_PARITY_EVEN;
+        return 0;
+    }
+
+    if (strcmp(str, "mark") == 0) {
+        *parity = GUAC_SERIAL_PARITY_MARK;
+        return 0;
+    }
+
+    if (strcmp(str, "space") == 0) {
+        *parity = GUAC_SERIAL_PARITY_SPACE;
+        return 0;
+    }
+
     return 1;
+
 }
 
 /**
@@ -425,11 +501,26 @@ static int guac_serial_parse_parity(const char* str, guac_serial_parity* parity)
  * @return
  *     Zero if the string was successfully parsed, non-zero otherwise.
  */
-static int guac_serial_parse_flow(const char* str, guac_serial_flow_control* flow) {
-    if (strcmp(str, "none") == 0)     { *flow = GUAC_SERIAL_FLOW_NONE;     return 0; }
-    if (strcmp(str, "rts-cts") == 0)  { *flow = GUAC_SERIAL_FLOW_RTS_CTS;  return 0; }
-    if (strcmp(str, "xon-xoff") == 0) { *flow = GUAC_SERIAL_FLOW_XON_XOFF; return 0; }
+static int guac_serial_parse_flow(const char* str,
+        guac_serial_flow_control* flow) {
+
+    if (strcmp(str, "none") == 0) {
+        *flow = GUAC_SERIAL_FLOW_NONE;
+        return 0;
+    }
+
+    if (strcmp(str, "rts-cts") == 0) {
+        *flow = GUAC_SERIAL_FLOW_RTS_CTS;
+        return 0;
+    }
+
+    if (strcmp(str, "xon-xoff") == 0) {
+        *flow = GUAC_SERIAL_FLOW_XON_XOFF;
+        return 0;
+    }
+
     return 1;
+
 }
 
 /**
@@ -446,54 +537,23 @@ static int guac_serial_parse_flow(const char* str, guac_serial_flow_control* flo
  */
 static int guac_serial_parse_line_ending(const char* str,
         guac_serial_line_ending* line_ending) {
-    if (strcmp(str, "cr") == 0)   { *line_ending = GUAC_SERIAL_LINE_ENDING_CR;   return 0; }
-    if (strcmp(str, "lf") == 0)   { *line_ending = GUAC_SERIAL_LINE_ENDING_LF;   return 0; }
-    if (strcmp(str, "crlf") == 0) { *line_ending = GUAC_SERIAL_LINE_ENDING_CRLF; return 0; }
-    return 1;
-}
 
-bool guac_serial_device_permitted(const char* device, const char* allowed) {
-
-    char real_device[PATH_MAX];
-    if (realpath(device, real_device) == NULL)
-        return false;
-
-    /* Duplicate the list so it may be tokenized in place */
-    char* list = guac_strdup(allowed);
-    char* saveptr = NULL;
-    bool permitted = false;
-
-    for (char* token = strtok_r(list, ":", &saveptr); token != NULL;
-            token = strtok_r(NULL, ":", &saveptr)) {
-
-        /* Skip empty entries */
-        if (token[0] == '\0')
-            continue;
-
-        /* Canonicalize the allowlist entry; skip entries that do not resolve */
-        char real_entry[PATH_MAX];
-        if (realpath(token, real_entry) == NULL)
-            continue;
-
-        size_t entry_len = strlen(real_entry);
-
-        /* Permit an exact match */
-        if (strcmp(real_device, real_entry) == 0) {
-            permitted = true;
-            break;
-        }
-
-        /* Permit a device that falls beneath a permitted prefix */
-        if (strncmp(real_device, real_entry, entry_len) == 0
-                && real_device[entry_len] == '/') {
-            permitted = true;
-            break;
-        }
-
+    if (strcmp(str, "cr") == 0) {
+        *line_ending = GUAC_SERIAL_LINE_ENDING_CR;
+        return 0;
     }
 
-    guac_mem_free(list);
-    return permitted;
+    if (strcmp(str, "lf") == 0) {
+        *line_ending = GUAC_SERIAL_LINE_ENDING_LF;
+        return 0;
+    }
+
+    if (strcmp(str, "crlf") == 0) {
+        *line_ending = GUAC_SERIAL_LINE_ENDING_CRLF;
+        return 0;
+    }
+
+    return 1;
 
 }
 
@@ -522,99 +582,109 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
     }
     guac_mem_free(type_str);
 
-    /* Parse network protocol */
-    char* proto_str = guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS,
-            argv, IDX_NETWORK_PROTOCOL, "raw");
-    if (guac_serial_parse_network_protocol(proto_str, &settings->network_protocol)) {
-        guac_user_log(user, GUAC_LOG_ERROR, "Invalid network-protocol \"%s\": "
-                "must be \"raw\", \"rfc2217\", or \"telnet\".", proto_str);
-        guac_mem_free(proto_str);
-        guac_mem_free(settings);
-        return NULL;
-    }
-    guac_mem_free(proto_str);
-
-    /* Parse local device path */
-    settings->device =
-        guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
-                IDX_DEVICE, NULL);
-
-    /* Parse network connection information */
-    settings->hostname =
-        guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
-                IDX_HOSTNAME, NULL);
-
-    settings->port =
-        guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
-                IDX_PORT, NULL);
-
-    settings->timeout =
-        guac_user_parse_args_int(user, GUAC_SERIAL_CLIENT_ARGS, argv,
-                IDX_TIMEOUT, GUAC_SERIAL_DEFAULT_TIMEOUT);
-
-    /* Parse reverse (listen) mode flag */
-    settings->reverse_connect =
-        guac_user_parse_args_boolean(user, GUAC_SERIAL_CLIENT_ARGS, argv,
-                IDX_REVERSE_CONNECT, false);
-
-    /* Parse listen timeout, treating negative values as "wait indefinitely" */
-    settings->listen_timeout =
-        guac_user_parse_args_int(user, GUAC_SERIAL_CLIENT_ARGS, argv,
-                IDX_LISTEN_TIMEOUT, GUAC_SERIAL_DEFAULT_LISTEN_TIMEOUT);
-    if (settings->listen_timeout < 0)
-        settings->listen_timeout = 0;
-
-    /* Parse local bind address used when listening in reverse mode */
-    settings->bind_address =
-        guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
-                IDX_BIND_ADDRESS, "127.0.0.1");
-
-    /* Reverse mode is meaningless for local connections */
-    if (settings->reverse_connect && settings->type == GUAC_SERIAL_TYPE_LOCAL) {
-        guac_user_log(user, GUAC_LOG_WARNING, "reverse-connect has no effect on "
-                "local serial connections; ignoring.");
-        settings->reverse_connect = false;
-    }
-
-    /* Validate transport-specific requirements */
+    /* Parse local device path, the only transport-specific parameter of
+     * local connections */
     if (settings->type == GUAC_SERIAL_TYPE_LOCAL) {
+
+        settings->device =
+            guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                    IDX_DEVICE, NULL);
+
         if (settings->device == NULL || settings->device[0] == '\0') {
             guac_user_log(user, GUAC_LOG_ERROR, "A \"device\" is required for "
                     "local serial connections.");
             guac_serial_settings_free(settings);
             return NULL;
         }
+
+        /* Reverse mode is meaningless for local connections. The flag is
+         * parsed here only to warn the user that it is being ignored. */
+        if (guac_user_parse_args_boolean(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                    IDX_REVERSE_CONNECT, false))
+            guac_user_log(user, GUAC_LOG_WARNING, "reverse-connect has no "
+                    "effect on local serial connections; ignoring.");
+
     }
+
+    /* Parse network connection information */
     else {
-        /* In reverse mode guacd binds and listens rather than dialing out, so
-         * a hostname is only required when dialing out */
-        if (!settings->reverse_connect
-                && (settings->hostname == NULL || settings->hostname[0] == '\0')) {
-            guac_user_log(user, GUAC_LOG_ERROR, "A \"hostname\" is required for "
-                    "network serial connections.");
+
+        /* Parse network protocol */
+        char* proto_str = guac_user_parse_args_string(user,
+                GUAC_SERIAL_CLIENT_ARGS, argv, IDX_NETWORK_PROTOCOL, "raw");
+        if (guac_serial_parse_network_protocol(proto_str,
+                    &settings->network_protocol)) {
+            guac_user_log(user, GUAC_LOG_ERROR, "Invalid network-protocol "
+                    "\"%s\": must be \"raw\", \"rfc2217\", or \"telnet\".",
+                    proto_str);
+            guac_mem_free(proto_str);
             guac_serial_settings_free(settings);
             return NULL;
         }
+        guac_mem_free(proto_str);
+
+#ifndef ENABLE_SERIAL_RFC2217
+        /* Reject RFC2217/telnet if libtelnet support was not compiled in */
+        if (settings->network_protocol == GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217
+                || settings->network_protocol
+                    == GUAC_SERIAL_NETWORK_PROTOCOL_TELNET) {
+            guac_user_log(user, GUAC_LOG_ERROR, "RFC2217/telnet transport "
+                    "requested but not compiled in; rebuild with libtelnet, "
+                    "or use network-protocol=raw.");
+            guac_serial_settings_free(settings);
+            return NULL;
+        }
+#endif
+
+        settings->hostname =
+            guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                    IDX_HOSTNAME, NULL);
+
+        settings->port =
+            guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                    IDX_PORT, NULL);
+
+        settings->timeout =
+            guac_user_parse_args_int(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                    IDX_TIMEOUT, GUAC_SERIAL_DEFAULT_TIMEOUT);
+
+        /* Parse reverse (listen) mode flag */
+        settings->reverse_connect =
+            guac_user_parse_args_boolean(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                    IDX_REVERSE_CONNECT, false);
+
+        /* Parse listen timeout, treating negative values as "wait
+         * indefinitely" */
+        settings->listen_timeout =
+            guac_user_parse_args_int(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                    IDX_LISTEN_TIMEOUT, GUAC_SERIAL_DEFAULT_LISTEN_TIMEOUT);
+        if (settings->listen_timeout < 0)
+            settings->listen_timeout = 0;
+
+        /* Parse local bind address used when listening in reverse mode */
+        settings->bind_address =
+            guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
+                    IDX_BIND_ADDRESS, "127.0.0.1");
+
+        /* In reverse mode guacd binds and listens rather than dialing out, so
+         * a hostname is only required when dialing out */
+        if (!settings->reverse_connect
+                && (settings->hostname == NULL
+                    || settings->hostname[0] == '\0')) {
+            guac_user_log(user, GUAC_LOG_ERROR, "A \"hostname\" is required "
+                    "for network serial connections.");
+            guac_serial_settings_free(settings);
+            return NULL;
+        }
+
         if (settings->port == NULL || settings->port[0] == '\0') {
             guac_user_log(user, GUAC_LOG_ERROR, "A \"port\" is required for "
                     "network serial connections.");
             guac_serial_settings_free(settings);
             return NULL;
         }
-    }
 
-#ifndef ENABLE_SERIAL_RFC2217
-    /* Reject RFC2217/telnet if libtelnet support was not compiled in */
-    if (settings->type == GUAC_SERIAL_TYPE_NETWORK
-            && (settings->network_protocol == GUAC_SERIAL_NETWORK_PROTOCOL_RFC2217
-                || settings->network_protocol == GUAC_SERIAL_NETWORK_PROTOCOL_TELNET)) {
-        guac_user_log(user, GUAC_LOG_ERROR, "RFC2217/telnet transport requested "
-                "but not compiled in; rebuild with libtelnet, or use "
-                "network-protocol=raw.");
-        guac_serial_settings_free(settings);
-        return NULL;
     }
-#endif
 
     /* Parse serial line speed */
     settings->baud_rate =
@@ -714,25 +784,6 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
     settings->hangup_on_close =
         guac_user_parse_args_boolean(user, GUAC_SERIAL_CLIENT_ARGS, argv,
                 IDX_HANGUP_ON_CLOSE, false);
-
-    /* Retain the device allowlist so it can be re-checked on every (re)open */
-    settings->allowed_devices =
-        guac_user_parse_args_string(user, GUAC_SERIAL_CLIENT_ARGS, argv,
-                IDX_ALLOWED_DEVICES, NULL);
-
-    /* Enforce local device allowlist at parse time, if configured */
-    if (settings->type == GUAC_SERIAL_TYPE_LOCAL
-            && settings->allowed_devices != NULL
-            && settings->allowed_devices[0] != '\0') {
-        if (!guac_serial_device_permitted(settings->device,
-                settings->allowed_devices)) {
-            guac_user_log(user, GUAC_LOG_ERROR, "Serial device \"%s\" is not "
-                    "permitted by the configured allowed-devices list, or "
-                    "could not be resolved.", settings->device);
-            guac_serial_settings_free(settings);
-            return NULL;
-        }
-    }
 
     /* Read-only mode */
     settings->read_only =
@@ -874,7 +925,6 @@ void guac_serial_settings_free(guac_serial_settings* settings) {
 
     /* Free transport connection information */
     guac_mem_free(settings->device);
-    guac_mem_free(settings->allowed_devices);
     guac_mem_free(settings->hostname);
     guac_mem_free(settings->port);
     guac_mem_free(settings->bind_address);

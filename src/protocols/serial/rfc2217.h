@@ -25,22 +25,16 @@
 
 #include <guacamole/client.h>
 
-/*
- * This header intentionally does not depend on libtelnet. All libtelnet usage
- * is confined to rfc2217.c and compiled only when ENABLE_SERIAL_RFC2217 is
- * defined (i.e. libtelnet is available). When it is not, the functions below
- * are still defined, but fail or become no-ops, so the rest of the plugin
- * links and runs (with the RFC2217 transport unavailable).
- */
-
 /**
  * Opens an RFC2217 (telnet COM-PORT-OPTION) connection to the network serial
  * server described by the given settings, negotiates the configured serial line
  * parameters, and stores the resulting socket and libtelnet session in the
- * given stream. On failure, the client is aborted.
+ * given stream. On failure, the
+ * stream's open_status is set and non-zero is returned; whether to retry is
+ * left to the caller.
  *
- * If RFC2217 support was not compiled in, the client is aborted and -1 is
- * returned.
+ * If RFC2217 support was not compiled in, an error is logged, the stream's
+ * open_status is set, and -1 is returned.
  *
  * @param stream
  *     The serial stream to populate with the opened socket and session.
@@ -66,8 +60,8 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
  * remain purely informational, as with the raw transport. Works in both forward
  * and reverse mode, as the socket is obtained via guac_serial_net_open_fd().
  *
- * If Telnet support was not compiled in, the client is aborted and -1 is
- * returned.
+ * If Telnet support was not compiled in, an error is logged, the stream's
+ * open_status is set, and -1 is returned.
  *
  * @param stream
  *     The serial stream to populate with the opened socket and session.
@@ -99,12 +93,12 @@ int guac_serial_telnet_open(guac_serial_stream* stream, guac_client* client,
 int guac_serial_telnet_send_break(guac_serial_stream* stream);
 
 /**
- * Sends the given buffer to the remote end of an RFC2217 connection, applying
- * telnet IAC framing. This must only be called on a stream whose backend is
- * GUAC_SERIAL_BACKEND_RFC2217.
+ * Sends the given buffer to the remote end of an RFC2217 or Telnet connection,
+ * applying Telnet IAC framing. This must only be called on a stream whose
+ * backend is GUAC_SERIAL_BACKEND_RFC2217 or GUAC_SERIAL_BACKEND_TELNET.
  *
  * @param stream
- *     The RFC2217 serial stream to write to.
+ *     The RFC2217 or Telnet serial stream to write to.
  *
  * @param buffer
  *     The buffer of data to send.
@@ -117,12 +111,12 @@ void guac_serial_rfc2217_send(guac_serial_stream* stream, const char* buffer,
 
 /**
  * Feeds the given buffer of bytes received from the remote end into the
- * RFC2217 libtelnet parser, which will de-frame the data and write terminal
- * output. This must only be called on a stream whose backend is
- * GUAC_SERIAL_BACKEND_RFC2217.
+ * libtelnet parser, which will de-frame the data and write terminal output.
+ * This must only be called on a stream whose backend is
+ * GUAC_SERIAL_BACKEND_RFC2217 or GUAC_SERIAL_BACKEND_TELNET.
  *
  * @param stream
- *     The RFC2217 serial stream that received the data.
+ *     The RFC2217 or Telnet serial stream that received the data.
  *
  * @param buffer
  *     The buffer of received data.

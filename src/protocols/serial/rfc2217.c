@@ -47,17 +47,7 @@
  * The telnet option number of the RFC2217 COM-PORT-OPTION. libtelnet does not
  * define this option, so it is defined here.
  */
-#ifndef TELNET_TELOPT_COMPORT
-#define TELNET_TELOPT_COMPORT 44
-#endif
-
-/**
- * The Telnet BREAK (BRK) command, sent as "IAC BRK". libtelnet does not define
- * this command, so it is defined here.
- */
-#ifndef TELNET_BREAK
-#define TELNET_BREAK 243   /* Telnet BRK command (RFC 854) */
-#endif
+#define GUAC_SERIAL_TELOPT_COMPORT 44
 
 /**
  * COM-PORT-OPTION client-to-server command: set the serial line speed. The
@@ -128,19 +118,39 @@ static int guac_serial_rfc2217_write_all(int fd, const char* buffer, int size) {
 }
 
 /**
- * Sends a single-byte COM-PORT-OPTION subnegotiation.
+ * Sends a COM-PORT-OPTION subnegotiation consisting of the given command byte
+ * followed by a single data byte, as used by all RFC2217 client-to-server
+ * commands other than SET-BAUDRATE.
+ *
+ * @param telnet
+ *     The libtelnet session over which the subnegotiation should be sent.
+ *
+ * @param command
+ *     The COM-PORT-OPTION command code, such as
+ *     GUAC_SERIAL_RFC2217_SET_DATASIZE.
+ *
+ * @param value
+ *     The single byte of data associated with the command.
  */
 static void guac_serial_rfc2217_send_byte(telnet_t* telnet,
         unsigned char command, unsigned char value) {
-    telnet_begin_sb(telnet, TELNET_TELOPT_COMPORT);
+    telnet_begin_sb(telnet, GUAC_SERIAL_TELOPT_COMPORT);
     telnet_send(telnet, (char*) &command, 1);
     telnet_send(telnet, (char*) &value, 1);
     telnet_finish_sb(telnet);
 }
 
 /**
- * Sends the serial line parameters described by the given settings using
- * client-to-server COM-PORT-OPTION subnegotiations.
+ * Sends the serial line parameters described by the given settings (baud rate,
+ * data bits, parity, stop bits and flow control) to the remote RFC2217 server
+ * using client-to-server COM-PORT-OPTION subnegotiations.
+ *
+ * @param telnet
+ *     The libtelnet session over which the subnegotiations should be sent.
+ *
+ * @param settings
+ *     The parsed connection settings containing the serial line parameters to
+ *     send.
  */
 static void guac_serial_rfc2217_set_line(telnet_t* telnet,
         guac_serial_settings* settings) {
@@ -154,7 +164,7 @@ static void guac_serial_rfc2217_set_line(telnet_t* telnet,
         (unsigned char) ((baud >>  8) & 0xFF),
         (unsigned char) ( baud        & 0xFF)
     };
-    telnet_begin_sb(telnet, TELNET_TELOPT_COMPORT);
+    telnet_begin_sb(telnet, GUAC_SERIAL_TELOPT_COMPORT);
     telnet_send(telnet, (char*) rate, sizeof(rate));
     telnet_finish_sb(telnet);
 
@@ -165,11 +175,27 @@ static void guac_serial_rfc2217_set_line(telnet_t* telnet,
     /* SET-PARITY (1=none, 2=odd, 3=even, 4=mark, 5=space) */
     unsigned char parity;
     switch (settings->parity) {
-        case GUAC_SERIAL_PARITY_ODD:   parity = 2; break;
-        case GUAC_SERIAL_PARITY_EVEN:  parity = 3; break;
-        case GUAC_SERIAL_PARITY_MARK:  parity = 4; break;
-        case GUAC_SERIAL_PARITY_SPACE: parity = 5; break;
-        default:                       parity = 1; break;
+
+        case GUAC_SERIAL_PARITY_ODD:
+            parity = 2;
+            break;
+
+        case GUAC_SERIAL_PARITY_EVEN:
+            parity = 3;
+            break;
+
+        case GUAC_SERIAL_PARITY_MARK:
+            parity = 4;
+            break;
+
+        case GUAC_SERIAL_PARITY_SPACE:
+            parity = 5;
+            break;
+
+        default:
+            parity = 1;
+            break;
+
     }
     guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_PARITY,
             parity);
@@ -181,9 +207,19 @@ static void guac_serial_rfc2217_set_line(telnet_t* telnet,
     /* SET-CONTROL flow control (1=none, 2=xon/xoff, 3=rts/cts) */
     unsigned char flow;
     switch (settings->flow_control) {
-        case GUAC_SERIAL_FLOW_XON_XOFF: flow = 2; break;
-        case GUAC_SERIAL_FLOW_RTS_CTS:  flow = 3; break;
-        default:                        flow = 1; break;
+
+        case GUAC_SERIAL_FLOW_XON_XOFF:
+            flow = 2;
+            break;
+
+        case GUAC_SERIAL_FLOW_RTS_CTS:
+            flow = 3;
+            break;
+
+        default:
+            flow = 1;
+            break;
+
     }
     guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_CONTROL,
             flow);
@@ -192,7 +228,19 @@ static void guac_serial_rfc2217_set_line(telnet_t* telnet,
 
 /**
  * Event handler, as defined by libtelnet. Invoked for every event fired by the
- * RFC2217 libtelnet session. The user data is the guac_serial_stream.
+ * libtelnet session of either the RFC2217 or the plain Telnet backend.
+ * Received data is written to the terminal, outbound data is written to the
+ * stream's socket, warnings are logged and errors abort the connection.
+ *
+ * @param telnet
+ *     The libtelnet session which fired the event.
+ *
+ * @param event
+ *     The event which was fired.
+ *
+ * @param data
+ *     The user data associated with the libtelnet session, which is the
+ *     guac_serial_stream that owns the session.
  */
 static void guac_serial_rfc2217_event_handler(telnet_t* telnet,
         telnet_event_t* event, void* data) {
@@ -241,7 +289,7 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
 
     /* Support levels for the telnet options used by the RFC2217 session */
     static const telnet_telopt_t rfc2217_options[] = {
-        { TELNET_TELOPT_COMPORT, TELNET_WILL, TELNET_DONT },
+        { GUAC_SERIAL_TELOPT_COMPORT, TELNET_WILL, TELNET_DONT },
         { TELNET_TELOPT_BINARY,  TELNET_WILL, TELNET_DO   },
         { TELNET_TELOPT_SGA,     TELNET_WILL, TELNET_DO   },
         { TELNET_TELOPT_ECHO,    TELNET_WONT, TELNET_DO   },
@@ -274,7 +322,7 @@ int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
     stream->telnet = telnet;
 
     /* Advertise our willingness to use COM-PORT-OPTION and binary mode */
-    telnet_negotiate(telnet, TELNET_WILL, TELNET_TELOPT_COMPORT);
+    telnet_negotiate(telnet, TELNET_WILL, GUAC_SERIAL_TELOPT_COMPORT);
     telnet_negotiate(telnet, TELNET_WILL, TELNET_TELOPT_BINARY);
     telnet_negotiate(telnet, TELNET_DO, TELNET_TELOPT_BINARY);
 
@@ -385,7 +433,14 @@ void guac_serial_rfc2217_free(guac_serial_stream* stream) {
     }
 }
 
-#else /* ENABLE_SERIAL_RFC2217 */
+#else /* !ENABLE_SERIAL_RFC2217 */
+
+/*
+ * libtelnet is not available, so neither the RFC2217 nor the Telnet transport
+ * is compiled in. The functions below fail (open) or do nothing (all others),
+ * allowing the rest of the plugin to link and run with those transports
+ * unavailable.
+ */
 
 int guac_serial_rfc2217_open(guac_serial_stream* stream, guac_client* client,
         guac_serial_settings* settings) {

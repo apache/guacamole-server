@@ -36,39 +36,35 @@
 int guac_serial_local_open(guac_serial_stream* stream, guac_client* client,
         guac_serial_settings* settings) {
 
-    /* Re-validate the device against the allowlist on every (re)open, guarding
-     * against a symlink being repointed at a disallowed device between
-     * reconnects */
-    if (settings->allowed_devices != NULL && settings->allowed_devices[0] != '\0'
-            && !guac_serial_device_permitted(settings->device,
-                    settings->allowed_devices)) {
-        guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" is not "
-                "permitted by the allowed-devices list, or is not currently "
-                "available.", settings->device);
-        stream->open_status = GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN;
-        return -1;
-    }
-
     /* Open device non-blocking so open() does not wait for carrier detect */
     int fd = open(settings->device, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (fd < 0) {
 
         /* Distinguish contention from other failures */
-        if (errno == EBUSY || errno == EACCES || errno == EPERM) {
-            guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" is "
-                    "busy or exclusively locked by another process: %s",
-                    settings->device, strerror(errno));
-            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
-        }
-        else if (errno == ENOENT) {
-            guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" not "
-                    "found: %s", settings->device, strerror(errno));
-            stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
-        }
-        else {
-            guac_client_log(client, GUAC_LOG_ERROR, "Unable to open serial "
-                    "device \"%s\": %s", settings->device, strerror(errno));
-            stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
+        switch (errno) {
+
+            case EBUSY:
+            case EACCES:
+            case EPERM:
+                guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" "
+                        "is busy or exclusively locked by another process: "
+                        "%s", settings->device, strerror(errno));
+                stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+                break;
+
+            case ENOENT:
+                guac_client_log(client, GUAC_LOG_ERROR, "Serial device \"%s\" "
+                        "not found: %s", settings->device, strerror(errno));
+                stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+                break;
+
+            default:
+                guac_client_log(client, GUAC_LOG_ERROR, "Unable to open "
+                        "serial device \"%s\": %s", settings->device,
+                        strerror(errno));
+                stream->open_status = GUAC_PROTOCOL_STATUS_SERVER_ERROR;
+                break;
+
         }
 
         return -1;
@@ -115,10 +111,23 @@ int guac_serial_local_open(guac_serial_stream* stream, guac_client* client,
     /* Apply data bits */
     tio.c_cflag &= ~CSIZE;
     switch (settings->data_bits) {
-        case 5: tio.c_cflag |= CS5; break;
-        case 6: tio.c_cflag |= CS6; break;
-        case 7: tio.c_cflag |= CS7; break;
-        default: tio.c_cflag |= CS8; break;
+
+        case 5:
+            tio.c_cflag |= CS5;
+            break;
+
+        case 6:
+            tio.c_cflag |= CS6;
+            break;
+
+        case 7:
+            tio.c_cflag |= CS7;
+            break;
+
+        default:
+            tio.c_cflag |= CS8;
+            break;
+
     }
 
     /* Apply parity */

@@ -27,12 +27,6 @@
 #include <stdbool.h>
 
 /**
- * The port to connect to when initiating any network serial connection, if no
- * other port is specified.
- */
-#define GUAC_SERIAL_DEFAULT_PORT "2000"
-
-/**
  * The protocol label included in the process title (the first argument passed
  * to guac_process_title_set_endpoint()), as seen in `ps`/`top`.
  */
@@ -84,7 +78,8 @@ typedef enum guac_serial_type {
     GUAC_SERIAL_TYPE_LOCAL,
 
     /**
-     * A remote serial line reached over the network (raw TCP or RFC2217).
+     * A remote serial line reached over the network (raw TCP, RFC2217, or
+     * Telnet).
      */
     GUAC_SERIAL_TYPE_NETWORK
 
@@ -123,20 +118,58 @@ typedef enum guac_serial_network_protocol {
  * The parity scheme applied to the serial line.
  */
 typedef enum guac_serial_parity {
+
+    /**
+     * No parity bit is sent or checked.
+     */
     GUAC_SERIAL_PARITY_NONE,
+
+    /**
+     * A parity bit is sent such that the total number of set bits in each
+     * character, including the parity bit, is odd.
+     */
     GUAC_SERIAL_PARITY_ODD,
+
+    /**
+     * A parity bit is sent such that the total number of set bits in each
+     * character, including the parity bit, is even.
+     */
     GUAC_SERIAL_PARITY_EVEN,
+
+    /**
+     * A parity bit is sent which is always set (1).
+     */
     GUAC_SERIAL_PARITY_MARK,
+
+    /**
+     * A parity bit is sent which is always cleared (0).
+     */
     GUAC_SERIAL_PARITY_SPACE
+
 } guac_serial_parity;
 
 /**
  * The flow control scheme applied to the serial line.
  */
 typedef enum guac_serial_flow_control {
+
+    /**
+     * No flow control is used.
+     */
     GUAC_SERIAL_FLOW_NONE,
+
+    /**
+     * Hardware flow control, using the RTS (Request To Send) and CTS (Clear To
+     * Send) control lines.
+     */
     GUAC_SERIAL_FLOW_RTS_CTS,
+
+    /**
+     * Software flow control, using in-band XON (DC1, 0x11) and XOFF (DC3,
+     * 0x13) characters.
+     */
     GUAC_SERIAL_FLOW_XON_XOFF
+
 } guac_serial_flow_control;
 
 /**
@@ -188,28 +221,23 @@ typedef struct guac_serial_settings {
     char* device;
 
     /**
-     * An optional ":"-separated allowlist of permitted local device paths or
-     * path prefixes, or NULL if no allowlist was configured. Retained so the
-     * device can be re-validated on every (re)open, guarding against a symlink
-     * being repointed at a disallowed device between reconnects.
-     */
-    char* allowed_devices;
-
-    /**
      * The hostname of the network serial server to connect to when type is
      * GUAC_SERIAL_TYPE_NETWORK. NULL if not a network connection.
      */
     char* hostname;
 
     /**
-     * The port of the network serial server to connect to when type is
-     * GUAC_SERIAL_TYPE_NETWORK.
+     * The port of the network serial server to connect to (or, in reverse
+     * mode, to listen on) when type is GUAC_SERIAL_TYPE_NETWORK. NULL if not a
+     * network connection.
      */
     char* port;
 
     /**
      * Whether guacd should listen for an inbound connection from the device
-     * (reverse mode) instead of dialing out. Only meaningful for network type.
+     * (reverse mode) instead of dialing out. Only takes effect for network
+     * connections; for local connections the parameter is read solely to
+     * warn that it is ignored, and this value is always false.
      */
     bool reverse_connect;
 
@@ -221,12 +249,13 @@ typedef struct guac_serial_settings {
 
     /**
      * Local address to bind when listening in reverse mode. NULL/empty =>
-     * 127.0.0.1.
+     * 127.0.0.1. Always NULL for local connections, which do not parse it.
      */
     char* bind_address;
 
     /**
-     * The number of seconds to wait for a connection before timing out.
+     * The number of seconds to wait for a network connection before timing
+     * out. Unused (zero) for local connections.
      */
     int timeout;
 
@@ -481,28 +510,6 @@ guac_serial_settings* guac_serial_parse_args(guac_user* user,
  *     (speed_t) -1 if the given speed is not supported.
  */
 speed_t guac_serial_baud_to_speed(int baud_rate);
-
-/**
- * Returns whether the given local device is permitted by the given ":"-
- * separated allowlist of device paths or path prefixes. Both the device and
- * each allowlist entry are canonicalized with realpath() before comparison; a
- * device is permitted if its canonical path equals a canonicalized entry or
- * falls beneath one of the canonicalized entries. If the device cannot be
- * resolved (e.g. it does not currently exist), it is not permitted.
- *
- * This performs no logging so that it may be reused both at parse time and on
- * every (re)open.
- *
- * @param device
- *     The local device path to test.
- *
- * @param allowed
- *     The ":"-separated allowlist of permitted device paths or prefixes.
- *
- * @return
- *     true if the device is permitted, false otherwise.
- */
-bool guac_serial_device_permitted(const char* device, const char* allowed);
 
 /**
  * Frees the given guac_serial_settings object, having been previously

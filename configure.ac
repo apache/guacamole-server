@@ -1387,17 +1387,16 @@ AM_CONDITIONAL([ENABLE_TELNET], [test "x${have_libtelnet}"  = "xyes" \
                                    -a "x${have_terminal}" = "xyes"])
 
 # Serial console support. The core plugin (local devices and raw TCP) requires
-# only the terminal. The RFC2217 network transport additionally requires
-# libtelnet and is compiled in conditionally (see ENABLE_SERIAL_RFC2217).
+# only the terminal. The RFC2217 and Telnet network transports additionally
+# require libtelnet, and are compiled in only when Telnet support itself is
+# being built (ENABLE_TELNET), in which case ENABLE_SERIAL_RFC2217 is defined.
+# The serial plugin already requires the terminal, so this is equivalent to
+# libtelnet being available.
 AM_CONDITIONAL([ENABLE_SERIAL], [test "x${have_terminal}" = "xyes"])
-
-# RFC2217 (COM-PORT-OPTION) serial transport, built on libtelnet. When
-# libtelnet is unavailable the serial plugin still builds; only the RFC2217
-# network transport is omitted.
-AM_CONDITIONAL([ENABLE_SERIAL_RFC2217], [test "x${have_libtelnet}" = "xyes"])
-AS_IF([test "x${have_libtelnet}" = "xyes"],
-      [AC_DEFINE([ENABLE_SERIAL_RFC2217], [1],
-                 [Define if RFC2217 serial transport (libtelnet) is available])])
+AM_COND_IF([ENABLE_TELNET],
+           [AC_DEFINE([ENABLE_SERIAL_RFC2217], [1],
+                      [Define if the RFC2217/Telnet serial transports
+                       are available])])
 
 AC_SUBST(TELNET_LIBS)
 
@@ -1657,13 +1656,13 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
    Protocol support:
 
-      Kubernetes .... ${build_kubernetes}
-      RDP ........... ${build_rdp}
-      SSH ........... ${build_ssh}
-      Serial ........ ${build_serial}
-      RFC2217 (serial) .... ${have_libtelnet}
-      Telnet ........ ${build_telnet}
-      VNC ........... ${build_vnc}
+      Kubernetes .......... ${build_kubernetes}
+      RDP ................. ${build_rdp}
+      SSH ................. ${build_ssh}
+      Serial .............. ${build_serial}
+      RFC2217 (serial) .... ${build_telnet}
+      Telnet .............. ${build_telnet}
+      VNC ................. ${build_vnc}
 
    Services / tools:
 

@@ -88,16 +88,16 @@ typedef struct guac_serial_stream {
 
     /**
      * The device file descriptor (local) or socket file descriptor (tcp,
-     * rfc2217), or -1 if not open.
+     * rfc2217, telnet), or -1 if not open.
      */
     int fd;
 
     /**
      * The libtelnet session (telnet_t*) used for IAC framing when the backend
-     * is GUAC_SERIAL_BACKEND_RFC2217, or NULL otherwise. Declared as an opaque
-     * pointer so this header does not depend on libtelnet, which is required
-     * only by the RFC2217 backend (see rfc2217.c). Only the RFC2217 backend
-     * dereferences this value.
+     * is GUAC_SERIAL_BACKEND_RFC2217 or GUAC_SERIAL_BACKEND_TELNET, or NULL
+     * otherwise. Declared as an opaque pointer so this header does not depend
+     * on libtelnet, which is required only by those two backends (see
+     * rfc2217.c). Only the RFC2217 and Telnet backends dereference this value.
      */
     void* telnet;
 
@@ -153,9 +153,9 @@ guac_serial_stream* guac_serial_stream_alloc(guac_client* client,
 /**
  * (Re)opens the transport for the given serial stream, closing any currently-
  * open file descriptor and libtelnet session first, then dispatching to the
- * local, TCP, or RFC2217 backend as appropriate. The stream's fd is swapped
- * under its write lock so that a concurrent writer never touches a stale
- * descriptor. On failure, the stream's open_status is set and the fd is left
+ * local, TCP, RFC2217, or Telnet backend as appropriate. The stream's fd is
+ * swapped under its write lock so that a concurrent writer never touches a
+ * stale descriptor. On failure, the stream's open_status is set and the fd is left
  * at -1; the client is NOT aborted, so the caller may retry.
  *
  * @param stream
@@ -197,9 +197,10 @@ int guac_serial_stream_write(guac_serial_stream* stream, const char* buffer,
 
 /**
  * Sends a serial break on the serial stream. For local and RFC2217 transports,
- * the transmit line is held low for the configured break duration. Raw TCP
- * transports do not support break signalling; a warning is logged and the call
- * is a no-op.
+ * the transmit line is held low for the configured break duration. For the
+ * Telnet transport, a Telnet NVT BRK command (IAC BRK) is sent, leaving it to
+ * the remote server to generate the break. Raw TCP transports do not support
+ * break signalling; a warning is logged and the call is a no-op.
  *
  * @param stream
  *     The serial stream on which to send the break.
@@ -213,8 +214,8 @@ int guac_serial_stream_send_break(guac_serial_stream* stream);
  * Asserts or de-asserts a modem control line (DTR or RTS) on the serial stream.
  * For local transports the line is toggled via TIOCMBIS/TIOCMBIC; for RFC2217
  * transports the corresponding COM-PORT-OPTION SET-CONTROL subnegotiation is
- * sent. Raw TCP transports do not support control-line signalling; a warning
- * is logged and the call is a no-op.
+ * sent. The raw TCP and Telnet transports do not support control-line
+ * signalling; a warning is logged and the call is a no-op.
  *
  * @param stream
  *     The serial stream on which to toggle the control line.

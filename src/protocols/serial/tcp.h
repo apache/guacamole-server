@@ -28,7 +28,9 @@
 /**
  * Opens a raw TCP connection to the network serial server described by the
  * given settings (e.g. ser2net operating in raw mode) and stores the resulting
- * socket in the given stream. On failure, the client is aborted.
+ * socket in the given stream. On failure, the
+ * stream's open_status is set and non-zero is returned; whether to retry is
+ * left to the caller.
  *
  * @param stream
  *     The serial stream to populate with the opened socket.
@@ -50,8 +52,8 @@ int guac_serial_tcp_open(guac_serial_stream* stream, guac_client* client,
  * (settings->reverse_connect) guacd binds, listens, and accepts a single
  * inbound connection from the device; otherwise it dials out via
  * guac_tcp_connect(). TCP_NODELAY is set on the resulting socket on success.
- * This is shared by both the raw TCP and RFC2217 backends so that reverse mode
- * need only be implemented once.
+ * This is shared by the raw TCP, RFC2217, and Telnet backends so that reverse
+ * mode need only be implemented once.
  *
  * @param stream
  *     The serial stream whose open_status is set on failure.

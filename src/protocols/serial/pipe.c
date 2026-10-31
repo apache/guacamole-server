@@ -97,8 +97,28 @@ static void guac_serial_control_dispatch(guac_user* user, const char* token) {
 }
 
 /**
- * Blob handler for the inbound control pipe: reassembles whitespace-delimited
- * plain-text tokens and dispatches each complete token.
+ * Handler for "blob" instructions received on the inbound "serial-control"
+ * pipe stream, as defined by guac_user_blob_handler. Reassembles the received
+ * data into whitespace-delimited plain-text tokens, dispatching each complete
+ * token via guac_serial_control_dispatch(). Tokens which exceed the reassembly
+ * buffer are dropped. Each blob is acknowledged once processed.
+ *
+ * @param user
+ *     The user that sent the blob.
+ *
+ * @param stream
+ *     The control pipe stream on which the blob was received. Its data member
+ *     points to the guac_serial_control_stream holding reassembly state.
+ *
+ * @param data
+ *     The blob data received.
+ *
+ * @param length
+ *     The number of bytes of blob data received.
+ *
+ * @return
+ *     Zero if the blob was handled successfully, non-zero otherwise. This
+ *     handler always returns zero.
  */
 static int guac_serial_control_blob_handler(guac_user* user,
         guac_stream* stream, void* data, int length) {
@@ -138,8 +158,22 @@ static int guac_serial_control_blob_handler(guac_user* user,
 }
 
 /**
- * End handler for the inbound control pipe. Dispatches any final unterminated
- * token and releases the reassembly state.
+ * Handler for the "end" instruction received on the inbound "serial-control"
+ * pipe stream, as defined by guac_user_end_handler. Dispatches any final token
+ * not terminated by whitespace and releases the reassembly state associated
+ * with the stream.
+ *
+ * @param user
+ *     The user that closed the control pipe.
+ *
+ * @param stream
+ *     The control pipe stream being closed. Its data member points to the
+ *     guac_serial_control_stream holding reassembly state, which is freed by
+ *     this handler.
+ *
+ * @return
+ *     Zero if the end of the stream was handled successfully, non-zero
+ *     otherwise. This handler always returns zero.
  */
 static int guac_serial_control_end_handler(guac_user* user,
         guac_stream* stream) {

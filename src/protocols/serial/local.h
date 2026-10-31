@@ -29,7 +29,9 @@
  * Opens the local serial device described by the given settings, configuring
  * its termios line discipline (baud rate, data/stop bits, parity, and flow
  * control) for raw I/O, and stores the resulting file descriptor in the given
- * stream. On failure, the client is aborted.
+ * stream. On failure, the
+ * stream's open_status is set and non-zero is returned; whether to retry is
+ * left to the caller.
  *
  * @param stream
  *     The serial stream to populate with the opened device.

@@ -31,8 +31,11 @@
 /**
  * The name reserved for the inbound out-of-band control pipe stream. A client
  * opens an inbound pipe stream with this name to send plain-text, whitespace-
- * delimited control commands to the serial connection. The only command
- * currently supported is "break", which sends a serial break.
+ * delimited control commands to the serial connection. The supported commands
+ * are "break", which sends a serial break, and "dtr-on", "dtr-off",
+ * "rts-on", and "rts-off", which assert or deassert the DTR and RTS control
+ * lines. Control-line commands are honored only by the local and RFC2217
+ * transports; the raw TCP and Telnet transports log a warning and ignore them.
  */
 #define GUAC_SERIAL_CONTROL_PIPE_NAME "serial-control"
 

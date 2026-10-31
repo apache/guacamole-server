@@ -222,23 +222,34 @@ int guac_serial_net_open_fd(guac_serial_stream* stream, guac_client* client,
 
             /* Distinguish an actively-refused or reset endpoint from other
              * failures (e.g. name resolution, timeout) */
-            if (err == ECONNREFUSED) {
-                guac_client_log(client, GUAC_LOG_ERROR, "ser2net endpoint "
-                        "\"%s:%s\" refused the connection: %s",
-                        settings->hostname, settings->port, strerror(err));
-                stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
-            }
-            else if (err == ECONNRESET) {
-                guac_client_log(client, GUAC_LOG_ERROR, "Connection to ser2net "
-                        "endpoint \"%s:%s\" was reset: %s", settings->hostname,
-                        settings->port, strerror(err));
-                stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
-            }
-            else {
-                guac_client_log(client, GUAC_LOG_ERROR, "Unable to connect to "
-                        "serial server \"%s\" port \"%s\".", settings->hostname,
-                        settings->port);
-                stream->open_status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+            switch (err) {
+
+                case ECONNREFUSED:
+                    guac_client_log(client, GUAC_LOG_ERROR, "ser2net "
+                            "endpoint \"%s:%s\" refused the connection: %s",
+                            settings->hostname, settings->port,
+                            strerror(err));
+                    stream->open_status =
+                        GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+                    break;
+
+                case ECONNRESET:
+                    guac_client_log(client, GUAC_LOG_ERROR, "Connection to "
+                            "ser2net endpoint \"%s:%s\" was reset: %s",
+                            settings->hostname, settings->port,
+                            strerror(err));
+                    stream->open_status =
+                        GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE;
+                    break;
+
+                default:
+                    guac_client_log(client, GUAC_LOG_ERROR, "Unable to "
+                            "connect to serial server \"%s\" port \"%s\".",
+                            settings->hostname, settings->port);
+                    stream->open_status =
+                        GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+                    break;
+
             }
 
             return -1;

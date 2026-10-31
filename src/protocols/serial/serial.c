@@ -91,11 +91,22 @@ typedef enum guac_serial_disconnect_reason {
  */
 static char guac_serial_parity_letter(guac_serial_parity parity) {
     switch (parity) {
-        case GUAC_SERIAL_PARITY_ODD:   return 'O';
-        case GUAC_SERIAL_PARITY_EVEN:  return 'E';
-        case GUAC_SERIAL_PARITY_MARK:  return 'M';
-        case GUAC_SERIAL_PARITY_SPACE: return 'S';
-        default:                       return 'N';
+
+        case GUAC_SERIAL_PARITY_ODD:
+            return 'O';
+
+        case GUAC_SERIAL_PARITY_EVEN:
+            return 'E';
+
+        case GUAC_SERIAL_PARITY_MARK:
+            return 'M';
+
+        case GUAC_SERIAL_PARITY_SPACE:
+            return 'S';
+
+        default:
+            return 'N';
+
     }
 }
 
@@ -158,9 +169,22 @@ static void guac_serial_write_banner(guac_terminal* term, const char* text) {
 static void guac_serial_line_terminator(guac_serial_line_ending line_ending,
         const char** terminator, int* length) {
     switch (line_ending) {
-        case GUAC_SERIAL_LINE_ENDING_LF:   *terminator = "\n";   *length = 1; break;
-        case GUAC_SERIAL_LINE_ENDING_CRLF: *terminator = "\r\n"; *length = 2; break;
-        default:                           *terminator = "\r";   *length = 1; break;
+
+        case GUAC_SERIAL_LINE_ENDING_LF:
+            *terminator = "\n";
+            *length = 1;
+            break;
+
+        case GUAC_SERIAL_LINE_ENDING_CRLF:
+            *terminator = "\r\n";
+            *length = 2;
+            break;
+
+        default:
+            *terminator = "\r";
+            *length = 1;
+            break;
+
     }
 }
 
