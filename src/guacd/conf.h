@@ -21,6 +21,7 @@
 #define GUACD_CONF_H
 
 #include <guacamole/client.h>
+#include <guacamole/rdp-drive.h>
 
 /**
  * The default host that guacd should bind to, if no other host is explicitly
@@ -80,6 +81,14 @@ typedef struct guacd_config {
      * The maximum log level to be logged by guacd.
      */
     guac_client_log_level max_log_level;
+
+    /**
+     * The maximum number of files an RDP redirected drive may keep open in
+     * one session. The default is GUAC_RDP_DRIVE_MAX_FILES_DEFAULT. The
+     * command-line -M option overrides the drive_max_files parameter from
+     * guacd.conf.
+     */
+    int rdp_drive_max_files;
 
 } guacd_config;
 

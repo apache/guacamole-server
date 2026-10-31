@@ -27,6 +27,7 @@ guacd \- Guacamole proxy daemon
 [\fB-l\fR \fIPORT\fR]
 [\fB-p\fR \fIPID FILE\fR]
 [\fB-L\fR \fILOG LEVEL\fR]
+[\fB-M\fR \fIMAX FILES\fR]
 [\fB-C\fR \fICERTIFICATE FILE\fR]
 [\fB-K\fR \fIKEY FILE\fR]
 [\fB-f\fR]
@@ -75,6 +76,14 @@ and
 .B error.
 The default value is
 .B info.
+.TP
+\fB\-M\fR \fIMAX FILES\fR
+Changes the maximum number of files each RDP redirected drive may keep
+open. The value must be a positive integer no greater than 4096. The
+default is 128. This option overrides
+.B drive_max_files
+in
+.BR guacd.conf (5).
 .TP
 \fB\-f\fR
 Causes

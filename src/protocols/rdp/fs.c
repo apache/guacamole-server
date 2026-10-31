@@ -27,13 +27,13 @@
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
 #include <guacamole/protocol.h>
+#include <guacamole/rdp-drive.h>
 #include <guacamole/socket.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
 #include <winpr/file.h>
 #include <winpr/nt.h>
 
-#include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -44,51 +44,6 @@
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
-
-int guac_rdp_fs_parse_max_files(const char* value) {
-
-    char* end;
-
-    if (value == NULL || *value == '\0')
-        return -1;
-
-    for (const char* current = value; *current != '\0'; current++) {
-        if (!isdigit((unsigned char) *current))
-            return -1;
-    }
-
-    errno = 0;
-    long max_files = strtol(value, &end, 10);
-
-    if (errno == ERANGE || end == value || *end != '\0'
-            || max_files <= 0 || max_files > GUAC_RDP_FS_MAX_FILES_LIMIT)
-        return -1;
-
-    return (int) max_files;
-
-}
-
-/**
- * Returns the open-file table size for this process. An unset or invalid
- * GUAC_RDP_FS_MAX_FILES value uses the compile-time default.
- */
-static int guac_rdp_fs_max_files_for_session(guac_client* client) {
-
-    const char* value = getenv("GUAC_RDP_FS_MAX_FILES");
-    if (value == NULL || *value == '\0')
-        return GUAC_RDP_FS_MAX_FILES;
-
-    int max_files = guac_rdp_fs_parse_max_files(value);
-    if (max_files < 0) {
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Ignoring invalid GUAC_RDP_FS_MAX_FILES=\"%s\"; using %i",
-                value, GUAC_RDP_FS_MAX_FILES);
-        return GUAC_RDP_FS_MAX_FILES;
-    }
-
-    return max_files;
-
-}
 
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
         int create_drive_path, int disable_download, int disable_upload) {
@@ -118,7 +73,7 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
     fs->drive_path = guac_strdup(drive_path);
     fs->file_id_pool = guac_pool_alloc(0);
     fs->open_files = 0;
-    fs->max_files = guac_rdp_fs_max_files_for_session(client);
+    fs->max_files = guac_rdp_drive_get_max_files();
     fs->files = guac_mem_zalloc(sizeof(guac_rdp_fs_file), (size_t) fs->max_files);
     fs->disable_download = disable_download;
     fs->disable_upload = disable_upload;

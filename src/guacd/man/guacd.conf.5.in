@@ -53,6 +53,11 @@ Parameters which configure how
 .B guacd
 behaves as a daemon, such as what file should contain the PID, if any.
 .TP
+\fB[rdp]\fR
+Parameters which apply to RDP connections handled by this
+.B guacd
+process, such as the redirected-drive open-file limit.
+.TP
 \fB[ssl]\fR
 Parameters which control the SSL support of
 .B guacd,
@@ -129,6 +134,17 @@ script can report on the status of
 .B guacd
 and kill it if necessary.
 .
+.SH RDP PARAMETERS
+.TP
+\fBdrive_max_files\fR \fB=\fR \fIMAX FILES\fR
+Sets the maximum number of files each RDP redirected drive may keep open.
+The value must be a positive integer no greater than 4096. The default is
+128. Directory listings and copies can hold many files open at once; once
+the limit is reached, further opens fail until an existing file is closed.
+Command-line option
+.B \-M
+overrides this parameter.
+.
 .SH SSL PARAMETERS
 If
 .B guacd
@@ -164,6 +180,10 @@ will require SSL/TLS enabled in the client (the web application).
 [daemon]
 
 pid_file = /var/run/guacd.pid
+
+[rdp]
+
+drive_max_files = 1024
 
 [server]
 

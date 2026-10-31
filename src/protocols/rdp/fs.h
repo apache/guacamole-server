@@ -34,23 +34,25 @@
 #include <guacamole/client.h>
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
+#include <guacamole/rdp-drive.h>
 #include <guacamole/user.h>
 
 #include <dirent.h>
 #include <stdint.h>
 
 /**
- * The default maximum number of file IDs to provide when
- * GUAC_RDP_FS_MAX_FILES is unset.
+ * The default maximum number of file IDs to provide when guacd has not
+ * configured a different limit. The configured value comes from the
+ * drive_max_files parameter in guacd.conf or from the guacd -M option.
  */
-#define GUAC_RDP_FS_MAX_FILES 128
+#define GUAC_RDP_FS_MAX_FILES GUAC_RDP_DRIVE_MAX_FILES_DEFAULT
 
 /**
- * The largest open-file table that may be requested via GUAC_RDP_FS_MAX_FILES.
- * Each slot embeds a GUAC_RDP_FS_MAX_PATH-byte directory pattern, so the table
- * is allocated per session.
+ * The largest open-file table that may be configured. Each slot embeds a
+ * GUAC_RDP_FS_MAX_PATH-byte directory pattern, so the table is allocated
+ * per session.
  */
-#define GUAC_RDP_FS_MAX_FILES_LIMIT 4096
+#define GUAC_RDP_FS_MAX_FILES_LIMIT GUAC_RDP_DRIVE_MAX_FILES_LIMIT
 
 /**
  * The maximum number of bytes in a path string.
@@ -211,7 +213,9 @@ typedef struct guac_rdp_fs {
     int open_files;
 
     /**
-     * The number of file IDs this filesystem may allocate.
+     * The number of file IDs this filesystem may allocate. This is the
+     * process-wide limit published by guac_rdp_drive_set_max_files(), or
+     * GUAC_RDP_FS_MAX_FILES when guacd has not set one.
      */
     int max_files;
 
@@ -297,10 +301,11 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
         int create_drive_path, int disable_download, int disable_upload);
 
 /**
- * Frees the given filesystem.
+ * Frees the given filesystem. Calling this function with a NULL filesystem
+ * has no effect.
  *
  * @param fs
- *     The filesystem to free.
+ *     The filesystem to free, or NULL.
  */
 void guac_rdp_fs_free(guac_rdp_fs* fs);
 
@@ -347,19 +352,6 @@ guac_object* guac_rdp_fs_alloc_object(guac_rdp_fs* fs, guac_user* user);
  *     no filesystem object could be allocated.
  */
 void* guac_rdp_fs_expose(guac_user* user, void* data);
-
-/**
- * Parses a GUAC_RDP_FS_MAX_FILES value. The value must be a positive decimal
- * integer no greater than GUAC_RDP_FS_MAX_FILES_LIMIT.
- *
- * @param value
- *     The environment value to parse.
- *
- * @return
- *     The parsed limit, or -1 if the value is missing, malformed, or out of
- *     range.
- */
-int guac_rdp_fs_parse_max_files(const char* value);
 
 /**
  * Converts the given relative path to an absolute path based on the given

@@ -6,6 +6,14 @@ if [ -n "$GUACD_LOG_LEVEL" ]; then
 fi
 
 # Listen on 0.0.0.0:4822, logging messages at the info level. Allow log level
-# to be overridden with LOG_LEVEL, and other behavior to be overridden with
-# additional command-line options passed to Docker.
-exec /opt/guacamole/sbin/guacd -f -b 0.0.0.0 -L "${LOG_LEVEL:-${GUACD_LOG_LEVEL:-info}}" "$@"
+# to be overridden with LOG_LEVEL, the RDP drive open-file limit to be
+# overridden with RDP_DRIVE_MAX_FILES, and other behavior to be overridden
+# with additional command-line options passed to Docker. Options passed to
+# Docker are applied last, so they override the environment variables.
+set -- -f -b 0.0.0.0 -L "${LOG_LEVEL:-${GUACD_LOG_LEVEL:-info}}" "$@"
+
+if [ -n "$RDP_DRIVE_MAX_FILES" ]; then
+    set -- -M "$RDP_DRIVE_MAX_FILES" "$@"
+fi
+
+exec /opt/guacamole/sbin/guacd "$@"

@@ -61,6 +61,7 @@ test_libguac_SOURCES =               \
     pool/next_free.c                 \
     protocol/base64_decode.c         \
     protocol/guac_protocol_version.c \
+    rdp-drive/max_files.c            \
     rect/align.c                     \
     rect/constrain.c                 \
     rect/extend.c                    \

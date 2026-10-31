@@ -42,12 +42,16 @@ Configuring the RDP drive open-file limit
 -----------------------------------------
 
 By default, each RDP session may keep 128 files open on the redirected drive.
-Set `GUAC_RDP_FS_MAX_FILES` to a positive integer no greater than 4096 to
-override this value:
+Raise that limit with guacd's `-M` option or with `RDP_DRIVE_MAX_FILES`. The
+value must be a positive integer no greater than 4096:
 
-    docker run --name some-guacd -d -e GUAC_RDP_FS_MAX_FILES=1024 guacamole/guacd
+    docker run --name some-guacd -d -e RDP_DRIVE_MAX_FILES=1024 guacamole/guacd
 
-Invalid values are ignored and the default of 128 is used.
+    docker run --name some-guacd -d guacamole/guacd -M 1024
+
+The same limit can be set in `guacd.conf` with `drive_max_files` in the
+`[rdp]` section. Command-line options override the configuration file and
+`RDP_DRIVE_MAX_FILES`. An invalid value prevents guacd from starting.
 
 Reporting issues
 ================

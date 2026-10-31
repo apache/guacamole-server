@@ -20,6 +20,21 @@
 #ifndef _GUACD_CONF_PARSE_H
 #define _GUACD_CONF_PARSE_H
 
+#include <guacamole/rdp-drive.h>
+
+#define GUACD_STRINGIFY_IMPL(value) #value
+#define GUACD_STRINGIFY(value) GUACD_STRINGIFY_IMPL(value)
+
+/**
+ * Error text used when drive_max_files or -M is not a positive integer no
+ * greater than GUAC_RDP_DRIVE_MAX_FILES_LIMIT. Callers that print this with
+ * an added period should leave this string without one.
+ */
+#define GUACD_RDP_DRIVE_MAX_FILES_ERROR \
+    "Invalid RDP drive open-file limit. The value must be a positive " \
+    "integer no greater than " \
+    GUACD_STRINGIFY(GUAC_RDP_DRIVE_MAX_FILES_LIMIT)
+
 /**
  * The maximum length of a name, in characters.
  */

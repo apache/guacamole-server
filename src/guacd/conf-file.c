@@ -24,6 +24,7 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/mem.h>
+#include <guacamole/rdp-drive.h>
 #include <guacamole/string.h>
 
 #include <errno.h>
@@ -115,6 +116,25 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
 
     }
 
+    /* RDP redirected drive options */
+    else if (strcmp(section, "rdp") == 0) {
+
+        /* Open-file limit for each redirected drive */
+        if (strcmp(param, "drive_max_files") == 0) {
+
+            int max_files = guac_rdp_drive_parse_max_files(value);
+            if (max_files < 0) {
+                guacd_conf_parse_error = GUACD_RDP_DRIVE_MAX_FILES_ERROR;
+                return 1;
+            }
+
+            config->rdp_drive_max_files = max_files;
+            return 0;
+
+        }
+
+    }
+
     /* If still unhandled, the parameter/section is invalid */
     guacd_conf_parse_error = "Invalid parameter or section name";
     return 1;
@@ -187,6 +207,7 @@ guacd_config* guacd_conf_load(void) {
     conf->foreground = 0;
     conf->print_version = 0;
     conf->max_log_level = GUAC_LOG_INFO;
+    conf->rdp_drive_max_files = GUAC_RDP_DRIVE_MAX_FILES_DEFAULT;
 
 #ifdef ENABLE_SSL
     conf->cert_file = NULL;

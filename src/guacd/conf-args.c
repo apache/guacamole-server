@@ -22,6 +22,7 @@
 #include "conf-parse.h"
 
 #include <guacamole/mem.h>
+#include <guacamole/rdp-drive.h>
 #include <guacamole/string.h>
 
 #include <getopt.h>
@@ -33,7 +34,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:fv")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:L:M:C:K:fv")) != -1) {
 
         /* -l: Bind port */
         if (opt == 'l') {
@@ -77,6 +78,19 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
         }
 
+        /* -M: RDP redirected-drive open-file limit */
+        else if (opt == 'M') {
+
+            int max_files = guac_rdp_drive_parse_max_files(optarg);
+            if (max_files < 0) {
+                fprintf(stderr, "%s.\n", GUACD_RDP_DRIVE_MAX_FILES_ERROR);
+                return 1;
+            }
+
+            config->rdp_drive_max_files = max_files;
+
+        }
+
 #ifdef ENABLE_SSL
         /* -C SSL certificate */
         else if (opt == 'C') {
@@ -107,6 +121,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
                     " [-b LISTENADDRESS]"
                     " [-p PIDFILE]"
                     " [-L LEVEL]"
+                    " [-M MAX_FILES]"
 #ifdef ENABLE_SSL
                     " [-C CERTIFICATE_FILE]"
                     " [-K PEM_FILE]"

@@ -81,6 +81,7 @@ libguacinc_HEADERS =                  \
     guacamole/protocol-constants.h    \
     guacamole/protocol-types.h        \
     guacamole/recording.h             \
+    guacamole/rdp-drive.h             \
     guacamole/rect.h                  \
     guacamole/rect-types.h            \
     guacamole/rwlock.h                \
@@ -162,6 +163,7 @@ libguac_la_SOURCES =          \
     protocol.c                \
     raw_encoder.c             \
     recording.c               \
+    rdp-drive.c               \
     rect.c                    \
     socket.c                  \
     socket-broadcast.c        \

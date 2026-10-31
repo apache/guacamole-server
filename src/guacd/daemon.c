@@ -26,6 +26,7 @@
 
 #include <guacamole/mem.h>
 #include <guacamole/proctitle.h>
+#include <guacamole/rdp-drive.h>
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
@@ -352,6 +353,13 @@ int main(int argc, char* argv[]) {
 
     /* Log start */
     guacd_log(GUAC_LOG_INFO, "Guacamole proxy daemon (guacd) version " VERSION " started");
+
+    /* Publish before guacd forks connection processes. */
+    guac_rdp_drive_set_max_files(config->rdp_drive_max_files);
+    if (config->rdp_drive_max_files != GUAC_RDP_DRIVE_MAX_FILES_DEFAULT)
+        guacd_log(GUAC_LOG_INFO,
+                "RDP redirected drive open-file limit set to %i",
+                config->rdp_drive_max_files);
 
     /* Get addresses for binding */
     if ((retval = getaddrinfo(config->bind_host, config->bind_port,
