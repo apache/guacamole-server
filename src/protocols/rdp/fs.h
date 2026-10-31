@@ -40,9 +40,17 @@
 #include <stdint.h>
 
 /**
- * The maximum number of file IDs to provide.
+ * The default maximum number of file IDs to provide when
+ * GUAC_RDP_FS_MAX_FILES is unset.
  */
 #define GUAC_RDP_FS_MAX_FILES 128
+
+/**
+ * The largest open-file table that may be requested via GUAC_RDP_FS_MAX_FILES.
+ * Each slot embeds a GUAC_RDP_FS_MAX_PATH-byte directory pattern, so the table
+ * is allocated per session.
+ */
+#define GUAC_RDP_FS_MAX_FILES_LIMIT 4096
 
 /**
  * The maximum number of bytes in a path string.
@@ -203,6 +211,11 @@ typedef struct guac_rdp_fs {
     int open_files;
 
     /**
+     * The number of file IDs this filesystem may allocate.
+     */
+    int max_files;
+
+    /**
      * Pool of file IDs.
      */
     guac_pool* file_id_pool;
@@ -210,7 +223,7 @@ typedef struct guac_rdp_fs {
     /**
      * All available file structures.
      */
-    guac_rdp_fs_file files[GUAC_RDP_FS_MAX_FILES];
+    guac_rdp_fs_file* files;
     
     /**
      * If downloads from the remote server to the browser should be disabled.
@@ -278,7 +291,7 @@ typedef struct guac_rdp_fs_info {
  *     disabled.
  *
  * @return
- *     The newly-allocated filesystem.
+ *     The newly-allocated filesystem, or NULL if allocation fails.
  */
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
         int create_drive_path, int disable_download, int disable_upload);
@@ -334,6 +347,19 @@ guac_object* guac_rdp_fs_alloc_object(guac_rdp_fs* fs, guac_user* user);
  *     no filesystem object could be allocated.
  */
 void* guac_rdp_fs_expose(guac_user* user, void* data);
+
+/**
+ * Parses a GUAC_RDP_FS_MAX_FILES value. The value must be a positive decimal
+ * integer no greater than GUAC_RDP_FS_MAX_FILES_LIMIT.
+ *
+ * @param value
+ *     The environment value to parse.
+ *
+ * @return
+ *     The parsed limit, or -1 if the value is missing, malformed, or out of
+ *     range.
+ */
+int guac_rdp_fs_parse_max_files(const char* value);
 
 /**
  * Converts the given relative path to an absolute path based on the given
