@@ -40,7 +40,8 @@ DIST_SUBDIRS =               \
     src/protocols/serial     \
     src/protocols/ssh        \
     src/protocols/telnet     \
-    src/protocols/vnc
+    src/protocols/vnc        \
+    src/protocols/spice
 
 SUBDIRS =        \
     src/libguac  \
@@ -80,6 +81,10 @@ endif
 
 if ENABLE_VNC
 SUBDIRS += src/protocols/vnc
+endif
+
+if ENABLE_SPICE
+SUBDIRS += src/protocols/spice
 endif
 
 if ENABLE_GUACD
