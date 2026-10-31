@@ -1630,7 +1630,8 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
                  src/protocols/vnc/Makefile
-                 src/protocols/spice/Makefile])
+                 src/protocols/spice/Makefile
+                 src/protocols/spice/tests/Makefile])
 AC_OUTPUT
 
 #
