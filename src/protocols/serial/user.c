@@ -31,6 +31,7 @@
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
@@ -62,15 +63,12 @@ int guac_serial_user_join_handler(guac_user* user, int argc, char** argv) {
         serial_client->settings = settings;
 
         /* Start client thread */
-        if (pthread_create(&(serial_client->client_thread), NULL,
-                    guac_serial_client_thread, (void*) client)) {
+        if (guac_thread_create(&serial_client->client_thread,
+                    guac_serial_client_thread, (void*) client, "serial-client")) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                     "Unable to start serial client thread");
             return 1;
         }
-
-        /* Thread now owns cleanup responsibilities and must be joined */
-        serial_client->client_thread_valid = 1;
 
     }
 

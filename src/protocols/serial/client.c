@@ -37,6 +37,7 @@
 #include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 
 /**
  * A pending join handler implementation that will synchronize the connection
@@ -117,12 +118,8 @@ int guac_serial_client_free_handler(guac_client* client) {
         guac_terminal_stop(serial_client->term);
 
     /* Wait for the client thread to fully exit before touching anything it
-     * uses. Joined only when it was successfully created, so early-failure
-     * setup paths neither leak the joinable thread nor join an invalid one. */
-    if (serial_client->client_thread_valid) {
-        pthread_join(serial_client->client_thread, NULL);
-        serial_client->client_thread_valid = 0;
-    }
+     * uses. This is a no-op if the thread was never started. */
+    guac_thread_join(&serial_client->client_thread, NULL);
 
     /* Clean up recording, if in progress */
     if (serial_client->recording != NULL)

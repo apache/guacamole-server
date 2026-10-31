@@ -25,6 +25,7 @@
 #include "terminal/terminal.h"
 
 #include <guacamole/recording.h>
+#include <guacamole/thread.h>
 
 #include <pthread.h>
 
@@ -41,13 +42,7 @@ typedef struct guac_serial_client {
     /**
      * The serial client thread.
      */
-    pthread_t client_thread;
-
-    /**
-     * Whether client_thread has been successfully created and must therefore
-     * be joined during cleanup.
-     */
-    int client_thread_valid;
+    guac_thread client_thread;
 
     /**
      * The serial byte stream connected to the serial line, or NULL if no

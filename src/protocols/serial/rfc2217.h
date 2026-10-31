@@ -29,9 +29,8 @@
  * Opens an RFC2217 (telnet COM-PORT-OPTION) connection to the network serial
  * server described by the given settings, negotiates the configured serial line
  * parameters, and stores the resulting socket and libtelnet session in the
- * given stream. On failure, the
- * stream's open_status is set and non-zero is returned; whether to retry is
- * left to the caller.
+ * given stream. On failure, the stream's open_status is set and non-zero is
+ * returned; whether to retry is left to the caller.
  *
  * If RFC2217 support was not compiled in, an error is logged, the stream's
  * open_status is set, and -1 is returned.

@@ -28,9 +28,8 @@
 /**
  * Opens a raw TCP connection to the network serial server described by the
  * given settings (e.g. ser2net operating in raw mode) and stores the resulting
- * socket in the given stream. On failure, the
- * stream's open_status is set and non-zero is returned; whether to retry is
- * left to the caller.
+ * socket in the given stream. On failure, the stream's open_status is set and
+ * non-zero is returned; whether to retry is left to the caller.
  *
  * @param stream
  *     The serial stream to populate with the opened socket.

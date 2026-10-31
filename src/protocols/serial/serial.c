@@ -29,9 +29,9 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/mem.h>
-#include <guacamole/proctitle.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
+#include <guacamole/thread.h>
 
 #include <errno.h>
 #include <poll.h>
@@ -271,10 +271,6 @@ static int guac_serial_translate_line_ending(guac_serial_line_ending line_ending
  */
 static void* guac_serial_input_thread(void* data) {
 
-    /* Thread name serial-stdin: reads terminal STDIN and forwards it to the
-     * serial line. */
-    guac_thread_name_set("serial-stdin");
-
     guac_client* client = (guac_client*) data;
     guac_serial_client* serial_client = (guac_serial_client*) client->data;
     guac_serial_settings* settings = serial_client->settings;
@@ -448,15 +444,11 @@ static int guac_serial_reconnect_wait(guac_client* client, int seconds) {
 
 void* guac_serial_client_thread(void* data) {
 
-    /* Thread name serial-worker: main serial client thread; runs the serial
-     * session and event loop. */
-    guac_thread_name_set("serial-worker");
-
     guac_client* client = (guac_client*) data;
     guac_serial_client* serial_client = (guac_serial_client*) client->data;
     guac_serial_settings* settings = serial_client->settings;
 
-    pthread_t input_thread;
+    guac_thread input_thread;
 
     /* Human-readable endpoint and "9600 8N1"-style line settings summary */
     char endpoint[256];
@@ -467,17 +459,19 @@ void* guac_serial_client_thread(void* data) {
             settings->baud_rate, settings->data_bits,
             guac_serial_parity_letter(settings->parity), settings->stop_bits);
 
-    /* Set process title to the device, listen endpoint, or hostname reached by
-     * this connection */
-    const char* title_host;
-    if (settings->type == GUAC_SERIAL_TYPE_LOCAL)
-        title_host = settings->device;
-    else if (settings->reverse_connect)
-        title_host = endpoint;
-    else
-        title_host = settings->hostname;
-    guac_process_title_set_endpoint(GUAC_SERIAL_PROCESS_TITLE_NAME,
-            NULL, title_host, NULL);
+    /* Describe the device, listen endpoint, or host:port reached by this
+     * connection */
+    if (settings->type == GUAC_SERIAL_TYPE_LOCAL || settings->reverse_connect) {
+        guac_client_set_info(client, &(guac_client_info) {
+            .resource_name = endpoint
+        });
+    }
+    else {
+        guac_client_set_info(client, &(guac_client_info) {
+            .hostname = settings->hostname,
+            .port = settings->port
+        });
+    }
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
@@ -541,8 +535,8 @@ void* guac_serial_client_thread(void* data) {
     guac_client_for_owner(client, guac_serial_send_current_argv, serial_client);
 
     /* Start input thread (persists across reconnects) */
-    if (pthread_create(&input_thread, NULL, guac_serial_input_thread,
-            (void*) client)) {
+    if (guac_thread_create(&input_thread, guac_serial_input_thread,
+                (void*) client, "serial-stdin")) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Unable to start input thread");
         return NULL;
@@ -637,7 +631,7 @@ void* guac_serial_client_thread(void* data) {
 
     /* Kill client and wait for input thread to die */
     guac_client_stop(client);
-    pthread_join(input_thread, NULL);
+    guac_thread_join(&input_thread, NULL);
 
     guac_client_log(client, GUAC_LOG_INFO, "Serial connection ended.");
     return NULL;
