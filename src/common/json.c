@@ -20,6 +20,8 @@
 #include "common/json.h"
 
 #include <assert.h>
+#include <inttypes.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -149,6 +151,112 @@ int guac_common_json_write_property(guac_user* user, guac_stream* stream,
     /* Write property value */
     blob_written |= guac_common_json_write_string(user, stream,
             json_state, value);
+
+    json_state->properties_written++;
+
+    return blob_written;
+
+}
+
+/**
+ * Writes a single "name":"value" string member, preceded by a comma, as used
+ * within the object value of a detailed stream index entry.
+ *
+ * @return
+ *     Non-zero if at least one blob was written, zero otherwise.
+ */
+static int guac_common_json_write_string_member(guac_user* user,
+        guac_stream* stream, guac_common_json_state* json_state,
+        const char* name, const char* value) {
+
+    int blob_written = 0;
+
+    blob_written |= guac_common_json_write(user, stream, json_state, ",", 1);
+    blob_written |= guac_common_json_write_string(user, stream, json_state,
+            name);
+    blob_written |= guac_common_json_write(user, stream, json_state, ":", 1);
+    blob_written |= guac_common_json_write_string(user, stream, json_state,
+            value);
+
+    return blob_written;
+
+}
+
+/**
+ * Writes a single "name":number member, preceded by a comma, as used within
+ * the object value of a detailed stream index entry.
+ *
+ * @return
+ *     Non-zero if at least one blob was written, zero otherwise.
+ */
+static int guac_common_json_write_number_member(guac_user* user,
+        guac_stream* stream, guac_common_json_state* json_state,
+        const char* name, uint64_t value) {
+
+    int blob_written = 0;
+    char buffer[32];
+
+    int length = snprintf(buffer, sizeof(buffer), "%" PRIu64, value);
+
+    blob_written |= guac_common_json_write(user, stream, json_state, ",", 1);
+    blob_written |= guac_common_json_write_string(user, stream, json_state,
+            name);
+    blob_written |= guac_common_json_write(user, stream, json_state, ":", 1);
+    blob_written |= guac_common_json_write(user, stream, json_state, buffer,
+            length);
+
+    return blob_written;
+
+}
+
+int guac_common_json_write_file_details(guac_user* user,
+        guac_stream* stream, guac_common_json_state* json_state,
+        const char* name, const guac_common_json_file_details* details) {
+
+    /* Users that predate detailed entries receive the mimetype alone */
+    if (!guac_user_supports_file_details(user))
+        return guac_common_json_write_property(user, stream, json_state,
+                name, details->mimetype);
+
+    int blob_written = 0;
+
+    /* Write leading comma if not first property */
+    if (json_state->properties_written != 0)
+        blob_written |= guac_common_json_write(user, stream,
+                json_state, ",", 1);
+
+    /* Write property name */
+    blob_written |= guac_common_json_write_string(user, stream,
+            json_state, name);
+
+    /* Begin object value with the (always present) mimetype */
+    blob_written |= guac_common_json_write(user, stream, json_state,
+            ":{\"mimetype\":", 13);
+    blob_written |= guac_common_json_write_string(user, stream, json_state,
+            details->mimetype);
+
+    /* Write each detail that is known */
+    if (details->has_size)
+        blob_written |= guac_common_json_write_number_member(user, stream,
+                json_state, "size", details->size);
+
+    if (details->has_mtime)
+        blob_written |= guac_common_json_write_number_member(user, stream,
+                json_state, "mtime", details->mtime);
+
+    if (details->permissions != NULL)
+        blob_written |= guac_common_json_write_string_member(user, stream,
+                json_state, "permissions", details->permissions);
+
+    if (details->owner != NULL)
+        blob_written |= guac_common_json_write_string_member(user, stream,
+                json_state, "owner", details->owner);
+
+    if (details->group != NULL)
+        blob_written |= guac_common_json_write_string_member(user, stream,
+                json_state, "group", details->group);
+
+    blob_written |= guac_common_json_write(user, stream, json_state, "}", 1);
 
     json_state->properties_written++;
 
