@@ -95,9 +95,14 @@ EXTRA_DIST =                         \
     Dockerfile                       \
     LICENSE                          \
     NOTICE                           \
+    README-text-output.md            \
     bin/guacctl                      \
     doc/libguac/Doxyfile.in          \
     doc/libguac-terminal/Doxyfile.in \
     src/guacd-docker                 \
-    util/generate-test-runner.pl
-
+    util/generate-test-runner.pl      \
+    util/manual-tests/README-text-output-e2e.md \
+    util/manual-tests/text-output-e2e.sh \
+    util/manual-tests/text-output-guacd-e2e.py \
+    util/manual-tests/text-output-k8s-exec-mock.py \
+    util/manual-tests/text-output-tunnel-smoke.py
