@@ -30,15 +30,24 @@
  * console stream so any client (browser panel, native TUI) can render it
  * natively. The in-terminal Ctrl+] menu remains as a portable fallback.
  *
- * Messages are newline-delimited JSON objects. Inbound (client -> server):
+ * Inbound (client -> server) messages are JSON objects, each terminated by a
+ * newline, written to the client-opened pipe stream. A single inbound stream
+ * may carry any number of commands:
  *
  *     {"id":"<opaque>","type":"command","command":"power-cycle"}
  *
- * Outbound (server -> client):
+ * Outbound (server -> client) messages are sent one JSON object per pipe
+ * stream, without a trailing newline; each outbound stream is ended right
+ * after its single message:
  *
- *     {"type":"state","power":"on","identify":false,"health":"sol-connected"}
+ *     {"type":"state","power":"on","health":"sol-connected"}
+ *     {"type":"state","health":"sol-disconnected"}
  *     {"id":"<opaque>","type":"result","ok":true,"message":"..."}
- *     {"type":"sel","total":66,"text":"..."}
+ *     {"type":"sel","text":"..."}
+ *     {"type":"sel","error":"..."}
+ *
+ * A "state" message omits "power" when the power state was not queried, in
+ * which case the client should keep its last-known value.
  */
 #define GUAC_IPMI_CONTROL_PIPE_NAME "ipmi-control"
 

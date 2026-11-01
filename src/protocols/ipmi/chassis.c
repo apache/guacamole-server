@@ -25,26 +25,10 @@
 
 #include <freeipmi/freeipmi.h>
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-
-/**
- * The IPMI session timeout, in milliseconds, used for the short-lived
- * out-of-band sessions opened to issue chassis commands. Chassis commands are
- * simple request/response operations, so a bounded timeout (rather than the
- * library default) is used to limit how long a chassis command can stall when
- * the BMC is slow or unreachable. This matters because chassis commands
- * triggered from the in-terminal control menu run synchronously within the
- * user input handler.
- */
-#define GUAC_IPMI_CHASSIS_SESSION_TIMEOUT 8000
-
-/**
- * The IPMI packet retransmission timeout, in milliseconds, used for chassis
- * command sessions.
- */
-#define GUAC_IPMI_CHASSIS_RETRANSMISSION_TIMEOUT 1000
 
 /**
  * The maximum number of System Event Log entries retained by the viewer (the
@@ -78,56 +62,76 @@ typedef struct guac_ipmi_sel_state {
 
 /**
  * Maps a guac_ipmi_privilege_level to the corresponding libfreeipmi
- * IPMI_PRIVILEGE_LEVEL_* constant.
+ * IPMI_PRIVILEGE_LEVEL_* constant. There is deliberately no fallback level: an
+ * unrecognized value is reported as an error rather than being mapped to some
+ * privilege the administrator did not request.
  *
  * @param privilege_level
  *     The privilege level to map.
  *
  * @return
- *     The equivalent IPMI_PRIVILEGE_LEVEL_* constant.
+ *     The equivalent IPMI_PRIVILEGE_LEVEL_* constant, or -1 if the given
+ *     privilege level is not recognized.
  */
-static uint8_t guac_ipmi_map_privilege_level(
+static int guac_ipmi_map_privilege_level(
         guac_ipmi_privilege_level privilege_level) {
 
     switch (privilege_level) {
+
         case GUAC_IPMI_PRIVILEGE_USER:
             return IPMI_PRIVILEGE_LEVEL_USER;
+
         case GUAC_IPMI_PRIVILEGE_OPERATOR:
             return IPMI_PRIVILEGE_LEVEL_OPERATOR;
+
         case GUAC_IPMI_PRIVILEGE_ADMIN:
-        default:
             return IPMI_PRIVILEGE_LEVEL_ADMIN;
+
+        default:
+            return -1;
+
     }
 
 }
 
 /**
  * Maps a guac_ipmi_power_action to the corresponding libfreeipmi
- * IPMI_CHASSIS_CONTROL_* constant.
+ * IPMI_CHASSIS_CONTROL_* constant. There is deliberately no fallback action:
+ * an unrecognized value is reported as an error so that it can never be
+ * translated into a disruptive command such as a power-down.
  *
  * @param action
- *     The power action to map. Must not be GUAC_IPMI_POWER_NONE.
+ *     The power action to map.
  *
  * @return
- *     The equivalent IPMI_CHASSIS_CONTROL_* constant.
+ *     The equivalent IPMI_CHASSIS_CONTROL_* constant, or -1 if the given
+ *     action is GUAC_IPMI_POWER_NONE or is not recognized.
  */
-static uint8_t guac_ipmi_map_power_action(guac_ipmi_power_action action) {
+static int guac_ipmi_map_power_action(guac_ipmi_power_action action) {
 
     switch (action) {
+
         case GUAC_IPMI_POWER_ON:
             return IPMI_CHASSIS_CONTROL_POWER_UP;
+
         case GUAC_IPMI_POWER_OFF:
             return IPMI_CHASSIS_CONTROL_POWER_DOWN;
+
         case GUAC_IPMI_POWER_CYCLE:
             return IPMI_CHASSIS_CONTROL_POWER_CYCLE;
+
         case GUAC_IPMI_POWER_RESET:
             return IPMI_CHASSIS_CONTROL_HARD_RESET;
+
         case GUAC_IPMI_POWER_SOFT_SHUTDOWN:
             return IPMI_CHASSIS_CONTROL_INITIATE_SOFT_SHUTDOWN;
+
         case GUAC_IPMI_POWER_DIAGNOSTIC_INTERRUPT:
             return IPMI_CHASSIS_CONTROL_PULSE_DIAGNOSTIC_INTERRUPT;
+
         default:
-            return IPMI_CHASSIS_CONTROL_POWER_DOWN;
+            return -1;
+
     }
 
 }
@@ -137,24 +141,31 @@ static uint8_t guac_ipmi_map_power_action(guac_ipmi_power_action action) {
  * IPMI_SYSTEM_BOOT_OPTION_BOOT_FLAG_BOOT_DEVICE_FORCE_* constant.
  *
  * @param device
- *     The boot device to map. Must not be GUAC_IPMI_BOOT_NONE.
+ *     The boot device to map.
  *
  * @return
- *     The equivalent boot device constant.
+ *     The equivalent boot device constant, or -1 if the given device is
+ *     GUAC_IPMI_BOOT_NONE or is not recognized.
  */
-static uint8_t guac_ipmi_map_boot_device(guac_ipmi_boot_device device) {
+static int guac_ipmi_map_boot_device(guac_ipmi_boot_device device) {
 
     switch (device) {
+
         case GUAC_IPMI_BOOT_PXE:
             return IPMI_SYSTEM_BOOT_OPTION_BOOT_FLAG_BOOT_DEVICE_FORCE_PXE;
+
         case GUAC_IPMI_BOOT_DISK:
             return IPMI_SYSTEM_BOOT_OPTION_BOOT_FLAG_BOOT_DEVICE_FORCE_HARD_DRIVE;
+
         case GUAC_IPMI_BOOT_CDROM:
             return IPMI_SYSTEM_BOOT_OPTION_BOOT_FLAG_BOOT_DEVICE_FORCE_CD_DVD;
+
         case GUAC_IPMI_BOOT_BIOS:
             return IPMI_SYSTEM_BOOT_OPTION_BOOT_FLAG_BOOT_DEVICE_FORCE_BIOS_SETUP;
+
         default:
-            return IPMI_SYSTEM_BOOT_OPTION_BOOT_FLAG_BOOT_DEVICE_NO_OVERRIDE;
+            return -1;
+
     }
 
 }
@@ -176,10 +187,23 @@ static ipmi_ctx_t guac_ipmi_chassis_connect(guac_client* client) {
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
     guac_ipmi_settings* settings = ipmi_client->settings;
 
+    /* Refuse to open a session at an unrecognized privilege level rather than
+     * guessing one */
+    int privilege_level =
+        guac_ipmi_map_privilege_level(settings->privilege_level);
+    if (privilege_level < 0) {
+        guac_client_log(client, GUAC_LOG_ERROR, "Invalid privilege level (%i) "
+                "for chassis command.", (int) settings->privilege_level);
+        return NULL;
+    }
+
+    /* ipmi_ctx_create() fails only if memory for the context cannot be
+     * allocated, in which case errno describes the failure (no context exists
+     * from which ipmi_ctx_errormsg() could report anything further) */
     ipmi_ctx_t ctx = ipmi_ctx_create();
     if (ctx == NULL) {
-        guac_client_log(client, GUAC_LOG_ERROR,
-                "Unable to allocate IPMI context for chassis command.");
+        guac_client_log(client, GUAC_LOG_ERROR, "Unable to allocate IPMI "
+                "context for chassis command: %s", strerror(errno));
         return NULL;
     }
 
@@ -188,17 +212,17 @@ static ipmi_ctx_t guac_ipmi_chassis_connect(guac_client* client) {
     const unsigned char* k_g = (const unsigned char*) settings->k_g;
     unsigned int k_g_len = settings->k_g_length;
 
-    /* Open an IPMI 2.0 (RMCP+) out-of-band session. Session and retransmission
-     * timeouts of 0 request the library defaults. */
+    /* Open an IPMI 2.0 (RMCP+) out-of-band session using the configured
+     * (always positive) chassis session and retransmission timeouts */
     if (ipmi_ctx_open_outofband_2_0(ctx,
                 settings->hostname,
                 settings->username,
                 settings->password,
                 k_g, k_g_len,
-                guac_ipmi_map_privilege_level(settings->privilege_level),
+                (uint8_t) privilege_level,
                 (uint8_t) settings->cipher_suite,
-                GUAC_IPMI_CHASSIS_SESSION_TIMEOUT,
-                GUAC_IPMI_CHASSIS_RETRANSMISSION_TIMEOUT,
+                (unsigned int) settings->chassis_timeout,
+                (unsigned int) settings->chassis_retransmission_timeout,
                 settings->chassis_workaround_flags,
                 0 /* flags */) < 0) {
         guac_client_log(client, GUAC_LOG_ERROR,
@@ -230,6 +254,14 @@ int guac_ipmi_chassis_power(guac_client* client,
     if (action == GUAC_IPMI_POWER_NONE)
         return 0;
 
+    /* Reject anything unrecognized before a session is even opened */
+    int command = guac_ipmi_map_power_action(action);
+    if (command < 0) {
+        guac_client_log(client, GUAC_LOG_ERROR, "Refusing to perform invalid "
+                "chassis power action (%i).", (int) action);
+        return 1;
+    }
+
     ipmi_ctx_t ctx = guac_ipmi_chassis_connect(client);
     if (ctx == NULL)
         return 1;
@@ -239,7 +271,7 @@ int guac_ipmi_chassis_power(guac_client* client,
     if (obj_cmd_rs != NULL) {
 
         if (ipmi_cmd_chassis_control(ctx,
-                    guac_ipmi_map_power_action(action), obj_cmd_rs) < 0)
+                    (uint8_t) command, obj_cmd_rs) < 0)
             guac_client_log(client, GUAC_LOG_ERROR,
                     "Chassis control command failed: %s",
                     ipmi_ctx_errormsg(ctx));
@@ -260,6 +292,14 @@ int guac_ipmi_chassis_set_boot_device(guac_client* client,
     /* A request for no override always succeeds */
     if (device == GUAC_IPMI_BOOT_NONE)
         return 0;
+
+    /* Reject anything unrecognized before a session is even opened */
+    int boot_device = guac_ipmi_map_boot_device(device);
+    if (boot_device < 0) {
+        guac_client_log(client, GUAC_LOG_ERROR, "Refusing to apply invalid "
+                "boot device override (%i).", (int) device);
+        return 1;
+    }
 
     ipmi_ctx_t ctx = guac_ipmi_chassis_connect(client);
     if (ctx == NULL)
@@ -282,7 +322,7 @@ int guac_ipmi_chassis_set_boot_device(guac_client* client,
                     IPMI_SYSTEM_BOOT_OPTION_BOOT_FLAG_VALID,
                     0 /* lock out reset button */,
                     0 /* screen blank */,
-                    guac_ipmi_map_boot_device(device),
+                    (uint8_t) boot_device,
                     0 /* lock keyboard */,
                     0 /* CMOS clear */,
                     IPMI_SYSTEM_BOOT_OPTION_BOOT_FLAG_CONSOLE_REDIRECTION_DEFAULT,

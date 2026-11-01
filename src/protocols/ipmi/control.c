@@ -76,14 +76,36 @@ void guac_ipmi_control_json_escape(char* dst, int dstlen,
     for (int i = 0; src[i] != '\0' && j < dstlen - 2; i++) {
         char c = src[i];
         switch (c) {
-            case '"':  case '\\': dst[j++] = '\\'; dst[j++] = c;   break;
-            case '\n': dst[j++] = '\\'; dst[j++] = 'n';            break;
-            case '\r': dst[j++] = '\\'; dst[j++] = 'r';            break;
-            case '\t': dst[j++] = '\\'; dst[j++] = 't';            break;
+
+            /* Quotes and backslashes are escaped as-is */
+            case '"':
+            case '\\':
+                dst[j++] = '\\';
+                dst[j++] = c;
+                break;
+
+            /* Common whitespace control characters use their short escapes */
+            case '\n':
+                dst[j++] = '\\';
+                dst[j++] = 'n';
+                break;
+
+            case '\r':
+                dst[j++] = '\\';
+                dst[j++] = 'r';
+                break;
+
+            case '\t':
+                dst[j++] = '\\';
+                dst[j++] = 't';
+                break;
+
+            /* Drop other control characters; pass everything else */
             default:
-                /* Drop other control characters; pass everything else */
                 if ((unsigned char) c >= 0x20)
                     dst[j++] = c;
+                break;
+
         }
     }
     dst[j] = '\0';
@@ -155,8 +177,9 @@ int guac_ipmi_control_json_get(const char* json, const char* key,
 }
 
 /**
- * Sends one newline-delimited JSON message to the given user on a fresh
- * outbound "ipmi-control" pipe stream.
+ * Sends one JSON message to the given user on a fresh outbound
+ * "ipmi-control" pipe stream. Each outbound stream carries exactly one message
+ * and is ended immediately afterward.
  *
  * @param user
  *     The user to which the message should be sent.

@@ -51,6 +51,31 @@
 #define GUAC_IPMI_DEFAULT_SOL_PAYLOAD_INSTANCE 1
 
 /**
+ * The default privilege level requested when none is specified. OPERATOR is
+ * the level the IPMI specification requires for chassis control (power, boot
+ * options, identify), while USER is commonly refused SOL activation ("privilege
+ * level insufficient"). The privilege required for the SOL payload is
+ * configurable on the BMC, so ADMIN must be requested explicitly where a BMC
+ * demands it.
+ */
+#define GUAC_IPMI_DEFAULT_PRIVILEGE_LEVEL GUAC_IPMI_PRIVILEGE_OPERATOR
+
+/**
+ * The default IPMI session timeout, in milliseconds, used for the short-lived
+ * out-of-band sessions opened to issue chassis commands. Chassis commands are
+ * simple request/response operations, so a bounded timeout (rather than the
+ * library default) limits how long a command can stall when the BMC is slow
+ * or unreachable.
+ */
+#define GUAC_IPMI_DEFAULT_CHASSIS_TIMEOUT 8000
+
+/**
+ * The default IPMI packet retransmission timeout, in milliseconds, used for
+ * chassis command sessions. Must be less than the chassis session timeout.
+ */
+#define GUAC_IPMI_DEFAULT_CHASSIS_RETRANSMISSION_TIMEOUT 1000
+
+/**
  * The filename to use for the typescript, if not specified.
  */
 #define GUAC_IPMI_DEFAULT_TYPESCRIPT_NAME "typescript"
@@ -242,6 +267,20 @@ typedef struct guac_ipmi_settings {
      * libipmiconsole default.
      */
     int keepalive_interval;
+
+    /**
+     * The IPMI session timeout, in milliseconds, used for the short-lived
+     * sessions opened to issue chassis commands. Always positive and greater
+     * than chassis_retransmission_timeout.
+     */
+    int chassis_timeout;
+
+    /**
+     * The IPMI packet retransmission timeout, in milliseconds, used for
+     * chassis command sessions. Always positive and less than
+     * chassis_timeout.
+     */
+    int chassis_retransmission_timeout;
 
     /**
      * The username to authenticate with, if any. NULL if unspecified (the BMC

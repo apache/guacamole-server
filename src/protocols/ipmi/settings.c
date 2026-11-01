@@ -71,6 +71,8 @@ const char* GUAC_IPMI_CLIENT_ARGS[] = {
     "disable-paste",
     "boot-device-persistent",
     "keepalive-interval",
+    "chassis-timeout",
+    "chassis-retransmission-timeout",
     NULL
 };
 
@@ -103,7 +105,8 @@ enum IPMI_ARGS_IDX {
 
     /**
      * The privilege level to authenticate with ("user", "operator", or
-     * "admin"). Optional; defaults to "admin".
+     * "admin"). Optional; defaults to "operator". An unrecognized value is
+     * rejected.
      */
     IDX_PRIVILEGE_LEVEL,
 
@@ -277,6 +280,20 @@ enum IPMI_ARGS_IDX {
      * uses the libipmiconsole default. Optional.
      */
     IDX_KEEPALIVE_INTERVAL,
+
+    /**
+     * The IPMI session timeout, in milliseconds, for the short-lived sessions
+     * used to issue chassis commands. Optional; defaults to
+     * GUAC_IPMI_DEFAULT_CHASSIS_TIMEOUT.
+     */
+    IDX_CHASSIS_TIMEOUT,
+
+    /**
+     * The IPMI packet retransmission timeout, in milliseconds, for chassis
+     * command sessions. Must be less than the chassis session timeout.
+     * Optional; defaults to GUAC_IPMI_DEFAULT_CHASSIS_RETRANSMISSION_TIMEOUT.
+     */
+    IDX_CHASSIS_RETRANSMISSION_TIMEOUT,
 
     IPMI_ARGS_COUNT
 };
@@ -762,6 +779,46 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_IPMI_CLIENT_ARGS, argv,
                 IDX_KEEPALIVE_INTERVAL, 0);
 
+    /* Read chassis session timeouts, falling back to the defaults for any
+     * non-positive value, and for both if the retransmission timeout is not
+     * less than the session timeout (which libfreeipmi rejects) */
+    settings->chassis_timeout =
+        guac_user_parse_args_int(user, GUAC_IPMI_CLIENT_ARGS, argv,
+                IDX_CHASSIS_TIMEOUT, GUAC_IPMI_DEFAULT_CHASSIS_TIMEOUT);
+
+    if (settings->chassis_timeout <= 0) {
+        guac_user_log(user, GUAC_LOG_WARNING, "Chassis timeout must be "
+                "positive; using the default of %i ms.",
+                GUAC_IPMI_DEFAULT_CHASSIS_TIMEOUT);
+        settings->chassis_timeout = GUAC_IPMI_DEFAULT_CHASSIS_TIMEOUT;
+    }
+
+    settings->chassis_retransmission_timeout =
+        guac_user_parse_args_int(user, GUAC_IPMI_CLIENT_ARGS, argv,
+                IDX_CHASSIS_RETRANSMISSION_TIMEOUT,
+                GUAC_IPMI_DEFAULT_CHASSIS_RETRANSMISSION_TIMEOUT);
+
+    if (settings->chassis_retransmission_timeout <= 0) {
+        guac_user_log(user, GUAC_LOG_WARNING, "Chassis retransmission timeout "
+                "must be positive; using the default of %i ms.",
+                GUAC_IPMI_DEFAULT_CHASSIS_RETRANSMISSION_TIMEOUT);
+        settings->chassis_retransmission_timeout =
+            GUAC_IPMI_DEFAULT_CHASSIS_RETRANSMISSION_TIMEOUT;
+    }
+
+    if (settings->chassis_retransmission_timeout >= settings->chassis_timeout) {
+        guac_user_log(user, GUAC_LOG_WARNING, "Chassis retransmission timeout "
+                "(%i ms) must be less than the chassis timeout (%i ms); using "
+                "the defaults of %i ms and %i ms.",
+                settings->chassis_retransmission_timeout,
+                settings->chassis_timeout,
+                GUAC_IPMI_DEFAULT_CHASSIS_RETRANSMISSION_TIMEOUT,
+                GUAC_IPMI_DEFAULT_CHASSIS_TIMEOUT);
+        settings->chassis_timeout = GUAC_IPMI_DEFAULT_CHASSIS_TIMEOUT;
+        settings->chassis_retransmission_timeout =
+            GUAC_IPMI_DEFAULT_CHASSIS_RETRANSMISSION_TIMEOUT;
+    }
+
     /* Read credentials */
     settings->username =
         guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
@@ -779,18 +836,33 @@ guac_ipmi_settings* guac_ipmi_parse_args(guac_user* user,
     settings->k_g = guac_ipmi_parse_k_g(user, raw_k_g, &settings->k_g_length);
     guac_mem_free(raw_k_g);
 
-    /* Read privilege level, applying the default (admin) and warning here so
-     * the parser itself stays a pure string-to-enum converter */
+    /* Read privilege level, applying the default here so the parser itself
+     * stays a pure string-to-enum converter. An unrecognized value is
+     * rejected outright rather than replaced: silently substituting a level
+     * the administrator did not ask for could grant more privilege than
+     * intended. */
     char* priv_str =
         guac_user_parse_args_string(user, GUAC_IPMI_CLIENT_ARGS, argv,
                 IDX_PRIVILEGE_LEVEL, NULL);
-    guac_ipmi_privilege_level priv = guac_ipmi_parse_privilege_level(priv_str);
-    if (priv == GUAC_IPMI_PRIVILEGE_INVALID) {
-        if (priv_str != NULL && *priv_str != '\0')
-            guac_user_log(user, GUAC_LOG_WARNING, "Unrecognized privilege level "
-                    "\"%s\"; defaulting to \"admin\".", priv_str);
-        priv = GUAC_IPMI_PRIVILEGE_ADMIN;
+
+    guac_ipmi_privilege_level priv;
+    if (priv_str == NULL || *priv_str == '\0')
+        priv = GUAC_IPMI_DEFAULT_PRIVILEGE_LEVEL;
+
+    else {
+
+        priv = guac_ipmi_parse_privilege_level(priv_str);
+        if (priv == GUAC_IPMI_PRIVILEGE_INVALID) {
+            guac_user_log(user, GUAC_LOG_ERROR, "Unrecognized privilege level "
+                    "\"%s\"; expected \"user\", \"operator\", or "
+                    "\"admin\".", priv_str);
+            guac_mem_free(priv_str);
+            guac_ipmi_settings_free(settings);
+            return NULL;
+        }
+
     }
+
     settings->privilege_level = priv;
     guac_mem_free(priv_str);
 

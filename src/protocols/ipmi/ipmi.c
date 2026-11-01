@@ -169,19 +169,28 @@ static void* __guac_ipmi_input_thread(void* data) {
  *     The privilege level to map.
  *
  * @return
- *     The equivalent IPMICONSOLE_PRIVILEGE_* constant.
+ *     The equivalent IPMICONSOLE_PRIVILEGE_* constant, or -1 if the given
+ *     privilege level is not recognized. There is deliberately no fallback
+ *     level, so that an unrecognized value can never be mapped to a privilege
+ *     the administrator did not request.
  */
 static int guac_ipmi_map_privilege_level_ipmiconsole(
         guac_ipmi_privilege_level privilege_level) {
 
     switch (privilege_level) {
+
         case GUAC_IPMI_PRIVILEGE_USER:
             return IPMICONSOLE_PRIVILEGE_USER;
+
         case GUAC_IPMI_PRIVILEGE_OPERATOR:
             return IPMICONSOLE_PRIVILEGE_OPERATOR;
+
         case GUAC_IPMI_PRIVILEGE_ADMIN:
-        default:
             return IPMICONSOLE_PRIVILEGE_ADMIN;
+
+        default:
+            return -1;
+
     }
 
 }
@@ -203,6 +212,16 @@ static ipmiconsole_ctx_t __guac_ipmi_create_session(guac_client* client) {
     guac_ipmi_client* ipmi_client = (guac_ipmi_client*) client->data;
     guac_ipmi_settings* settings = ipmi_client->settings;
 
+    /* Refuse to establish a session at an unrecognized privilege level rather
+     * than guessing one */
+    int privilege_level =
+        guac_ipmi_map_privilege_level_ipmiconsole(settings->privilege_level);
+    if (privilege_level < 0) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Invalid IPMI privilege level.");
+        return NULL;
+    }
+
     /* IPMI authentication and protocol configuration. Values of < 0 (or NULL)
      * request the libipmiconsole defaults. */
     struct ipmiconsole_ipmi_config ipmi_config = {
@@ -210,8 +229,7 @@ static ipmiconsole_ctx_t __guac_ipmi_create_session(guac_client* client) {
         .password         = settings->password,
         .k_g              = (unsigned char*) settings->k_g,
         .k_g_len          = settings->k_g_length,
-        .privilege_level  =
-            guac_ipmi_map_privilege_level_ipmiconsole(settings->privilege_level),
+        .privilege_level  = privilege_level,
         .cipher_suite_id  = settings->cipher_suite,
         .workaround_flags = settings->sol_workaround_flags
     };
