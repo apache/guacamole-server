@@ -38,6 +38,10 @@
  *     The name of the codec to use for the video encoding, as defined by
  *     ffmpeg / libavcodec.
  *
+ * @param format
+ *     The container format name, as defined by ffmpeg / libavformat, or NULL
+ *     to guess from the extension of out_path ("ipod" if out_path is a pipe).
+ *
  * @param width
  *     The width of the desired video, in pixels.
  *
@@ -57,7 +61,7 @@
  *     the video.
  */
 int guacenc_encode(const char* path, const char* out_path, const char* codec,
-        int width, int height, int bitrate, bool force);
+        const char* format, int width, int height, int bitrate, bool force);
 
 #endif
 
