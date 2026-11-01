@@ -33,6 +33,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/recording.h>
+#include <guacamole/thread.h>
 
 #include <pthread.h>
 
@@ -56,7 +57,7 @@ typedef struct guac_ssh_client {
     /**
      * The SSH client thread.
      */
-    pthread_t client_thread;
+    guac_thread client_thread;
 
     /**
      * The user and credentials to use for all SSH sessions.

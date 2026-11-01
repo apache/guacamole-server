@@ -28,6 +28,7 @@
 #include "guacamole/rect.h"
 #include "guacamole/rwlock.h"
 #include "guacamole/socket.h"
+#include "guacamole/thread.h"
 #include "guacamole/timestamp.h"
 #include "guacamole/user.h"
 
@@ -148,14 +149,15 @@ guac_display* guac_display_alloc(guac_client* client) {
     }
 
     display->worker_thread_count = cpu_count * GUAC_DISPLAY_CPU_THREAD_FACTOR;
-    display->worker_threads = guac_mem_alloc(display->worker_thread_count, sizeof(pthread_t));
+    display->worker_threads = guac_mem_alloc(display->worker_thread_count, sizeof(guac_thread));
     guac_client_log(client, GUAC_LOG_INFO, "Graphical updates will be encoded "
             "using %i worker thread(s).", display->worker_thread_count);
 
     /* Now that the core of the display has been fully initialized, it's safe
      * to start the worker threads */
     for (int i = 0; i < display->worker_thread_count; i++)
-        pthread_create(&(display->worker_threads[i]), NULL, guac_display_worker_thread, display);
+        guac_thread_create(&display->worker_threads[i],
+                guac_display_worker_thread, display, "disp-wrk-%i", i);
 
     return display;
 
@@ -180,7 +182,7 @@ void guac_display_stop(guac_display* display) {
         /* Wait for all worker threads to terminate (they should nearly immediately
          * terminate following invalidation of the FIFO) */
         for (int i = 0; i < display->worker_thread_count; i++)
-            pthread_join(display->worker_threads[i], NULL);
+            guac_thread_join(&display->worker_threads[i], NULL);
 
         /* All worker threads are now terminated and may be safely cleaned up */
         guac_mem_free(display->worker_threads);

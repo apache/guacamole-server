@@ -27,6 +27,7 @@
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 #include <libwebsockets.h>
 
 #include <langinfo.h>
@@ -154,7 +155,7 @@ int guac_kubernetes_client_free_handler(guac_client* client) {
         (guac_kubernetes_client*) client->data;
 
     /* Wait client thread to terminate */
-    pthread_join(kubernetes_client->client_thread, NULL);
+    guac_thread_join(&kubernetes_client->client_thread, NULL);
 
     /* Free settings */
     if (kubernetes_client->settings != NULL)

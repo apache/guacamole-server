@@ -34,6 +34,7 @@
 #include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 
 /**
  * A pending join handler implementation that will synchronize the connection
@@ -110,7 +111,7 @@ int guac_ssh_client_free_handler(guac_client* client) {
         guac_terminal_stop(ssh_client->term);
 
         /* Wait ssh_client_thread to finish before freeing the terminal */
-        pthread_join(ssh_client->client_thread, NULL);
+        guac_thread_join(&ssh_client->client_thread, NULL);
         guac_terminal_free(ssh_client->term);
     }
 

@@ -74,6 +74,7 @@ test_libguac_SOURCES =               \
     string/strlcpy.c                 \
     string/strljoin.c                \
     string/strnstr.c                 \
+    thread/thread.c                  \
     unicode/charsize.c               \
     unicode/read.c                   \
     unicode/strlen.c                 \

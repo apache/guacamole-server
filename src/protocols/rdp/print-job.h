@@ -22,6 +22,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
+#include <guacamole/thread.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
@@ -139,7 +140,7 @@ typedef struct guac_rdp_print_job {
     /**
      * Thread which transfers data from the printer to the Guacamole client.
      */
-    pthread_t output_thread;
+    guac_thread output_thread;
 
     /**
      * The number of bytes received in the current print job.
