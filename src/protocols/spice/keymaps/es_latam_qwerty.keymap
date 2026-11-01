@@ -29,7 +29,7 @@ map -caps -altgr -shift      0x10..0x19 0x1B ~ "qwertyuiop+"
 map -caps -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjklñ{}"
 map -caps -altgr -shift 0x56 0x2C..0x35      ~ "<zxcvbnm,.-"
 
-map -caps -altgr +shift 0x29 0x02..0x0D      ~ "º!"#$%&/()=?¡"
+map -caps -altgr +shift 0x29 0x02..0x0D      ~ "°!"#$%&/()=?¡"
 map -caps -altgr +shift      0x10..0x19 0x1B ~ "QWERTYUIOP*"
 map -caps -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÑ[]"
 map -caps -altgr +shift 0x56 0x2C..0x35      ~ ">ZXCVBNM;:_"
@@ -39,7 +39,7 @@ map +caps -altgr -shift      0x10..0x19 0x1B ~ "QWERTYUIOP+"
 map +caps -altgr -shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÑ{}"
 map +caps -altgr -shift 0x56 0x2C..0x35      ~ "<ZXCVBNM,.-"
 
-map +caps -altgr +shift 0x29 0x02..0x0D      ~ "º!"#$%&/()=?¡"
+map +caps -altgr +shift 0x29 0x02..0x0D      ~ "°!"#$%&/()=?¡"
 map +caps -altgr +shift      0x10..0x19 0x1B ~ "qwertyuiop*"
 map +caps -altgr +shift      0x1E..0x28 0x2B ~ "asdfghjklñ[]"
 map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">zxcvbnm;:_"
@@ -49,10 +49,8 @@ map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">zxcvbnm;:_"
 #
 
 map +altgr -shift 0x29 0x0C ~ "¬\"
-map +altgr -shift 0x05      ~ "~"
-map +altgr -shift 0x10      ~ "@"
+map +altgr -shift 0x10 0x1B ~ "@~"
 map +altgr -shift 0x12      ~ "€"
-map +altgr -shift 0x28      ~ "^"
 
 #
 # Dead keys
@@ -60,6 +58,6 @@ map +altgr -shift 0x28      ~ "^"
 
 map +altgr -shift 0x2B ~ 0xFE50 # Dead grave
 map -altgr -shift 0x1A ~ 0xFE51 # Dead acute
+map +altgr -shift 0x28 ~ 0xFE52 # Dead circumflex
 map -altgr +shift 0x1A ~ 0xFE57 # Dead diaeresis (umlaut)
-map +altgr -shift 0x1B ~ 0xFE53 # Dead tilde
 
