@@ -269,12 +269,25 @@ static void guac_png_flush_handler(png_structp png) {
  * palette construction and uses compression level 1 with only the SUB filter.
  * Decoded pixels remain lossless, but low-color images may require more bytes
  * than the default palette writer. Uses the existing PNG blob transport.
+ *
+ * @param socket
+ *     The output socket.
+ *
+ * @param stream
+ *     The output stream.
+ *
+ * @param surface
+ *     The opaque RGB24 Cairo surface to encode.
+ *
+ * @return
+ *     Zero on successful encoding, non-zero on error.
  */
 static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
         cairo_surface_t* surface) {
     const int width = cairo_image_surface_get_width(surface);
     const int height = cairo_image_surface_get_height(surface);
     const int stride = cairo_image_surface_get_stride(surface);
+    cairo_surface_flush(surface);
     const unsigned char* pixels = cairo_image_surface_get_data(surface);
     if (width < 1 || height < 1 || !pixels) {
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
@@ -311,7 +324,6 @@ static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
         return -1;
     }
 
-    cairo_surface_flush(surface);
     png_set_write_fn(png, &writer, guac_png_write_handler, guac_png_flush_handler);
     png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB,
             PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
@@ -334,8 +346,8 @@ static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
     return 0;
 }
 
-int guac_png_write(guac_socket* socket, guac_stream* stream,
-        cairo_surface_t* surface) {
+int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
+        cairo_surface_t* surface, int fast_png_encoding) {
 
     png_structp png;
     png_infop png_info;
@@ -353,9 +365,8 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
     int stride = cairo_image_surface_get_stride(surface);
     unsigned char* data = cairo_image_surface_get_data(surface);
 
-    /* Explicit experimental opt-in. All other values retain existing policy. */
-    const char* fast = getenv("GUAC_PNG_FAST_ENCODING");
-    if (format == CAIRO_FORMAT_RGB24 && fast && strcmp(fast, "1") == 0)
+    /* Only an explicit per-connection option can select fast PNG encoding. */
+    if (fast_png_encoding == 1 && format == CAIRO_FORMAT_RGB24 && data != NULL)
         return guac_png_rgb_fast_write(socket, stream, surface);
 
     /* If not RGB24, use Cairo PNG writer */
@@ -476,3 +487,8 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
 
 }
 
+
+int guac_png_write(guac_socket* socket, guac_stream* stream,
+        cairo_surface_t* surface) {
+    return guac_png_write_with_options(socket, stream, surface, 0);
+}

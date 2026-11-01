@@ -311,6 +311,12 @@ struct guac_client {
      */
     void* __plugin_handle;
 
+    /**
+     * Whether this connection explicitly requests the experimental lossless
+     * fast PNG encoder for opaque RGB24 surfaces. Defaults to disabled.
+     */
+    int fast_png_encoding;
+
 };
 
 /**
