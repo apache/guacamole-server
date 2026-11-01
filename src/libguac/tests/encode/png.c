@@ -85,6 +85,28 @@ static ssize_t capture_bytes(guac_socket* socket, const void* data, size_t lengt
 }
 
 /**
+ * Simulates a socket write failure.
+ *
+ * @param socket
+ *     The socket being written to.
+ *
+ * @param data
+ *     Bytes that would have been written.
+ *
+ * @param length
+ *     Number of bytes that would have been written.
+ *
+ * @return
+ *     Always -1 to indicate failure.
+ */
+static ssize_t fail_write(guac_socket* socket, const void* data, size_t length) {
+    (void) socket;
+    (void) data;
+    (void) length;
+    return -1;
+}
+
+/**
  * Reads encoded PNG bytes for Cairo's independent PNG decoder.
  *
  * @param closure
@@ -324,4 +346,29 @@ void test_png__argb_odd_fallback(void) {
  */
 void test_png__argb_padded_fallback(void) {
     roundtrip(CAIRO_FORMAT_ARGB32, 512, 257, 16);
+}
+
+/**
+ * Verifies that both the legacy and fast PNG writers report socket failures.
+ */
+void test_png__socket_write_failure(void) {
+
+    cairo_surface_t* surface = cairo_image_surface_create(
+            CAIRO_FORMAT_RGB24, 1, 1);
+    CU_ASSERT_EQUAL_FATAL(cairo_surface_status(surface), CAIRO_STATUS_SUCCESS);
+
+    for (int fast = 0; fast <= 1; fast++) {
+        guac_socket* socket = guac_socket_alloc();
+        CU_ASSERT_PTR_NOT_NULL_FATAL(socket);
+        socket->write_handler = fail_write;
+
+        guac_stream stream = { .index = 1 };
+        CU_ASSERT_NOT_EQUAL(guac_png_write_with_options(socket, &stream,
+                surface, fast), 0);
+
+        guac_socket_free(socket);
+    }
+
+    cairo_surface_destroy(surface);
+
 }

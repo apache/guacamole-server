@@ -62,6 +62,9 @@ typedef struct guac_png_write_state {
      */
     int buffer_size;
 
+    /** Whether writing PNG data to the underlying socket has failed. */
+    int failed;
+
 } guac_png_write_state;
 
 /**
@@ -71,14 +74,24 @@ typedef struct guac_png_write_state {
  * @param write_state
  *     The write state to flush.
  */
-static void guac_png_flush_data(guac_png_write_state* write_state) {
+static int guac_png_flush_data(guac_png_write_state* write_state) {
+
+    if (write_state->failed)
+        return -1;
+
+    if (write_state->buffer_size == 0)
+        return 0;
 
     /* Send blob */
-    guac_protocol_send_blob(write_state->socket, write_state->stream,
-            write_state->buffer, write_state->buffer_size);
+    if (guac_protocol_send_blob(write_state->socket, write_state->stream,
+                write_state->buffer, write_state->buffer_size)) {
+        write_state->failed = 1;
+        return -1;
+    }
 
     /* Clear buffer */
     write_state->buffer_size = 0;
+    return 0;
 
 }
 
@@ -96,8 +109,11 @@ static void guac_png_flush_data(guac_png_write_state* write_state) {
  * @param length
  *     The size of the given PNG data, in bytes.
  */
-static void guac_png_write_data(guac_png_write_state* write_state,
+static int guac_png_write_data(guac_png_write_state* write_state,
         const void* data, int length) {
+
+    if (write_state->failed)
+        return -1;
 
     const unsigned char* current = data;
 
@@ -109,7 +125,8 @@ static void guac_png_write_data(guac_png_write_state* write_state,
 
         /* If no space remains, flush buffer to make room */
         if (remaining == 0) {
-            guac_png_flush_data(write_state);
+            if (guac_png_flush_data(write_state))
+                return -1;
             remaining = sizeof(write_state->buffer);
         }
 
@@ -128,6 +145,8 @@ static void guac_png_write_data(guac_png_write_state* write_state,
         length -= block_size;
 
     }
+
+    return 0;
 
 }
 
@@ -157,7 +176,8 @@ static cairo_status_t guac_png_cairo_write_handler(void* closure,
     guac_png_write_state* write_state = (guac_png_write_state*) closure;
 
     /* Append data to buffer, writing as necessary */
-    guac_png_write_data(write_state, data, length);
+    if (guac_png_write_data(write_state, data, length))
+        return CAIRO_STATUS_WRITE_ERROR;
 
     return CAIRO_STATUS_SUCCESS;
 
@@ -188,18 +208,18 @@ static int guac_png_cairo_write(guac_socket* socket, guac_stream* stream,
     write_state.socket = socket;
     write_state.stream = stream;
     write_state.buffer_size = 0;
+    write_state.failed = 0;
 
     /* Write surface as PNG */
     if (cairo_surface_write_to_png_stream(surface,
                 guac_png_cairo_write_handler,
-                &write_state) != CAIRO_STATUS_SUCCESS) {
-        guac_error = GUAC_STATUS_INTERNAL_ERROR;
-        guac_error_message = "Cairo PNG backend failed";
+                &write_state) != CAIRO_STATUS_SUCCESS
+            || guac_png_flush_data(&write_state)) {
+        guac_error = GUAC_STATUS_IO_ERROR;
+        guac_error_message = "Could not write PNG data to socket";
         return -1;
     }
 
-    /* Flush remaining PNG data */
-    guac_png_flush_data(&write_state);
     return 0;
 
 }
@@ -233,7 +253,8 @@ static void guac_png_write_handler(png_structp png, png_bytep data,
 #endif
 
     /* Append data to buffer, writing as necessary */
-    guac_png_write_data(write_state, data, length);
+    if (guac_png_write_data(write_state, data, length))
+        png_error(png, "Could not write PNG data to socket");
 
 }
 
@@ -260,7 +281,8 @@ static void guac_png_flush_handler(png_structp png) {
 #endif
 
     /* Flush buffer */
-    guac_png_flush_data(write_state);
+    if (guac_png_flush_data(write_state))
+        png_error(png, "Could not flush PNG data to socket");
 
 }
 
@@ -316,6 +338,7 @@ static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
         return -1;
     }
     guac_png_write_state writer = { .socket = socket, .stream = stream, .buffer_size = 0 };
+    writer.failed = 0;
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &info);
         guac_mem_free(row);
@@ -342,7 +365,11 @@ static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
     png_write_end(png, info);
     png_destroy_write_struct(&png, &info);
     guac_mem_free(row);
-    guac_png_flush_data(&writer);
+    if (guac_png_flush_data(&writer)) {
+        guac_error = GUAC_STATUS_IO_ERROR;
+        guac_error_message = "Could not write PNG data to socket";
+        return -1;
+    }
     return 0;
 }
 
@@ -407,9 +434,24 @@ int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
         return -1;
     }
 
+    /* Allocate rows before setjmp so the pointer remains valid after a PNG
+     * write error and all partially allocated rows can be freed. */
+    png_rows = (png_byte**) guac_mem_alloc(sizeof(png_byte*), height);
+    if (!png_rows) {
+        png_destroy_write_struct(&png, &png_info);
+        guac_palette_free(palette);
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate PNG row pointers";
+        return -1;
+    }
+    memset(png_rows, 0, sizeof(png_byte*) * height);
+
     /* Set error handler */
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &png_info);
+        for (int i=0; i<height; i++)
+            guac_mem_free(png_rows[i]);
+        guac_mem_free(png_rows);
         guac_palette_free(palette);
         guac_error = GUAC_STATUS_IO_ERROR;
         guac_error_message = "libpng output error";
@@ -420,6 +462,7 @@ int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
     write_state.socket = socket;
     write_state.stream = stream;
     write_state.buffer_size = 0;
+    write_state.failed = 0;
 
     /* Set up writer */
     png_set_write_fn(png, &write_state,
@@ -427,11 +470,20 @@ int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
             guac_png_flush_handler);
 
     /* Copy data from surface into PNG data */
-    png_rows = (png_byte**) guac_mem_alloc(sizeof(png_byte*), height);
     for (y=0; y<height; y++) {
 
         /* Allocate new PNG row */
         png_byte* row = (png_byte*) guac_mem_alloc(sizeof(png_byte), width);
+        if (!row) {
+            for (int i=0; i<y; i++)
+                guac_mem_free(png_rows[i]);
+            guac_mem_free(png_rows);
+            png_destroy_write_struct(&png, &png_info);
+            guac_palette_free(palette);
+            guac_error = GUAC_STATUS_NO_MEMORY;
+            guac_error_message = "Could not allocate PNG row";
+            return -1;
+        }
         png_rows[y] = row;
 
         /* Copy data from surface into current row */
@@ -482,7 +534,11 @@ int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
     guac_mem_free(png_rows);
 
     /* Ensure all data is written */
-    guac_png_flush_data(&write_state);
+    if (guac_png_flush_data(&write_state)) {
+        guac_error = GUAC_STATUS_IO_ERROR;
+        guac_error_message = "Could not write PNG data to socket";
+        return -1;
+    }
     return 0;
 
 }
