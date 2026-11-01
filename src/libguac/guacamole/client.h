@@ -353,6 +353,12 @@ struct guac_client {
      */
     guac_client_info_handler* info_handler;
 
+    /**
+     * Whether this connection explicitly requests the experimental lossless
+     * fast PNG encoder for opaque RGB24 surfaces. Defaults to disabled.
+     */
+    int fast_png_encoding;
+
 };
 
 /**
