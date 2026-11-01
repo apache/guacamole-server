@@ -66,6 +66,9 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
         /* Store owner's settings at client level */
         rdp_client->settings = settings;
 
+        /* Only the owning user's setting controls the shared PNG encoder. */
+        user->client->fast_png_encoding = settings->fast_png_encoding;
+
         /* Init clipboard */
         rdp_client->clipboard =
             guac_rdp_clipboard_alloc(user->client, settings->clipboard_buffer_size);

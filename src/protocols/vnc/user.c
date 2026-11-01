@@ -62,6 +62,9 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
         /* Store owner's settings at client level */
         vnc_client->settings = settings;
 
+        /* Only the owning user's setting controls the shared PNG encoder. */
+        user->client->fast_png_encoding = settings->fast_png_encoding;
+
         /* Init clipboard. */
         vnc_client->clipboard =
             guac_common_clipboard_alloc(settings->clipboard_buffer_size);
