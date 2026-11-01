@@ -129,11 +129,13 @@ static void encode_surface(cairo_surface_t* surface, int option,
     socket->data = &protocol;
     socket->write_handler = capture_bytes;
     guac_stream stream = { .index = 7 };
-    if (option == -1)
+    if (option == -1) {
         CU_ASSERT_EQUAL(guac_png_write(socket, &stream, surface), 0);
-    else
+    }
+    else {
         CU_ASSERT_EQUAL(guac_png_write_with_options(socket, &stream,
                 surface, option), 0);
+    }
     CU_ASSERT_EQUAL(guac_socket_flush(socket), 0);
     guac_socket_free(socket);
 
