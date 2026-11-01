@@ -548,7 +548,8 @@ void guacd_proc_free(guacd_proc* proc) {
 
 }
 
-guacd_proc* guacd_create_proc(const char* protocol, int exe_fd) {
+guacd_proc* guacd_create_proc(const char* protocol, int exe_fd,
+        int max_display_worker_threads) {
 
     int sockets[2];
 
@@ -692,6 +693,7 @@ guacd_proc* guacd_create_proc(const char* protocol, int exe_fd) {
 
         guacd_proc_config config = {
             .log_level = guacd_log_level,
+            .max_display_worker_threads = max_display_worker_threads,
             .parent_pid = getpid(),
             .startup_deadline = startup_deadline
         };

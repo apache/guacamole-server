@@ -284,12 +284,16 @@ static int guacd_add_user(int proc_socket, guac_parser* parser, guac_socket* soc
  *     A descriptor pointing to the guacd executable that should be executed to
  *     handle the new connection.
  *
+ * @param max_display_worker_threads
+ *     The maximum number of display worker threads for each new connection,
+ *     or zero if limited only by the number of available processors.
+ *
  * @return
  *     Zero if the connection was successfully routed, non-zero if routing has
  *     failed.
  */
 static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket,
-        int exe_fd) {
+        int exe_fd, int max_display_worker_threads) {
 
     guac_parser* parser = guac_parser_alloc();
 
@@ -360,7 +364,7 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket,
                 identifier);
 
         /* Create new process */
-        proc = guacd_create_proc(identifier, exe_fd);
+        proc = guacd_create_proc(identifier, exe_fd, max_display_worker_threads);
         proc_socket = (proc != NULL) ? proc->fd_socket : -1;
         new_process = 1;
 
@@ -478,7 +482,8 @@ void* guacd_connection_thread(void* data) {
     }
 
     /* Route connection according to Guacamole, creating a new process if needed */
-    if (guacd_route_connection(map, socket, exe_fd))
+    if (guacd_route_connection(map, socket, exe_fd,
+                params->max_display_worker_threads))
         guac_socket_free(socket);
 
     guac_mem_free(params);
