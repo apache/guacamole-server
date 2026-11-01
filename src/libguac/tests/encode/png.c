@@ -38,6 +38,21 @@ typedef struct test_png_buffer {
     size_t offset;
 } test_png_buffer;
 
+/**
+ * Appends test data to an in-memory byte buffer.
+ *
+ * @param buffer
+ *     Destination buffer.
+ *
+ * @param data
+ *     Bytes to append.
+ *
+ * @param length
+ *     Number of bytes to append.
+ *
+ * @return
+ *     Zero on success, -1 on allocation failure.
+ */
 static int append_bytes(test_png_buffer* buffer, const void* data, size_t length) {
     if (!length)
         return 0;
@@ -50,10 +65,40 @@ static int append_bytes(test_png_buffer* buffer, const void* data, size_t length
     return 0;
 }
 
+/**
+ * Captures protocol output for PNG tests.
+ *
+ * @param socket
+ *     The socket with the capture buffer in its data pointer.
+ *
+ * @param data
+ *     Bytes being written.
+ *
+ * @param length
+ *     Number of bytes being written.
+ *
+ * @return
+ *     Number of bytes written, or -1 on failure.
+ */
 static ssize_t capture_bytes(guac_socket* socket, const void* data, size_t length) {
     return append_bytes(socket->data, data, length) ? -1 : (ssize_t) length;
 }
 
+/**
+ * Reads encoded PNG bytes for Cairo's independent PNG decoder.
+ *
+ * @param closure
+ *     Test buffer containing encoded PNG bytes.
+ *
+ * @param data
+ *     Destination byte array.
+ *
+ * @param length
+ *     Number of bytes requested.
+ *
+ * @return
+ *     CAIRO_STATUS_SUCCESS or CAIRO_STATUS_READ_ERROR.
+ */
 static cairo_status_t read_png_bytes(void* closure, unsigned char* data,
         unsigned int length) {
     test_png_buffer* buffer = closure;
@@ -64,15 +109,31 @@ static cairo_status_t read_png_bytes(void* closure, unsigned char* data,
     return CAIRO_STATUS_SUCCESS;
 }
 
-/** Encode through the production writer, socket, blob protocol and parser. */
-static void encode_surface(cairo_surface_t* surface, test_png_buffer* png) {
+/**
+ * Encodes through production socket, blob protocol, and PNG writer.
+ *
+ * @param surface
+ *     The image surface to encode.
+ *
+ * @param option
+ *     -1 to use the legacy API, otherwise the encoder selection option.
+ *
+ * @param png
+ *     Receives the reassembled PNG.
+ */
+static void encode_surface(cairo_surface_t* surface, int option,
+        test_png_buffer* png) {
     test_png_buffer protocol = {0};
     guac_socket* socket = guac_socket_alloc();
     CU_ASSERT_PTR_NOT_NULL_FATAL(socket);
     socket->data = &protocol;
     socket->write_handler = capture_bytes;
     guac_stream stream = { .index = 7 };
-    CU_ASSERT_EQUAL(guac_png_write(socket, &stream, surface), 0);
+    if (option == -1)
+        CU_ASSERT_EQUAL(guac_png_write(socket, &stream, surface), 0);
+    else
+        CU_ASSERT_EQUAL(guac_png_write_with_options(socket, &stream,
+                surface, option), 0);
     CU_ASSERT_EQUAL(guac_socket_flush(socket), 0);
     guac_socket_free(socket);
 
@@ -110,12 +171,22 @@ static void encode_surface(cairo_surface_t* surface, test_png_buffer* png) {
 }
 
 /**
- * Generate initialized Cairo pixels, encode all option values, decode the PNG
- * and compare every pixel. Extra row padding is initialized and checked too.
+ * Checks the explicit PNG option and the legacy default using pixel round-trips
+ * and source padding comparisons for a given Cairo surface configuration.
+ *
+ * @param format
+ *     Cairo pixel format to test.
+ *
+ * @param width
+ *     Surface width.
+ *
+ * @param height
+ *     Surface height.
+ *
+ * @param padding
+ *     Extra row stride in bytes.
  */
 static void roundtrip(cairo_format_t format, int width, int height, int padding) {
-    const char* old = getenv("GUAC_PNG_FAST_ENCODING");
-    char* saved = old ? strdup(old) : NULL;
     int stride = cairo_format_stride_for_width(format, width) + padding;
     size_t size = (size_t) stride * height;
     unsigned char* pixels = malloc(size);
@@ -145,18 +216,12 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
     CU_ASSERT_EQUAL_FATAL(cairo_surface_status(surface), CAIRO_STATUS_SUCCESS);
     cairo_surface_mark_dirty(surface);
 
-    /* Only exactly "1" may activate the experimental writer. */
-    const char* modes[] = { NULL, "0", "true", "01", " 1", "1" };
+    /* Only exactly option 1 enables the experimental encoder. */
+    const int modes[] = { -1, 0, 2, -2, 1 };
     test_png_buffer baseline = {0};
     for (unsigned int mode = 0; mode < sizeof(modes) / sizeof(modes[0]); mode++) {
-        if (modes[mode]) {
-            CU_ASSERT_EQUAL(setenv("GUAC_PNG_FAST_ENCODING", modes[mode], 1), 0);
-        }
-        else {
-            CU_ASSERT_EQUAL(unsetenv("GUAC_PNG_FAST_ENCODING"), 0);
-        }
         test_png_buffer png = {0};
-        encode_surface(surface, &png);
+        encode_surface(surface, modes[mode], &png);
         CU_ASSERT(png.length >= 33);
         if (png.length < 33) {
             free(png.data);
@@ -164,7 +229,7 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
         }
         CU_ASSERT_EQUAL(memcmp(png.data, "\x89PNG\r\n\x1a\n", 8), 0);
         CU_ASSERT_EQUAL(memcmp(png.data + 12, "IHDR", 4), 0);
-        if (format == CAIRO_FORMAT_RGB24 && mode == 5) {
+        if (format == CAIRO_FORMAT_RGB24 && modes[mode] == 1) {
             CU_ASSERT_EQUAL(png.data[24], 8);
             CU_ASSERT_EQUAL(png.data[25], PNG_COLOR_TYPE_RGB);
         }
@@ -203,7 +268,7 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
             baseline = png;
         else {
             /* Default flags and all ARGB32 writes must preserve exact output. */
-            if (mode != 5 || format == CAIRO_FORMAT_ARGB32) {
+            if (modes[mode] != 1 || format == CAIRO_FORMAT_ARGB32) {
                 CU_ASSERT_EQUAL(png.length, baseline.length);
                 if (png.length == baseline.length)
                     CU_ASSERT_EQUAL(memcmp(png.data, baseline.data, png.length), 0);
@@ -215,34 +280,46 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
     cairo_surface_destroy(surface);
     free(pixels);
     free(original);
-    if (saved) {
-        CU_ASSERT_EQUAL(setenv("GUAC_PNG_FAST_ENCODING", saved, 1), 0);
-        free(saved);
-    }
-    else
-        CU_ASSERT_EQUAL(unsetenv("GUAC_PNG_FAST_ENCODING"), 0);
 }
 
+/**
+ * Verifies PNG round-trip behavior for one-pixel RGB24 surfaces.
+ */
 void test_png__rgb_single_pixel(void) {
     roundtrip(CAIRO_FORMAT_RGB24, 1, 1, 0);
 }
 
+/**
+ * Verifies PNG round-trip behavior for odd RGB24 dimensions.
+ */
 void test_png__rgb_odd_dimensions(void) {
     roundtrip(CAIRO_FORMAT_RGB24, 17, 13, 0);
 }
 
+/**
+ * Verifies PNG round-trip behavior for padded RGB24 row strides.
+ */
 void test_png__rgb_padded_stride(void) {
     roundtrip(CAIRO_FORMAT_RGB24, 512, 257, 12);
 }
 
+/**
+ * Verifies PNG round-trip behavior for large RGB24 images and multi-blob output.
+ */
 void test_png__rgb_large_odd_stride(void) {
     roundtrip(CAIRO_FORMAT_RGB24, 1366, 768, 20);
 }
 
+/**
+ * Verifies PNG round-trip behavior for odd alpha surfaces and the Cairo fallback.
+ */
 void test_png__argb_odd_fallback(void) {
     roundtrip(CAIRO_FORMAT_ARGB32, 17, 13, 8);
 }
 
+/**
+ * Verifies PNG round-trip behavior for padded alpha surfaces and the Cairo fallback.
+ */
 void test_png__argb_padded_fallback(void) {
     roundtrip(CAIRO_FORMAT_ARGB32, 512, 257, 16);
 }
