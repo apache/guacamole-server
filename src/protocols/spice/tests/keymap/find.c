@@ -134,7 +134,8 @@ static void assert_altgr_key(const guac_spice_keymap* keymap, int keysym,
 
 /**
  * Test which verifies the AltGr characters of the Latin American layout that
- * have no other key: "@" (AltGr+Q), "~" (AltGr+4) and the euro sign (AltGr+E).
+ * have no other key: "@" (AltGr+Q), "~" (AltGr+"+"), the euro sign (AltGr+E)
+ * and the dead circumflex (AltGr+"{"), matching the Windows layout (KBDLA).
  */
 void test_keymap__es_latam_altgr(void) {
 
@@ -142,7 +143,14 @@ void test_keymap__es_latam_altgr(void) {
     CU_ASSERT_PTR_NOT_NULL_FATAL(latam);
 
     assert_altgr_key(latam, '@', 0x10);
-    assert_altgr_key(latam, '~', 0x05);
+    assert_altgr_key(latam, '~', 0x1B);
     assert_altgr_key(latam, 0x010020AC, 0x12);
+    assert_altgr_key(latam, 0xFE52, 0x28);
+
+    /* Shift+"|" types the degree sign, not the masculine ordinal */
+    const guac_spice_keysym_desc* degree = find_keysym(latam, 0xB0);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(degree);
+    CU_ASSERT_EQUAL(degree->scancode, 0x29);
+    CU_ASSERT_PTR_NULL(find_keysym(latam, 0xBA));
 
 }
