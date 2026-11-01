@@ -20,7 +20,12 @@
 #include "../input-wheel.h"
 
 #include <CUnit/CUnit.h>
+#include <limits.h>
 
+/**
+ * Verifies that supported signed horizontal and vertical wheel deltas survive
+ * encoding into, and decoding from, the private mouse-mask extension.
+ */
 void test_input_wheel__signed_sub_notch_round_trip(void) {
 
     const int deltas[] = { -127, -1, 0, 1, 127 };
@@ -41,6 +46,10 @@ void test_input_wheel__signed_sub_notch_round_trip(void) {
 
 }
 
+/**
+ * Verifies that extension payloads never set ordinary Guacamole mouse-button
+ * or wheel-event bits in the low five positions of the mouse mask.
+ */
 void test_input_wheel__payload_never_sets_standard_mouse_buttons(void) {
 
     uint32_t mask = guac_rdp_encode_smooth_wheel(-127, 127);
@@ -51,23 +60,71 @@ void test_input_wheel__payload_never_sets_standard_mouse_buttons(void) {
 
 }
 
+/**
+ * Verifies that standard mouse-button and wheel-event masks never trigger
+ * the private wheel-extension path.
+ */
 void test_input_wheel__ordinary_mouse_mask_is_not_extension(void) {
 
-    CU_ASSERT_FALSE(guac_rdp_mouse_mask_is_smooth_wheel(0x1F));
-    CU_ASSERT_FALSE(guac_rdp_mouse_mask_is_smooth_wheel(0));
+    for (uint32_t mask = 0; mask <= UINT32_C(0x1F); mask++)
+        CU_ASSERT_FALSE(guac_rdp_mouse_mask_is_smooth_wheel(mask));
 
 }
 
-void test_input_wheel__rdp_rotation_uses_unsigned_magnitude(void) {
+/**
+ * Verifies that out-of-range deltas are clamped without wrapping across the
+ * nine-bit signed payload, including the minimum and maximum C int values.
+ */
+void test_input_wheel__out_of_range_deltas_are_clamped(void) {
 
-    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_magnitude(-127), 127);
-    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_magnitude(-1), 1);
-    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_magnitude(0), 0);
-    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_magnitude(1), 1);
-    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_magnitude(127), 127);
+    uint32_t mask = guac_rdp_encode_smooth_wheel(INT_MIN, INT_MAX);
 
-    /* Reject out-of-range magnitudes from malformed custom clients. */
-    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_magnitude(-256), 127);
-    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_magnitude(255), 127);
+    CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
+                GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT), -127);
+    CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
+                GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT), 127);
+
+    mask = guac_rdp_encode_smooth_wheel(-128, 128);
+    CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
+                GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT), -127);
+    CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
+                GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT), 127);
+
+}
+
+/**
+ * Verifies that RDP rotation uses the signed nine-bit two's-complement field,
+ * including its 0x100 sign bit, rather than sign-plus-absolute-magnitude.
+ */
+void test_input_wheel__rdp_rotation_uses_signed_nine_bit_encoding(void) {
+
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(-127), UINT16_C(0x181));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(-1), UINT16_C(0x1FF));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(0), UINT16_C(0x000));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(1), UINT16_C(0x001));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(127), UINT16_C(0x07F));
+
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(-128), UINT16_C(0x181));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(255), UINT16_C(0x07F));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(INT_MIN), UINT16_C(0x181));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(INT_MAX), UINT16_C(0x07F));
+
+}
+
+/**
+ * Verifies that every permitted RDP wheel delta can be recovered by sign
+ * extending the low nine rotation bits, as specified for TS_POINTER_EVENT.
+ */
+void test_input_wheel__rdp_rotation_sign_extension_round_trip(void) {
+
+    for (int delta = -127; delta <= 127; delta++) {
+
+        uint16_t rotation = guac_rdp_smooth_wheel_rotation(delta);
+        int decoded = (rotation & UINT16_C(0x100))
+                ? (int) rotation - 0x200 : (int) rotation;
+
+        CU_ASSERT_EQUAL(decoded, delta);
+
+    }
 
 }

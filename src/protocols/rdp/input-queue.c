@@ -38,15 +38,25 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * Builds an RDP pointer-wheel event from a signed sub-notch rotation delta.
+ * RDP uses a signed nine-bit two's-complement rotation field; its sign bit
+ * (PTR_FLAGS_WHEEL_NEGATIVE) is part of that field, not a separate magnitude
+ * encoding.
+ *
+ * @param delta
+ *     The signed wheel rotation delta, clamped to -127 through 127.
+ *
+ * @param horizontal
+ *     Nonzero for a horizontal wheel event, zero for a vertical wheel event.
+ *
+ * @return
+ *     The FreeRDP pointer flags with the wheel axis and encoded rotation.
+ */
 static uint16_t guac_rdp_smooth_wheel_flags(int delta, int horizontal) {
 
     uint16_t flags = horizontal ? PTR_FLAGS_HWHEEL : PTR_FLAGS_WHEEL;
-    if (delta < 0)
-        flags |= PTR_FLAGS_WHEEL_NEGATIVE;
-
-    /* RDP stores direction separately from the unsigned rotation magnitude.
-     * Positive vertical values preserve the legacy downward-scroll direction. */
-    return flags | guac_rdp_smooth_wheel_magnitude(delta);
+    return flags | guac_rdp_smooth_wheel_rotation(delta);
 
 }
 
@@ -80,9 +90,8 @@ static void guac_rdp_handle_mouse_event(guac_rdp_client* rdp_client,
     if (rdp_inst == NULL)
         goto complete;
 
-    /* Smooth wheel input is a stateless Guac mouse-mask extension. Do not
-     * expose its payload bits to normal button tracking, recordings, or
-     * cursor-position notifications. */
+    /* This stateless private wheel extension must not affect standard button
+     * tracking, recordings, or cursor-position notifications. */
     if (guac_rdp_mouse_mask_is_smooth_wheel((uint32_t) mask)) {
 
         int dx = guac_rdp_decode_smooth_wheel_axis(

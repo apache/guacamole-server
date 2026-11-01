@@ -22,41 +22,82 @@
 
 #include <stdint.h>
 
-/* Private Guac mouse-mask extension. Bits 0-4 remain clear, preserving the
- * standard button and wheel mask even when an older server ignores this
- * extension. Each axis is signed 9-bit two's complement. */
+/**
+ * Marker identifying a private mouse-mask extension for two-axis wheel input.
+ * This nonstandard extension requires a matching client implementation.
+ */
 #define GUAC_RDP_MOUSE_SMOOTH_WHEEL_MASK UINT32_C(0x10000000)
+
+/**
+ * Bit offset of the signed nine-bit horizontal wheel delta in the mouse mask.
+ */
 #define GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT 9
+
+/**
+ * Bit offset of the signed nine-bit vertical wheel delta in the mouse mask.
+ */
 #define GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT 19
+
+/**
+ * Bit mask of a nine-bit, two's-complement wheel delta, before shifting it
+ * into its axis-specific location in the mouse mask.
+ */
 #define GUAC_RDP_MOUSE_SMOOTH_WHEEL_AXIS_MASK UINT32_C(0x1FF)
 
-static inline int guac_rdp_mouse_mask_is_smooth_wheel(uint32_t mask) {
-    return (mask & GUAC_RDP_MOUSE_SMOOTH_WHEEL_MASK) != 0;
-}
+/**
+ * Returns whether the given mouse mask contains a private wheel payload.
+ *
+ * @param mask
+ *     The mouse mask to examine.
+ *
+ * @return
+ *     Nonzero if the private extension marker is set, zero otherwise.
+ */
+int guac_rdp_mouse_mask_is_smooth_wheel(uint32_t mask);
 
-static inline int guac_rdp_decode_smooth_wheel_axis(uint32_t mask,
-        unsigned int shift) {
+/**
+ * Decodes one signed axis from a private wheel mouse-mask payload.
+ *
+ * @param mask
+ *     The mouse mask containing the encoded axis.
+ *
+ * @param shift
+ *     The axis bit offset, either GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT or
+ *     GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT.
+ *
+ * @return
+ *     The signed nine-bit delta, in the range -256 through 255.
+ */
+int guac_rdp_decode_smooth_wheel_axis(uint32_t mask, unsigned int shift);
 
-    int value = (mask >> shift) & GUAC_RDP_MOUSE_SMOOTH_WHEEL_AXIS_MASK;
-    return value & 0x100 ? value - 0x200 : value;
+/**
+ * Encodes horizontal and vertical deltas in a private mouse-mask extension.
+ * The low five bits used for ordinary mouse buttons and wheel events are
+ * always clear. Each delta is clamped to -127 through 127 before encoding.
+ *
+ * @param dx
+ *     The horizontal wheel delta.
+ *
+ * @param dy
+ *     The vertical wheel delta.
+ *
+ * @return
+ *     A mouse mask containing the private extension marker and both deltas.
+ */
+uint32_t guac_rdp_encode_smooth_wheel(int dx, int dy);
 
-}
-
-static inline uint32_t guac_rdp_encode_smooth_wheel(int dx, int dy) {
-    return GUAC_RDP_MOUSE_SMOOTH_WHEEL_MASK
-            | (((uint32_t) dx & GUAC_RDP_MOUSE_SMOOTH_WHEEL_AXIS_MASK)
-                    << GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT)
-            | (((uint32_t) dy & GUAC_RDP_MOUSE_SMOOTH_WHEEL_AXIS_MASK)
-                    << GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT);
-}
-
-/* RDP wheel events represent direction separately from their unsigned
- * rotation magnitude. Keep each event within the sub-notch range emitted by
- * the frontend, even if a malformed client sends a larger signed delta. */
-static inline int guac_rdp_smooth_wheel_magnitude(int delta) {
-    if (delta < 0)
-        delta = -delta;
-    return delta > 127 ? 127 : delta;
-}
+/**
+ * Encodes a signed wheel delta for the RDP pointer event rotation field.
+ * Negative values must be represented in nine-bit two's complement, not as
+ * a negative flag combined with an unsigned magnitude. Deltas are clamped to
+ * -127 through 127 to avoid overflowing the sub-notch event range.
+ *
+ * @param delta
+ *     The signed wheel delta.
+ *
+ * @return
+ *     The low nine RDP rotation bits, including the sign bit when negative.
+ */
+uint16_t guac_rdp_smooth_wheel_rotation(int delta);
 
 #endif
