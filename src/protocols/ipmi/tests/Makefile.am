@@ -34,6 +34,7 @@ check_PROGRAMS = test_ipmi
 TESTS = $(check_PROGRAMS)
 
 test_ipmi_SOURCES =        \
+    control/feed.c         \
     control/json_escape.c  \
     control/json_get.c
 

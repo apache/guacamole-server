@@ -41,33 +41,10 @@
 #define GUAC_IPMI_CONTROL_IDENTIFY_INTERVAL 15
 
 /**
- * The maximum size, in bytes, of a single inbound control message (one line of
- * newline-delimited JSON).
- */
-#define GUAC_IPMI_CONTROL_BUFFER_LENGTH 4096
-
-/**
  * The maximum size, in bytes, of the buffer used to render the System Event
  * Log for a control-channel response.
  */
 #define GUAC_IPMI_CONTROL_SEL_LENGTH 8192
-
-/**
- * Per-inbound-stream reassembly state for the control pipe.
- */
-typedef struct guac_ipmi_control_stream {
-
-    /**
-     * Buffer accumulating the current (possibly partial) inbound JSON line.
-     */
-    char buffer[GUAC_IPMI_CONTROL_BUFFER_LENGTH];
-
-    /**
-     * The number of bytes currently held in the buffer.
-     */
-    int length;
-
-} guac_ipmi_control_stream;
 
 void guac_ipmi_control_json_escape(char* dst, int dstlen,
         const char* src) {
@@ -488,6 +465,60 @@ static void guac_ipmi_control_dispatch(guac_user* user, const char* line) {
 
 }
 
+void guac_ipmi_control_feed(guac_ipmi_control_stream* cs, const char* data,
+        int length, guac_ipmi_control_line_handler* handler,
+        void* handler_data) {
+
+    for (int i = 0; i < length; i++) {
+
+        char c = data[i];
+
+        /* A newline completes the current line. A line which overflowed the
+         * buffer was already abandoned, so only its end is noted here. */
+        if (c == '\n') {
+
+            if (!cs->discarding && cs->length > 0) {
+                cs->buffer[cs->length] = '\0';
+                handler(cs->buffer, handler_data);
+            }
+
+            cs->length = 0;
+            cs->discarding = false;
+
+        }
+
+        /* Skip the remainder of an oversized line */
+        else if (cs->discarding)
+            continue;
+
+        else if (cs->length < GUAC_IPMI_CONTROL_BUFFER_LENGTH - 1)
+            cs->buffer[cs->length++] = c;
+
+        /* The line does not fit: drop what was buffered and everything up to
+         * the next newline, so no fragment of it is ever dispatched */
+        else {
+            cs->length = 0;
+            cs->discarding = true;
+        }
+
+    }
+
+}
+
+/**
+ * guac_ipmi_control_line_handler which dispatches a complete inbound control
+ * line on behalf of the user owning the control pipe.
+ *
+ * @param line
+ *     The complete, null-terminated line received.
+ *
+ * @param data
+ *     The guac_user which owns the inbound control pipe.
+ */
+static void guac_ipmi_control_dispatch_line(const char* line, void* data) {
+    guac_ipmi_control_dispatch((guac_user*) data, line);
+}
+
 /**
  * Blob handler for the inbound control pipe: reassembles newline-delimited JSON
  * and dispatches each complete line.
@@ -511,24 +542,10 @@ static int guac_ipmi_control_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
     guac_ipmi_control_stream* cs = (guac_ipmi_control_stream*) stream->data;
-    const char* in = (const char*) data;
 
-    /* Accumulate incoming bytes into the per-stream buffer, dispatching each
-     * complete line as its terminating newline arrives */
-    for (int i = 0; i < length; i++) {
-        char c = in[i];
-        if (c == '\n') {
-            cs->buffer[cs->length] = '\0';
-            if (cs->length > 0)
-                guac_ipmi_control_dispatch(user, cs->buffer);
-            cs->length = 0;
-        }
-        else if (cs->length < GUAC_IPMI_CONTROL_BUFFER_LENGTH - 1)
-            cs->buffer[cs->length++] = c;
-        else
-            /* Oversized line; drop it to resynchronize on the next newline */
-            cs->length = 0;
-    }
+    /* Dispatch each complete line as its terminating newline arrives */
+    guac_ipmi_control_feed(cs, (const char*) data, length,
+            guac_ipmi_control_dispatch_line, user);
 
     guac_protocol_send_ack(user->socket, stream, "OK",
             GUAC_PROTOCOL_STATUS_SUCCESS);

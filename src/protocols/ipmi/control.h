@@ -22,6 +22,8 @@
 
 #include <guacamole/user.h>
 
+#include <stdbool.h>
+
 /**
  * The name of the client-agnostic out-of-band control/status channel. A client
  * opens an inbound pipe stream with this name to send JSON commands, and the
@@ -52,6 +54,49 @@
 #define GUAC_IPMI_CONTROL_PIPE_NAME "ipmi-control"
 
 /**
+ * The maximum size, in bytes, of a single inbound control message (one line of
+ * newline-delimited JSON), including its null terminator. Longer lines are
+ * discarded in their entirety.
+ */
+#define GUAC_IPMI_CONTROL_BUFFER_LENGTH 4096
+
+/**
+ * Per-inbound-stream reassembly state for the control pipe.
+ */
+typedef struct guac_ipmi_control_stream {
+
+    /**
+     * Buffer accumulating the current (possibly partial) inbound JSON line.
+     */
+    char buffer[GUAC_IPMI_CONTROL_BUFFER_LENGTH];
+
+    /**
+     * The number of bytes currently held in the buffer.
+     */
+    int length;
+
+    /**
+     * Whether the current line has overflowed the buffer, in which case all
+     * bytes up to and including the next newline are skipped rather than
+     * buffered.
+     */
+    bool discarding;
+
+} guac_ipmi_control_stream;
+
+/**
+ * Handler invoked by guac_ipmi_control_feed() for each complete inbound line.
+ *
+ * @param line
+ *     The complete, null-terminated line, excluding its newline. The buffer
+ *     is reused once the handler returns.
+ *
+ * @param data
+ *     The arbitrary data passed to guac_ipmi_control_feed().
+ */
+typedef void guac_ipmi_control_line_handler(const char* line, void* data);
+
+/**
  * Pushes the current control-channel state to all currently-connected users of
  * the given client. The chassis power state is not actively queried.
  *
@@ -72,6 +117,35 @@ void guac_ipmi_control_broadcast_state(guac_client* client);
  *     The inbound pipe stream.
  */
 void guac_ipmi_control_open(guac_user* user, guac_stream* stream);
+
+/**
+ * Appends the given bytes to the reassembly state of an inbound control pipe
+ * stream, invoking the given handler for each complete, non-empty line as its
+ * terminating newline arrives. Lines may span any number of calls. A line too
+ * long to fit within GUAC_IPMI_CONTROL_BUFFER_LENGTH is discarded entirely, up
+ * to and including its newline, so that no fragment of it is ever passed to
+ * the handler.
+ *
+ * Exposed (rather than file-static) so the framing can be unit-tested.
+ *
+ * @param cs
+ *     The reassembly state of the inbound stream.
+ *
+ * @param data
+ *     The bytes received.
+ *
+ * @param length
+ *     The number of bytes received.
+ *
+ * @param handler
+ *     The handler to invoke for each complete line.
+ *
+ * @param handler_data
+ *     Arbitrary data to pass to the handler.
+ */
+void guac_ipmi_control_feed(guac_ipmi_control_stream* cs, const char* data,
+        int length, guac_ipmi_control_line_handler* handler,
+        void* handler_data);
 
 /**
  * Escapes the given string into the body of a JSON string (without the
