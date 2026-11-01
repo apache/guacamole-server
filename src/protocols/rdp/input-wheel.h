@@ -71,22 +71,6 @@ int guac_rdp_mouse_mask_is_smooth_wheel(uint32_t mask);
 int guac_rdp_decode_smooth_wheel_axis(uint32_t mask, unsigned int shift);
 
 /**
- * Encodes horizontal and vertical deltas in a private mouse-mask extension.
- * The low five bits used for ordinary mouse buttons and wheel events are
- * always clear. Each delta is clamped to -127 through 127 before encoding.
- *
- * @param dx
- *     The horizontal wheel delta.
- *
- * @param dy
- *     The vertical wheel delta.
- *
- * @return
- *     A mouse mask containing the private extension marker and both deltas.
- */
-uint32_t guac_rdp_encode_smooth_wheel(int dx, int dy);
-
-/**
  * Encodes a signed wheel delta for the RDP pointer event rotation field.
  * Negative values must be represented in nine-bit two's complement, not as
  * a negative flag combined with an unsigned magnitude. Deltas are clamped to

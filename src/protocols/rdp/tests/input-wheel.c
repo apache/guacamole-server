@@ -23,6 +23,29 @@
 #include <limits.h>
 
 /**
+ * Constructs a private wheel payload for decoder tests.
+ *
+ * @param dx
+ *     Signed horizontal wheel delta to encode in nine-bit two's complement.
+ *
+ * @param dy
+ *     Signed vertical wheel delta to encode in nine-bit two's complement.
+ *
+ * @return
+ *     A test mouse mask containing the marker and both axis payloads.
+ */
+static uint32_t test_encode_smooth_wheel(int dx, int dy) {
+
+    uint32_t x = (uint32_t) dx & GUAC_RDP_MOUSE_SMOOTH_WHEEL_AXIS_MASK;
+    uint32_t y = (uint32_t) dy & GUAC_RDP_MOUSE_SMOOTH_WHEEL_AXIS_MASK;
+
+    return GUAC_RDP_MOUSE_SMOOTH_WHEEL_MASK
+            | (x << GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT)
+            | (y << GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT);
+
+}
+
+/**
  * Verifies that supported signed horizontal and vertical wheel deltas survive
  * encoding into, and decoding from, the private mouse-mask extension.
  */
@@ -34,7 +57,7 @@ void test_input_wheel__signed_sub_notch_round_trip(void) {
 
         int dx = deltas[i];
         int dy = deltas[sizeof(deltas) / sizeof(deltas[0]) - i - 1];
-        uint32_t mask = guac_rdp_encode_smooth_wheel(dx, dy);
+        uint32_t mask = test_encode_smooth_wheel(dx, dy);
 
         CU_ASSERT_TRUE(guac_rdp_mouse_mask_is_smooth_wheel(mask));
         CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
@@ -52,7 +75,7 @@ void test_input_wheel__signed_sub_notch_round_trip(void) {
  */
 void test_input_wheel__payload_never_sets_standard_mouse_buttons(void) {
 
-    uint32_t mask = guac_rdp_encode_smooth_wheel(-127, 127);
+    uint32_t mask = test_encode_smooth_wheel(-127, 127);
 
     CU_ASSERT_EQUAL(mask & UINT32_C(0x1F), 0);
     CU_ASSERT_EQUAL(mask & GUAC_RDP_MOUSE_SMOOTH_WHEEL_MASK,
@@ -77,18 +100,22 @@ void test_input_wheel__ordinary_mouse_mask_is_not_extension(void) {
  */
 void test_input_wheel__out_of_range_deltas_are_clamped(void) {
 
-    uint32_t mask = guac_rdp_encode_smooth_wheel(INT_MIN, INT_MAX);
+    uint32_t mask = test_encode_smooth_wheel(-256, 255);
 
     CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
-                GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT), -127);
+                GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT), -256);
     CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
-                GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT), 127);
+                GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT), 255);
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(-256), UINT16_C(0x181));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(255), UINT16_C(0x07F));
 
-    mask = guac_rdp_encode_smooth_wheel(-128, 128);
+    mask = test_encode_smooth_wheel(-128, 128);
     CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
-                GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT), -127);
+                GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT), -128);
     CU_ASSERT_EQUAL(guac_rdp_decode_smooth_wheel_axis(mask,
-                GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT), 127);
+                GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT), 128);
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(-128), UINT16_C(0x181));
+    CU_ASSERT_EQUAL(guac_rdp_smooth_wheel_rotation(128), UINT16_C(0x07F));
 
 }
 

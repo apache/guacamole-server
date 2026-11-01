@@ -50,19 +50,6 @@ int guac_rdp_decode_smooth_wheel_axis(uint32_t mask, unsigned int shift) {
 
 }
 
-uint32_t guac_rdp_encode_smooth_wheel(int dx, int dy) {
-
-    uint32_t x = (uint32_t) guac_rdp_clamp_smooth_wheel_delta(dx);
-    uint32_t y = (uint32_t) guac_rdp_clamp_smooth_wheel_delta(dy);
-
-    return GUAC_RDP_MOUSE_SMOOTH_WHEEL_MASK
-            | ((x & GUAC_RDP_MOUSE_SMOOTH_WHEEL_AXIS_MASK)
-                    << GUAC_RDP_MOUSE_SMOOTH_WHEEL_X_SHIFT)
-            | ((y & GUAC_RDP_MOUSE_SMOOTH_WHEEL_AXIS_MASK)
-                    << GUAC_RDP_MOUSE_SMOOTH_WHEEL_Y_SHIFT);
-
-}
-
 uint16_t guac_rdp_smooth_wheel_rotation(int delta) {
 
     uint32_t clamped = (uint32_t) guac_rdp_clamp_smooth_wheel_delta(delta);
