@@ -20,10 +20,13 @@
 #include "../../encode-png.h"
 
 #include <CUnit/CUnit.h>
+#include <guacamole/client.h>
+#include <guacamole/layer.h>
 #include <guacamole/parser.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
+#include <guacamole/user.h>
 
 #include <cairo/cairo.h>
 #include <png.h>
@@ -37,6 +40,15 @@ typedef struct test_png_buffer {
     size_t length;
     size_t offset;
 } test_png_buffer;
+
+/** Socket state used to fail exactly one PNG blob write. */
+typedef struct test_png_failure_state {
+    test_png_buffer protocol;
+    int failed;
+} test_png_failure_state;
+
+/** State used by the synchronous PNG stream failure-injection tests. */
+static test_png_failure_state* active_failure_state;
 
 /**
  * Appends test data to an in-memory byte buffer.
@@ -104,6 +116,84 @@ static ssize_t fail_write(guac_socket* socket, const void* data, size_t length) 
     (void) data;
     (void) length;
     return -1;
+}
+
+/**
+ * Fails the first PNG blob instruction and captures subsequent socket writes.
+ *
+ * @param socket
+ *     The socket being written to.
+ *
+ * @param data
+ *     Bytes being written.
+ *
+ * @param length
+ *     Number of bytes being written.
+ *
+ * @return
+ *     -1 for the first PNG blob instruction, otherwise the number of bytes
+ *     captured or -1 if capture allocation fails.
+ */
+static ssize_t fail_blob_once(guac_socket* socket, const void* data,
+        size_t length) {
+    (void) socket;
+    test_png_failure_state* state = active_failure_state;
+    if (!state->failed && length >= 7 && memcmp(data, "4.blob,", 7) == 0) {
+        state->failed = 1;
+        return -1;
+    }
+    return append_bytes(&state->protocol, data, length) ? -1 : (ssize_t) length;
+}
+
+/**
+ * Counts instructions with the given opcode in captured protocol output.
+ *
+ * @param protocol
+ *     Captured protocol bytes.
+ *
+ * @param opcode
+ *     The instruction opcode to count.
+ *
+ * @return
+ *     The number of matching instructions, or -1 if parsing fails.
+ */
+static int count_instructions(const test_png_buffer* protocol,
+        const char* opcode) {
+    unsigned char* data = malloc(protocol->length);
+    if (!data)
+        return -1;
+    memcpy(data, protocol->data, protocol->length);
+
+    size_t offset = 0;
+    int count = 0;
+    while (offset < protocol->length) {
+        guac_parser* parser = guac_parser_alloc();
+        if (!parser) {
+            free(data);
+            return -1;
+        }
+        while (offset < protocol->length && parser->state != GUAC_PARSE_COMPLETE
+                && parser->state != GUAC_PARSE_ERROR) {
+            int consumed = guac_parser_append(parser, data + offset,
+                    protocol->length - offset);
+            if (consumed <= 0) {
+                guac_parser_free(parser);
+                free(data);
+                return -1;
+            }
+            offset += consumed;
+        }
+        if (parser->state != GUAC_PARSE_COMPLETE) {
+            guac_parser_free(parser);
+            free(data);
+            return -1;
+        }
+        if (strcmp(parser->opcode, opcode) == 0)
+            count++;
+        guac_parser_free(parser);
+    }
+    free(data);
+    return count;
 }
 
 /**
@@ -370,5 +460,76 @@ void test_png__socket_write_failure(void) {
     }
 
     cairo_surface_destroy(surface);
+
+}
+
+/**
+ * Verifies failed client-level PNG output reports an error without ending the
+ * truncated image stream normally.
+ */
+void test_png__client_stream_write_failure(void) {
+
+    test_png_failure_state state = {0};
+    guac_client* client = guac_client_alloc();
+    CU_ASSERT_PTR_NOT_NULL_FATAL(client);
+    guac_socket* socket = client->socket;
+    CU_ASSERT_PTR_NOT_NULL_FATAL(socket);
+    active_failure_state = &state;
+    socket->write_handler = fail_blob_once;
+    client->fast_png_encoding = 1;
+    guac_layer layer = { .index = 0 };
+    cairo_surface_t* surface = cairo_image_surface_create(
+            CAIRO_FORMAT_RGB24, 1, 1);
+
+    guac_client_stream_png(client, socket, GUAC_COMP_OVER, &layer, 0, 0,
+            surface);
+
+    CU_ASSERT_TRUE(state.failed);
+    CU_ASSERT_EQUAL(count_instructions(&state.protocol, "img"), 1);
+    CU_ASSERT_EQUAL(count_instructions(&state.protocol, "error"), 1);
+    CU_ASSERT_EQUAL(count_instructions(&state.protocol, "end"), 0);
+
+    cairo_surface_destroy(surface);
+    guac_client_free(client);
+    free(state.protocol.data);
+    active_failure_state = NULL;
+
+}
+
+/**
+ * Verifies failed user-level PNG output reports an error without ending the
+ * truncated image stream normally.
+ */
+void test_png__user_stream_write_failure(void) {
+
+    test_png_failure_state state = {0};
+    guac_client* client = guac_client_alloc();
+    guac_user* user = guac_user_alloc();
+    CU_ASSERT_PTR_NOT_NULL_FATAL(client);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(user);
+    guac_socket* socket = client->socket;
+    CU_ASSERT_PTR_NOT_NULL_FATAL(socket);
+    active_failure_state = &state;
+    socket->write_handler = fail_blob_once;
+    client->fast_png_encoding = 1;
+    user->client = client;
+    user->socket = socket;
+    guac_layer layer = { .index = 0 };
+    cairo_surface_t* surface = cairo_image_surface_create(
+            CAIRO_FORMAT_RGB24, 1, 1);
+
+    guac_user_stream_png(user, socket, GUAC_COMP_OVER, &layer, 0, 0,
+            surface);
+
+    CU_ASSERT_TRUE(state.failed);
+    CU_ASSERT_EQUAL(count_instructions(&state.protocol, "img"), 1);
+    CU_ASSERT_EQUAL(count_instructions(&state.protocol, "error"), 1);
+    CU_ASSERT_EQUAL(count_instructions(&state.protocol, "end"), 0);
+
+    cairo_surface_destroy(surface);
+    guac_user_free(user);
+    guac_client_free(client);
+    free(state.protocol.data);
+    active_failure_state = NULL;
 
 }

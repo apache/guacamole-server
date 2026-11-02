@@ -35,6 +35,9 @@ ACLOCAL_AMFLAGS = -I m4
 check_PROGRAMS = test_libguac
 TESTS = $(check_PROGRAMS)
 
+# Optional encoder microbenchmark; invoke with "make png-benchmark".
+EXTRA_PROGRAMS = png-benchmark
+
 noinst_HEADERS =                     \
     assert-signal.h
 
@@ -86,6 +89,16 @@ test_libguac_CFLAGS =       \
 
 test_libguac_LDADD = \
     @CUNIT_LIBS@     \
+    @CAIRO_LIBS@     \
+    @LIBGUAC_LTLIB@
+
+png_benchmark_SOURCES = encode/png_benchmark.c
+
+png_benchmark_CFLAGS =  \
+    -Werror -Wall -pedantic \
+    @LIBGUAC_INCLUDE@
+
+png_benchmark_LDADD = \
     @CAIRO_LIBS@     \
     @LIBGUAC_LTLIB@
 

@@ -73,6 +73,9 @@ typedef struct guac_png_write_state {
  *
  * @param write_state
  *     The write state to flush.
+ *
+ * @return
+ *     Zero if all pending data was sent, non-zero if the socket write failed.
  */
 static int guac_png_flush_data(guac_png_write_state* write_state) {
 
@@ -98,7 +101,6 @@ static int guac_png_flush_data(guac_png_write_state* write_state) {
 /**
  * Appends the given PNG data to the internal buffer of the given write state,
  * automatically flushing the write state as necessary.
- * socket.
  *
  * @param write_state
  *     The write state to append the given data to.
@@ -108,6 +110,9 @@ static int guac_png_flush_data(guac_png_write_state* write_state) {
  *
  * @param length
  *     The size of the given PNG data, in bytes.
+ *
+ * @return
+ *     Zero if all data was buffered or sent, non-zero if a socket write failed.
  */
 static int guac_png_write_data(guac_png_write_state* write_state,
         const void* data, int length) {
@@ -167,8 +172,8 @@ static int guac_png_write_data(guac_png_write_state* write_state,
  *     The size of the given buffer, in bytes.
  *
  * @return
- *     A Cairo status code indicating whether the write operation succeeded.
- *     In the case of this handler, this will always be CAIRO_STATUS_SUCCESS.
+ *     CAIRO_STATUS_SUCCESS if all data was buffered or sent, or
+ *     CAIRO_STATUS_WRITE_ERROR if sending data to the socket failed.
  */
 static cairo_status_t guac_png_cairo_write_handler(void* closure,
         const unsigned char* data, unsigned int length) {
@@ -227,7 +232,7 @@ static int guac_png_cairo_write(guac_socket* socket, guac_stream* stream,
 /**
  * Writes the given buffer of PNG data to the buffer of the given write state,
  * flushing that buffer to blob instructions if necessary. This handler is
- * called by libpng when writing PNG data via png_write_png().
+ * called by libpng when writing PNG data through the configured write function.
  *
  * @param png
  *     The PNG compression state structure associated with the write operation.
@@ -261,8 +266,8 @@ static void guac_png_write_handler(png_structp png, png_bytep data,
 /**
  * Flushes any PNG data within the buffer of the given write state as a blob
  * instruction. If no data is within the buffer, this function has no effect.
- * This handler is called by libpng when it has finished writing PNG data via
- * png_write_png().
+ * This handler is called by libpng when it flushes PNG data through the
+ * configured write function.
  *
  * @param png
  *     The PNG compression state structure associated with the write operation.

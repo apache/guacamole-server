@@ -61,7 +61,8 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
  *     The Cairo surface to encode.
  *
  * @param fast_png_encoding
- *     Exactly 1 to select the faster opaque RGB24 encoder, zero otherwise.
+ *     Exactly 1 to select the faster opaque RGB24 encoder; all other values
+ *     retain the existing encoder selection.
  *
  * @return
  *     Zero on success, non-zero on error.

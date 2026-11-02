@@ -820,11 +820,15 @@ void guac_client_stream_png(guac_client* client, guac_socket* socket,
     guac_protocol_send_img(socket, stream, mode, layer, "image/png", x, y);
 
     /* Write PNG data */
-    guac_png_write_with_options(socket, stream, surface,
-            client->fast_png_encoding);
-
-    /* Terminate stream */
-    guac_protocol_send_end(socket, stream);
+    if (guac_png_write_with_options(socket, stream, surface,
+                client->fast_png_encoding)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "PNG encoding failed: %s", guac_error_message);
+    }
+    else {
+        /* Mark the image stream complete only after all PNG data was written. */
+        guac_protocol_send_end(socket, stream);
+    }
 
     /* Free allocated stream */
     guac_client_free_stream(client, stream);

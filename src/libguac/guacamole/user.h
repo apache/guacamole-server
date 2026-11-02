@@ -829,6 +829,9 @@ void guac_user_stream_argv(guac_user* user, guac_socket* socket,
  *
  * @param surface
  *     A Cairo surface containing the image data to be streamed.
+ *
+ * If PNG encoding fails, an error is sent to the user and the image stream is
+ * not marked as successfully complete.
  */
 void guac_user_stream_png(guac_user* user, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
