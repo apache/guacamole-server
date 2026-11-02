@@ -358,6 +358,11 @@ void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
     if (row < 0 || row >= display->height)
         return;
 
+    /* Ignore operations for which no source column has a destination within
+     * the display */
+    if (offset >= display->width || -offset >= display->width)
+        return;
+
     /* Fit relevant extents of operation within bounds (NOTE: Because this
      * operation is relative and represents the destination with an offset,
      * there's no need to recalculate the destination region - the offset
@@ -407,6 +412,11 @@ void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
 
 void guac_terminal_display_copy_rows(guac_terminal_display* display,
         int start_row, int end_row, int offset) {
+
+    /* Ignore operations for which no source row has a destination within the
+     * display */
+    if (offset >= display->height || -offset >= display->height)
+        return;
 
     /* Fit relevant extents of operation within bounds (NOTE: Because this
      * operation is relative and represents the destination with an offset,
@@ -483,7 +493,7 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         return;
 
     /* Ignore operations outside display bounds */
-    if (row < 0 || row >= display->height)
+    if (row < 0 || row >= display->height || display->width == 0)
         return;
 
     /* Fit range within bounds */
