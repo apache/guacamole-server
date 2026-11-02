@@ -449,6 +449,16 @@ static void calculate_rows_and_columns(guac_terminal* term,
     /* Keep width within predefined maximum */
     if (*columns > GUAC_TERMINAL_MAX_COLUMNS)
         *columns = GUAC_TERMINAL_MAX_COLUMNS;
+
+    /* The terminal must always contain at least one character cell, even if
+     * the available display area is smaller than a single character. A zero
+     * dimension produces empty ranges that the display operations cannot
+     * represent. */
+    if (*rows < 1)
+        *rows = 1;
+
+    if (*columns < 1)
+        *columns = 1;
 }
 
 /**
