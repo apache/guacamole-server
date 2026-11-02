@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "rfc2217.h"
 #include "settings.h"
 #include "stream.h"
@@ -50,36 +48,75 @@
 #define GUAC_SERIAL_TELOPT_COMPORT 44
 
 /**
- * COM-PORT-OPTION client-to-server command: set the serial line speed. The
- * data is a 4-byte big-endian unsigned integer giving the speed in bits per
- * second.
+ * The client-to-server command codes of the RFC2217 COM-PORT-OPTION, as sent
+ * in the first byte of each COM-PORT-OPTION subnegotiation. The values are
+ * defined by RFC 2217 and must not be changed.
  */
-#define GUAC_SERIAL_RFC2217_SET_BAUDRATE 1
+typedef enum guac_serial_rfc2217_command {
+
+    /**
+     * Set the serial line speed. The data is a 4-byte big-endian unsigned
+     * integer giving the speed in bits per second.
+     */
+    GUAC_SERIAL_RFC2217_SET_BAUDRATE = 1,
+
+    /**
+     * Set the number of data bits. The data is a single byte (5 through 8).
+     */
+    GUAC_SERIAL_RFC2217_SET_DATASIZE = 2,
+
+    /**
+     * Set the parity. The data is a single guac_serial_rfc2217_parity
+     * value.
+     */
+    GUAC_SERIAL_RFC2217_SET_PARITY = 3,
+
+    /**
+     * Set the number of stop bits. The data is a single byte (1=1 stop bit,
+     * 2=2 stop bits).
+     */
+    GUAC_SERIAL_RFC2217_SET_STOPSIZE = 4,
+
+    /**
+     * Set flow control, the break state, or the DTR/RTS modem control lines.
+     * The data is a single guac_serial_rfc2217_control value.
+     */
+    GUAC_SERIAL_RFC2217_SET_CONTROL = 5
+
+} guac_serial_rfc2217_command;
 
 /**
- * COM-PORT-OPTION client-to-server command: set the number of data bits. The
- * data is a single byte (5 through 8).
+ * The values of the RFC2217 COM-PORT-OPTION SET-PARITY command. The values are
+ * defined by RFC 2217 and must not be changed.
  */
-#define GUAC_SERIAL_RFC2217_SET_DATASIZE 2
+typedef enum guac_serial_rfc2217_parity {
 
-/**
- * COM-PORT-OPTION client-to-server command: set the parity. The data is a
- * single byte (1=none, 2=odd, 3=even, 4=mark, 5=space).
- */
-#define GUAC_SERIAL_RFC2217_SET_PARITY 3
+    /**
+     * No parity bit.
+     */
+    GUAC_SERIAL_RFC2217_PARITY_NONE = 1,
 
-/**
- * COM-PORT-OPTION client-to-server command: set the number of stop bits. The
- * data is a single byte (1=1 stop bit, 2=2 stop bits).
- */
-#define GUAC_SERIAL_RFC2217_SET_STOPSIZE 4
+    /**
+     * Odd parity.
+     */
+    GUAC_SERIAL_RFC2217_PARITY_ODD = 2,
 
-/**
- * COM-PORT-OPTION client-to-server command: set line/flow control and break
- * state. The data is a single byte. For flow control: 1=none, 2=xon/xoff,
- * 3=rts/cts. For the break signal: 5=break on, 6=break off.
- */
-#define GUAC_SERIAL_RFC2217_SET_CONTROL 5
+    /**
+     * Even parity.
+     */
+    GUAC_SERIAL_RFC2217_PARITY_EVEN = 3,
+
+    /**
+     * The parity bit is always set (mark).
+     */
+    GUAC_SERIAL_RFC2217_PARITY_MARK = 4,
+
+    /**
+     * The parity bit is always clear (space).
+     */
+    GUAC_SERIAL_RFC2217_PARITY_SPACE = 5
+
+} guac_serial_rfc2217_parity;
 
 /**
  * Writes the entire buffer given to the specified file descriptor, retrying
@@ -133,9 +170,10 @@ static int guac_serial_rfc2217_write_all(int fd, const char* buffer, int size) {
  *     The single byte of data associated with the command.
  */
 static void guac_serial_rfc2217_send_byte(telnet_t* telnet,
-        unsigned char command, unsigned char value) {
+        guac_serial_rfc2217_command command, unsigned char value) {
+    unsigned char code = (unsigned char) command;
     telnet_begin_sb(telnet, GUAC_SERIAL_TELOPT_COMPORT);
-    telnet_send(telnet, (char*) &command, 1);
+    telnet_send(telnet, (char*) &code, 1);
     telnet_send(telnet, (char*) &value, 1);
     telnet_finish_sb(telnet);
 }
@@ -172,57 +210,57 @@ static void guac_serial_rfc2217_set_line(telnet_t* telnet,
     guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_DATASIZE,
             (unsigned char) settings->data_bits);
 
-    /* SET-PARITY (1=none, 2=odd, 3=even, 4=mark, 5=space) */
-    unsigned char parity;
+    /* SET-PARITY */
+    guac_serial_rfc2217_parity parity;
     switch (settings->parity) {
 
         case GUAC_SERIAL_PARITY_ODD:
-            parity = 2;
+            parity = GUAC_SERIAL_RFC2217_PARITY_ODD;
             break;
 
         case GUAC_SERIAL_PARITY_EVEN:
-            parity = 3;
+            parity = GUAC_SERIAL_RFC2217_PARITY_EVEN;
             break;
 
         case GUAC_SERIAL_PARITY_MARK:
-            parity = 4;
+            parity = GUAC_SERIAL_RFC2217_PARITY_MARK;
             break;
 
         case GUAC_SERIAL_PARITY_SPACE:
-            parity = 5;
+            parity = GUAC_SERIAL_RFC2217_PARITY_SPACE;
             break;
 
         default:
-            parity = 1;
+            parity = GUAC_SERIAL_RFC2217_PARITY_NONE;
             break;
 
     }
     guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_PARITY,
-            parity);
+            (unsigned char) parity);
 
     /* SET-STOPSIZE (1=1 stop bit, 2=2 stop bits) */
     guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_STOPSIZE,
             (unsigned char) settings->stop_bits);
 
-    /* SET-CONTROL flow control (1=none, 2=xon/xoff, 3=rts/cts) */
-    unsigned char flow;
+    /* SET-CONTROL flow control */
+    guac_serial_rfc2217_control flow;
     switch (settings->flow_control) {
 
         case GUAC_SERIAL_FLOW_XON_XOFF:
-            flow = 2;
+            flow = GUAC_SERIAL_RFC2217_CONTROL_FLOW_XON_XOFF;
             break;
 
         case GUAC_SERIAL_FLOW_RTS_CTS:
-            flow = 3;
+            flow = GUAC_SERIAL_RFC2217_CONTROL_FLOW_RTS_CTS;
             break;
 
         default:
-            flow = 1;
+            flow = GUAC_SERIAL_RFC2217_CONTROL_FLOW_NONE;
             break;
 
     }
     guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_CONTROL,
-            flow);
+            (unsigned char) flow);
 
 }
 
@@ -408,20 +446,23 @@ int guac_serial_rfc2217_send_break(guac_serial_stream* stream) {
     telnet_t* telnet = (telnet_t*) stream->telnet;
 
     /* SET-CONTROL: break on */
-    guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_CONTROL, 5);
+    guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_CONTROL,
+            GUAC_SERIAL_RFC2217_CONTROL_BREAK_ON);
 
     /* Hold the line low for the configured duration */
     if (stream->break_duration > 0)
         usleep((useconds_t) stream->break_duration * 1000);
 
     /* SET-CONTROL: break off */
-    guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_CONTROL, 6);
+    guac_serial_rfc2217_send_byte(telnet, GUAC_SERIAL_RFC2217_SET_CONTROL,
+            GUAC_SERIAL_RFC2217_CONTROL_BREAK_OFF);
 
     return 0;
 
 }
 
-void guac_serial_rfc2217_set_control(guac_serial_stream* stream, int value) {
+void guac_serial_rfc2217_set_control(guac_serial_stream* stream,
+        guac_serial_rfc2217_control value) {
     guac_serial_rfc2217_send_byte((telnet_t*) stream->telnet,
             GUAC_SERIAL_RFC2217_SET_CONTROL, (unsigned char) value);
 }
@@ -494,7 +535,8 @@ int guac_serial_rfc2217_send_break(guac_serial_stream* stream) {
     return 0;
 }
 
-void guac_serial_rfc2217_set_control(guac_serial_stream* stream, int value) {
+void guac_serial_rfc2217_set_control(guac_serial_stream* stream,
+        guac_serial_rfc2217_control value) {
     /* RFC2217 unavailable; a stream with this backend is never created */
     (void) stream;
     (void) value;

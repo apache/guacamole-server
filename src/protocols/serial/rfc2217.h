@@ -26,6 +26,61 @@
 #include <guacamole/client.h>
 
 /**
+ * The values of the RFC2217 COM-PORT-OPTION SET-CONTROL command, which sets
+ * flow control, the break state, or the DTR/RTS modem control lines of the
+ * remote serial port. The values are defined by RFC 2217 and must not be
+ * changed.
+ */
+typedef enum guac_serial_rfc2217_control {
+
+    /**
+     * Use no flow control.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_FLOW_NONE = 1,
+
+    /**
+     * Use XON/XOFF software flow control.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_FLOW_XON_XOFF = 2,
+
+    /**
+     * Use RTS/CTS hardware flow control.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_FLOW_RTS_CTS = 3,
+
+    /**
+     * Begin a break, holding the transmit line low.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_BREAK_ON = 5,
+
+    /**
+     * End a break, releasing the transmit line.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_BREAK_OFF = 6,
+
+    /**
+     * Assert the DTR modem control line.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_DTR_ON = 8,
+
+    /**
+     * Deassert the DTR modem control line.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_DTR_OFF = 9,
+
+    /**
+     * Assert the RTS modem control line.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_RTS_ON = 11,
+
+    /**
+     * Deassert the RTS modem control line.
+     */
+    GUAC_SERIAL_RFC2217_CONTROL_RTS_OFF = 12
+
+} guac_serial_rfc2217_control;
+
+/**
  * Opens an RFC2217 (telnet COM-PORT-OPTION) connection to the network serial
  * server described by the given settings, negotiates the configured serial line
  * parameters, and stores the resulting socket and libtelnet session in the
@@ -143,17 +198,18 @@ int guac_serial_rfc2217_send_break(guac_serial_stream* stream);
 /**
  * Sends a COM-PORT-OPTION SET-CONTROL subnegotiation with the given control
  * value to the remote end of an RFC2217 connection. Used to toggle the modem
- * control lines (e.g. DTR ON=8, DTR OFF=9, RTS ON=11, RTS OFF=12 per RFC 2217).
- * This must only be called on a stream whose backend is
+ * control lines. This must only be called on a stream whose backend is
  * GUAC_SERIAL_BACKEND_RFC2217.
  *
  * @param stream
  *     The RFC2217 serial stream on which to send the SET-CONTROL command.
  *
  * @param value
- *     The RFC 2217 SET-CONTROL value to send.
+ *     The SET-CONTROL value to send, such as
+ *     GUAC_SERIAL_RFC2217_CONTROL_DTR_ON.
  */
-void guac_serial_rfc2217_set_control(guac_serial_stream* stream, int value);
+void guac_serial_rfc2217_set_control(guac_serial_stream* stream,
+        guac_serial_rfc2217_control value);
 
 /**
  * Frees the libtelnet session associated with the given stream, if any. Safe

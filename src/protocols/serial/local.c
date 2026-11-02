@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "local.h"
 #include "settings.h"
 #include "stream.h"

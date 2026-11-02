@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "local.h"
 #include "rfc2217.h"
 #include "settings.h"
@@ -292,13 +290,13 @@ int guac_serial_stream_set_line(guac_serial_stream* stream,
             break;
 
         case GUAC_SERIAL_BACKEND_RFC2217: {
-            /* RFC2217 SET-CONTROL values: DTR ON=8, DTR OFF=9, RTS ON=11,
-             * RTS OFF=12 */
-            int value;
+            guac_serial_rfc2217_control value;
             if (line == GUAC_SERIAL_CONTROL_LINE_DTR)
-                value = state ? 8 : 9;
+                value = state ? GUAC_SERIAL_RFC2217_CONTROL_DTR_ON
+                              : GUAC_SERIAL_RFC2217_CONTROL_DTR_OFF;
             else
-                value = state ? 11 : 12;
+                value = state ? GUAC_SERIAL_RFC2217_CONTROL_RTS_ON
+                              : GUAC_SERIAL_RFC2217_CONTROL_RTS_OFF;
             guac_serial_rfc2217_set_control(stream, value);
             break;
         }

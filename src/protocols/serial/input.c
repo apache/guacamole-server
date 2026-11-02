@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "input.h"
 #include "serial.h"
 #include "stream.h"
@@ -30,6 +29,22 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+/**
+ * The X11 keysym of the Pause key. Pressing this key sends a serial break.
+ */
+#define GUAC_SERIAL_KEYSYM_PAUSE 0xFF13
+
+/**
+ * The X11 keysym of the Break key. Pressing this key sends a serial break.
+ */
+#define GUAC_SERIAL_KEYSYM_BREAK 0xFF6B
+
+/**
+ * The keysym which, while Ctrl is held, sends a serial break. This is an
+ * alternative for keyboards which lack a Pause or Break key.
+ */
+#define GUAC_SERIAL_KEYSYM_CTRL_BREAK '0'
 
 int guac_serial_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
@@ -68,12 +83,12 @@ int guac_serial_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     /* Intercept and handle Pause / Break / Ctrl+0 as a serial break */
     if (pressed && (
-                keysym == 0xFF13                  /* Pause */
-             || keysym == 0xFF6B                  /* Break */
+                keysym == GUAC_SERIAL_KEYSYM_PAUSE
+             || keysym == GUAC_SERIAL_KEYSYM_BREAK
              || (
                     guac_terminal_get_mod_ctrl(term)
-                    && keysym == '0'
-                )                                 /* Ctrl + 0 */
+                    && keysym == GUAC_SERIAL_KEYSYM_CTRL_BREAK
+                )
        )) {
 
         /* Send a serial break if the connection is established */

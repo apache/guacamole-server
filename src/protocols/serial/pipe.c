@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "pipe.h"
 #include "serial.h"
 #include "stream.h"
@@ -29,10 +28,15 @@
 #include <guacamole/user.h>
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <string.h>
 
 /**
- * The maximum length, in bytes, of a single control command token.
+ * The size, in bytes, of the buffer holding a single control command token,
+ * including its null terminator. The longest recognized command ("dtr-off" or
+ * "rts-off") is 7 bytes, so this leaves generous room for future commands
+ * while keeping the per-stream buffer small and fixed. Tokens which do not fit
+ * cannot be valid commands and are discarded in their entirety.
  */
 #define GUAC_SERIAL_CONTROL_TOKEN_LENGTH 64
 
@@ -51,6 +55,13 @@ typedef struct guac_serial_control_stream {
      * The number of bytes currently held in the token buffer.
      */
     int length;
+
+    /**
+     * Whether the current token has exceeded the token buffer and is being
+     * discarded. While true, all characters up to the next whitespace are
+     * ignored, so that no part of an oversized token is dispatched.
+     */
+    bool discarding;
 
 } guac_serial_control_stream;
 
@@ -133,20 +144,25 @@ static int guac_serial_control_blob_handler(guac_user* user,
 
         /* A whitespace character completes the current token */
         if (isspace((unsigned char) c)) {
-            if (cs->length > 0) {
+            if (cs->length > 0 && !cs->discarding) {
                 cs->token[cs->length] = '\0';
                 guac_serial_control_dispatch(user, cs->token);
-                cs->length = 0;
             }
+            cs->length = 0;
+            cs->discarding = false;
         }
+
+        /* Ignore the remainder of an oversized token */
+        else if (cs->discarding)
+            continue;
 
         /* Accumulate non-whitespace characters into the current token */
         else if (cs->length < GUAC_SERIAL_CONTROL_TOKEN_LENGTH - 1)
             cs->token[cs->length++] = c;
 
-        /* Oversized token; drop it to resynchronize on the next whitespace */
+        /* Oversized token; discard it up to the next whitespace */
         else
-            cs->length = 0;
+            cs->discarding = true;
 
     }
 
@@ -181,8 +197,9 @@ static int guac_serial_control_end_handler(guac_user* user,
     guac_serial_control_stream* cs =
         (guac_serial_control_stream*) stream->data;
 
-    /* Dispatch any trailing token not followed by whitespace */
-    if (cs != NULL && cs->length > 0) {
+    /* Dispatch any trailing token not followed by whitespace, unless it is
+     * an oversized token being discarded */
+    if (cs != NULL && cs->length > 0 && !cs->discarding) {
         cs->token[cs->length] = '\0';
         guac_serial_control_dispatch(user, cs->token);
     }
