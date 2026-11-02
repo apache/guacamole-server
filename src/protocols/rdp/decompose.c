@@ -161,9 +161,18 @@ int guac_rdp_decompose_keysym(guac_rdp_keyboard* keyboard, int keysym) {
             || !guac_rdp_keyboard_is_defined(keyboard, key->base_keysym))
         return 1;
 
+    /* Note the modifiers held before the dead key is typed */
+    unsigned int modifier_flags = guac_rdp_keyboard_get_modifier_flags(keyboard);
+
     /* Press dead key */
     guac_rdp_keyboard_update_keysym(keyboard, key->dead_keysym, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     guac_rdp_keyboard_update_keysym(keyboard, key->dead_keysym, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+
+    /* Release any modifiers pressed only to type the dead key (such as AltGr),
+     * as the remote side would otherwise receive the base key with those
+     * modifiers still held and not combine it with the dead key */
+    guac_rdp_keyboard_update_modifiers(keyboard, 0,
+            guac_rdp_keyboard_get_modifier_flags(keyboard) & ~modifier_flags);
 
     /* Press base key */
     guac_rdp_keyboard_update_keysym(keyboard, key->base_keysym, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);

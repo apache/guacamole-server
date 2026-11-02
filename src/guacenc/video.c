@@ -191,10 +191,10 @@ fail_codec:
 
 /**
  * Flushes the specified frame as a new frame of video, updating the internal
- * video timestamp by one frame's worth of time. The pts member of the given
- * frame structure will be updated with the current presentation timestamp of
- * the video. If pending frames of the video are being flushed, the given frame
- * may be NULL (as required by avcodec_encode_video2()).
+ * video timestamp by the given duration. The pts member of the given frame
+ * structure will be updated with the current presentation timestamp of the
+ * video. If pending frames of the video are being flushed, the given frame may
+ * be NULL (as required by avcodec_encode_video2()).
  *
  * @param video
  *     The video to write the given frame to.
@@ -203,16 +203,28 @@ fail_codec:
  *     The frame to write to the video, or NULL if previously-written frames
  *     are being flushed.
  *
+ * @param duration
+ *     The duration for which the frame should be displayed, in units of the
+ *     video time base (one unit being one frame's worth of time at the
+ *     configured framerate). The internal video timestamp will be advanced by
+ *     this amount.
+ *
  * @return
  *     A positive value if the frame was successfully written, zero if the
  *     frame has been saved for later writing / reordering, negative if an
  *     error occurs.
  */
-static int guacenc_video_write_frame(guacenc_video* video, AVFrame* frame) {
+static int guacenc_video_write_frame(guacenc_video* video, AVFrame* frame,
+        int64_t duration) {
 
-    /* Set timestamp of frame, if frame given */
-    if (frame != NULL)
+    /* Set timestamp and display duration of frame, if frame given */
+    if (frame != NULL) {
         frame->pts = video->next_pts;
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(56,14,100)
+#else
+        frame->duration = duration;
+#endif
+    }
 
     /* Write frame to video */
     int got_data = guacenc_avcodec_encode_video(video, frame);
@@ -220,7 +232,7 @@ static int guacenc_video_write_frame(guacenc_video* video, AVFrame* frame) {
         return -1;
 
     /* Update presentation timestamp for next frame */
-    video->next_pts++;
+    video->next_pts += duration;
 
     /* Write was successful */
     return got_data;
@@ -229,19 +241,24 @@ static int guacenc_video_write_frame(guacenc_video* video, AVFrame* frame) {
 
 /**
  * Flushes the frame previously specified by guacenc_video_prepare_frame() as a
- * new frame of video, updating the internal video timestamp by one frame's
- * worth of time.
+ * new frame of video, updating the internal video timestamp by the given
+ * duration.
  *
  * @param video
  *     The video to flush.
  *
+ * @param duration
+ *     The duration for which the flushed frame should be displayed, in units
+ *     of the video time base (one unit being one frame's worth of time at the
+ *     configured framerate).
+ *
  * @return
  *     Zero if flushing was successful, non-zero if an error occurs.
  */
-static int guacenc_video_flush_frame(guacenc_video* video) {
+static int guacenc_video_flush_frame(guacenc_video* video, int64_t duration) {
 
     /* Write frame to video */
-    return guacenc_video_write_frame(video, video->next_frame) < 0;
+    return guacenc_video_write_frame(video, video->next_frame, duration) < 0;
 
 }
 
@@ -265,14 +282,37 @@ int guacenc_video_advance_timeline(guacenc_video* video,
         next_timestamp = video->last_timestamp
                         + elapsed * 1000 / GUACENC_VIDEO_FRAMERATE;
 
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(56,14,100)
         /* Flush frames to bring timeline in sync, duplicating if necessary */
         do {
-            if (guacenc_video_flush_frame(video)) {
+            if (guacenc_video_flush_frame(video, 1)) {
                 guacenc_log(GUAC_LOG_ERROR, "Unable to flush frame to video "
                         "stream.");
                 return 1;
             }
         } while (--elapsed != 0);
+#else
+        /* Instead of encoding the same frame once per elapsed tick, encode it
+         * with an extended display duration covering the gap, clamping each
+         * frame's duration such that the codec can actually represent the
+         * requested gap (some codecs, such as MPEG-4, cannot encode a single
+         * frame with an arbitrarily long display duration). If the gap exceeds
+         * that limit, duplicate frames are encoded to cover the remainder. */
+        int64_t remaining = elapsed;
+        do {
+            int64_t duration = remaining;
+            if (duration > GUACENC_MAX_FRAME_DURATION)
+                duration = GUACENC_MAX_FRAME_DURATION;
+
+            if (guacenc_video_flush_frame(video, duration)) {
+                guacenc_log(GUAC_LOG_ERROR, "Unable to flush frame to video "
+                        "stream.");
+                return 1;
+            }
+
+            remaining -= duration;
+        } while (remaining > 0);
+#endif
 
     }
 
@@ -472,12 +512,12 @@ int guacenc_video_free(guacenc_video* video) {
         return 0;
 
     /* Write final frame */
-    guacenc_video_flush_frame(video);
+    guacenc_video_flush_frame(video, 1);
 
     /* Flush any unwritten frames */
     int retval;
     do {
-        retval = guacenc_video_write_frame(video, NULL);
+        retval = guacenc_video_write_frame(video, NULL, 1);
     } while (retval > 0);
 
     /* write trailer, if needed */
