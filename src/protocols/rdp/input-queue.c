@@ -146,6 +146,25 @@ static void guac_rdp_handle_mouse_event(guac_rdp_client* rdp_client,
 
         }
 
+        /* Extended mouse buttons (back and forward) */
+        static const int xmasks[2] = { GUAC_CLIENT_MOUSE_BACK, GUAC_CLIENT_MOUSE_FORWARD };
+        static const UINT16 xbuttons[2] = { PTR_XFLAGS_BUTTON1, PTR_XFLAGS_BUTTON2 };
+        for (int i = 0; i < 2; i++) {
+
+            if (!((released_mask | pressed_mask) & xmasks[i]))
+                continue;
+
+            UINT16 xflags = xbuttons[i];
+            if (pressed_mask & xmasks[i])
+                xflags |= PTR_XFLAGS_DOWN;
+
+            pthread_mutex_lock(&(rdp_client->message_lock));
+            GUAC_RDP_CONTEXT(rdp_inst)->input->ExtendedMouseEvent(
+                    GUAC_RDP_CONTEXT(rdp_inst)->input, xflags, x, y);
+            pthread_mutex_unlock(&(rdp_client->message_lock));
+
+        }
+
         rdp_client->mouse_button_mask = mask;
     }
 
