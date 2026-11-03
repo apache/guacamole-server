@@ -76,6 +76,16 @@
 #define GUAC_CLIENT_MOUSE_SCROLL_DOWN 0x10
 
 /**
+ * The flag set in the mouse button mask when the back mouse button is down.
+ */
+#define GUAC_CLIENT_MOUSE_BACK 0x20
+
+/**
+ * The flag set in the mouse button mask when the forward mouse button is down.
+ */
+#define GUAC_CLIENT_MOUSE_FORWARD 0x40
+
+/**
  * The minimum number of buffers to create before allowing free'd buffers to
  * be reclaimed. In the case a protocol rapidly creates, uses, and destroys
  * buffers, this can prevent unnecessary reuse of the same buffer (which
