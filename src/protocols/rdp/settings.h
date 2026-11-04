@@ -218,6 +218,11 @@ typedef struct guac_rdp_settings {
     int lossless;
 
     /**
+     * Whether this connection opts into the fast lossless RGB24 PNG encoder.
+     */
+    int fast_png_encoding;
+
+    /**
      * Whether audio is enabled.
      */
     int audio_enabled;

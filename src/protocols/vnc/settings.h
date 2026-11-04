@@ -92,6 +92,11 @@ typedef struct guac_vnc_settings {
     bool lossless;
 
     /**
+     * Whether this connection opts into the fast lossless RGB24 PNG encoder.
+     */
+    bool fast_png_encoding;
+
+    /**
      * The level of compression to ask the VNC client library to perform.
      */
     int compress_level;

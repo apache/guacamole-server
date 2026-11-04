@@ -26,8 +26,10 @@
 #include <cairo/cairo.h>
 
 /**
- * Encodes the given surface as a PNG, and sends the resulting data over the
- * given stream and socket as blobs.
+ * Encodes the given surface as a PNG, sends the resulting data over the given
+ * stream and socket as blobs, and returns zero on success or non-zero on error.
+ *
+ * This legacy entry point always uses the original PNG encoding policy.
  *
  * @param socket
  *     The socket to send PNG blobs over.
@@ -43,6 +45,31 @@
  */
 int guac_png_write(guac_socket* socket, guac_stream* stream,
         cairo_surface_t* surface);
+
+/**
+ * Writes PNG blobs, optionally using lossless fast RGB24 encoding when the
+ * supplied connection option is exactly 1. Returns zero on success or
+ * non-zero on error. Non-RGB24 images and all disabled options retain the
+ * existing fallback, and codec selection is unchanged.
+ *
+ * @param socket
+ *     The output socket.
+ *
+ * @param stream
+ *     The output stream.
+ *
+ * @param surface
+ *     The Cairo surface to encode.
+ *
+ * @param fast_png_encoding
+ *     Exactly 1 to select the faster opaque RGB24 encoder; all other values
+ *     retain the existing encoder selection.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
+        cairo_surface_t* surface, int fast_png_encoding);
 
 #endif
 

@@ -104,6 +104,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "force-lossless",
     "compress-level",
     "quality-level",
+    "fast-png",
     NULL
 };
 
@@ -450,6 +451,11 @@ enum VNC_ARGS_IDX {
      */
     IDX_QUALITY_LEVEL,
 
+    /**
+     * Whether the owner opts into fast, lossless opaque RGB24 PNG output.
+     */
+    IDX_FAST_PNG,
+
     VNC_ARGS_COUNT
 };
 
@@ -523,6 +529,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->lossless =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_FORCE_LOSSLESS, false);
+
+    /* Fast PNG encoding is separately opt-in, without changing codec choice. */
+    settings->fast_png_encoding =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_FAST_PNG, false);
 
     /* Compression level */
     settings->compress_level =

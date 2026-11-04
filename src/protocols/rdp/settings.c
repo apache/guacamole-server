@@ -152,6 +152,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
     "force-lossless",
     "normalize-clipboard",
+    "fast-png",
     NULL
 };
 
@@ -739,6 +740,11 @@ enum RDP_ARGS_IDX {
      */
     IDX_NORMALIZE_CLIPBOARD,
 
+    /**
+     * Whether the owner opts into fast, lossless opaque RGB24 PNG output.
+     */
+    IDX_FAST_PNG,
+
     RDP_ARGS_COUNT
 };
 
@@ -914,6 +920,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->lossless =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_FORCE_LOSSLESS, 0);
+
+    /* Fast PNG encoding is separately opt-in, without changing codec choice. */
+    settings->fast_png_encoding =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_FAST_PNG, 0);
 
     /* Domain */
     settings->domain =
