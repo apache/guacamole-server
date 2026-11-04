@@ -24,6 +24,7 @@
 #include "resolution.h"
 #include "settings.h"
 
+#include <freerdp/codec/h264.h>
 #include <freerdp/constants.h>
 #include <freerdp/settings.h>
 #include <freerdp/freerdp.h>
@@ -96,6 +97,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "disable-offscreen-caching",
     "disable-glyph-caching",
     "disable-gfx",
+    "enable-h264",
     "preconnection-id",
     "preconnection-blob",
     "timezone",
@@ -418,6 +420,12 @@ enum RDP_ARGS_IDX {
      * Graphics Pipeline Extension should be used if available.
      */
     IDX_DISABLE_GFX,
+
+    /**
+     * "true" if H.264 should be offered within the RDP Graphics Pipeline
+     * Extension (in addition to RemoteFX), "false" or blank otherwise.
+     */
+    IDX_ENABLE_H264,
 
     /**
      * The preconnection ID to send within the preconnection PDU when
@@ -1261,6 +1269,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         !guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_DISABLE_GFX, 0);
 
+    /* H.264 within RDP Graphics Pipeline enable/disable */
+    settings->enable_h264 =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_H264, 0);
+
     /* Session color depth */
     settings->color_depth =
         guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -1475,6 +1488,24 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
 }
 
 /**
+ * Returns whether the FreeRDP library in use can decode H.264, by attempting
+ * to create a decoder. This fails if FreeRDP has no usable H.264 backend.
+ *
+ * @returns
+ *     Non-zero if FreeRDP can decode H.264, zero otherwise.
+ */
+static int guac_rdp_h264_supported(void) {
+
+    H264_CONTEXT* h264 = h264_context_new(FALSE);
+    if (h264 == NULL)
+        return 0;
+
+    h264_context_free(h264);
+    return 1;
+
+}
+
+/**
  * Given the settings structure of the Guacamole RDP client, calculates the
  * standard performance flag value to send to the RDP server. The value of
  * these flags is dictated by the RDP standard.
@@ -1586,6 +1617,24 @@ void guac_rdp_push_settings(guac_client* client,
 
         freerdp_settings_set_bool(rdp_settings, FreeRDP_SupportGraphicsPipeline, TRUE);
         freerdp_settings_set_bool(rdp_settings, FreeRDP_RemoteFxCodec, TRUE);
+
+        /* Offer H.264 only if requested, as servers supporting both may choose
+         * it, and guacd must then decode it before re-encoding it */
+        if (guac_settings->enable_h264) {
+            if (guac_rdp_h264_supported()) {
+                freerdp_settings_set_bool(rdp_settings,
+                        FreeRDP_GfxH264, TRUE);
+                freerdp_settings_set_bool(rdp_settings,
+                        FreeRDP_GfxAVC444, TRUE);
+                freerdp_settings_set_bool(rdp_settings,
+                        FreeRDP_GfxAVC444v2, TRUE);
+            }
+            else
+                guac_client_log(client, GUAC_LOG_WARNING, "H.264 was "
+                        "requested, but FreeRDP cannot decode it, so only "
+                        "RemoteFX will be offered within the RDP Graphics "
+                        "Pipeline.");
+        }
 
         if (freerdp_settings_get_uint32(rdp_settings, FreeRDP_ColorDepth) != RDP_GFX_REQUIRED_DEPTH) {
             guac_client_log(client, GUAC_LOG_WARNING, "Ignoring requested "
@@ -1821,6 +1870,20 @@ void guac_rdp_push_settings(guac_client* client,
 
         rdp_settings->SupportGraphicsPipeline = TRUE;
         rdp_settings->RemoteFxCodec = TRUE;
+
+        /* Offer H.264 only if requested (see above) */
+        if (guac_settings->enable_h264) {
+            if (guac_rdp_h264_supported()) {
+                rdp_settings->GfxH264 = TRUE;
+                rdp_settings->GfxAVC444 = TRUE;
+                rdp_settings->GfxAVC444v2 = TRUE;
+            }
+            else
+                guac_client_log(client, GUAC_LOG_WARNING, "H.264 was "
+                        "requested, but FreeRDP cannot decode it, so only "
+                        "RemoteFX will be offered within the RDP Graphics "
+                        "Pipeline.");
+        }
 
         if (rdp_settings->ColorDepth != RDP_GFX_REQUIRED_DEPTH) {
             guac_client_log(client, GUAC_LOG_WARNING, "Ignoring requested "

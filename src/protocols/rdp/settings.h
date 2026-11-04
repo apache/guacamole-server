@@ -621,6 +621,12 @@ typedef struct guac_rdp_settings {
     int enable_gfx;
 
     /**
+     * Whether H.264 should be offered within the RDP Graphics Pipeline
+     * Extension, in addition to RemoteFX.
+     */
+    int enable_h264;
+
+    /**
      * Whether multi-touch support is enabled.
      */
     int enable_touch;
