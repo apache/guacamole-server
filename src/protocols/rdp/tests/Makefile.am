@@ -37,7 +37,8 @@ TESTS = $(check_PROGRAMS)
 
 test_rdp_SOURCES =      \
     fs/basename.c       \
-    fs/normalize_path.c
+    fs/normalize_path.c \
+    input-wheel.c
 
 test_rdp_CFLAGS =                \
     -Werror -Wall -pedantic      \
@@ -66,4 +67,3 @@ nodist_test_rdp_SOURCES = \
 LOG_DRIVER =                \
     env AM_TAP_AWK='$(AWK)' \
     $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh
-

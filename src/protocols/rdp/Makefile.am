@@ -70,6 +70,7 @@ libguac_client_rdp_la_SOURCES =                  \
     gdi.c                                        \
     input.c                                      \
     input-queue.c                                \
+    input-wheel.c                                \
     keyboard.c                                   \
     keymap.c                                     \
     log.c                                        \
@@ -114,6 +115,7 @@ noinst_HEADERS =                                 \
     error.h                                      \
     fs.h                                         \
     gdi.h                                        \
+    input-wheel.h                                \
     input.h                                      \
     keyboard.h                                   \
     keymap.h                                     \
