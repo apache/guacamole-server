@@ -36,6 +36,7 @@ check_PROGRAMS = test_rdp
 TESTS = $(check_PROGRAMS)
 
 test_rdp_SOURCES =      \
+    aad/percent_decode.c \
     fs/basename.c       \
     fs/normalize_path.c
 
