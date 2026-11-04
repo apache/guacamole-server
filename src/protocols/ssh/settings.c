@@ -68,6 +68,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "recording-include-clipboard",
     "create-recording-path",
     "recording-write-existing",
+    "require-recording",
     "read-only",
     "server-alive-interval",
     "backspace",
@@ -274,6 +275,12 @@ enum SSH_ARGS_IDX {
      * Disabled by default.
      */
     IDX_RECORDING_WRITE_EXISTING,
+
+    /**
+     * Whether recording is required. If set to "true", the connection will
+     * be closed if the recording cannot be created for any reason.
+     */
+    IDX_REQUIRE_RECORDING,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -559,6 +566,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->recording_write_existing =
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_RECORDING_WRITE_EXISTING, false);
+
+    /* Parse require recording flag */
+    settings->require_recording =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_REQUIRE_RECORDING, false);
 
     /* Parse server alive interval */
     settings->server_alive_interval =
