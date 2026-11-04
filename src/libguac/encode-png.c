@@ -62,14 +62,16 @@ typedef struct guac_png_write_state {
      */
     int buffer_size;
 
-    /** Whether writing PNG data to the underlying socket has failed. */
+    /**
+     * Whether writing PNG data to the underlying socket has failed.
+     */
     int failed;
 
 } guac_png_write_state;
 
 /**
  * Writes the contents of the PNG write state as a blob to its associated
- * socket.
+ * socket, returning zero on success or non-zero if the socket write fails.
  *
  * @param write_state
  *     The write state to flush.
@@ -100,7 +102,8 @@ static int guac_png_flush_data(guac_png_write_state* write_state) {
 
 /**
  * Appends the given PNG data to the internal buffer of the given write state,
- * automatically flushing the write state as necessary.
+ * automatically flushing the write state as necessary. Returns zero if all
+ * data was buffered or sent, or non-zero if a socket write fails.
  *
  * @param write_state
  *     The write state to append the given data to.
@@ -159,7 +162,9 @@ static int guac_png_write_data(guac_png_write_state* write_state,
  * Writes the given buffer of PNG data to the buffer of the given write state,
  * flushing that buffer to blob instructions if necessary. This handler is
  * called by Cairo when writing PNG data via
- * cairo_surface_write_to_png_stream().
+ * cairo_surface_write_to_png_stream(). Returns CAIRO_STATUS_SUCCESS if all
+ * data was buffered or sent, or CAIRO_STATUS_WRITE_ERROR if a socket write
+ * fails.
  *
  * @param closure
  *     Pointer to arbitrary data passed to cairo_surface_write_to_png_stream().
@@ -189,8 +194,8 @@ static cairo_status_t guac_png_cairo_write_handler(void* closure,
 }
 
 /**
- * Implementation of guac_png_write() which uses Cairo's own PNG encoder to
- * write PNG data, rather than using libpng directly.
+ * Encodes PNG data using Cairo's own encoder rather than libpng, returning
+ * zero on success or non-zero if the encoding or socket write fails.
  *
  * @param socket
  *     The socket to send PNG blobs over.
@@ -292,10 +297,12 @@ static void guac_png_flush_handler(png_structp png) {
 }
 
 /**
- * Experimental, opt-in truecolor PNG writer for opaque RGB24 surfaces. Skips
- * palette construction and uses compression level 1 with only the SUB filter.
+ * Encodes opaque RGB24 surfaces with the experimental truecolor PNG writer,
+ * returning zero on success or non-zero on error. It skips palette
+ * construction and uses compression level 1 with only the SUB filter.
  * Decoded pixels remain lossless, but low-color images may require more bytes
- * than the default palette writer. Uses the existing PNG blob transport.
+ * than the default palette writer. Output uses the existing PNG blob
+ * transport.
  *
  * @param socket
  *     The output socket.
@@ -311,6 +318,8 @@ static void guac_png_flush_handler(png_structp png) {
  */
 static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
         cairo_surface_t* surface) {
+
+    /* Get and validate the opaque RGB24 surface data. */
     const int width = cairo_image_surface_get_width(surface);
     const int height = cairo_image_surface_get_height(surface);
     const int stride = cairo_image_surface_get_stride(surface);
@@ -322,7 +331,9 @@ static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
         return -1;
     }
 
-    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    /* Allocate libpng state and a reusable packed RGB row. */
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+            NULL, NULL, NULL);
     if (!png) {
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = "libpng failed to create write structure";
@@ -342,8 +353,12 @@ static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
         guac_error_message = "Could not allocate RGB PNG row";
         return -1;
     }
-    guac_png_write_state writer = { .socket = socket, .stream = stream, .buffer_size = 0 };
-    writer.failed = 0;
+    guac_png_write_state writer = {
+        .socket = socket,
+        .stream = stream,
+        .buffer_size = 0,
+        .failed = 0
+    };
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &info);
         guac_mem_free(row);
@@ -352,21 +367,29 @@ static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
         return -1;
     }
 
-    png_set_write_fn(png, &writer, guac_png_write_handler, guac_png_flush_handler);
+    /* Configure libpng to send encoded data through the Guacamole blob
+     * writer. */
+    png_set_write_fn(png, &writer, guac_png_write_handler,
+            guac_png_flush_handler);
     png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB,
-            PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+            PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+            PNG_FILTER_TYPE_DEFAULT);
     png_set_compression_level(png, 1);
     png_set_filter(png, PNG_FILTER_TYPE_BASE, PNG_FILTER_SUB);
     png_write_info(png, info);
+
+    /* Convert each Cairo pixel to packed RGB bytes and encode each row. */
     for (int y = 0; y < height; y++) {
         const uint32_t* src = (const uint32_t*) (pixels + (size_t) y * stride);
         for (int x = 0; x < width; x++) {
-            row[3*x] = (src[x] >> 16) & 0xff;
-            row[3*x+1] = (src[x] >> 8) & 0xff;
-            row[3*x+2] = src[x] & 0xff;
+            row[3 * x] = (src[x] >> 16) & 0xff;
+            row[3 * x + 1] = (src[x] >> 8) & 0xff;
+            row[3 * x + 2] = src[x] & 0xff;
         }
         png_write_row(png, row);
     }
+    /* Complete PNG output, release temporary state, and flush the final
+     * blob. */
     png_write_end(png, info);
     png_destroy_write_struct(&png, &info);
     guac_mem_free(row);
@@ -375,7 +398,9 @@ static int guac_png_rgb_fast_write(guac_socket* socket, guac_stream* stream,
         guac_error_message = "Could not write PNG data to socket";
         return -1;
     }
+
     return 0;
+
 }
 
 int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
@@ -454,7 +479,7 @@ int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
     /* Set error handler */
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &png_info);
-        for (int i=0; i<height; i++)
+        for (int i = 0; i < height; i++)
             guac_mem_free(png_rows[i]);
         guac_mem_free(png_rows);
         guac_palette_free(palette);
@@ -480,7 +505,7 @@ int guac_png_write_with_options(guac_socket* socket, guac_stream* stream,
         /* Allocate new PNG row */
         png_byte* row = (png_byte*) guac_mem_alloc(sizeof(png_byte), width);
         if (!row) {
-            for (int i=0; i<y; i++)
+            for (int i = 0; i < y; i++)
                 guac_mem_free(png_rows[i]);
             guac_mem_free(png_rows);
             png_destroy_write_struct(&png, &png_info);

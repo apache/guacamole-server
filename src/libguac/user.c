@@ -268,7 +268,8 @@ void guac_user_stream_png(guac_user* user, guac_socket* socket,
                 "PNG encoding failed: %s", guac_error_message);
     }
     else {
-        /* Mark the image stream complete only after all PNG data was written. */
+        /* Mark the image stream complete only after all PNG data was
+         * written. */
         guac_protocol_send_end(socket, stream);
     }
 

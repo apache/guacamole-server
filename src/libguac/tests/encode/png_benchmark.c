@@ -35,13 +35,15 @@
 #define PNG_BENCHMARK_WARMUPS 2
 #define PNG_BENCHMARK_SAMPLES 7
 
-/** Counts encoded protocol bytes without storing them. */
+/**
+ * A data structure to store the count of encoded protocol bytes.
+ */
 typedef struct png_benchmark_sink {
     size_t bytes;
 } png_benchmark_sink;
 
 /**
- * Counts bytes written to a benchmark socket.
+ * Counts bytes written to a benchmark socket and returns the number accepted.
  *
  * @param socket
  *     The socket containing a png_benchmark_sink in its data pointer.
@@ -57,16 +59,25 @@ typedef struct png_benchmark_sink {
  */
 static ssize_t count_bytes(guac_socket* socket, const void* data,
         size_t length) {
+
     (void) data;
     ((png_benchmark_sink*) socket->data)->bytes += length;
     return (ssize_t) length;
+
 }
 
-/** Returns the current monotonic clock value in nanoseconds. */
+/**
+ * Returns the current monotonic clock value in nanoseconds.
+ *
+ * @return
+ *     The current monotonic clock value in nanoseconds.
+ */
 static uint64_t get_time_ns(void) {
+
     struct timespec time;
     clock_gettime(CLOCK_MONOTONIC, &time);
     return (uint64_t) time.tv_sec * 1000000000ULL + time.tv_nsec;
+
 }
 
 /**
@@ -122,7 +133,8 @@ static void fill_surface(cairo_surface_t* surface, int pattern) {
 }
 
 /**
- * Encodes one sample and returns elapsed time and serialized protocol bytes.
+ * Encodes one sample, stores elapsed time and serialized protocol bytes, and
+ * returns zero on success or non-zero if encoding or socket flushing fails.
  *
  * @param surface
  *     Surface to encode.
@@ -166,15 +178,31 @@ static int encode_sample(cairo_surface_t* surface, int fast,
 
 }
 
-/** Compares two elapsed-time samples for qsort(). */
+/**
+ * Compares two elapsed-time samples for qsort() and returns a negative value,
+ * zero, or a positive value as the first sample is less than, equal to, or
+ * greater than the second.
+ *
+ * @param a
+ *     First elapsed-time sample.
+ *
+ * @param b
+ *     Second elapsed-time sample.
+ *
+ * @return
+ *     A negative value, zero, or a positive value according to the ordering.
+ */
 static int compare_times(const void* a, const void* b) {
+
     uint64_t left = *(const uint64_t*) a;
     uint64_t right = *(const uint64_t*) b;
     return (left > right) - (left < right);
+
 }
 
 /**
- * Benchmarks both encoders against one deterministic synthetic image.
+ * Benchmarks both encoders against one deterministic synthetic image and
+ * returns zero on success or non-zero if setup or encoding fails.
  *
  * @param name
  *     Human-readable image pattern name.
@@ -241,7 +269,8 @@ static int run_case(const char* name, int pattern) {
 
     uint64_t default_time = elapsed[0][PNG_BENCHMARK_SAMPLES / 2];
     uint64_t fast_time = elapsed[1][PNG_BENCHMARK_SAMPLES / 2];
-    printf("%s: default %zu bytes/%llu us; fast %zu bytes/%llu us; speedup %.2fx\n",
+    printf("%s: default %zu bytes/%llu us; fast %zu bytes/%llu us; "
+            "speedup %.2fx\n",
             name, bytes[0], (unsigned long long) (default_time / 1000),
             bytes[1], (unsigned long long) (fast_time / 1000),
             (double) default_time / fast_time);
@@ -260,10 +289,18 @@ fail:
 
 }
 
+/**
+ * Runs all PNG benchmark cases and returns zero if they all succeed, or
+ * non-zero if any case fails.
+ *
+ * @return
+ *     Zero if all cases succeed, non-zero otherwise.
+ */
 int main(void) {
 
     puts("1280x720 RGB24; two warmups and seven timed samples per encoder;");
-    puts("reported byte counts include Guacamole blob framing, not network I/O.");
+    puts("reported byte counts include Guacamole blob framing, "
+            "not network I/O.");
 
     if (run_case("four-color tiles", 0)
             || run_case("gradient/text pattern", 1)

@@ -918,7 +918,8 @@ void guac_client_stream_argv(guac_client* client, guac_socket* socket,
 /**
  * Streams the image data of the given surface over an image stream ("img"
  * instruction) as PNG-encoded data. The image stream will be automatically
- * allocated and freed.
+ * allocated and freed. If PNG encoding fails, an error is sent to the client
+ * and the image stream is not marked as successfully complete.
  *
  * @param client
  *     The Guacamole client for which the image stream should be allocated.
@@ -944,8 +945,6 @@ void guac_client_stream_argv(guac_client* client, guac_socket* socket,
  * @param surface
  *     A Cairo surface containing the image data to be streamed.
  *
- * If PNG encoding fails, an error is sent to the client and the image stream
- * is not marked as successfully complete.
  */
 void guac_client_stream_png(guac_client* client, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,

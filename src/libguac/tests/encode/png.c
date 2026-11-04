@@ -34,24 +34,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-/** In-memory storage for synthetic PNG/protocol data only. */
+/**
+ * In-memory storage for synthetic PNG/protocol data only.
+ */
 typedef struct test_png_buffer {
     unsigned char* data;
     size_t length;
     size_t offset;
 } test_png_buffer;
 
-/** Socket state used to fail exactly one PNG blob write. */
+/**
+ * Socket state used to fail exactly one PNG blob write.
+ */
 typedef struct test_png_failure_state {
     test_png_buffer protocol;
     int failed;
 } test_png_failure_state;
 
-/** State used by the synchronous PNG stream failure-injection tests. */
+/**
+ * State used by the synchronous PNG stream failure-injection tests.
+ */
 static test_png_failure_state* active_failure_state;
 
 /**
- * Appends test data to an in-memory byte buffer.
+ * Appends test data to an in-memory byte buffer and returns zero on success
+ * or -1 if allocation fails.
  *
  * @param buffer
  *     Destination buffer.
@@ -65,7 +72,9 @@ static test_png_failure_state* active_failure_state;
  * @return
  *     Zero on success, -1 on allocation failure.
  */
-static int append_bytes(test_png_buffer* buffer, const void* data, size_t length) {
+static int append_bytes(test_png_buffer* buffer, const void* data,
+        size_t length) {
+
     if (!length)
         return 0;
     unsigned char* resized = realloc(buffer->data, buffer->length + length);
@@ -75,10 +84,12 @@ static int append_bytes(test_png_buffer* buffer, const void* data, size_t length
     memcpy(buffer->data + buffer->length, data, length);
     buffer->length += length;
     return 0;
+
 }
 
 /**
- * Captures protocol output for PNG tests.
+ * Captures protocol output for PNG tests and returns the number of bytes
+ * written, or -1 on failure.
  *
  * @param socket
  *     The socket with the capture buffer in its data pointer.
@@ -92,12 +103,15 @@ static int append_bytes(test_png_buffer* buffer, const void* data, size_t length
  * @return
  *     Number of bytes written, or -1 on failure.
  */
-static ssize_t capture_bytes(guac_socket* socket, const void* data, size_t length) {
+static ssize_t capture_bytes(guac_socket* socket, const void* data,
+        size_t length) {
+
     return append_bytes(socket->data, data, length) ? -1 : (ssize_t) length;
+
 }
 
 /**
- * Simulates a socket write failure.
+ * Simulates a socket write failure and returns -1.
  *
  * @param socket
  *     The socket being written to.
@@ -111,15 +125,19 @@ static ssize_t capture_bytes(guac_socket* socket, const void* data, size_t lengt
  * @return
  *     Always -1 to indicate failure.
  */
-static ssize_t fail_write(guac_socket* socket, const void* data, size_t length) {
+static ssize_t fail_write(guac_socket* socket, const void* data,
+        size_t length) {
+
     (void) socket;
     (void) data;
     (void) length;
     return -1;
+
 }
 
 /**
- * Fails the first PNG blob instruction and captures subsequent socket writes.
+ * Fails the first PNG blob instruction and captures subsequent socket writes,
+ * returning -1 for the failed write or the number of bytes captured.
  *
  * @param socket
  *     The socket being written to.
@@ -136,17 +154,22 @@ static ssize_t fail_write(guac_socket* socket, const void* data, size_t length) 
  */
 static ssize_t fail_blob_once(guac_socket* socket, const void* data,
         size_t length) {
+
     (void) socket;
     test_png_failure_state* state = active_failure_state;
-    if (!state->failed && length >= 7 && memcmp(data, "4.blob,", 7) == 0) {
+    if (!state->failed && length >= 7
+            && memcmp(data, "4.blob,", 7) == 0) {
         state->failed = 1;
         return -1;
     }
-    return append_bytes(&state->protocol, data, length) ? -1 : (ssize_t) length;
+    return append_bytes(&state->protocol, data, length)
+        ? -1 : (ssize_t) length;
+
 }
 
 /**
- * Counts instructions with the given opcode in captured protocol output.
+ * Counts instructions with the given opcode in captured protocol output and
+ * returns the number found, or -1 if parsing fails.
  *
  * @param protocol
  *     Captured protocol bytes.
@@ -159,6 +182,7 @@ static ssize_t fail_blob_once(guac_socket* socket, const void* data,
  */
 static int count_instructions(const test_png_buffer* protocol,
         const char* opcode) {
+
     unsigned char* data = malloc(protocol->length);
     if (!data)
         return -1;
@@ -194,10 +218,12 @@ static int count_instructions(const test_png_buffer* protocol,
     }
     free(data);
     return count;
+
 }
 
 /**
- * Reads encoded PNG bytes for Cairo's independent PNG decoder.
+ * Reads encoded PNG bytes for Cairo's independent PNG decoder and returns a
+ * Cairo status indicating whether the requested bytes were read.
  *
  * @param closure
  *     Test buffer containing encoded PNG bytes.
@@ -213,16 +239,19 @@ static int count_instructions(const test_png_buffer* protocol,
  */
 static cairo_status_t read_png_bytes(void* closure, unsigned char* data,
         unsigned int length) {
+
     test_png_buffer* buffer = closure;
     if (length > buffer->length - buffer->offset)
         return CAIRO_STATUS_READ_ERROR;
     memcpy(data, buffer->data + buffer->offset, length);
     buffer->offset += length;
     return CAIRO_STATUS_SUCCESS;
+
 }
 
 /**
- * Encodes through production socket, blob protocol, and PNG writer.
+ * Encodes through the production socket, blob protocol, and PNG writer, then
+ * stores the reassembled PNG bytes in the given buffer.
  *
  * @param surface
  *     The image surface to encode.
@@ -235,6 +264,7 @@ static cairo_status_t read_png_bytes(void* closure, unsigned char* data,
  */
 static void encode_surface(cairo_surface_t* surface, int option,
         test_png_buffer* png) {
+
     test_png_buffer protocol = {0};
     guac_socket* socket = guac_socket_alloc();
     CU_ASSERT_PTR_NOT_NULL_FATAL(socket);
@@ -282,11 +312,12 @@ static void encode_surface(cairo_surface_t* surface, int option,
     }
     CU_ASSERT_EQUAL(offset, protocol.length);
     free(protocol.data);
+
 }
 
 /**
- * Checks the explicit PNG option and the legacy default using pixel round-trips
- * and source padding comparisons for a given Cairo surface configuration.
+ * Checks the explicit PNG option and legacy default using pixel round-trips
+ * and source padding comparisons for a Cairo surface configuration.
  *
  * @param format
  *     Cairo pixel format to test.
@@ -300,7 +331,9 @@ static void encode_surface(cairo_surface_t* surface, int option,
  * @param padding
  *     Extra row stride in bytes.
  */
-static void roundtrip(cairo_format_t format, int width, int height, int padding) {
+static void roundtrip(cairo_format_t format, int width, int height,
+        int padding) {
+
     int stride = cairo_format_stride_for_width(format, width) + padding;
     size_t size = (size_t) stride * height;
     unsigned char* pixels = malloc(size);
@@ -333,7 +366,8 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
     /* Only exactly option 1 enables the experimental encoder. */
     const int modes[] = { -1, 0, 2, -2, 1 };
     test_png_buffer baseline = {0};
-    for (unsigned int mode = 0; mode < sizeof(modes) / sizeof(modes[0]); mode++) {
+    for (unsigned int mode = 0;
+            mode < sizeof(modes) / sizeof(modes[0]); mode++) {
         test_png_buffer png = {0};
         encode_surface(surface, modes[mode], &png);
         CU_ASSERT(png.length >= 33);
@@ -358,7 +392,8 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
             CU_ASSERT_EQUAL(cairo_image_surface_get_width(decoded), width);
             CU_ASSERT_EQUAL(cairo_image_surface_get_height(decoded), height);
             cairo_surface_flush(decoded);
-            const unsigned char* decoded_data = cairo_image_surface_get_data(decoded);
+            const unsigned char* decoded_data =
+                    cairo_image_surface_get_data(decoded);
             int decoded_stride = cairo_image_surface_get_stride(decoded);
             for (int y = 0; y < height; y++) {
                 const uint32_t* expected = (const uint32_t*)
@@ -367,7 +402,8 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
                     (decoded_data + (size_t) y * decoded_stride);
                 for (int x = 0; x < width; x++) {
                     if (format == CAIRO_FORMAT_RGB24) {
-                        CU_ASSERT_EQUAL(actual[x] & 0xFFFFFF, expected[x] & 0xFFFFFF);
+                        CU_ASSERT_EQUAL(actual[x] & 0xFFFFFF,
+                                expected[x] & 0xFFFFFF);
                     }
                     else {
                         CU_ASSERT_EQUAL(actual[x], expected[x]);
@@ -381,11 +417,12 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
         if (mode == 0)
             baseline = png;
         else {
-            /* Default flags and all ARGB32 writes must preserve exact output. */
+            /* Default flags and ARGB32 writes must preserve exact output. */
             if (modes[mode] != 1 || format == CAIRO_FORMAT_ARGB32) {
                 CU_ASSERT_EQUAL(png.length, baseline.length);
                 if (png.length == baseline.length)
-                    CU_ASSERT_EQUAL(memcmp(png.data, baseline.data, png.length), 0);
+                    CU_ASSERT_EQUAL(memcmp(png.data, baseline.data,
+                            png.length), 0);
             }
             free(png.data);
         }
@@ -394,48 +431,62 @@ static void roundtrip(cairo_format_t format, int width, int height, int padding)
     cairo_surface_destroy(surface);
     free(pixels);
     free(original);
+
 }
 
 /**
  * Verifies PNG round-trip behavior for one-pixel RGB24 surfaces.
  */
 void test_png__rgb_single_pixel(void) {
+
     roundtrip(CAIRO_FORMAT_RGB24, 1, 1, 0);
+
 }
 
 /**
  * Verifies PNG round-trip behavior for odd RGB24 dimensions.
  */
 void test_png__rgb_odd_dimensions(void) {
+
     roundtrip(CAIRO_FORMAT_RGB24, 17, 13, 0);
+
 }
 
 /**
  * Verifies PNG round-trip behavior for padded RGB24 row strides.
  */
 void test_png__rgb_padded_stride(void) {
+
     roundtrip(CAIRO_FORMAT_RGB24, 512, 257, 12);
+
 }
 
 /**
- * Verifies PNG round-trip behavior for large RGB24 images and multi-blob output.
+ * Verifies round-trip behavior for large RGB24 images and multi-blob output.
  */
 void test_png__rgb_large_odd_stride(void) {
+
     roundtrip(CAIRO_FORMAT_RGB24, 1366, 768, 20);
+
 }
 
 /**
- * Verifies PNG round-trip behavior for odd alpha surfaces and the Cairo fallback.
+ * Verifies round-trip behavior for odd alpha surfaces and the Cairo fallback.
  */
 void test_png__argb_odd_fallback(void) {
+
     roundtrip(CAIRO_FORMAT_ARGB32, 17, 13, 8);
+
 }
 
 /**
- * Verifies PNG round-trip behavior for padded alpha surfaces and the Cairo fallback.
+ * Verifies round-trip behavior for padded alpha surfaces and the Cairo
+ * fallback.
  */
 void test_png__argb_padded_fallback(void) {
+
     roundtrip(CAIRO_FORMAT_ARGB32, 512, 257, 16);
+
 }
 
 /**
