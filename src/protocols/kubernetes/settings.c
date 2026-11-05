@@ -26,6 +26,7 @@
 #include <guacamole/user.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 /* Client plugin arguments */
 const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
@@ -63,6 +64,7 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "disable-copy",
     "disable-paste",
     "terminal-type",
+    "text-output",
     NULL
 };
 
@@ -287,6 +289,16 @@ enum KUBERNETES_ARGS_IDX {
      */
     IDX_TERMINAL_TYPE,
 
+    /**
+     * Whether the raw terminal (PTY) byte stream should be teed, verbatim, to
+     * an outbound "STDOUT" pipe stream in addition to the normal graphical
+     * display. This enables a native/CLI Guacamole client to render the
+     * session as true in-terminal text. If set to "true", text-output mode is
+     * enabled; by default it is disabled. Honored only when copying from the
+     * terminal is not disabled (see IDX_DISABLE_COPY).
+     */
+    IDX_TEXT_OUTPUT,
+
     KUBERNETES_ARGS_COUNT
 };
 
@@ -495,6 +507,17 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     settings->terminal_type =
         guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_TERMINAL_TYPE, "linux");
+    /* Parse text-output mode. Accepts "true" (tee mode: the graphical display
+     * is preserved for browser clients) or "raw" (headless: the graphical
+     * terminal is not rendered, eliminating the graphical instruction stream
+     * and its rendering cost). Any other value disables text-output. */
+    char* text_output_mode =
+        guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_TEXT_OUTPUT, "false");
+    settings->text_output_raw = (strcmp(text_output_mode, "raw") == 0);
+    settings->text_output = settings->text_output_raw
+            || (strcmp(text_output_mode, "true") == 0);
+    guac_mem_free(text_output_mode);
 
     /* Parsing was successful */
     return settings;
