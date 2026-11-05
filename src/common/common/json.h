@@ -23,6 +23,8 @@
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 
+#include <stdint.h>
+
 /**
  * The current streaming state of an arbitrary JSON object, consisting of
  * any number of property name/value pairs.
@@ -166,6 +168,92 @@ int guac_common_json_write_property(guac_user* user, guac_stream* stream,
  * @param json_state
  *     The state object to initialize.
  */
+/**
+ * Details of a single file or directory, for inclusion as one entry of a
+ * stream index (the JSON listing sent for a directory of a filesystem
+ * object). Only the mimetype is required; each other detail is written only
+ * if it is known.
+ */
+typedef struct guac_common_json_file_details {
+
+    /**
+     * The mimetype of the entry. This is GUAC_USER_STREAM_INDEX_MIMETYPE for
+     * directories.
+     */
+    const char* mimetype;
+
+    /**
+     * Non-zero if size is known and should be written, zero otherwise.
+     */
+    int has_size;
+
+    /**
+     * The size of the file, in bytes.
+     */
+    uint64_t size;
+
+    /**
+     * Non-zero if mtime is known and should be written, zero otherwise.
+     */
+    int has_mtime;
+
+    /**
+     * The time the file was last modified, in seconds since the UNIX epoch.
+     */
+    uint64_t mtime;
+
+    /**
+     * The permissions of the file in "ls -l" form (for example "-rw-r--r--"),
+     * or NULL if unknown or not applicable.
+     */
+    const char* permissions;
+
+    /**
+     * The name (or, if no name is available, the numeric ID) of the user that
+     * owns the file, or NULL if unknown or not applicable.
+     */
+    const char* owner;
+
+    /**
+     * The name (or, if no name is available, the numeric ID) of the group
+     * that owns the file, or NULL if unknown or not applicable.
+     */
+    const char* group;
+
+} guac_common_json_file_details;
+
+/**
+ * Writes a single stream index entry, mapping the given name to the given
+ * file details, into the given JSON object buffer. If the user supports
+ * detailed stream index entries (see guac_user_supports_file_details()), the
+ * value is written as an object containing the mimetype and every known
+ * detail. Otherwise, the value is written as the mimetype string alone,
+ * exactly as guac_common_json_write_property() would, so older clients are
+ * unaffected. All flushing and blob handling is as for
+ * guac_common_json_write_property().
+ *
+ * @param user
+ *     The user to whom the stream index is being sent.
+ *
+ * @param stream
+ *     The stream to which the JSON object is being written.
+ *
+ * @param json_state
+ *     The current state of the JSON output buffer.
+ *
+ * @param name
+ *     The name of the entry (typically its absolute path).
+ *
+ * @param details
+ *     The details of the entry. The mimetype must be non-NULL.
+ *
+ * @return
+ *     Non-zero if at least one blob was written, zero otherwise.
+ */
+int guac_common_json_write_file_details(guac_user* user,
+        guac_stream* stream, guac_common_json_state* json_state,
+        const char* name, const guac_common_json_file_details* details);
+
 void guac_common_json_begin_object(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state);
 

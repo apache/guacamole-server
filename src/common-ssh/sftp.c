@@ -31,6 +31,7 @@
 
 #include <fcntl.h>
 #include <libgen.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -584,6 +585,103 @@ void guac_common_ssh_sftp_set_upload_path(
 }
 
 /**
+ * Renders the given SFTP permissions in "ls -l" form, such as "-rw-r--r--" or
+ * "drwxr-xr-x".
+ *
+ * @param permissions
+ *     The permissions field of a LIBSSH2_SFTP_ATTRIBUTES structure.
+ *
+ * @param buffer
+ *     The buffer to receive the NULL-terminated result. This buffer must be
+ *     at least 11 bytes long.
+ */
+static void guac_common_ssh_sftp_format_permissions(unsigned long permissions,
+        char* buffer) {
+
+    const char* flags = "rwxrwxrwx";
+    int i;
+
+    if (LIBSSH2_SFTP_S_ISDIR(permissions))       buffer[0] = 'd';
+    else if (LIBSSH2_SFTP_S_ISLNK(permissions))  buffer[0] = 'l';
+    else if (LIBSSH2_SFTP_S_ISCHR(permissions))  buffer[0] = 'c';
+    else if (LIBSSH2_SFTP_S_ISBLK(permissions))  buffer[0] = 'b';
+    else if (LIBSSH2_SFTP_S_ISFIFO(permissions)) buffer[0] = 'p';
+    else if (LIBSSH2_SFTP_S_ISSOCK(permissions)) buffer[0] = 's';
+    else                                         buffer[0] = '-';
+
+    for (i = 0; i < 9; i++)
+        buffer[i + 1] = (permissions & (0400 >> i)) ? flags[i] : '-';
+
+    buffer[10] = '\0';
+
+}
+
+/**
+ * Copies the whitespace-delimited field at the given index out of the given
+ * "longname" returned by an SFTP directory read. SFTP version 3 defines the
+ * longname only as the output of "ls -l", and it is the only place owner and
+ * group names are available (the attributes carry only numeric IDs). The
+ * field is copied only if the longname actually appears to be "ls -l" output.
+ *
+ * @param longname
+ *     The longname returned by libssh2_sftp_readdir_ex().
+ *
+ * @param index
+ *     The zero-based index of the field to copy. In "ls -l" output, the owner
+ *     is field 2 and the group is field 3.
+ *
+ * @param buffer
+ *     The buffer to receive the NULL-terminated field.
+ *
+ * @param length
+ *     The size of the buffer, in bytes.
+ *
+ * @return
+ *     Non-zero if the field was found and copied, zero otherwise.
+ */
+static int guac_common_ssh_sftp_longname_field(const char* longname,
+        int index, char* buffer, int length) {
+
+    const char* current = longname;
+    int i;
+
+    /* Only trust longnames that begin with an "ls -l" file type */
+    if (*current == '\0' || strchr("-dlcbps", *current) == NULL)
+        return 0;
+
+    for (i = 0; *current != '\0'; i++) {
+
+        /* Skip whitespace preceding field */
+        while (*current == ' ' || *current == '\t')
+            current++;
+
+        if (*current == '\0')
+            break;
+
+        /* Find end of field */
+        const char* start = current;
+        while (*current != '\0' && *current != ' ' && *current != '\t')
+            current++;
+
+        if (i == index) {
+
+            int field_length = current - start;
+            if (field_length >= length)
+                return 0;
+
+            memcpy(buffer, start, field_length);
+            buffer[field_length] = '\0';
+            return 1;
+
+        }
+
+    }
+
+    return 0;
+
+}
+
+/**
  * Handler for ack messages received due to receipt of a "body" or "blob"
  * instruction associated with a SFTP directory list operation.
  *
@@ -610,6 +708,7 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
     int bytes_read;
 
     char filename[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+    char longname[GUAC_COMMON_SSH_SFTP_MAX_PATH];
     LIBSSH2_SFTP_ATTRIBUTES attributes;
 
     guac_common_ssh_sftp_ls_state* list_state =
@@ -627,9 +726,11 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
         return 0;
     }
 
-    /* While directory entries remain */
-    while ((bytes_read = libssh2_sftp_readdir(list_state->directory,
-                filename, sizeof(filename), &attributes)) > 0) {
+    /* While directory entries remain (the longname carries owner and group
+     * names, which the attributes lack) */
+    while ((bytes_read = libssh2_sftp_readdir_ex(list_state->directory,
+                filename, sizeof(filename), longname, sizeof(longname),
+                &attributes)) > 0) {
 
         char absolute_path[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -649,11 +750,13 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
         }
 
         /* Stat explicitly if symbolic link (might point to directory) */
+        int followed_link = 0;
         if (LIBSSH2_SFTP_S_ISLNK(attributes.permissions)) {
             char real_path[GUAC_COMMON_SSH_SFTP_MAX_PATH];
             if (guac_ssh_append_filename(real_path,
                         list_state->directory_real_path, filename))
-                libssh2_sftp_stat(sftp, real_path, &attributes);
+                followed_link = (libssh2_sftp_stat(sftp, real_path,
+                            &attributes) == 0);
         }
 
         /* Determine mimetype */
@@ -663,9 +766,50 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
         else
             mimetype = "application/octet-stream";
 
+        /* Gather whatever details the server provided */
+        char permissions[11];
+        char owner[256];
+        char group[256];
+
+        guac_common_json_file_details details = {
+            .mimetype = mimetype,
+            .has_size = (attributes.flags & LIBSSH2_SFTP_ATTR_SIZE) != 0,
+            .size = attributes.filesize,
+            .has_mtime = (attributes.flags & LIBSSH2_SFTP_ATTR_ACMODTIME) != 0,
+            .mtime = attributes.mtime
+        };
+
+        if (attributes.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) {
+            guac_common_ssh_sftp_format_permissions(attributes.permissions,
+                    permissions);
+            details.permissions = permissions;
+        }
+
+        /* Owner and group by name where available, otherwise by ID. If a
+         * symbolic link was followed, the attributes now describe its target
+         * while the longname still describes the link itself, so only the
+         * target's IDs are used. */
+        const char* names = followed_link ? "" : longname;
+
+        if (guac_common_ssh_sftp_longname_field(names, 2,
+                    owner, sizeof(owner)))
+            details.owner = owner;
+        else if (attributes.flags & LIBSSH2_SFTP_ATTR_UIDGID) {
+            snprintf(owner, sizeof(owner), "%lu", attributes.uid);
+            details.owner = owner;
+        }
+
+        if (guac_common_ssh_sftp_longname_field(names, 3,
+                    group, sizeof(group)))
+            details.group = group;
+        else if (attributes.flags & LIBSSH2_SFTP_ATTR_UIDGID) {
+            snprintf(group, sizeof(group), "%lu", attributes.gid);
+            details.group = group;
+        }
+
         /* Write entry, waiting for next ack if a blob is written */
-        if (guac_common_json_write_property(user, stream,
-                    &list_state->json_state, absolute_path, mimetype))
+        if (guac_common_json_write_file_details(user, stream,
+                    &list_state->json_state, absolute_path, &details))
             break;
 
     }

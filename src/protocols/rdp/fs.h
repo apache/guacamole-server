@@ -115,6 +115,13 @@
 #define WINDOWS_TIME(t) ((t + ((uint64_t) 11644473600)) * 10000000)
 
 /**
+ * Converts the given Windows timestamp (100-nanosecond intervals since
+ * January 1, 1601) to a UNIX timestamp (seconds since the UNIX epoch). This
+ * is the inverse of WINDOWS_TIME().
+ */
+#define UNIX_TIME(t) (((uint64_t) (t)) / 10000000 - ((uint64_t) 11644473600))
+
+/**
  * An arbitrary file on the virtual filesystem of the Guacamole drive.
  */
 typedef struct guac_rdp_fs_file {
