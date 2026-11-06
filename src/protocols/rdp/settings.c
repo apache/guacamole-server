@@ -1480,7 +1480,7 @@ int guac_rdp_get_width(freerdp* rdp) {
 #ifdef HAVE_SETTERS_GETTERS
     return freerdp_settings_get_uint32(rdp->context->settings, FreeRDP_DesktopWidth);
 #else
-    return rdp->settings->DesktopWidth;
+    return GUAC_RDP_CONTEXT(rdp)->settings->DesktopWidth;
 #endif
 }
 
@@ -1488,7 +1488,7 @@ int guac_rdp_get_height(freerdp* rdp) {
 #ifdef HAVE_SETTERS_GETTERS
     return freerdp_settings_get_uint32(rdp->context->settings, FreeRDP_DesktopHeight);
 #else
-    return rdp->settings->DesktopHeight;
+    return GUAC_RDP_CONTEXT(rdp)->settings->DesktopHeight;
 #endif
 }
 
@@ -1496,7 +1496,7 @@ int guac_rdp_get_depth(freerdp* rdp) {
 #ifdef HAVE_SETTERS_GETTERS
     return freerdp_settings_get_uint32(rdp->context->settings, FreeRDP_ColorDepth);
 #else
-    return rdp->settings->ColorDepth;
+    return GUAC_RDP_CONTEXT(rdp)->settings->ColorDepth;
 #endif
 }
 

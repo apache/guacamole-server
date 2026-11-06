@@ -120,7 +120,7 @@ char* guac_strnstr(const char *haystack, const char *needle, size_t len) {
 #ifdef HAVE_STRNSTR
     return strnstr(haystack, needle, len);
 #else
-    char* chr;
+    const char* chr;
     size_t nlen = strlen(needle), off = 0;
 
     /* Follow documented API: return haystack if needle is the empty string. */
@@ -136,7 +136,7 @@ char* guac_strnstr(const char *haystack, const char *needle, size_t len) {
             return NULL;
         /* Now that we know we have at least nlen bytes, compare them. */
         if (!memcmp(chr, needle, nlen))
-            return chr;
+            return (char *) chr;
         /* Make sure we make progress. */
         off += 1;
     }
