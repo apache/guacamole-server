@@ -1138,6 +1138,8 @@ fi
 
 if test "x${have_freerdp}" = "xyes"
 then
+    save_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -Wno-error=deprecated-declarations"
     AC_MSG_CHECKING([whether freerdp structs have a context])
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
         #include <freerdp/freerdp.h>
@@ -1154,6 +1156,7 @@ then
     [AC_DEFINE([FREERDP_HAS_CONTEXT],,
                [FreeRDP structs have a context])],
     [AC_MSG_RESULT([no])])
+    CFLAGS="$save_CFLAGS"
 fi
 
 if test "x${have_freerdp}" = "xyes"
@@ -1244,10 +1247,13 @@ fi
 if test "x${have_freerdp}" = "xyes"
 then
     AC_MSG_CHECKING([whether freerdp instance supports LoadChannels])
+
+    guac_save_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -Wno-error=deprecated-declarations"
+
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
         #include <freerdp/freerdp.h>
 
-        /* Mock LoadChannels function with the expected signature */
         BOOL load_channels(freerdp* instance) {
             return TRUE;
         }
@@ -1259,10 +1265,12 @@ then
             return 0;
         }
     ]])],
-    [AC_MSG_RESULT([yes])]
-    [AC_DEFINE([RDP_INST_HAS_LOAD_CHANNELS],,
+    [AC_MSG_RESULT([yes])
+     AC_DEFINE([RDP_INST_HAS_LOAD_CHANNELS],,
                [Defined if freerdp instance supports LoadChannels])],
     [AC_MSG_RESULT([no])])
+
+    CFLAGS="$guac_save_CFLAGS"
 fi
 
 # Restore CPPFLAGS, removing FreeRDP-specific options needed for testing

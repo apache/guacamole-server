@@ -784,7 +784,7 @@ static int guac_terminal_named_color_search(const void* a, const void* b) {
 int guac_terminal_find_color(const char* name, guac_terminal_color* color) {
 
     /* Search for the color having the given name */
-    guac_terminal_named_color* found = bsearch(name,
+    const guac_terminal_named_color* found = bsearch(name,
             GUAC_TERMINAL_NAMED_COLORS, GUAC_TERMINAL_NAMED_COLORS_LENGTH,
             sizeof(guac_terminal_named_color),
             guac_terminal_named_color_search);
