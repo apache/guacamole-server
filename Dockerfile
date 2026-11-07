@@ -24,7 +24,7 @@
 # The Alpine Linux image that should be used as the basis for the guacd image
 # NOTE: Using 3.18 because the required openssl1.1-compat-dev package was
 # removed in more recent versions.
-ARG ALPINE_BASE_IMAGE=3.18
+ARG ALPINE_BASE_IMAGE=3.24
 
 # The target architecture of the build. Valid values are "ARM" and "X86". By
 # default, this is detected automatically.
