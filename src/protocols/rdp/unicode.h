@@ -33,7 +33,9 @@
  *     Buffer to which the converted UTF-8 data will be written.
  *
  * @param size
- *     The maximum number of bytes available in the UTF-8 buffer.
+ *     The maximum number of bytes available in the UTF-8 buffer. If the
+ *     converted string, including its NULL terminator, does not fit, the
+ *     result is truncated to the largest valid UTF-8 string that does fit.
  */
 void guac_rdp_utf16_to_utf8(const unsigned char* utf16, int length,
         char* utf8, int size);

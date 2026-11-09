@@ -27,6 +27,13 @@ void guac_rdp_utf16_to_utf8(const unsigned char* utf16, int length,
     int i;
     const uint16_t* in_codepoint = (const uint16_t*) utf16;
 
+    /* If there is no room for even a NULL terminator, do nothing */
+    if (size <= 0)
+        return;
+
+    /* Reserve one byte for the NULL terminator */
+    size--;
+
     /* For each UTF-16 character */
     for (i=0; i<length; i++) {
 
@@ -35,13 +42,18 @@ void guac_rdp_utf16_to_utf8(const unsigned char* utf16, int length,
 
         /* Save codepoint as UTF-8 */
         int bytes_written = guac_utf8_write(codepoint, utf8, size);
+
+        /* Stop if there is insufficient space for this character */
+        if (bytes_written == 0)
+            break;
+
         size -= bytes_written;
         utf8 += bytes_written;
 
     }
 
     /* Save NULL terminator */
-    *(utf8++) = 0;
+    *utf8 = 0;
 
 }
 
