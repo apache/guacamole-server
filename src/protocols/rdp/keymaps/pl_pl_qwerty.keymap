@@ -17,7 +17,7 @@
 # under the License.
 #
 
-parent  "base"
+parent  "base_altgr"
 name    "pl-pl-qwerty"
 freerdp "KBD_POLISH_PROGRAMMERS"
 
