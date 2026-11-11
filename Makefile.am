@@ -38,6 +38,7 @@ DIST_SUBDIRS =               \
     src/protocols/kubernetes \
     src/protocols/rdp        \
     src/protocols/serial     \
+    src/protocols/spice      \
     src/protocols/ssh        \
     src/protocols/telnet     \
     src/protocols/vnc
@@ -72,6 +73,10 @@ endif
 
 if ENABLE_SERIAL
 SUBDIRS += src/protocols/serial
+endif
+
+if ENABLE_SPICE
+SUBDIRS += src/protocols/spice
 endif
 
 if ENABLE_TELNET
