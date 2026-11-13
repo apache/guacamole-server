@@ -1,0 +1,23 @@
+From d552b266d5bb3afd3e514ef0b16650877f24ac7f Mon Sep 17 00:00:00 2001
+From: joshua2a <35690947+joshua2a@users.noreply.github.com>
+Date: Thu, 19 Mar 2026 07:40:44 +0000
+Subject: [PATCH] Fix Queue.c to make stable-2.0 build
+
+Upstream: https://github.com/FreeRDP/FreeRDP/commit/d552b266d5bb3afd3e514ef0b16650877f24ac7f
+
+---
+ winpr/libwinpr/utils/collections/Queue.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/winpr/libwinpr/utils/collections/Queue.c b/winpr/libwinpr/utils/collections/Queue.c
+--- a/winpr/libwinpr/utils/collections/Queue.c
++++ b/winpr/libwinpr/utils/collections/Queue.c
+@@ -160,7 +160,7 @@ static BOOL Queue_EnsureCapacity(wQueue* queue, size_t count)
+ 		if (new_capacity > SIZE_MAX / sizeof(BYTE*))
+ 			return FALSE;
+ 
+-		uintptr_t* newArray = (uintptr_t*)realloc(queue->array, sizeof(uintptr_t) * new_capacity);
++		void **newArray = (void**)realloc(queue->array, sizeof(void*) * new_capacity);
+ 
+ 		if (!newArray)
+ 			return FALSE;

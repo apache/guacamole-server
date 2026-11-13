@@ -1,0 +1,20 @@
+Use WebKitGTK 4.1 when available for the SDL client's AAD login WebView,
+retaining the 4.0 fallback for systems that still provide it.
+
+This is a local compatibility patch for FreeRDP 3.5.1, not an upstream backport.
+WebKitGTK documents the 4.0-to-4.1 migration here:
+https://webkitgtk.org/2025/10/07/webkitgtk-soup2-deprecation.html
+
+diff --git a/client/SDL/aad/CMakeLists.txt b/client/SDL/aad/CMakeLists.txt
+index 2286542..7a65532 100644
+--- a/client/SDL/aad/CMakeLists.txt
++++ b/client/SDL/aad/CMakeLists.txt
+@@ -44,7 +44,7 @@ if (WITH_WEBVIEW)
+       )
+     else()
+       find_package(PkgConfig REQUIRED)
+-      pkg_check_modules(WEBVIEW_GTK webkit2gtk-4.0 REQUIRED)
++      pkg_search_module(WEBVIEW_GTK REQUIRED webkit2gtk-4.1 webkit2gtk-4.0)
+       include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
+       list(APPEND LIBS
+         ${WEBVIEW_GTK_LIBRARIES}
