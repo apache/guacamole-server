@@ -124,8 +124,8 @@ static ssize_t __guac_socket_tee_flush_handler(guac_socket* socket) {
 }
 
 /**
- * Callback function which delegates the lock operation to the primary
- * socket alone.
+ * Callback function which delegates the lock operation to both underlying
+ * sockets.
  *
  * @param socket
  *     The tee socket on which guac_socket_instruction_begin() was invoked.
@@ -141,8 +141,8 @@ static void __guac_socket_tee_lock_handler(guac_socket* socket) {
 }
 
 /**
- * Callback function which delegates the unlock operation to the primary
- * socket alone.
+ * Callback function which delegates the unlock operation to both underlying
+ * sockets.
  *
  * @param socket
  *     The tee socket on which guac_socket_instruction_end() was invoked.
@@ -183,6 +183,22 @@ static int __guac_socket_tee_select_handler(guac_socket* socket,
 }
 
 /**
+ * Callback function which delegates the shutdown operation to both underlying
+ * sockets.
+ *
+ * @param socket
+ *     The tee socket whose underlying sockets should be shut down.
+ */
+static void __guac_socket_tee_shutdown_handler(guac_socket* socket) {
+
+    guac_socket_tee_data* data = (guac_socket_tee_data*) socket->data;
+
+    guac_socket_shutdown(data->primary);
+    guac_socket_shutdown(data->secondary);
+
+}
+
+/**
  * Callback function which frees all underlying data associated with the
  * given tee socket, including both primary and secondary sockets.
  *
@@ -218,13 +234,14 @@ guac_socket* guac_socket_tee(guac_socket* primary, guac_socket* secondary) {
     socket->data = data;
 
     /* Assign handlers */
-    socket->read_handler   = __guac_socket_tee_read_handler;
-    socket->write_handler  = __guac_socket_tee_write_handler;
-    socket->select_handler = __guac_socket_tee_select_handler;
-    socket->flush_handler  = __guac_socket_tee_flush_handler;
-    socket->lock_handler   = __guac_socket_tee_lock_handler;
-    socket->unlock_handler = __guac_socket_tee_unlock_handler;
-    socket->free_handler   = __guac_socket_tee_free_handler;
+    socket->read_handler     = __guac_socket_tee_read_handler;
+    socket->write_handler    = __guac_socket_tee_write_handler;
+    socket->select_handler   = __guac_socket_tee_select_handler;
+    socket->flush_handler    = __guac_socket_tee_flush_handler;
+    socket->lock_handler     = __guac_socket_tee_lock_handler;
+    socket->unlock_handler   = __guac_socket_tee_unlock_handler;
+    socket->free_handler     = __guac_socket_tee_free_handler;
+    socket->shutdown_handler = __guac_socket_tee_shutdown_handler;
 
     return socket;
 

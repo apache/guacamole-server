@@ -314,6 +314,37 @@ static void __guac_socket_broadcast_unlock_handler(guac_socket* socket) {
 }
 
 /**
+ * Callback which is invoked by the broadcast handler to cancel all pending
+ * and future operations on the given user's socket.
+ *
+ * @param user
+ *     The user whose socket should be shut down.
+ *
+ * @param data
+ *     Arbitrary data passed to the broadcast handler. This is not needed
+ *     by this callback, and should be left as NULL.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* __shutdown_callback(guac_user* user, void* data) {
+    guac_socket_shutdown(user->socket);
+    return NULL;
+}
+
+/**
+ * Shutdown handler which cancels all pending and future operations on the
+ * sockets of all broadcasted users.
+ *
+ * @param socket
+ *     The broadcast socket to shut down.
+ */
+static void __guac_socket_broadcast_shutdown_handler(guac_socket* socket) {
+    guac_socket_broadcast_data* data = (guac_socket_broadcast_data*) socket->data;
+    data->broadcast_handler(data->client, __shutdown_callback, NULL);
+}
+
+/**
  * Callback which handles select operations on the broadcast socket, waiting
  * for data to become available such that the next read operation will not
  * block. This callback always fails, as the broadcast socket is write-only; it
@@ -402,13 +433,14 @@ static guac_socket* __guac_socket_init(
     pthread_mutex_init(&(data->socket_lock), &lock_attributes);
 
     /* Set read/write handlers */
-    socket->read_handler   = __guac_socket_broadcast_read_handler;
-    socket->write_handler  = __guac_socket_broadcast_write_handler;
-    socket->select_handler = __guac_socket_broadcast_select_handler;
-    socket->flush_handler  = __guac_socket_broadcast_flush_handler;
-    socket->lock_handler   = __guac_socket_broadcast_lock_handler;
-    socket->unlock_handler = __guac_socket_broadcast_unlock_handler;
-    socket->free_handler   = __guac_socket_broadcast_free_handler;
+    socket->read_handler     = __guac_socket_broadcast_read_handler;
+    socket->write_handler    = __guac_socket_broadcast_write_handler;
+    socket->select_handler   = __guac_socket_broadcast_select_handler;
+    socket->flush_handler    = __guac_socket_broadcast_flush_handler;
+    socket->lock_handler     = __guac_socket_broadcast_lock_handler;
+    socket->unlock_handler   = __guac_socket_broadcast_unlock_handler;
+    socket->free_handler     = __guac_socket_broadcast_free_handler;
+    socket->shutdown_handler = __guac_socket_broadcast_shutdown_handler;
 
     return socket;
 

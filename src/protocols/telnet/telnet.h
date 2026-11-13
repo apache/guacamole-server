@@ -24,6 +24,7 @@
 #include "terminal/terminal.h"
 
 #include <guacamole/recording.h>
+#include <guacamole/thread.h>
 #include <libtelnet.h>
 
 #include <stdint.h>
@@ -41,7 +42,7 @@ typedef struct guac_telnet_client {
     /**
      * The telnet client thread.
      */
-    pthread_t client_thread;
+    guac_thread client_thread;
 
     /**
      * The file descriptor of the socket connected to the telnet server,

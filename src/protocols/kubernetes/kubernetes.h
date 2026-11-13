@@ -27,6 +27,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/recording.h>
+#include <guacamole/thread.h>
 #include <libwebsockets.h>
 
 #include <pthread.h>
@@ -100,7 +101,7 @@ typedef struct guac_kubernetes_client {
     /**
      * The Kubernetes client thread.
      */
-    pthread_t client_thread;
+    guac_thread client_thread;
 
     /**
      * The terminal which will render all output from the Kubernetes pod.

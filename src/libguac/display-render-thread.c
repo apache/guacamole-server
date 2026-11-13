@@ -22,7 +22,7 @@
 #include "guacamole/display.h"
 #include "guacamole/flag.h"
 #include "guacamole/mem.h"
-#include "guacamole/proctitle.h"
+#include "guacamole/thread.h"
 #include "guacamole/timestamp.h"
 
 /**
@@ -61,10 +61,6 @@
  *     Always NULL.
  */
 static void* guac_display_render_loop(void* data) {
-
-    /* Thread name display-render: drives the display render loop, flushing
-     * completed frames to the client. */
-    guac_thread_name_set("display-render");
 
     guac_display_render_thread* render_thread = (guac_display_render_thread*) data;
     guac_display* display = render_thread->display;
@@ -195,7 +191,8 @@ guac_display_render_thread* guac_display_render_thread_create(guac_display* disp
 
     /* Start render thread (this will immediately begin blocking until frame
      * modification or readiness is signalled) */
-    pthread_create(&render_thread->thread, NULL, guac_display_render_loop, render_thread);
+    guac_thread_create(&render_thread->thread, guac_display_render_loop,
+            render_thread, "disp-render");
 
     return render_thread;
 
@@ -227,7 +224,7 @@ void guac_display_render_thread_destroy(guac_display_render_thread* render_threa
 
     /* Clean up render thread after signalling it to stop */
     guac_flag_set(&render_thread->state, GUAC_DISPLAY_RENDER_THREAD_STATE_STOPPING);
-    pthread_join(render_thread->thread, NULL);
+    guac_thread_join(&render_thread->thread, NULL);
 
     /* Free remaining resources */
     guac_flag_destroy(&render_thread->state);

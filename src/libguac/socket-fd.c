@@ -34,6 +34,8 @@
 
 #ifdef ENABLE_WINSOCK
 #include <winsock2.h>
+#else
+#include <sys/socket.h>
 #endif
 
 /**
@@ -50,6 +52,13 @@ typedef struct guac_socket_fd_data {
      * The number of bytes currently in the main write buffer.
      */
     int written;
+
+    /**
+     * Whether a write has failed, thus invalidating further use of the socket.
+     * If a failed write has occurred, this value is set to the value of errno
+     * associated with that failure.
+     */
+    int failed_errno;
 
     /**
      * The main write buffer. Bytes written go here before being flushed
@@ -74,7 +83,8 @@ typedef struct guac_socket_fd_data {
 /**
  * Writes the entire contents of the given buffer to the file descriptor
  * associated with the given socket, retrying as necessary until the whole
- * buffer is written, and aborting if an error occurs.
+ * buffer is written, and aborting if an error occurs. If an error occurs, errno
+ * and the failed_errno member of guac_socket_fd_data are set appropriately.
  *
  * @param socket
  *     The guac_socket associated with the file descriptor to which the given
@@ -111,6 +121,11 @@ ssize_t guac_socket_fd_write(guac_socket* socket,
 
         /* Record errors in guac_error */
         if (retval < 0) {
+#ifdef ENABLE_WINSOCK
+            data->failed_errno = errno = WSAGetLastError();
+#else
+            data->failed_errno = errno;
+#endif
             guac_error = GUAC_STATUS_SEE_ERRNO;
             guac_error_message = "Error writing data to socket";
             return retval;
@@ -182,14 +197,28 @@ static ssize_t guac_socket_fd_flush(guac_socket* socket) {
 
     guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
 
+    /* Drop any further writes to failed socket (instruction stream is no longer
+     * valid) */
+    if (data->failed_errno) {
+        errno = data->failed_errno;
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error writing data to socket";
+        return 1;
+    }
+
     /* Flush remaining bytes in buffer */
     if (data->written > 0) {
 
         /* Write ALL bytes in buffer immediately */
-        if (guac_socket_fd_write(socket, data->out_buf, data->written))
+        int flush_failed = guac_socket_fd_write(socket, data->out_buf, data->written);
+
+        /* All outstanding content in the buffer is either fully written or no
+         * longer valid (failed/partial write) */
+        data->written = 0;
+
+        if (flush_failed)
             return 1;
 
-        data->written = 0;
     }
 
     return 0;
@@ -249,6 +278,14 @@ static ssize_t guac_socket_fd_write_buffered(guac_socket* socket,
     size_t original_count = count;
     const char* current = buf;
     guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+
+    /* Refuse further writes/buffering if the stream is already broken */
+    if (data->failed_errno) {
+        errno = data->failed_errno;
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error writing data to socket";
+        return -1;
+    }
 
     /* Append to buffer, flush if necessary */
     while (count > 0) {
@@ -362,6 +399,25 @@ static int guac_socket_fd_select_handler(guac_socket* socket,
 }
 
 /**
+ * Cancels all pending and future operations on the given socket by shutting
+ * down the underlying file descriptor.
+ *
+ * @param socket
+ *     The guac_socket whose operations should be canceled.
+ */
+static void guac_socket_fd_shutdown_handler(guac_socket* socket) {
+
+    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+
+#ifdef ENABLE_WINSOCK
+    shutdown(data->fd, SD_BOTH);
+#else
+    shutdown(data->fd, SHUT_RDWR);
+#endif
+
+}
+
+/**
  * Frees all implementation-specific data associated with the given socket, but
  * not the socket object itself.
  *
@@ -424,11 +480,21 @@ guac_socket* guac_socket_open(int fd) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
+    if (socket == NULL)
+        return NULL;
+
     guac_socket_fd_data* data = guac_mem_alloc(sizeof(guac_socket_fd_data));
+    if (data == NULL) {
+        guac_mem_free(socket);
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for socket data";
+        return NULL;
+    }
 
     /* Store file descriptor as socket data */
     data->fd = fd;
     data->written = 0;
+    data->failed_errno = 0;
     socket->data = data;
 
     pthread_mutexattr_init(&lock_attributes);
@@ -439,13 +505,14 @@ guac_socket* guac_socket_open(int fd) {
     pthread_mutex_init(&(data->buffer_lock), &lock_attributes);
     
     /* Set read/write handlers */
-    socket->read_handler   = guac_socket_fd_read_handler;
-    socket->write_handler  = guac_socket_fd_write_handler;
-    socket->select_handler = guac_socket_fd_select_handler;
-    socket->lock_handler   = guac_socket_fd_lock_handler;
-    socket->unlock_handler = guac_socket_fd_unlock_handler;
-    socket->flush_handler  = guac_socket_fd_flush_handler;
-    socket->free_handler   = guac_socket_fd_free_handler;
+    socket->read_handler     = guac_socket_fd_read_handler;
+    socket->write_handler    = guac_socket_fd_write_handler;
+    socket->select_handler   = guac_socket_fd_select_handler;
+    socket->lock_handler     = guac_socket_fd_lock_handler;
+    socket->unlock_handler   = guac_socket_fd_unlock_handler;
+    socket->flush_handler    = guac_socket_fd_flush_handler;
+    socket->free_handler     = guac_socket_fd_free_handler;
+    socket->shutdown_handler = guac_socket_fd_shutdown_handler;
 
     return socket;
 

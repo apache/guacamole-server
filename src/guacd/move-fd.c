@@ -87,7 +87,7 @@ int guacd_recv_fd(int sock) {
 
     /* Receive file descriptor */
     ssize_t result;
-    GUAC_RETRY_EINTR(result, recvmsg(sock, &message, 0));
+    GUAC_RETRY_EINTR(result, recvmsg(sock, &message, MSG_CMSG_CLOEXEC));
 
     if (result == sizeof(message_data)) {
 
@@ -97,21 +97,43 @@ int guacd_recv_fd(int sock) {
             return -1;
         }
 
+        /* Truncated ancillary data means no room for another descriptor, or a
+         * policy blocked it */
+        int truncated = (message.msg_flags & MSG_CTRUNC) != 0;
+
         /* Iterate control headers, looking for the sent file descriptor */
         struct cmsghdr* control;
         for (control = CMSG_FIRSTHDR(&message); control != NULL; control = CMSG_NXTHDR(&message, control)) {
 
-            /* Pull file descriptor from data */
-            if (control->cmsg_level == SOL_SOCKET && control->cmsg_type == SCM_RIGHTS) {
+            /* Pull file descriptor from data (if present) */
+            if (control->cmsg_level == SOL_SOCKET && control->cmsg_type == SCM_RIGHTS
+                    && control->cmsg_len == CMSG_LEN(sizeof(fd))) {
+
                 memcpy(&fd, CMSG_DATA(control), sizeof(fd));
+
+                /* We can't use any descriptors included in a truncated
+                 * SCM_RIGHTS message, but they should at least be closed */
+                if (truncated) {
+                    close(fd);
+                    break;
+                }
+
                 return fd;
+
             }
 
         }
 
+        /* The message arrived, but did not include a usable descriptor */
+        errno = truncated ? EMFILE : EPROTO;
+        return -1;
+
     } /* end if recvmsg() success */
 
     /* Failed to receive file descriptor */
+    if (result >= 0)
+        errno = ECONNRESET;
+
     return -1;
 
 }

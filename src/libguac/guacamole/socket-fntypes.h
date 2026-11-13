@@ -85,7 +85,9 @@ typedef ssize_t guac_socket_flush_handler(guac_socket* socket);
 /**
  * When set within a guac_socket, a handler of this type will be called
  * whenever exclusive access to the guac_socket is required, such as when
- * guac_socket_instruction_begin() is called.
+ * guac_socket_instruction_begin() is called. Locking the socket with a handler
+ * of this type does not prevent the socket's shutdown handler from being
+ * called.
  *
  * @param socket
  *     The guac_socket to which exclusive access is required.
@@ -111,6 +113,17 @@ typedef void guac_socket_unlock_handler(guac_socket* socket);
  * @return Zero on success, or -1 if an error occurs.
  */
 typedef int guac_socket_free_handler(guac_socket* socket);
+
+/**
+ * Generic handler for the cancellation of all pending and future operations
+ * on a socket, modeled after the standard POSIX shutdown() function. When set
+ * within a guac_socket, a handler of this type will be called when the socket
+ * is shut down using guac_socket_shutdown(), and may be called more than once.
+ *
+ * @param socket
+ *     The guac_socket whose operations should be canceled.
+ */
+typedef void guac_socket_shutdown_handler(guac_socket* socket);
 
 #endif
 

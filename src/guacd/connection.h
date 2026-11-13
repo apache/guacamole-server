@@ -36,6 +36,12 @@ typedef struct guacd_connection_thread_params {
      */
     guacd_proc_map* map;
 
+    /**
+     * A file descriptor pointing to the executable of the running copy of
+     * guacd. This value is used by guacd_create_proc() to execute subprocesses.
+     */
+    int exe_fd;
+
 #ifdef ENABLE_SSL
     /**
      * SSL context for encrypted connections to guacd. If SSL is not active,
@@ -61,11 +67,11 @@ typedef struct guacd_connection_thread_params {
  *
  * @param data
  *     A pointer to a guacd_connection_thread_params structure containing the
- *     shared overall map of currently-connected processes, the file
- *     descriptor associated with the newly-established connection that is to
- *     be either (1) associated with a new process or (2) passed on to an
- *     existing process, and the SSL context for the encryption surrounding
- *     that connection (if any).
+ *     shared overall map of currently-connected processes, the file descriptor
+ *     pointing to the guacd executable, the file descriptor associated with the
+ *     newly-established connection that is to be either (1) associated with a
+ *     new process or (2) passed on to an existing process, and the SSL context
+ *     for the encryption surrounding that connection (if any).
  *
  * @return
  *     Always NULL.

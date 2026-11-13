@@ -84,6 +84,21 @@ typedef void guac_client_log_handler(guac_client* client,
         guac_client_log_level level, const char* format, va_list args);
 
 /**
+ * Handler for receiving details describing the connection served by a
+ * guac_client instance.
+ *
+ * @param client
+ *     The client being described.
+ *
+ * @param info
+ *     The details describing the client's connection. This structure and its
+ *     contents are only guaranteed to remain valid for the duration of the call
+ *     to this handler.
+ */
+typedef void guac_client_info_handler(guac_client* client,
+        const guac_client_info* info);
+
+/**
  * The entry point of a client plugin which must initialize the given
  * guac_client. In practice, this function will be called "guac_client_init".
  *

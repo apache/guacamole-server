@@ -30,6 +30,7 @@
 #include "selection-point.h"
 
 #include <guacamole/flag.h>
+#include <guacamole/thread.h>
 
 /**
  * The bitwise flag set on the modified flag of guac_terminal when the terminal
@@ -73,7 +74,7 @@ struct guac_terminal {
     /**
      * The terminal render thread.
      */
-    pthread_t thread;
+    guac_thread thread;
 
     /**
      * Called whenever the necessary terminal codes are sent to change

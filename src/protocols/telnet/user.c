@@ -28,6 +28,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
@@ -59,8 +60,8 @@ int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
         telnet_client->settings = settings;
 
         /* Start client thread */
-        if (pthread_create(&(telnet_client->client_thread), NULL,
-                    guac_telnet_client_thread, (void*) client)) {
+        if (guac_thread_create(&telnet_client->client_thread,
+                    guac_telnet_client_thread, (void*) client, "telnet-client")) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                     "Unable to start telnet client thread");
             return 1;

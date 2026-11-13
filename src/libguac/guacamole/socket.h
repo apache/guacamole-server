@@ -30,9 +30,9 @@
 #include "socket-constants.h"
 #include "socket-fntypes.h"
 #include "socket-types.h"
+#include "thread.h"
 #include "timestamp-types.h"
 
-#include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -109,14 +109,16 @@ struct guac_socket {
     char __encoded_buf[GUAC_SOCKET_BASE64_ENCODED_BUFFER_SIZE];
 
     /**
-     * Whether automatic keep-alive is enabled.
+     * The keep-alive thread. This thread is only started if automatic
+     * keep-alive is enabled.
      */
-    int __keep_alive_enabled;
+    guac_thread __keep_alive_thread;
 
     /**
-     * The keep-alive thread.
+     * Handler which will be called whenever guac_socket_shutdown() is invoked
+     * on this socket.
      */
-    pthread_t __keep_alive_thread;
+    guac_socket_shutdown_handler* shutdown_handler;
 
 };
 
@@ -128,6 +130,19 @@ struct guac_socket {
  *          not be allocated.
  */
 guac_socket* guac_socket_alloc(void);
+
+/**
+ * Cancels all pending, active, and future operations on the given guac_socket.
+ * All such operations will cease blocking and fail immediately. The socket
+ * itself remains allocated and must still be freed with guac_socket_free().
+ *
+ * This function may be safely called more than once.
+ *
+ * @param socket
+ *     The guac_socket whose pending, active, and future operations should be
+ *     canceled.
+ */
+void guac_socket_shutdown(guac_socket* socket);
 
 /**
  * Frees the given guac_socket and all associated resources.

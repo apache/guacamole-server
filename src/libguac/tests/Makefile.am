@@ -41,6 +41,7 @@ noinst_HEADERS =                     \
 test_libguac_SOURCES =               \
     client/buffer_pool.c             \
     client/layer_pool.c              \
+    display/plan_combine.c           \
     fifo/fifo.c                      \
     file/openat.c                    \
     flag/flag.c                      \
@@ -73,6 +74,7 @@ test_libguac_SOURCES =               \
     string/strlcpy.c                 \
     string/strljoin.c                \
     string/strnstr.c                 \
+    thread/thread.c                  \
     unicode/charsize.c               \
     unicode/read.c                   \
     unicode/strlen.c                 \

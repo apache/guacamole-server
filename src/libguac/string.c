@@ -57,8 +57,8 @@ int guac_itoa(char* restrict dest, int integer) {
 
 }
 
-int guac_itoa_safe(char* restrict dest, size_t dest_size, int integer)
-{
+int guac_itoa_safe(char* restrict dest, size_t dest_size, int integer) {
+
     int str_size = snprintf(dest, dest_size, "%d", integer);
 
     if (str_size < 0)
@@ -70,6 +70,10 @@ int guac_itoa_safe(char* restrict dest, size_t dest_size, int integer)
 
     /* Return the number of characters written (excluding the terminator). */
     return str_size;
+}
+
+int guac_is_nonempty(const char* str) {
+    return str != NULL && *str != '\0';
 }
 
 size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n) {

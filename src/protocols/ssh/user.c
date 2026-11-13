@@ -30,6 +30,7 @@
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
+#include <guacamole/thread.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
@@ -61,8 +62,8 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
         ssh_client->settings = settings;
 
         /* Start client thread */
-        if (pthread_create(&(ssh_client->client_thread), NULL,
-                    ssh_client_thread, (void*) client)) {
+        if (guac_thread_create(&ssh_client->client_thread,
+                    ssh_client_thread, (void*) client, "ssh-client")) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                     "Unable to start SSH client thread");
             return 1;

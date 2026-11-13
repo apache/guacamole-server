@@ -21,6 +21,7 @@
 #define GUAC_RDP_CHANNELS_AUDIO_INPUT_AUDIO_BUFFER_H
 
 #include <guacamole/stream.h>
+#include <guacamole/thread.h>
 #include <guacamole/user.h>
 #include <pthread.h>
 #include <time.h>
@@ -166,7 +167,7 @@ struct guac_rdp_audio_buffer {
      * the audio sample rate (which might result in dropped samples due to
      * overflow of the remote audio buffer).
      */
-    pthread_t flush_thread;
+    guac_thread flush_thread;
 
     /**
      * The absolute point in time that the next packet of audio data should be

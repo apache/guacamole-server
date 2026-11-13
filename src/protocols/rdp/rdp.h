@@ -47,6 +47,7 @@
 #include <guacamole/fifo.h>
 #include <guacamole/rwlock.h>
 #include <guacamole/recording.h>
+#include <guacamole/thread.h>
 #include <winpr/wtypes.h>
 
 #include <pthread.h>
@@ -79,7 +80,7 @@ typedef struct guac_rdp_client {
     /**
      * The RDP client thread.
      */
-    pthread_t client_thread;
+    guac_thread client_thread;
 
     /**
      * Pointer to the FreeRDP client instance handling the current connection.
