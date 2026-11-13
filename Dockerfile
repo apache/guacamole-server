@@ -22,9 +22,7 @@
 #
 
 # The Alpine Linux image that should be used as the basis for the guacd image
-# NOTE: Using 3.18 because the required openssl1.1-compat-dev package was
-# removed in more recent versions.
-ARG ALPINE_BASE_IMAGE=3.18
+ARG ALPINE_BASE_IMAGE=3.24
 
 # The target architecture of the build. Valid values are "ARM" and "X86". By
 # default, this is detected automatically.
@@ -64,7 +62,9 @@ ARG WITH_LIBWEBSOCKETS='v\d+(\.\d+)+'
 
 ARG FREERDP_ARM_OPTS=""
 
+# FreeRDP 2 declares a policy baseline older than CMake 4 supports.
 ARG FREERDP_OPTS="\
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILTIN_CHANNELS=OFF \
     -DCHANNEL_URBDRC=OFF \
@@ -135,7 +135,11 @@ ARG LIBTELNET_X86_OPTS=""
 
 ARG LIBVNCCLIENT_ARM_OPTS=""
 
-ARG LIBVNCCLIENT_OPTS=""
+# LibVNCServer 0.9.15 declares a 3.4 policy baseline, which CMake 4 rejects.
+# Match upstream's increase to 3.5 pending a release containing that fix:
+# https://github.com/LibVNC/libvncserver/commit/e64fa928170f22a2e21b5bbd6d46c8f8e7dd7a96
+ARG LIBVNCCLIENT_OPTS="\
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 
 ARG LIBVNCCLIENT_X86_OPTS=""
 
@@ -169,6 +173,7 @@ RUN apk add --no-cache                \
         build-base                    \
         cairo-dev                     \
         cjson-dev                     \
+        cjson-static                  \
         cmake                         \
         cunit-dev                     \
         git                           \
@@ -179,13 +184,13 @@ RUN apk add --no-cache                \
         libtool                       \
         libwebp-dev                   \
         make                          \
-        openssl1.1-compat-dev         \
+        openssl-dev                   \
         pango-dev                     \
         pulseaudio-dev                \
         sdl2-dev                      \
         sdl2_ttf-dev                  \
         util-linux-dev                \
-        webkit2gtk-dev
+        webkit2gtk-4.1-dev
 
 # Copy generic, automatic build script
 COPY ./src/guacd-docker/bin/autobuild.sh ${BUILD_DIR}/src/guacd-docker/bin/
@@ -261,6 +266,9 @@ ARG FREERDP_OPTS
 ARG FREERDP_X86_OPTS
 ARG PREFIX_DIR
 ARG WITH_FREERDP
+
+# Apply version-specific compatibility fixes before compiling FreeRDP.
+COPY ./src/guacd-docker/patches/FREERDP/ ${BUILD_DIR}/src/guacd-docker/patches/FREERDP/
 
 RUN ${BUILD_DIR}/src/guacd-docker/bin/autobuild.sh "FREERDP" \
     "https://github.com/FreeRDP/FreeRDP"
