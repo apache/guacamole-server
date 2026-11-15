@@ -25,6 +25,8 @@
 ## protocol library dependencies. Usage of GNU Autotools vs. CMake is
 ## automatically detected. Additional build options may be provided using
 ## environment variables, including architecture-specific options.
+## Patches under ../patches/VAR_BASE/VERSION/ relative to this script are
+## applied after checking out the selected dependency version.
 ##
 ## @param VAR_BASE
 ##     The text that should be used as the base for environment variables
@@ -52,6 +54,7 @@
 
 VAR_BASE="$1"
 LOCATION="$2"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Pre-populate build control variables such that the custom build prefix is
 # used for C headers, locating libraries, etc.
@@ -119,6 +122,13 @@ if [ -e .git ]; then
     # Switch to desired version of source
     echo "Building $SRC_DIR @ $VERSION ..."
     git -c advice.detachedHead=false checkout "$VERSION"
+
+    # Apply local backports only to the dependency version they target.
+    for PATCH in "${SCRIPT_DIR}/../patches/${VAR_BASE}/${VERSION}/"*.patch; do
+        [ -f "$PATCH" ] || continue
+        echo "Applying $PATCH ..."
+        git apply "$PATCH"
+    done
 
 else
     echo "Building $SRC_DIR ..."
