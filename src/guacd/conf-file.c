@@ -27,6 +27,7 @@
 #include <guacamole/string.h>
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,6 +60,25 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
             guac_mem_free(config->bind_port);
             config->bind_port = guac_strdup(value);
             return 0;
+        }
+
+        /* Maximum number of worker threads per connection */
+        else if (strcmp(param, "max_worker_threads") == 0) {
+
+            char* end;
+            long max_threads = strtol(value, &end, 10);
+
+            /* Invalid worker thread limit */
+            if (*value == '\0' || *end != '\0'
+                    || max_threads < 0 || max_threads > INT_MAX) {
+                guacd_conf_parse_error = "Maximum number of worker threads must be a non-negative integer";
+                return 1;
+            }
+
+            /* Valid worker thread limit */
+            config->max_worker_threads = (int) max_threads;
+            return 0;
+
         }
 
     }
@@ -187,6 +207,7 @@ guacd_config* guacd_conf_load(void) {
     conf->foreground = 0;
     conf->print_version = 0;
     conf->max_log_level = GUAC_LOG_INFO;
+    conf->max_worker_threads = 0;
 
 #ifdef ENABLE_SSL
     conf->cert_file = NULL;
