@@ -148,9 +148,14 @@ int guac_rdp_user_leave_handler(guac_user* user) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
 
+    /* Keep display teardown from racing with the cursor update. */
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+
     /* Update shared cursor state if the display still exists */
     if (rdp_client->display != NULL)
         guac_display_notify_user_left(rdp_client->display, user);
+
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     /* Free settings if not owner (owner settings will be freed with client) */
     if (!user->owner) {

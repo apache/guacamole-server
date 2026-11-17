@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "channels/rail.h"
 #include "channels/disp.h"
 #include "channels/rdpei.h"
 #include "input.h"
@@ -75,9 +76,12 @@ static void guac_rdp_handle_mouse_event(guac_rdp_client* rdp_client,
 
     /* If button mask unchanged, just send move event */
     if (mask == rdp_client->mouse_button_mask) {
+        guac_rdp_rail_track_mouse_event(rdp_client, mask, x, y);
+
         pthread_mutex_lock(&(rdp_client->message_lock));
         GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
-                GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_MOVE, x, y);
+                GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_MOVE,
+                x, y);
         pthread_mutex_unlock(&(rdp_client->message_lock));
     }
 
@@ -89,6 +93,16 @@ static void guac_rdp_handle_mouse_event(guac_rdp_client* rdp_client,
 
         /* Mouse buttons which have JUST become pressed */
         int pressed_mask  = ~rdp_client->mouse_button_mask &  mask;
+
+        /* RAIL+GFX renders RemoteApp windows as separate Guacamole layers.
+         * FreeRDP tracks server-side ordering, but some servers do not send
+         * DESKTOP_ACTIVE_WND when a RemoteApp window is clicked, so raise and
+         * activate the clicked layer locally before mouse down. */
+        if (pressed_mask & 0x07) {
+            guac_rdp_rail_raise_window_at(rdp_client, x, y);
+        }
+
+        guac_rdp_rail_track_mouse_event(rdp_client, mask, x, y);
 
         /* Release event */
         if (released_mask & 0x07) {
@@ -132,7 +146,8 @@ static void guac_rdp_handle_mouse_event(guac_rdp_client* rdp_client,
             if (pressed_mask & 0x08) {
                 pthread_mutex_lock(&(rdp_client->message_lock));
                 GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
-                        GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_WHEEL | 0x78, x, y);
+                        GUAC_RDP_CONTEXT(rdp_inst)->input,
+                        PTR_FLAGS_WHEEL | 0x78, x, y);
                 pthread_mutex_unlock(&(rdp_client->message_lock));
             }
 
@@ -140,7 +155,9 @@ static void guac_rdp_handle_mouse_event(guac_rdp_client* rdp_client,
             if (pressed_mask & 0x10) {
                 pthread_mutex_lock(&(rdp_client->message_lock));
                 GUAC_RDP_CONTEXT(rdp_inst)->input->MouseEvent(
-                        GUAC_RDP_CONTEXT(rdp_inst)->input, PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88, x, y);
+                        GUAC_RDP_CONTEXT(rdp_inst)->input,
+                        PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88,
+                        x, y);
                 pthread_mutex_unlock(&(rdp_client->message_lock));
             }
 

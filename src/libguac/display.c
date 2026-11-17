@@ -342,6 +342,18 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
 
 }
 
+void guac_display_lock(guac_display* display) {
+
+    guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
+
+}
+
+void guac_display_unlock(guac_display* display) {
+
+    guac_rwlock_release_lock(&display->pending_frame.lock);
+
+}
+
 void guac_display_notify_user_left(guac_display* display, guac_user* user) {
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
 

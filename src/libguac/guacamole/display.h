@@ -326,6 +326,25 @@ void guac_display_notify_user_moved_mouse(guac_display* display, guac_user* user
 void guac_display_end_frame(guac_display* display);
 
 /**
+ * Locks the pending frame. Display operations may acquire this lock again on
+ * the same thread. Frames must not be flushed and rendering must not be awaited
+ * while holding this lock.
+ *
+ * @param display
+ *     The display to lock.
+ */
+void guac_display_lock(guac_display* display);
+
+/**
+ * Releases one acquisition of guac_display_lock() on the calling thread. Any
+ * application locks acquired after the display lock must be released first.
+ *
+ * @param display
+ *     The display to unlock.
+ */
+void guac_display_unlock(guac_display* display);
+
+/**
  * Ends the current frame only if the user-visible changes consist purely of
  * updates to the mouse cursor position or icon. If other visible changes have
  * been made, such as graphical updates to the display itself, this function

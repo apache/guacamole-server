@@ -177,7 +177,8 @@ static UINT guac_rdp_ai_close(IWTSVirtualChannelCallback* channel_callback) {
  *     Pointer to a flag which should be set to TRUE if the connection should
  *     be accepted or FALSE otherwise. In the case of FreeRDP, this value
  *     defaults to TRUE, and TRUE absolutely MUST be identically 1 or it will
- *     be interpreted as FALSE.
+ *     be interpreted as FALSE. Uses BOOL for macOS compatibility, where BOOL
+ *     differs from int.
  *
  * @param channel_callback
  *     A pointer to the location that the new IWTSVirtualChannelCallback
@@ -188,7 +189,7 @@ static UINT guac_rdp_ai_close(IWTSVirtualChannelCallback* channel_callback) {
  */
 static UINT guac_rdp_ai_new_connection(
         IWTSListenerCallback* listener_callback, IWTSVirtualChannel* channel,
-        BYTE* data, int* accept,
+        BYTE* data, BOOL* accept,
         IWTSVirtualChannelCallback** channel_callback) {
 
     guac_rdp_ai_listener_callback* ai_listener_callback =
