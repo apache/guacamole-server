@@ -282,7 +282,7 @@ int guacenc_video_advance_timeline(guacenc_video* video,
         next_timestamp = video->last_timestamp
                         + elapsed * 1000 / GUACENC_VIDEO_FRAMERATE;
 
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(56,14,100)
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57,30,100)
         /* Flush frames to bring timeline in sync, duplicating if necessary */
         do {
             if (guacenc_video_flush_frame(video, 1)) {
