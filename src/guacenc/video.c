@@ -220,7 +220,7 @@ static int guacenc_video_write_frame(guacenc_video* video, AVFrame* frame,
     /* Set timestamp and display duration of frame, if frame given */
     if (frame != NULL) {
         frame->pts = video->next_pts;
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(56,14,100)
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57,30,100)
 #else
         frame->duration = duration;
 #endif
