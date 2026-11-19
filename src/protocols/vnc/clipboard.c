@@ -217,6 +217,11 @@ void guac_vnc_cut_text_utf8(rfbClient* client, const char* text, int textlen) {
         return;
     }
 
+    /* Extended Clipboard text is NUL-terminated on the wire; the terminator
+     * is not part of the clipboard contents */
+    while (textlen > 0 && text[textlen - 1] == '\0')
+        textlen--;
+
     const char* input = text;
     char* output = received_data;
 
@@ -225,6 +230,16 @@ void guac_vnc_cut_text_utf8(rfbClient* client, const char* text, int textlen) {
      * with the Unicode replacement character (U+FFFD, ?) */
     guac_iconv(GUAC_READ_UTF8, &input, textlen,
             GUAC_WRITE_UTF8, &output, GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+
+    /* Extended Clipboard text uses CRLF line endings; the classic path
+     * delivers LF, so the same text is converted here */
+    char* out = received_data;
+    for (const char* in = received_data; in < output; in++) {
+        if (*in == '\r' && in + 1 < output && *(in + 1) == '\n')
+            continue;
+        *(out++) = *in;
+    }
+    output = out;
 
     /* Send converted data */
     guac_common_clipboard_reset(vnc_client->clipboard, "text/plain");
