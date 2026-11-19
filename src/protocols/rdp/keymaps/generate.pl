@@ -55,7 +55,10 @@ for my $filename (@ARGV) {
     my $content = "";
     my $parent = "";
     my $layout_name = "";
-    my $freerdp = "";
+    my $keyboard_layout = "";
+    my $keyboard_type = "";
+    my $keyboard_subtype = "";
+    my $keyboard_function_key = "";
 
     # Parse file
     open INPUT, '<', "$filename";
@@ -77,10 +80,26 @@ for my $filename (@ARGV) {
             $parent = keymap_symbol($name);
         }
 
-        # FreeRDP equiv 
+        # FreeRDP equiv keyboard layout
         elsif ((my $name) = m/^\s*freerdp\s+"(.*)"\s*(?:#.*)?$/) {
-            $freerdp = $name;
+            $keyboard_layout = $name;
         }
+        
+        # keyboard type
+        elsif ((my $name) = m/^\s*keyboard_type\s+"(.*)"\s*(?:#.*)?$/) {
+            $keyboard_type = $name;
+        }
+
+        # keyboard subtype
+        elsif ((my $name) = m/^\s*keyboard_subtype\s+"(.*)"\s*(?:#.*)?$/) {
+            $keyboard_subtype = $name;
+        }
+
+        # keyboard function key
+        elsif ((my $name) = m/^\s*keyboard_function_key\s+"(.*)"\s*(?:#.*)?$/) {
+            $keyboard_function_key = $name;
+        }
+
 
         # Map
         elsif ((my $range, my $onto) =
@@ -241,9 +260,21 @@ for my $filename (@ARGV) {
         print OUTPUT "    .parent = &$parent,\n";
     }
 
-    # FreeRDP layout (if any)
-    if ($freerdp) {
-        print OUTPUT "    .freerdp_keyboard_layout = $freerdp,\n";
+    # Keyboard layout (if any)
+    if ($keyboard_layout) {
+        print OUTPUT "    .keyboard_layout = $keyboard_layout,\n";
+    }
+    # Keyboard type (if any)
+    if ($keyboard_type) {
+        print OUTPUT "    .keyboard_type = $keyboard_type,\n";
+    }
+    # Keyboard subtype (if any)
+    if ($keyboard_subtype) {
+        print OUTPUT "    .keyboard_subtype = $keyboard_subtype,\n";
+    }
+    # Keyboard funtion keys (if any)
+    if ($keyboard_function_key) {
+        print OUTPUT "    .keyboard_function_key = $keyboard_function_key,\n";
     }
 
     # Desc footer
