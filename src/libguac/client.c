@@ -474,6 +474,15 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
 
     int retval = 0;
 
+    /* Publish the owner before the join handler can start protocol threads
+     * which use guac_client_for_owner() to expose connection resources. Do not
+     * hold the lock across the handler, which may itself look up the owner. */
+    if (user->owner) {
+        guac_rwlock_acquire_write_lock(&(client->__users_lock));
+        client->__owner = user;
+        guac_rwlock_release_lock(&(client->__users_lock));
+    }
+
     /* Call handler, if defined */
     if (client->join_handler) {
         guac_client_watchdog_notify_operation_start(client);
@@ -489,10 +498,14 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
          */
         guac_client_add_pending_user(client, user);
 
-        /* Update owner pointer if user is owner */
-        if (user->owner)
-            client->__owner = user;
+    }
 
+    /* A failed join must not leave a reference to a rejected user. */
+    if (retval != 0 && user->owner) {
+        guac_rwlock_acquire_write_lock(&(client->__users_lock));
+        if (client->__owner == user)
+            client->__owner = NULL;
+        guac_rwlock_release_lock(&(client->__users_lock));
     }
 
     /* Notify owner of user joining connection. */
