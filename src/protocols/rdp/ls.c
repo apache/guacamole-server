@@ -32,6 +32,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 int guac_rdp_ls_ack_handler(guac_user* user, guac_stream* stream,
         char* message, guac_protocol_status status) {
@@ -87,10 +88,17 @@ int guac_rdp_ls_ack_handler(guac_user* user, guac_stream* stream,
 
         /* Determine mimetype */
         const char* mimetype;
-        if (file->attributes & FILE_ATTRIBUTE_DIRECTORY)
-            mimetype = GUAC_USER_STREAM_INDEX_MIMETYPE;
-        else
-            mimetype = "application/octet-stream";
+        char tmpstr[150];
+        //adding file size
+        if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
+            sprintf(tmpstr, "{\"mime\":\"%s\",\"size\":%lu}",
+                GUAC_USER_STREAM_INDEX_MIMETYPE, file->size);
+        }
+        else {
+            sprintf(tmpstr, "{\"mime\":\"%s\",\"size\":%lu}",
+                "application/octet-stream", file->size);
+        }
+        mimetype = tmpstr;
 
         /* Write entry */
         blob_written |= guac_common_json_write_property(user, stream,
