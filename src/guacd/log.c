@@ -102,7 +102,11 @@ void guacd_log(guac_client_log_level level, const char* format, ...) {
 
 void guacd_client_log(guac_client* client, guac_client_log_level level,
         const char* format, va_list args) {
-    vguacd_log(level, format, args);
+
+    char message[2048];
+    vsnprintf(message, sizeof(message), format, args);
+    guacd_log(level, "[%s] %s", client->connection_id, message);
+
 }
 
 void guacd_log_guac_error(guac_client_log_level level, const char* message) {
