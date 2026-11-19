@@ -152,28 +152,22 @@ int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream) {
 
 #ifdef LIBVNC_CLIENT_HAS_EXTENDED_CLIPBOARD
     /*
-     * Guacamole stores clipboard text as UTF-8. The clipboard-encoding
-     * setting only applies to the classic VNC clipboard path, where text
-     * must be converted from UTF-8 to the configured wire encoding.
-     *
-     * If clipboard-encoding is UTF-8, try the Extended Clipboard  path first
-     * since it can send UTF-8 directly. Otherwise, or if that fails, fall
-     * back to classic clipboard conversion.
+     * Guacamole stores clipboard text as UTF-8, and the Extended Clipboard
+     * carries UTF-8 by definition, so it is tried first whenever the server
+     * announced it (SendClientCutTextUTF8() returns FALSE otherwise). The
+     * clipboard-encoding setting describes only the classic VNC clipboard,
+     * the fallback below, where text must be converted from UTF-8 to the
+     * configured wire encoding. Tying the Extended Clipboard to
+     * clipboard-encoding=UTF-8 would force a choice between Unicode on
+     * servers that support it and correct ISO 8859-1 on servers that do not.
      *
      * Text coming back from the VNC server follows the same idea in reverse:
      * classic clipboard text is decoded using clipboard-encoding, while
      * Extended Clipboard text is already UTF-8.
      */
-
-    const char* clipboard_encoding = vnc_client->settings->clipboard_encoding;
-    int use_utf8_clipboard = clipboard_encoding != NULL &&
-        strcmp(clipboard_encoding, "UTF-8") == 0;
-
-    if (use_utf8_clipboard) {
-        if (SendClientCutTextUTF8(rfb_client, vnc_client->clipboard->buffer,
-                    vnc_client->clipboard->length))
-            return 0;
-    }
+    if (SendClientCutTextUTF8(rfb_client, vnc_client->clipboard->buffer,
+                vnc_client->clipboard->length))
+        return 0;
 #endif
 
     /* Fall back to classic clipboard with encoding conversion */
