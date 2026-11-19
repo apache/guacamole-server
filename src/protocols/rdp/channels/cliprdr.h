@@ -29,6 +29,8 @@
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
 
+#include <pthread.h>
+
 /**
  * RDP clipboard, leveraging the "CLIPRDR" channel.
  */
@@ -58,6 +60,20 @@ typedef struct guac_rdp_clipboard {
      * library, such as CF_TEXT.
      */
     UINT requested_format;
+
+    /**
+     * Whether a Format Data Request has been sent and is still awaiting a
+     * response. Prevents overlapping requests that desynchronize FreeRDP
+     * 3.x's internal CLIPRDR request tracking.
+     */
+    int request_pending;
+
+    /**
+     * Lock protecting request_pending and requested_format against
+     * concurrent access from the CLIPRDR channel thread and user input
+     * threads.
+     */
+    pthread_mutex_t request_lock;
 
 } guac_rdp_clipboard;
 
