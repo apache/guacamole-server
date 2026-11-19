@@ -24,25 +24,88 @@
 #include <pthread.h>
 #include <stddef.h>
 
-/** State shared with the join handler and its initialization thread. */
+/**
+ * State used by the owner tests to control the result of the join handler and
+ * record the owner seen by its protocol initialization thread.
+ */
 typedef struct owner_test_state {
+
+    /**
+     * The connection owner returned by the initialization thread. This is NULL
+     * if no owner was available when the thread looked up the owner.
+     */
     guac_user* observed_owner;
+
+    /**
+     * The result that the join handler should return if thread creation and
+     * joining succeed. Zero accepts the user; any non-zero value rejects it.
+     */
     int join_result;
+
+    /**
+     * The error code returned by pthread_create() if thread creation fails,
+     * or the result of pthread_join() otherwise. Zero indicates success.
+     */
     int thread_result;
+
 } owner_test_state;
 
-/** Return the owner supplied by guac_client_for_owner(). */
+/**
+ * Callback for guac_client_for_owner() which returns the supplied owner
+ * without modifying it, allowing tests to inspect the owner through the same
+ * lookup mechanism used by protocol initialization.
+ *
+ * @param owner
+ *     The current connection owner, or NULL if no owner is available.
+ *
+ * @param data
+ *     Arbitrary callback data. This value is not used.
+ *
+ * @return
+ *     The supplied owner pointer, which may be NULL.
+ */
 static void* return_owner(guac_user* owner, void* data) {
     return owner;
 }
 
-/** Model protocol initialization that exposes a filesystem to the owner. */
+/**
+ * Thread routine which looks up the connection owner. This models the owner
+ * lookup performed when protocol initialization exposes a filesystem.
+ *
+ * @param data
+ *     The guac_user whose connection is being initialized. Its client member
+ *     must point to the guac_client being tested.
+ *
+ * @return
+ *     The connection owner returned by guac_client_for_owner(), or NULL if
+ *     the owner was not yet available.
+ */
 static void* initialize_protocol(void* data) {
     guac_user* user = (guac_user*) data;
     return guac_client_for_owner(user->client, return_owner, NULL);
 }
 
-/** Force protocol initialization to finish before the join handler returns. */
+/**
+ * Join handler which starts a protocol initialization thread and waits for it
+ * to finish before returning. This forces the owner lookup to occur during
+ * the join handler, making the initialization race reproducible without
+ * depending on thread scheduling. The thread result and observed owner are
+ * recorded in the owner_test_state referenced by user->data.
+ *
+ * @param user
+ *     The user being added to the connection. Its client member must reference
+ *     the connection, and its data member must reference an owner_test_state.
+ *
+ * @param argc
+ *     The number of connection arguments. This value is not used.
+ *
+ * @param argv
+ *     The connection arguments. This value is not used.
+ *
+ * @return
+ *     The configured join_result if thread creation and joining succeed, or
+ *     one if either thread operation fails.
+ */
 static int join_with_initialization(guac_user* user, int argc, char** argv) {
     owner_test_state* state = (owner_test_state*) user->data;
     pthread_t thread;
@@ -58,7 +121,11 @@ static int join_with_initialization(guac_user* user, int argc, char** argv) {
     return state->thread_result ? 1 : state->join_result;
 }
 
-/** An initialization thread must be able to find its connection owner. */
+/**
+ * Test which verifies that a protocol initialization thread can find the
+ * connection owner before the owner's join handler returns, and that the
+ * owner remains available after the user has been added successfully.
+ */
 void test_client__owner_available_during_join(void) {
     guac_client* client = guac_client_alloc();
     guac_user* owner = guac_user_alloc();
@@ -79,7 +146,12 @@ void test_client__owner_available_during_join(void) {
     guac_user_free(owner);
 }
 
-/** A rejected owner must not leave a dangling pointer, and may retry. */
+/**
+ * Test which verifies that the owner is available during a join which is
+ * subsequently rejected, but is cleared after the rejection without adding a
+ * connected user. Retrying the join successfully must make the owner
+ * available both during and after the second join attempt.
+ */
 void test_client__failed_owner_join(void) {
     guac_client* client = guac_client_alloc();
     guac_user* owner = guac_user_alloc();
@@ -106,7 +178,11 @@ void test_client__failed_owner_join(void) {
     guac_user_free(owner);
 }
 
-/** Neither successful nor rejected guests may replace the owner. */
+/**
+ * Test which verifies that the initialization thread for a guest sees the
+ * original connection owner. Both rejected and successful guest joins must
+ * preserve that owner after their join handlers return.
+ */
 void test_client__guest_preserves_owner(void) {
     guac_client* client = guac_client_alloc();
     guac_user* owner = guac_user_alloc();
