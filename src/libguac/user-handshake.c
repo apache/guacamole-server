@@ -237,9 +237,10 @@ static int guac_user_start(guac_parser* parser, guac_user* user,
 /**
  * This function loops through the received instructions during the handshake
  * with the client attempting to join the connection, and runs the handlers
- * for each of the opcodes, ending when the connect instruction is received.
- * Returns zero if the handshake completes successfully with the connect opcode,
- * or a non-zero value if an error occurs.
+ * for each of the opcodes, ending when the connect or disconnect instruction
+ * is received. Returns zero if the handshake completes successfully with the
+ * connect opcode, or a non-zero value if the client disconnects or an error
+ * occurs.
  * 
  * @param user
  *     The guac_user attempting to join the connection.
@@ -252,7 +253,7 @@ static int guac_user_start(guac_parser* parser, guac_user* user,
  * 
  * @return
  *     Zero if the handshake completes successfully with the connect opcode,
- *     or non-zero if an error occurs.
+ *     or non-zero if the client disconnects or an error occurs.
  */
 static int __guac_user_handshake(guac_user* user, guac_parser* parser,
         int usec_timeout) {
@@ -266,6 +267,14 @@ static int __guac_user_handshake(guac_user* user, guac_parser* parser,
         if (strcmp(parser->opcode, "connect") == 0)
             return 0;
         
+        /* If we receive the disconnect opcode, the client is leaving before
+         * completing the handshake, which is not an error. */
+        if (strcmp(parser->opcode, "disconnect") == 0) {
+            guac_user_log(user, GUAC_LOG_DEBUG,
+                    "Guacamole connection closed during handshake");
+            return 1;
+        }
+
         guac_user_log(user, GUAC_LOG_DEBUG, "Processing instruction: %s",
                 parser->opcode);
         
