@@ -114,10 +114,15 @@ static void guac_rdp_send_key_event(guac_rdp_client* rdp_client,
 }
 
 /**
- * Immediately sends an RDP Unicode event having the given Unicode codepoint.
- * Unlike key events, RDP Unicode events do have not a pressed or released
- * state. They represent strictly the input of a single character, and are
- * technically independent of the keyboard.
+ * Immediately sends a pair of RDP Unicode events, pressed then released,
+ * having the given Unicode codepoint. The events represent strictly the input
+ * of a single character, and are technically independent of the keyboard.
+ *
+ * The released event is required. Windows types the character on the pressed
+ * event alone, but xrdp types a character found on its keymap by pressing the
+ * modifiers that character needs (Shift, AltGr), and releases those modifiers
+ * only on the released event. Without it, every following key is received as
+ * though AltGr or Shift were still held.
  *
  * @param rdp_client
  *     The RDP client instance associated with the RDP session along which the
@@ -135,10 +140,12 @@ static void guac_rdp_send_unicode_event(guac_rdp_client* rdp_client,
     if (rdp_inst == NULL)
         return;
 
-    /* Send Unicode event */
+    /* Send Unicode events */
     pthread_mutex_lock(&(rdp_client->message_lock));
     GUAC_RDP_CONTEXT(rdp_inst)->input->UnicodeKeyboardEvent(
             GUAC_RDP_CONTEXT(rdp_inst)->input, 0, codepoint);
+    GUAC_RDP_CONTEXT(rdp_inst)->input->UnicodeKeyboardEvent(
+            GUAC_RDP_CONTEXT(rdp_inst)->input, KBD_FLAGS_RELEASE, codepoint);
     pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }
